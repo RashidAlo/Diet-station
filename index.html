@@ -103,9 +103,9 @@
     const bandTop = satd + 70;
     const chipsTop = Hd - sabd - 181 - 46;
     const e = Math.max(0.6, Math.min(1, (chipsTop - bandTop) / 386));
-    const w = 560 * e, h = 689 * e;
+    const w = 450 * e, h = 554 * e;
     overlay.style.left = (201 - w / 2) + 'px';
-    overlay.style.top = ((bandTop + chipsTop) / 2 - 12 * e - 0.3906 * h) + 'px';
+    overlay.style.top = ((bandTop + chipsTop) / 2 - 26 * e - 0.3906 * h) + 'px';
     overlay.style.width = w + 'px';
     overlay.style.height = h + 'px';
     const dpr = (window.devicePixelRatio || 1) * k;
