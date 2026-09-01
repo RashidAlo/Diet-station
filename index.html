@@ -39,6 +39,10 @@
   .chrome .cta img { position: absolute; left: -0.5px; top: -0.5px; width: 285px; height: 55px;
     max-width: none; display: block; pointer-events: none; }
   .chrome .cta:active img { transform: scale(.985); }
+  .chrome .cta .ctalabel { position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+    font: 500 16px/1 'Urbane Rounded', -apple-system, sans-serif; color: #fff;
+    letter-spacing: 0; pointer-events: none; }
   /* segmented control: one pill, four segments, a thumb that glides */
   .chips { position: absolute; bottom: calc(var(--sabd, 0px) + 181px); left: 50%;
     transform: translateX(-50%); display: flex; flex-wrap: nowrap; gap: 0;
@@ -63,9 +67,8 @@
     <div id="overlay"><canvas id="rive"></canvas></div>
     <div class="chrome">
       <button class="closebtn" id="closeBtn" title="close"><img alt="close" src="close-btn.png"></button>
-      <div class="title">Nutrition.<br>Personalized.</div>
       <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
-      <button class="cta" id="ctaBtn"><img alt="Get Started" src="cta-btn.png"></button>
+      <button class="cta" id="ctaBtn"><img alt="" src="cta-plate.png"><span class="ctalabel">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
     </div>
     <div class="chips" id="chips">
       <div class="thumb" id="chipThumb"></div>
@@ -97,12 +100,12 @@
     const satd = si.top / k, sabd = si.bottom / k;
     phone.style.setProperty('--satd', satd.toFixed(1) + 'px');
     phone.style.setProperty('--sabd', sabd.toFixed(1) + 'px');
-    const titleBottom = satd + 22 + 80;
+    const bandTop = satd + 70;
     const chipsTop = Hd - sabd - 181 - 46;
-    const e = Math.max(0.6, Math.min(1, (chipsTop - titleBottom) / 386));
-    const w = 530 * e, h = 652 * e;
+    const e = Math.max(0.6, Math.min(1, (chipsTop - bandTop) / 386));
+    const w = 560 * e, h = 689 * e;
     overlay.style.left = (201 - w / 2) + 'px';
-    overlay.style.top = ((titleBottom + chipsTop) / 2 - 0.3906 * h) + 'px';
+    overlay.style.top = ((bandTop + chipsTop) / 2 - 12 * e - 0.3906 * h) + 'px';
     overlay.style.width = w + 'px';
     overlay.style.height = h + 'px';
     const dpr = (window.devicePixelRatio || 1) * k;
