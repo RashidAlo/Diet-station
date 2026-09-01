@@ -4,4 +4,4 @@ A guided breathing web app. Single self-contained page — fonts and audio embed
 
 **Live app:** https://rashidalo.github.io/diet-station/
 
-Deployed automatically to GitHub Pages on every push to `main`.
+Deployed via GitHub Pages from the `gh-pages` branch — push updates to `gh-pages` to update the live site.
