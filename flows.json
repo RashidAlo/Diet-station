@@ -15,12 +15,22 @@
         "Caption output": "number “shown”: 0 hidden · 1–4 feature caption · 5 intro blurb",
         "Layout": "402pt design width · animation stage 450×554pt, ball center at 39% of stage height · header pinned to safe-area top, actions pinned above home bar",
         "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)",
-        "Brand rule": "Ball dots are red #FF3848 on #ED1C24; icons+headlines resolve to white. Never recolor."
+        "Brand rule": "Ball dots are red #FF3848 on #ED1C24; icons+headlines resolve to white. Never recolor.",
+        "Nav buttons": "Liquid Glass (iOS 26) rendered in CSS: backdrop-filter blur(9px) saturate(175%) + specular inset rim; native SwiftUI equivalent = .glassEffect()"
       },
       "downloads": [
-        { "label": "dietstation.riv", "href": "breathe/dietstation.riv" },
-        { "label": "Prototype source (index.html)", "href": "breathe/index.html" }
-      ]
+        {
+          "label": "dietstation.riv",
+          "href": "breathe/dietstation.riv"
+        },
+        {
+          "label": "Prototype source (index.html)",
+          "href": "breathe/index.html"
+        }
+      ],
+      "platform": "iOS",
+      "area": "Onboarding",
+      "preview": "breathe/preview.png"
     }
   ]
 }

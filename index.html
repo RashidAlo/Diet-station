@@ -45,6 +45,16 @@
     padding: 6px 10px 5px; border-radius: 999px; white-space: nowrap; }
   .pill.in-progress { background: var(--red-soft); color: var(--red); }
   .pill.ready { background: var(--ok-soft); color: var(--ok); }
+  .tag { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em; text-transform: uppercase;
+    padding: 6px 10px 5px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--ink-soft); white-space: nowrap; }
+  .row { display: flex; gap: 22px; align-items: flex-start; }
+  .row .body { flex: 1; min-width: 0; }
+  .thumb { flex: none; display: block; }
+  .thumb img { width: 96px; aspect-ratio: 402 / 874; object-fit: cover; display: block;
+    border-radius: 14px; border: 1px solid var(--line);
+    box-shadow: 0 10px 24px -16px rgba(34,26,27,.35); }
+  @media (max-width: 480px) { .thumb img { width: 76px; } }
   .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 60ch; }
   .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 10px; }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
@@ -93,13 +103,20 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
       `<dt>${k}</dt><dd>${v}</dd>`).join('');
     const dl = (f.downloads || []).map(d =>
       `<a href="${d.href}" download>${d.label}</a>`).join('');
+    const tags = [f.platform, f.area].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join('');
     card.innerHTML = `
-      <div class="top">
-        <h2>${f.title}</h2>
-        <span class="pill ${f.status}">${statusLabel}</span>
+      <div class="row">
+        <div class="body">
+          <div class="top">
+            <h2>${f.title}</h2>
+            ${tags}
+            <span class="pill ${f.status}">${statusLabel}</span>
+          </div>
+          <p class="desc">${f.description}</p>
+          <p class="meta">Updated ${f.updated}</p>
+        </div>
+        ${f.preview ? `<a class="thumb" href="${f.path}"><img src="${f.preview}" alt="${f.title} preview"></a>` : ''}
       </div>
-      <p class="desc">${f.description}</p>
-      <p class="meta">Updated ${f.updated}</p>
       <div class="actions">
         <a class="btn primary" href="${f.path}">Open prototype</a>
         <button class="btn ghost" aria-expanded="false">Dev handoff</button>

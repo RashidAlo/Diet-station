@@ -27,22 +27,34 @@
   .chrome .para { position: absolute; bottom: calc(var(--sabd, 0px) + 112px); left: 50%;
     transform: translateX(-50%); width: 240px; text-align: center;
     font: 400 14px/20px 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif; color: #F9F9F9; }
+  /* Liquid Glass (iOS 26) nav buttons - rendered natively: backdrop
+     refraction + specular rim + gel press. No raster. */
+  .glass {
+    border: none; padding: 0; pointer-events: auto; cursor: pointer;
+    background: rgba(255, 255, 255, 0.11);
+    -webkit-backdrop-filter: blur(9px) saturate(175%);
+    backdrop-filter: blur(9px) saturate(175%);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255,255,255,.50),
+      inset 0 -1px 1.5px rgba(255,255,255,.14),
+      inset 2px 4px 9px -4px rgba(255,255,255,.62),
+      inset -3px -5px 10px -5px rgba(110,0,6,.38),
+      0 12px 28px -12px rgba(70,0,4,.55),
+      0 1px 2px rgba(70,0,4,.18);
+    transition: transform .18s cubic-bezier(.3,.8,.3,1), background .18s ease;
+  }
+  .glass:active { background: rgba(255,255,255,.19); }
   .chrome .closebtn { position: absolute; left: 21px; top: calc(var(--satd, 0px) + 20px);
-    width: 40px; height: 40px; border: none; padding: 0; background: none; overflow: visible;
-    pointer-events: auto; cursor: pointer; }
-  .chrome .closebtn img { position: absolute; left: -15px; top: -15px; width: 70px; height: 70px;
-    max-width: none; display: block; pointer-events: none; }
-  .chrome .closebtn:active img { transform: scale(.94); }
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; }
+  .chrome .closebtn:active { transform: scale(.92); }
+  .chrome .closebtn svg { width: 16px; height: 16px; display: block; }
   .chrome .cta { position: absolute; bottom: calc(var(--sabd, 0px) + 30px); left: 50%;
-    transform: translateX(-50%); width: 284px; height: 54px; border: none; padding: 0;
-    background: none; overflow: visible; pointer-events: auto; cursor: pointer; }
-  .chrome .cta img { position: absolute; left: -0.5px; top: -0.5px; width: 285px; height: 55px;
-    max-width: none; display: block; pointer-events: none; }
-  .chrome .cta:active img { transform: scale(.985); }
-  .chrome .cta .ctalabel { position: absolute; inset: 0; display: flex;
-    align-items: center; justify-content: center; gap: 8px;
+    transform: translateX(-50%); width: 284px; height: 54px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
     font: 500 16px/1 'Urbane Rounded', -apple-system, sans-serif; color: #fff;
-    letter-spacing: 0; pointer-events: none; }
+    letter-spacing: 0; }
+  .chrome .cta:active { transform: translateX(-50%) scale(.97); }
   /* segmented control: one pill, four segments, a thumb that glides */
   .chips { position: absolute; bottom: calc(var(--sabd, 0px) + 181px); left: 50%;
     transform: translateX(-50%); display: flex; flex-wrap: nowrap; gap: 0;
@@ -66,9 +78,9 @@
   <div class="phone" id="phone">
     <div id="overlay"><canvas id="rive"></canvas></div>
     <div class="chrome">
-      <button class="closebtn" id="closeBtn" title="close"><img alt="close" src="close-btn.png"></button>
+      <button class="closebtn glass" id="closeBtn" title="close"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
       <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
-      <button class="cta" id="ctaBtn"><img alt="" src="cta-plate.png"><span class="ctalabel">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
+      <button class="cta glass" id="ctaBtn"><span class="ctalabel" style="display:contents">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
     </div>
     <div class="chips" id="chips">
       <div class="thumb" id="chipThumb"></div>
