@@ -1,0 +1,26 @@
+{
+  "flows": [
+    {
+      "id": "breathe",
+      "title": "Breathe — Onboarding Intro",
+      "status": "in-progress",
+      "updated": "2026-09-02",
+      "description": "Interactive breathing dot-field that opens the AI questionnaire. The red ball morphs through four health-need states — Weight, Muscle, Pregnancy, Gut — auto-progressing and tappable via the segmented control.",
+      "path": "breathe/",
+      "handoff": {
+        "Design source": "Figma · Diet Station 4.0 · Step 2 (node 17034-157443)",
+        "Motion source": "Rive file untitled/2544677 · artboard “DietStation Breathe” 520×640",
+        "Runtime": "@rive-app/canvas ≥ 2.41 · state machine “State Machine 1” · autoBind",
+        "State input": "ViewModel “Machine” · number “state”: 0 ball · 1 weight · 2 muscle · 3 pregnancy · 4 gut",
+        "Caption output": "number “shown”: 0 hidden · 1–4 feature caption · 5 intro blurb",
+        "Layout": "402pt design width · animation stage 450×554pt, ball center at 39% of stage height · header pinned to safe-area top, actions pinned above home bar",
+        "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)",
+        "Brand rule": "Ball dots are red #FF3848 on #ED1C24; icons+headlines resolve to white. Never recolor."
+      },
+      "downloads": [
+        { "label": "dietstation.riv", "href": "breathe/dietstation.riv" },
+        { "label": "Prototype source (index.html)", "href": "breathe/index.html" }
+      ]
+    }
+  ]
+}

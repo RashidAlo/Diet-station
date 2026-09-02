@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DietStation — Nutrition. Personalized.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ED1C24">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #ED1C24; overflow: hidden; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+  .phone-wrap { transform-origin: top left; }
+  .phone { position: relative; width: 402px; background: #ED1C24; overflow: hidden; }
+  #overlay { position: absolute; }
+  #rive { width: 100%; height: 100%; display: block; }
+  .chrome { position: absolute; inset: 0; pointer-events: none; }
+  .chrome .title { position: absolute; top: calc(var(--satd, 0px) + 22px); left: 50%;
+    transform: translateX(-50%); width: 258px; text-align: center;
+    font: 600 30px/40px 'Urbane Rounded', -apple-system, sans-serif; color: #F9F9F9; }
+  .chrome .para { position: absolute; bottom: calc(var(--sabd, 0px) + 112px); left: 50%;
+    transform: translateX(-50%); width: 240px; text-align: center;
+    font: 400 14px/20px 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif; color: #F9F9F9; }
+  .chrome .closebtn { position: absolute; left: 21px; top: calc(var(--satd, 0px) + 20px);
+    width: 40px; height: 40px; border: none; padding: 0; background: none; overflow: visible;
+    pointer-events: auto; cursor: pointer; }
+  .chrome .closebtn img { position: absolute; left: -15px; top: -15px; width: 70px; height: 70px;
+    max-width: none; display: block; pointer-events: none; }
+  .chrome .closebtn:active img { transform: scale(.94); }
+  .chrome .cta { position: absolute; bottom: calc(var(--sabd, 0px) + 30px); left: 50%;
+    transform: translateX(-50%); width: 284px; height: 54px; border: none; padding: 0;
+    background: none; overflow: visible; pointer-events: auto; cursor: pointer; }
+  .chrome .cta img { position: absolute; left: -0.5px; top: -0.5px; width: 285px; height: 55px;
+    max-width: none; display: block; pointer-events: none; }
+  .chrome .cta:active img { transform: scale(.985); }
+  .chrome .cta .ctalabel { position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+    font: 500 16px/1 'Urbane Rounded', -apple-system, sans-serif; color: #fff;
+    letter-spacing: 0; pointer-events: none; }
+  /* segmented control: one pill, four segments, a thumb that glides */
+  .chips { position: absolute; bottom: calc(var(--sabd, 0px) + 181px); left: 50%;
+    transform: translateX(-50%); display: flex; flex-wrap: nowrap; gap: 0;
+    justify-content: center; z-index: 20;
+    padding: 3px; border: 1px solid #E5E5E5; border-radius: 1024px; }
+  .chip { height: 38px; padding: 0 13px; border: none; border-radius: 1024px;
+    white-space: nowrap; background: transparent; color: #fff;
+    font: 500 14px/1 'Urbane Rounded', -apple-system, sans-serif;
+    display: flex; align-items: center; cursor: pointer;
+    position: relative; z-index: 1; transition: color .25s ease; }
+  .chip.sel { color: #ED1C24; }
+  .chips .thumb { position: absolute; top: 3px; left: 0; height: 38px; width: 0;
+    background: #FFF2F2; border-radius: 1024px; opacity: 0; z-index: 0;
+    box-shadow: 0 1px 15px -15px rgba(56,64,74,0.1);
+    transition: left .4s cubic-bezier(.3,.8,.3,1), width .4s cubic-bezier(.3,.8,.3,1),
+      opacity .25s ease; }
+</style>
+</head>
+<body>
+<div class="phone-wrap" id="phoneWrap">
+  <div class="phone" id="phone">
+    <div id="overlay"><canvas id="rive"></canvas></div>
+    <div class="chrome">
+      <button class="closebtn" id="closeBtn" title="close"><img alt="close" src="close-btn.png"></button>
+      <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
+      <button class="cta" id="ctaBtn"><img alt="" src="cta-plate.png"><span class="ctalabel">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
+    </div>
+    <div class="chips" id="chips">
+      <div class="thumb" id="chipThumb"></div>
+      <button class="chip" data-state="1">Weight</button>
+      <button class="chip" data-state="2">Muscle</button>
+      <button class="chip" data-state="3">Pregnancy</button>
+      <button class="chip" data-state="4">Gut</button>
+    </div>
+  </div>
+</div>
+<div id="safeProbe"></div>
+<script src="rive.js"></script>
+<script>
+(() => {
+  rive.RuntimeLoader.setWasmUrl('rive.wasm');
+  const $ = id => document.getElementById(id);
+  const phone = $('phone'), wrap = $('phoneWrap'), overlay = $('overlay'), canvas = $('rive');
+  let r = null;
+  function safeInsets() {
+    const cs = getComputedStyle($('safeProbe'));
+    return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  }
+  function refit() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const k = W / 402, Hd = H / k;
+    wrap.style.transform = `scale(${k})`;
+    phone.style.height = Hd + 'px';
+    const si = safeInsets();
+    const satd = si.top / k, sabd = si.bottom / k;
+    phone.style.setProperty('--satd', satd.toFixed(1) + 'px');
+    phone.style.setProperty('--sabd', sabd.toFixed(1) + 'px');
+    const bandTop = satd + 70;
+    const chipsTop = Hd - sabd - 181 - 46;
+    const e = Math.max(0.6, Math.min(1, (chipsTop - bandTop) / 386));
+    const w = 450 * e, h = 554 * e;
+    overlay.style.left = (201 - w / 2) + 'px';
+    overlay.style.top = ((bandTop + chipsTop) / 2 - 26 * e - 0.3906 * h) + 'px';
+    overlay.style.width = w + 'px';
+    overlay.style.height = h + 'px';
+    const dpr = (window.devicePixelRatio || 1) * k;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    if (r) r.resizeDrawingSurfaceToCanvas();
+  }
+  window.addEventListener('resize', refit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
+  window.addEventListener('orientationchange', () => setTimeout(refit, 250));
+  refit();
+  const chipEls = document.querySelectorAll('#chips .chip');
+  let curSel = 0;
+  function setSel(v) {
+    curSel = v;
+    let selEl = null;
+    chipEls.forEach(c => {
+      const on = parseInt(c.dataset.state, 10) === v;
+      c.classList.toggle('sel', on);
+      if (on) selEl = c;
+    });
+    const th = $('chipThumb');
+    if (selEl) {
+      th.style.opacity = 1;
+      th.style.left = selEl.offsetLeft + 'px';
+      th.style.width = selEl.offsetWidth + 'px';
+    } else {
+      th.style.opacity = 0;
+    }
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setSel(curSel));
+  fetch('dietstation.riv').then(res => res.arrayBuffer()).then(buffer => {
+    r = new rive.Rive({
+      buffer, canvas, autoplay: true, autoBind: true,
+      stateMachines: 'State Machine 1',
+      onLoad: () => {
+        r.resizeDrawingSurfaceToCanvas();
+        try {
+          const st = r.viewModelInstance.number('state');
+          setSel(Math.round(st.value));
+          st.on(v => setSel(Math.round(v)));
+          chipEls.forEach(c => c.onclick = () => { st.value = parseInt(c.dataset.state, 10); });
+        } catch (_) {}
+      },
+    });
+  });
+  $('ctaBtn').onclick = () => {};
+  $('closeBtn').onclick = () => { location.href = '../'; };
+})();
+</script>
+</body>
+</html>
