@@ -104,9 +104,7 @@
     --t-head:#f9f9f9; --t-body:#fff; --t-sub:#f9f9f9;
     --badge-bg: linear-gradient(to top, #f2b90d 45%, #ffca2a 55%);
     --badge-border:#fefae7; --badge-text:#c59300;
-    --check-bg: rgba(255,255,255,.22); --spark:#ffdf8e;
-    --cshadow: rgba(146,100,10,.42);
-    --voucher-shadow: none; }
+    --check-bg: rgba(255,255,255,.22); --spark:#ffdf8e; }
   .phone[data-level="bronze"] { /* frame 17137:76256 */
     --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #d5bb9f 24.41%, #c9a682 91.259%);
@@ -115,8 +113,7 @@
     --t-head:#0b0e12; --t-body:#0b0e12; --t-sub:#5c3f21;
     --badge-bg: linear-gradient(to bottom, #d5bb9f 45%, #c9a682 55%);
     --badge-border:#ffffff; --badge-text: rgba(76,64,51,.42);
-    --check-bg: rgba(0,0,0,.10); --spark:#8a5f36;
-    --cshadow: rgba(118,88,58,.38); }
+    --check-bg: rgba(0,0,0,.10); --spark:#8a5f36; }
   .phone[data-level="silver"] { /* frame 17137:76130 */
     --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #e5e7eb 19.152%, #d1d5db 86.283%);
@@ -125,8 +122,7 @@
     --t-head:#0b0e12; --t-body:#0b0e12; --t-sub:#7a7a7a;
     --badge-bg: linear-gradient(to bottom, #e5e7eb 45%, #d1d5db 55%);
     --badge-border:#e4e4e7; --badge-text: rgba(82,82,91,.46);
-    --check-bg: rgba(0,0,0,.08); --spark:#9aa0a8;
-    --cshadow: rgba(92,100,112,.32); }
+    --check-bg: rgba(0,0,0,.08); --spark:#9aa0a8; }
   .phone[data-level="vip"] { /* frame 17137:75818 */
     --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #270f0f 0.461%, #0f0e0d 100%);
@@ -137,19 +133,17 @@
                 linear-gradient(180deg, #57524d 45%, #2d2a27 55%);
     --badge-border:#f9f9f9; --badge-text:#fff;
     --check-bg: rgba(255,255,255,.22); --spark:#f2c94c;
-    --cshadow: rgba(0,0,0,.55);
-    --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
+    --voucher-shadow: 0 0 12px rgba(56,64,74,.12); }
   /* red theme — frame 16842:87694: flat brand red, only the badge keeps the
      tier's styling (badge vars deliberately NOT overridden here) */
   .phone[data-theme="red"] {
     --backdrop: #a6a6a6;
     --sheet-grad: linear-gradient(to top, #ed1c24, #ed1c24);
     --tint: rgba(237,28,36,.35);
-    --lighter: rgba(196,196,196,.28);   /* boosted: coupons must read clearly on flat red */
+    --lighter: rgba(173,173,173,.12);   /* exact Figma 17137-75573 layer */
     --t-head:#f9f9f9; --t-body:#fff; --t-sub:#f9f9f9;
     --spark:#ffffff;
-    --cshadow: rgba(112,6,10,.48);
-    --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
+    --voucher-shadow: 0 0 12px rgba(56,64,74,.12); }
 
   /* ---- sheet (bottom-anchored: the backdrop strip above absorbs any
      extra viewport height on mobile so the page runs edge-to-edge) ------ */
@@ -204,7 +198,14 @@
   .coupons { position: absolute; left: 0; top: 194px; width: 402px;
     padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
 
-  .coupon { position: relative; width: 368px; height: 125px; filter: var(--voucher-shadow); }
+  .coupon { position: relative; width: 368px; height: 125px; }
+  /* Figma's voucher ambient shadow (0 0 12 rgba(56,64,74,.12)) — as an outer
+     box-shadow on a transparent underlay, NEVER a filter on .coupon: filter
+     creates a stacking context and isolates the plus-lighter blend (the bug
+     that washed the red & VIP coupons). */
+  .coupon .vshadow { position: absolute; left: 0; top: 0; width: 368px; height: 125px;
+    border-radius: 24px; background: transparent; pointer-events: none;
+    box-shadow: var(--voucher-shadow, none); }
 
   /* ONE card with the exact Figma fill stack + a torn-off "piece" overlay.
      Layering matters: the plus-lighter layer (.lighter-ov) is a SIBLING so it
@@ -620,6 +621,9 @@ function buildCoupons() {
     applyMask(piece);
     piece.style.clipPath = `inset(0px 0px 0px ${SEAM}px)`;
 
+    const vshadow = document.createElement('div');
+    vshadow.className = 'vshadow';
+    el.appendChild(vshadow);
     el.appendChild(base);
     el.appendChild(lighter);
     el.appendChild(face);
@@ -647,6 +651,7 @@ function buildCoupons() {
    hole pops the tab rips free and the card heals into the redeemed state. */
 function attachPull(coupon, base, piece, lighter, face) {
   const hit = coupon.querySelector('.hit');
+  const vshadow = coupon.querySelector('.vshadow');
   const baseLabel = face.querySelector('.stublabel');
   const N = HOLES.length;
   const threshold = i => MODS.tearAt * (0.30 + 0.70 * i / (N - 1));
@@ -660,6 +665,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     base.style.transition = lighter.style.transition = 'none';
     base.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
     lighter.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
+    vshadow.style.width = SEAM + 'px';   // resize, not clip: clip crops the shadow
     baseLabel.style.opacity = '0';
     piece.style.visibility = 'visible';
     piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.16))';
@@ -669,6 +675,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     split = false;
     base.style.clipPath = '';
     lighter.style.clipPath = '';
+    vshadow.style.width = '368px';
     baseLabel.style.opacity = '';
     piece.style.visibility = 'hidden';
     piece.style.transform = '';
@@ -783,6 +790,8 @@ function attachPull(coupon, base, piece, lighter, face) {
         elm.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
         elm.style.clipPath = 'inset(0px 0px 0px 0px)';
       });
+      vshadow.style.transition = 'width .55s cubic-bezier(.3,1,.4,1)';
+      vshadow.style.width = '368px';
     }, 380);
   };
 
