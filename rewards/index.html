@@ -214,13 +214,16 @@
     width: 368px; height: 125px; overflow: hidden; border-radius: 24px;
     -webkit-backdrop-filter: var(--frost-filter, none);
     backdrop-filter: var(--frost-filter, none); }
-  /* soft dynamic shadow: a blurred underlay tinted from the active theme —
-     also darkens what shows through the punched holes so they read clearly.
-     (Must be an element, not filter on .coupon: filter would isolate the
-     plus-lighter blend and wash the coupons white.) */
+  /* soft dynamic shadow tinted from the active theme. Outer box-shadow on a
+     transparent box: the spec clips it OUTSIDE the border-box, so nothing
+     paints under the translucent coupon fills — no muddying. */
   .coupon .cshadow { position: absolute; inset: 0; border-radius: 24px;
-    background: var(--cshadow, transparent); filter: blur(9px);
-    transform: translateY(4px); pointer-events: none; }
+    background: transparent; pointer-events: none;
+    box-shadow: 0 6px 16px -2px var(--cshadow, transparent); }
+  /* punched card stock: a hairline dark inner edge makes each hole read */
+  .holering { position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.20); pointer-events: none; z-index: 1; }
+  .coupon.redeemed .holering { display: none; }
   .coupon .base { z-index: 0; }
   .coupon .lighter-ov { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; border-radius: 24px; z-index: 1;
@@ -599,7 +602,8 @@ function buildCoupons() {
         <div class="headline">${def.headline}</div>
         <div class="sub">${def.sub}</div>
       </div>
-      ${stubLabel}`);
+      ${stubLabel}
+      ${HOLES.map(y => `<div class="holering" style="left:${SEAM - 4}px;top:${y - 4}px"></div>`).join('')}`);
 
     // 4. the rippable tab (carries its own fill stack while moving)
     const piece = document.createElement('div');
