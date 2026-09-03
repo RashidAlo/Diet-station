@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>DietStation — Rewards / Pull to Redeem</title>
+<script>class Button {}</script>
+<script src="html2canvas.min.js"></script>
+<script src="liquid-glass-container.js"></script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -19,6 +22,9 @@
   #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
     background: #a6a6a6; transform-origin: center center; }
+  /* desktop playground: framed device; mobile: edge-to-edge (JS toggles) */
+  .phone.framed { border-radius: 42px;
+    box-shadow: 0 34px 90px -24px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.18); }
 
   /* ---- level theming (exact values from Figma section 17137:76380) --- */
   .phone { /* gold — frame 17137:75698 */
@@ -103,18 +109,23 @@
 
   .coupon { position: relative; width: 368px; height: 125px; filter: var(--voucher-shadow); }
 
-  .coupon .body { position: absolute; left: 0; top: 0; width: 278px; height: 125px;
-    border-radius: 24px 0 0 24px; overflow: hidden;
-    will-change: transform, width, border-radius; }
-  .coupon .stub { position: absolute; left: 277px; top: 0; width: 90px; height: 125px;
-    border-radius: 0 24px 24px 0; overflow: hidden; cursor: grab;
+  /* body + stub are liquid-glass containers (liquid-glass-js) */
+  .glass-container { position: absolute; }
+  .coupon .body { left: 0; top: 0; width: 278px; height: 125px; z-index: 0;
+    overflow: hidden; border-radius: 24px;
+    will-change: transform, width; }
+  .coupon .stub { left: 278px; top: 0; width: 90px; height: 125px; z-index: 0;
+    overflow: hidden; border-radius: 24px; cursor: grab;
     display: flex; align-items: center; justify-content: center;
     touch-action: none; will-change: transform, opacity; }
   .coupon .stub:active { cursor: grabbing; }
-  .coupon .body::before, .coupon .stub::before { content: ''; position: absolute; inset: 0;
-    background: var(--tint); }
-  .coupon .body::after, .coupon .stub::after { content: ''; position: absolute; inset: 0;
-    background: var(--lighter); mix-blend-mode: plus-lighter; }
+  .coupon .glass-container canvas { box-shadow: none !important; }
+
+  /* Figma fill stack layered over the refraction canvas */
+  .coupon .fill-tint { position: absolute; inset: 0; border-radius: inherit;
+    background: var(--tint); pointer-events: none; }
+  .coupon .fill-lighter { position: absolute; inset: 0; border-radius: inherit;
+    background: var(--lighter); mix-blend-mode: plus-lighter; pointer-events: none; }
 
   .coupon .content { position: absolute; left: 25px; top: 28px; bottom: 29px; width: 220px;
     display: flex; flex-direction: column; justify-content: center; z-index: 1;
@@ -151,8 +162,8 @@
     border: 1.5px dashed var(--t-sub); border-radius: 8px;
     font: 600 13px/18px 'Urbane Rounded', sans-serif; color: var(--t-body); letter-spacing: 1.5px; }
 
-  .coupon.redeemed .body { width: 368px; border-radius: 24px;
-    transition: width .45s cubic-bezier(.3,1.3,.4,1), border-radius .45s cubic-bezier(.3,1.3,.4,1); }
+  .coupon.redeemed .body { width: 368px;
+    transition: width .45s cubic-bezier(.3,1.3,.4,1); }
   .coupon.redeemed .content { opacity: 0; }
   .coupon.redeemed .perf { display: none; }
   .coupon.redeemed .done-face { opacity: 1; pointer-events: auto;
@@ -223,28 +234,94 @@ function couponDefs(lvl) {
   ];
 }
 
+/* ---------------- liquid glass plumbing (liquid-glass-js) ---------------- */
+const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+let liveGlass = [];
+
+function makeGlass(cls) {
+  if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
+  const c = new Container({ borderRadius: 24, tintOpacity: 0.14 });
+  c.element.classList.add(cls);
+  // The lib sizes canvases from getBoundingClientRect(), which is wrong inside
+  // our scaled .phone: backing store must be the on-screen (scaled) size for
+  // correct snapshot sampling, while the canvas CSS size must stay 100% of the
+  // layout box. Border radius scales with the stage too.
+  c.resizeGlass = () => {
+    const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
+    const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
+    c.width = w; c.height = h; c.borderRadius = 24 * stageScale;
+    c.canvas.width = w; c.canvas.height = h;
+    c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
+    if (c.gl_refs.gl) {
+      const gl = c.gl_refs.gl;
+      gl.viewport(0, 0, w, h);
+      gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
+      gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
+      c.render && c.render();
+    }
+  };
+  // run after the lib's own rAF sizing pass so ours wins
+  requestAnimationFrame(() => requestAnimationFrame(c.resizeGlass));
+  liveGlass.push(c);
+  return c;
+}
+
+function destroyGlass() {
+  liveGlass.forEach(c => {
+    try { const ext = c.gl && c.gl.getExtension('WEBGL_lose_context'); ext && ext.loseContext(); } catch (_) {}
+    c.gl_refs = {}; c.render = null;
+  });
+  liveGlass = [];
+  if (GLASS_OK) {
+    Container.instances = [];
+    Container.pageSnapshot = null;
+    Container.isCapturing = false;
+    Container.waitingForSnapshot = [];
+  }
+}
+
+/* repaint a set of glass containers for `ms` milliseconds (during motion) */
+function paintDuring(glasses, ms) {
+  const t0 = performance.now();
+  const tick = () => {
+    glasses.forEach(g => g.render && g.render());
+    if (performance.now() - t0 < ms) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 /* ---------------- build coupons ---------------- */
 const phone = document.getElementById('phone');
 const list = document.getElementById('coupons');
 const lvlBadge = document.getElementById('lvlBadge');
 
 function buildCoupons() {
+  destroyGlass();
   const theme = LEVELS[phone.dataset.level];
   document.querySelector('.qbtn img').src = theme.q;
   list.innerHTML = '';
   couponDefs(phone.dataset.level).forEach(def => {
     const el = document.createElement('div');
     el.className = 'coupon';
-    el.innerHTML = `
-      <div class="body">
-        <div class="content">
-          <div class="expires">Expires in 1 Day</div>
-          <div class="headline">${def.headline}</div>
-          <div class="sub">${def.sub}</div>
-        </div>
-      </div>
+
+    const body = makeGlass('body');
+    body.element.insertAdjacentHTML('beforeend', `
+      <div class="fill-tint"></div><div class="fill-lighter"></div>
+      <div class="content">
+        <div class="expires">Expires in 1 Day</div>
+        <div class="headline">${def.headline}</div>
+        <div class="sub">${def.sub}</div>
+      </div>`);
+
+    const stub = makeGlass('stub');
+    stub.element.insertAdjacentHTML('beforeend', `
+      <div class="fill-tint"></div><div class="fill-lighter"></div>
+      <p><span class="pull">Pull</span><span class="tored">to Redeem</span></p>`);
+
+    el.appendChild(body.element);
+    el.appendChild(stub.element);
+    el.insertAdjacentHTML('beforeend', `
       <div class="perf"><img src="${theme.perf}" alt=""></div>
-      <div class="stub"><p><span class="pull">Pull</span><span class="tored">to Redeem</span></p></div>
       <div class="done-face">
         <div class="check">&#10003;</div>
         <div>
@@ -252,9 +329,9 @@ function buildCoupons() {
           <div class="done-sub">Applied to your next renewal</div>
           <span class="code">${def.code}</span>
         </div>
-      </div>`;
+      </div>`);
     list.appendChild(el);
-    attachPull(el);
+    attachPull(el, body, stub);
   });
 }
 
@@ -262,12 +339,13 @@ function buildCoupons() {
 const MAX_PULL = 96;    // px of visual travel at full stretch
 const TEAR_AT  = 62;    // visual px at which the stub tears off
 
-function attachPull(coupon) {
-  const stub = coupon.querySelector('.stub');
-  const body = coupon.querySelector('.body');
+function attachPull(coupon, bodyC, stubC) {
+  const stub = stubC.element;
+  const body = bodyC.element;
   const perf = coupon.querySelector('.perf img');
   let dragging = false, torn = false, startX = 0, raf = 0, disp = 0;
   let hintTimer = 0, interacted = false;
+  const paint = () => { bodyC.render && bodyC.render(); stubC.render && stubC.render(); };
 
   const setPull = (d) => {
     disp = d;
@@ -276,6 +354,7 @@ function attachPull(coupon) {
     body.style.transform = `translateX(${-d * 0.07}px)`;
     perf.style.opacity = 1 - p * 0.75;
     stub.style.filter = `brightness(${1 + p * 0.18})`;
+    paint();
   };
 
   const onDown = (e) => {
@@ -315,6 +394,7 @@ function attachPull(coupon) {
     stub.style.transform = 'translateX(0)';
     body.style.transform = 'translateX(0)';
     perf.style.opacity = 1; stub.style.filter = '';
+    paintDuring([bodyC, stubC], 520);
     armHint();
   };
 
@@ -330,7 +410,12 @@ function attachPull(coupon) {
     burst(coupon);
     // coupon body relaxes, then expands into redeemed state
     body.style.transform = 'translateX(0)';
-    setTimeout(() => coupon.classList.add('redeemed'), 140);
+    setTimeout(() => {
+      coupon.classList.add('redeemed');
+      // resize the glass to the expanded body once the spring settles
+      setTimeout(() => { bodyC.resizeGlass && bodyC.resizeGlass(); paintDuring([bodyC], 120); }, 500);
+    }, 140);
+    paintDuring([bodyC, stubC], 700);
   };
 
   stub.addEventListener('pointerdown', onDown);
@@ -351,6 +436,7 @@ function attachPull(coupon) {
         { transform: 'translateX(6px)', offset: .75 },
         { transform: 'translateX(0)' },
       ], { duration: 900, easing: 'ease-in-out' });
+      paintDuring([stubC], 950);
       armHint();
     }, 2600 + Math.random() * 1800);
   };
@@ -384,27 +470,37 @@ function burst(coupon) {
 /* ---------------- level switching / dev bar ---------------- */
 document.getElementById('devbar').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'resetBtn') { buildCoupons(); return; }
+  if (b.id === 'resetBtn') { requestAnimationFrame(buildCoupons); return; }
   const lvl = b.dataset.lvl; if (!lvl) return;
   document.querySelectorAll('.devbar [data-lvl]').forEach(x => x.classList.toggle('on', x === b));
   phone.dataset.level = lvl;
   lvlBadge.textContent = LEVELS[lvl].label;
-  buildCoupons();
+  // rebuild next frame so the fresh page snapshot sees the new theme
+  requestAnimationFrame(buildCoupons);
 });
 
 document.getElementById('closeBtn').addEventListener('click', () => {
   location.href = '../';
 });
 
-/* ---------------- stage scaling ---------------- */
+/* ---------------- stage scaling: desktop playground vs mobile fullscreen -- */
 let stageScale = 1;
 function fit() {
-  stageScale = Math.min(innerWidth / 402, innerHeight / 874);
+  const mobile = matchMedia('(max-width: 500px)').matches ||
+    (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  if (mobile) {
+    phone.classList.remove('framed');
+    stageScale = Math.min(innerWidth / 402, innerHeight / 874);
+  } else {
+    phone.classList.add('framed');
+    stageScale = Math.min(1, (innerWidth - 48) / 402, (innerHeight - 48) / 874);
+  }
   phone.style.transform = `scale(${stageScale})`;
+  liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
 }
 addEventListener('resize', fit);
 fit();
-buildCoupons();
+document.fonts.ready.then(() => requestAnimationFrame(buildCoupons));
 </script>
 </body>
 </html>

@@ -37,7 +37,7 @@
       "title": "Rewards — Pull to Redeem",
       "status": "in-progress",
       "updated": "2026-09-03",
-      "description": "Loyalty coupon redeem sheet with four level themes — Bronze, Silver, Gold, VIP — pulled 1:1 from Figma. Each voucher's stub tears off along the perforation with an elastic pull gesture: resistance, tear threshold, confetti burst, and a redeemed state with promo code. Level switcher in the floating dev bar.",
+      "description": "Loyalty coupon redeem sheet with four level themes — Bronze, Silver, Gold, VIP — pulled 1:1 from Figma. Coupons are real liquid glass (WebGL refraction via liquid-glass-js). Each voucher's stub tears off along the perforation with an elastic pull gesture: resistance, tear threshold, confetti burst, and a redeemed state with promo code. Desktop opens the framed playground with the level dev bar; mobile goes fullscreen.",
       "path": "rewards/",
       "handoff": {
         "Design source": "Figma · Diet Station 4.0 · Rewards states (section 17137-76380; Gold frame 17137-75698)",
@@ -49,7 +49,9 @@
         "Redeemed state": "Stub flies off (420ms cubic-bezier(.3,.6,.4,1)) with confetti burst at the perforation; body expands 278→368pt (450ms spring) into check + promo code chip",
         "Layout": "402pt design width · sheet 806pt, top radius 38 · vouchers 368×125 radius 24 · stub 90pt · perforation 110pt dashed 8/8",
         "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder)",
-        "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()"
+        "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()",
+        "Coupon material": "Liquid glass via github.com/dashersw/liquid-glass-js (Container class, borderRadius 24, tintOpacity 0.14): WebGL refraction of an html2canvas page snapshot, one canvas per coupon half; Figma fill stack layered above it (gold tint rgba(240,168,60,.35) + rgba(173,173,173,.12) plus-lighter, Silver .06). Snapshot re-captured on level switch; contexts disposed via WEBGL_lose_context. Native SwiftUI equivalent = .glassEffect() on the coupon shape.",
+        "Viewport behavior": "Desktop: framed device (radius 42, capped at 1x) + dev bar playground. Mobile (<=500px or coarse pointer): fullscreen fit."
       },
       "downloads": [
         {
