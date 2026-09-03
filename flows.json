@@ -4,7 +4,7 @@
       "id": "breathe",
       "title": "Breathe — Onboarding Intro",
       "status": "in-progress",
-      "updated": "2026-09-02",
+      "updated": "2026-09-03",
       "description": "Interactive breathing dot-field that opens the AI questionnaire. The red ball morphs through four health-need states — Weight, Muscle, Pregnancy, Gut — auto-progressing and tappable via the segmented control.",
       "path": "breathe/",
       "handoff": {
@@ -16,7 +16,8 @@
         "Layout": "402pt design width · animation stage 450×554pt, ball center at 39% of stage height · header pinned to safe-area top, actions pinned above home bar",
         "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)",
         "Brand rule": "Ball dots are red #FF3848 on #ED1C24; icons+headlines resolve to white. Never recolor.",
-        "Nav buttons": "Liquid Glass (iOS 26) in CSS: backdrop-filter blur(7px) saturate(100%), fill rgba(255,255,255,0), rim 0.30, depth 0.35 (specular insets + drop scaled by rim/depth); native SwiftUI equivalent = .glassEffect()"
+        "Nav buttons": "Liquid Glass (iOS 26) in CSS: backdrop-filter blur(7px) saturate(100%), fill rgba(255,255,255,0), rim 0.30, depth 0.35 (specular insets + drop scaled by rim/depth); native SwiftUI equivalent = .glassEffect()",
+        "Playground": "Desktop (standard shell): sidebar with description, health-need state selector (drives ViewModel Machine.state, synced with the in-phone segmented control), and live Liquid Glass dials (blur, saturation, fill, rim, depth) + Copy values; device frame with Dynamic Island, fixed 874pt canvas. Mobile: original fullscreen adaptive layout with safe-area handling."
       },
       "downloads": [
         {

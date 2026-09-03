@@ -14,10 +14,79 @@
   @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; background: #ED1C24; overflow: hidden; }
+  body.desktop { background: #0f0f12; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
-  .phone-wrap { transform-origin: top left; }
+
+  /* ================= playground shell (desktop standard) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #16161a; border-right: 1px solid rgba(255,255,255,.07);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y;
+    display: none; -webkit-user-select: none; user-select: none; }
+  body.desktop #side { display: block; }
+
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ff5a5f; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #fff; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.55);
+    margin-bottom: 26px; }
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.38);
+    margin-bottom: 12px; }
+
+  .lvl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lvl-grid button { display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 12px; background: rgba(255,255,255,.03);
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.65);
+    transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .lvl-grid button:hover { background: rgba(255,255,255,.07); }
+  .lvl-grid button.on { background: rgba(255,255,255,.12); color: #fff;
+    border-color: rgba(255,255,255,.35); }
+  .lvl-grid button:first-child { grid-column: 1 / -1; }
+
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ff5a5f; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.35); }
+
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    transition: filter .15s ease, background .15s ease; }
+  #sIntro { background: #ff5a5f; color: #fff; }
+  #sIntro:hover { filter: brightness(1.08); }
+  #sCopy { background: rgba(255,255,255,.09); color: rgba(255,255,255,.85); }
+  #sCopy:hover { background: rgba(255,255,255,.15); }
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
+
+  /* ================= stage + device frame ================= */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body.desktop #stage { left: 316px; }
+
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.85), 0 6px 20px rgba(0,0,0,.4),
+      inset 0 0 0 2px #34343a, inset 0 0 0 7px #000; }
+  body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
+    width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
+    box-shadow: 0 -70px 0 #2c2c32; }
+  body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
+    width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
+  .island { display: none; position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
+    width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
+    pointer-events: none; }
+  body.desktop .island { display: block; }
+
   .phone { position: relative; width: 402px; background: #ED1C24; overflow: hidden; }
+  body.desktop .phone { border-radius: 46px; }
+
   #overlay { position: absolute; }
   #rive { width: 100%; height: 100%; display: block; }
   .chrome { position: absolute; inset: 0; pointer-events: none; }
@@ -74,21 +143,88 @@
 </style>
 </head>
 <body>
-<div class="phone-wrap" id="phoneWrap">
-  <div class="phone" id="phone">
-    <div id="overlay"><canvas id="rive"></canvas></div>
-    <div class="chrome">
-      <button class="closebtn glass" id="closeBtn" title="close"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
-      <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
-      <button class="cta glass" id="ctaBtn"><span class="ctalabel" style="display:contents">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
+
+<aside id="side">
+  <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <h2>Breathe — Onboarding Intro</h2>
+  <p class="s-desc">Interactive breathing dot-field that opens the AI questionnaire.
+    The red ball morphs through four health-need states — auto-progressing on its own,
+    or driven from the segmented control (and the buttons below). Motion runs in Rive;
+    the ball's dots are brand red on red, icons and headlines resolve to white.</p>
+
+  <div class="s-sec">
+    <div class="s-label">Health need</div>
+    <div class="s-note">Drives the Rive state machine's <b>state</b> input — the same
+      value the in-phone segmented control writes.</div>
+    <div class="lvl-grid" id="stateGrid">
+      <button data-state="0" class="on">&#9679;&nbsp;&nbsp;Intro ball</button>
+      <button data-state="1">Weight</button>
+      <button data-state="2">Muscle</button>
+      <button data-state="3">Pregnancy</button>
+      <button data-state="4">Gut</button>
     </div>
-    <div class="chips" id="chips">
-      <div class="thumb" id="chipThumb"></div>
-      <button class="chip" data-state="1">Weight</button>
-      <button class="chip" data-state="2">Muscle</button>
-      <button class="chip" data-state="3">Pregnancy</button>
-      <button class="chip" data-state="4">Gut</button>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Liquid glass modifiers</div>
+    <div class="s-note">Live dials on the X + CTA glass (iOS 26 recipe in CSS).</div>
+    <div class="mod">
+      <div class="mod-head"><label>Blur</label><output id="vBlur">7px</output></div>
+      <input type="range" id="mBlur" min="0" max="20" step="0.5" value="7">
+      <div class="mod-desc">Backdrop refraction radius behind the button.</div>
     </div>
+    <div class="mod">
+      <div class="mod-head"><label>Saturation</label><output id="vSat">100%</output></div>
+      <input type="range" id="mSat" min="100" max="250" step="5" value="100">
+      <div class="mod-desc">Color punch pulled through the glass.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Fill</label><output id="vFill">0.00</output></div>
+      <input type="range" id="mFill" min="0" max="0.30" step="0.01" value="0">
+      <div class="mod-desc">White wash inside the button. 0 = fully clear.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Rim</label><output id="vRim">0.30</output></div>
+      <input type="range" id="mRim" min="0" max="1" step="0.05" value="0.30">
+      <div class="mod-desc">Specular highlight strength on the top edge.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Depth</label><output id="vDepth">0.35</output></div>
+      <input type="range" id="mDepth" min="0" max="1" step="0.05" value="0.35">
+      <div class="mod-desc">Inner shading + drop shadow — how "thick" the glass feels.</div>
+    </div>
+  </div>
+
+  <div class="s-actions">
+    <button id="sIntro">Back to intro</button>
+    <button id="sCopy">Copy values</button>
+  </div>
+
+  <div class="s-foot">Figma: Diet Station 4.0 &middot; Step 2 (node 17034-157443) &middot;
+    Rive artboard "DietStation Breathe". Copy values puts the glass recipe on the
+    clipboard — read it to Claude to bake it in.</div>
+</aside>
+
+<div id="stage">
+  <div class="device" id="device">
+    <div class="phone-wrap" id="phoneWrap">
+      <div class="phone" id="phone">
+        <div id="overlay"><canvas id="rive"></canvas></div>
+        <div class="chrome">
+          <button class="closebtn glass" id="closeBtn" title="close"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
+          <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
+          <button class="cta glass" id="ctaBtn"><span class="ctalabel" style="display:contents">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
+        </div>
+        <div class="chips" id="chips">
+          <div class="thumb" id="chipThumb"></div>
+          <button class="chip" data-state="1">Weight</button>
+          <button class="chip" data-state="2">Muscle</button>
+          <button class="chip" data-state="3">Pregnancy</button>
+          <button class="chip" data-state="4">Gut</button>
+        </div>
+      </div>
+    </div>
+    <div class="island"></div>
   </div>
 </div>
 <div id="safeProbe"></div>
@@ -97,19 +233,40 @@
 (() => {
   rive.RuntimeLoader.setWasmUrl('rive.wasm');
   const $ = id => document.getElementById(id);
-  const phone = $('phone'), wrap = $('phoneWrap'), overlay = $('overlay'), canvas = $('rive');
+  const phone = $('phone'), wrap = $('phoneWrap'), device = $('device'),
+    overlay = $('overlay'), canvas = $('rive');
   let r = null;
   function safeInsets() {
     const cs = getComputedStyle($('safeProbe'));
     return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
   }
+  const isMobile = () => matchMedia('(max-width: 500px)').matches ||
+    (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   function refit() {
     const W = window.innerWidth, H = window.innerHeight;
-    const k = W / 402, Hd = H / k;
-    wrap.style.transform = `scale(${k})`;
+    let k, Hd, satd, sabd;
+    if (isMobile()) {
+      document.body.classList.remove('desktop');
+      k = W / 402; Hd = H / k;
+      const si = safeInsets();
+      satd = si.top / k; sabd = si.bottom / k;
+      device.style.transform = 'none';
+      wrap.style.transform = `scale(${k})`;
+      wrap.style.transformOrigin = 'top left';
+      wrap.style.width = (402 * k) + 'px';
+      wrap.style.height = H + 'px';
+    } else {
+      // standard desktop playground: sidebar + device frame, fixed 874pt canvas
+      document.body.classList.add('desktop');
+      Hd = 874; satd = 24; sabd = 12;
+      const availW = W - 316;
+      k = Math.min(1, (availW - 56) / 426, (H - 56) / 898);
+      wrap.style.transform = 'none';
+      wrap.style.width = '402px';
+      wrap.style.height = '874px';
+      device.style.transform = `scale(${k})`;
+    }
     phone.style.height = Hd + 'px';
-    const si = safeInsets();
-    const satd = si.top / k, sabd = si.bottom / k;
     phone.style.setProperty('--satd', satd.toFixed(1) + 'px');
     phone.style.setProperty('--sabd', sabd.toFixed(1) + 'px');
     const bandTop = satd + 70;
@@ -130,7 +287,8 @@
   window.addEventListener('orientationchange', () => setTimeout(refit, 250));
   refit();
   const chipEls = document.querySelectorAll('#chips .chip');
-  let curSel = 0;
+  const sideEls = document.querySelectorAll('#stateGrid button');
+  let curSel = 0, stInput = null;
   function setSel(v) {
     curSel = v;
     let selEl = null;
@@ -139,6 +297,7 @@
       c.classList.toggle('sel', on);
       if (on) selEl = c;
     });
+    sideEls.forEach(b => b.classList.toggle('on', parseInt(b.dataset.state, 10) === v));
     const th = $('chipThumb');
     if (selEl) {
       th.style.opacity = 1;
@@ -157,13 +316,48 @@
         r.resizeDrawingSurfaceToCanvas();
         try {
           const st = r.viewModelInstance.number('state');
+          stInput = st;
           setSel(Math.round(st.value));
           st.on(v => setSel(Math.round(v)));
           chipEls.forEach(c => c.onclick = () => { st.value = parseInt(c.dataset.state, 10); });
+          sideEls.forEach(b => b.onclick = () => { st.value = parseInt(b.dataset.state, 10); });
         } catch (_) {}
       },
     });
   });
+  $('sIntro').onclick = () => { if (stInput) stInput.value = 0; };
+
+  /* glass modifier dials (X + CTA share the recipe) */
+  const GV = { blur: 7, sat: 100, fill: 0, rim: 0.30, depth: 0.35 };
+  function applyGlass() {
+    phone.style.setProperty('--g-blur', GV.blur + 'px');
+    phone.style.setProperty('--g-sat', GV.sat + '%');
+    phone.style.setProperty('--g-fill', GV.fill);
+    phone.style.setProperty('--g-rim', GV.rim);
+    phone.style.setProperty('--g-depth', GV.depth);
+  }
+  function bindMod(id, out, key, fmt) {
+    const el = $(id), o = $(out);
+    el.addEventListener('input', () => {
+      GV[key] = parseFloat(el.value);
+      o.textContent = fmt(GV[key]);
+      applyGlass();
+    });
+  }
+  bindMod('mBlur', 'vBlur', 'blur', v => v + 'px');
+  bindMod('mSat', 'vSat', 'sat', v => v + '%');
+  bindMod('mFill', 'vFill', 'fill', v => v.toFixed(2));
+  bindMod('mRim', 'vRim', 'rim', v => v.toFixed(2));
+  bindMod('mDepth', 'vDepth', 'depth', v => v.toFixed(2));
+  $('sCopy').onclick = () => {
+    const spec = `glass: blur ${GV.blur}px, saturate ${GV.sat}%, fill ${GV.fill.toFixed(2)}, ` +
+      `rim ${GV.rim.toFixed(2)}, depth ${GV.depth.toFixed(2)}`;
+    const b = $('sCopy');
+    navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
+      b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
+    }).catch(() => { b.textContent = spec; });
+  };
+
   $('ctaBtn').onclick = () => {};
   $('closeBtn').onclick = () => { location.href = '../'; };
 })();
