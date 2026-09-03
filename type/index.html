@@ -88,6 +88,16 @@
   .glyphs .gl-ar { display: block; }
   @media (max-width: 560px) { .wtag { width: 64px; } .stage { padding: 4px 16px; } }
 
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
   /* ---- embedded Font Lab ---- */
   .editorcard { padding: 0; overflow: hidden; }
   .editorcard .edhead { padding: 24px 26px 0; }
@@ -146,6 +156,41 @@
       (&#8776;3.6&nbsp;KB each on the web) &middot; weights = dot radius R49 / 55 / 62 / 70 on one grid.</p>
   </section>
 
+  <section class="card">
+    <h2>React Native handoff</h2>
+    <p class="desc">Load the four OTFs from the family zip with expo-font and address each
+      weight by its family name — custom faces don't map through <code>fontWeight</code>
+      reliably in RN. Arabic contextual shaping (initial/medial/final forms and lam-alef)
+      is baked into the font's OpenType tables, so native text rendering shapes it
+      automatically — no extra work.</p>
+    <div class="codewrap">
+      <pre id="rnFont">// npx expo install expo-font   (OTFs from the family zip -> assets/fonts/)
+import { useFonts } from 'expo-font';
+
+const [fontsLoaded] = useFonts({
+  'DietStationDot-Light':   require('./assets/fonts/DietStationDot-Light.otf'),
+  'DietStationDot-Regular': require('./assets/fonts/DietStationDot-Regular.otf'),
+  'DietStationDot-Medium':  require('./assets/fonts/DietStationDot-Medium.otf'),
+  'DietStationDot-Bold':    require('./assets/fonts/DietStationDot-Bold.otf'),
+});
+
+// Address weights by family name, NOT fontWeight:
+&lt;Text style={{ fontFamily: 'DietStationDot-Bold', fontSize: 40 }}&gt;
+  diet station
+&lt;/Text&gt;
+&lt;Text style={{ fontFamily: 'DietStationDot-Regular', fontSize: 40 }}&gt;
+  دايت ستيشن   {/* shapes natively — contextual forms are in the font */}
+&lt;/Text&gt;
+
+// Notes:
+// - Unicase: A-Z and a-z share one dot form.
+// - Weights are dot radius on one grid (R49/55/62/70) — mixing weights
+//   keeps perfect vertical rhythm.
+// - Web embeds use the hosted WOFF2s (Copy CSS embed above).</pre>
+      <button class="copycode" id="rnFontCopy">Copy</button>
+    </div>
+  </section>
+
   <section class="card editorcard">
     <div class="edhead">
       <h2>Glyph editor — Font Lab</h2>
@@ -195,6 +240,13 @@
     }).catch(() => {});
   });
   paint();
+  const fc = document.getElementById('rnFontCopy');
+  fc.addEventListener('click', () => {
+    const text = document.getElementById('rnFont').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+      fc.textContent = 'Copied ✓'; setTimeout(() => fc.textContent = 'Copy', 1400);
+    }).catch(() => {});
+  });
 })();
 </script>
 </body>

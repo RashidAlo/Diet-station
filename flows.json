@@ -27,11 +27,37 @@
         {
           "label": "Prototype source (index.html)",
           "href": "breathe/index.html"
+        },
+        {
+          "label": "Lottie fallback (shapeshift loop)",
+          "href": "breathe/dietstation-shapeshift.lottie.json"
         }
       ],
       "platform": "iOS",
       "area": "Onboarding",
-      "preview": "breathe/preview.png"
+      "preview": "breathe/preview.png",
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "The animation is a Rive state machine — rive-react-native plays the exact same .riv the web prototype uses. A Lottie export of the shapeshift loop is included as a fallback for contexts without Rive.",
+          "code": "npx expo install rive-react-native\n# fallback only:\nnpx expo install lottie-react-native"
+        },
+        {
+          "t": "Rive integration",
+          "note": "One artboard, one state machine, one number input. Drive Machine.state from the segmented control; read Machine.shown to fade the captions. Never recolor: ball dots are #FF3848 on the #ED1C24 ground, icons resolve to white — brand law.",
+          "code": "import Rive, { RiveRef } from 'rive-react-native';\n\nconst ref = useRef<RiveRef>(null);\n\n<Rive\n  ref={ref}\n  resourceName=\"dietstation\"            // dietstation.riv (download below)\n  artboardName=\"DietStation Breathe\"    // 520x640\n  stateMachineName=\"State Machine 1\"\n  autoplay\n  dataBinding={AutoBind(true)}           // binds ViewModel \"Machine\"\n/>\n\n// Health-need selector -> ViewModel \"Machine\" number \"state\":\n// 0 ball · 1 weight · 2 muscle · 3 pregnancy · 4 gut\nref.current?.setNumberState('Machine', 'state', tierIndex);\n// Caption output: number \"shown\" — 0 hidden · 1-4 feature caption · 5 intro blurb"
+        },
+        {
+          "t": "Layout tokens",
+          "note": "402pt design width — scale by width/402. Header pins to the safe-area top, actions pin above the home indicator.",
+          "code": "export const STAGE = { w: 450, h: 554, ballCenterY: 0.39 }; // ball center = 39% of stage\nexport const GROUND = '#ED1C24';   // screen + animation ground\nexport const DOT    = '#FF3848';   // ball dots — never recolor\n// Auto-progress: states advance on the Rive timeline; tapping the segmented\n// control overrides Machine.state directly and the machine takes it from there."
+        },
+        {
+          "t": "Materials & type",
+          "note": "X and CTA are the global Liquid Glass material — live recipe + RN mapping in the Glass Lab handoff (Design System tab). Type: Urbane Rounded Medium/DemiBold + Proxima Nova Regular (files in this folder).",
+          "code": null
+        }
+      ]
     },
     {
       "id": "rewards",
@@ -68,7 +94,39 @@
       ],
       "platform": "iOS",
       "area": "Loyalty",
-      "preview": "rewards/preview.png"
+      "preview": "rewards/preview.png",
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "Everything in this flow is reproducible with four libraries. Skia is the load-bearing one — it gives you the real plus-lighter blend and even-odd hole punching that plain RN styles can't do.",
+          "code": "npx expo install react-native-gesture-handler react-native-reanimated\nnpx expo install @shopify/react-native-skia expo-haptics expo-linear-gradient"
+        },
+        {
+          "t": "Design tokens",
+          "note": "Figma-exact, from section 17137-76380 (tiers) and 16842-87694 (red theme). All sizes are pt on a 402pt design width — scale by width/402.",
+          "code": "// tokens.ts — Figma-exact tier themes\nexport const TIERS = {\n  bronze: { sheet: ['#D5BB9F', '#C9A682'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#5C3F21', tint: null,   lighter: 0.12, shadow: null },\n  silver: { sheet: ['#E5E7EB', '#D1D5DB'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#7A7A7A', tint: null,   lighter: 0.06, shadow: null },\n  gold:   { sheet: ['#E4A70F', '#FFBC2A'], sheetDir: 'up',   backdrop: '#A6A6A6',\n            heading: '#F9F9F9', secondary: '#FFFFFF',\n            tint: 'rgba(240,168,60,0.35)',  lighter: 0.12, shadow: null },\n  vip:    { sheet: ['#270F0F', '#0F0E0D'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#F9F9F9', secondary: '#FFFFFF', tint: null,   lighter: 0.12,\n            shadow: 'rgba(56,64,74,0.12)' },\n  // Red theme: flat brand red sheet; ONLY the loyalty badge reflects the tier\n  red:    { sheet: ['#ED1C24', '#ED1C24'], sheetDir: 'down', backdrop: '#A6A6A6',\n            heading: '#FFFFFF', secondary: '#FFFFFF',\n            tint: 'rgba(237,28,36,0.35)',   lighter: 0.12, shadow: 'rgba(56,64,74,0.12)' },\n} as const;\n\nexport const SHEET  = { height: 806, topRadius: 38 };\nexport const COUPON = {\n  w: 368, h: 125, radius: 24,\n  seam: 243,          // perforation x — everything right of it is the pull tab (125pt)\n  holeR: 3, notchR: 7,\n  holes: Array.from({ length: 7 }, (_, i) => 18 + i * (89 / 6)),  // y of each punched hole\n};\nexport const GESTURE = { tearAt: 62, stretch: 96, resistance: 90, confetti: 14 };\n// Type scale (Urbane Rounded): headline 26/34 DemiBold, mid 17/24 Medium, tail 16/24 Light"
+        },
+        {
+          "t": "Coupon material (Skia)",
+          "note": "The coupon is two fills blended against the SHEET — a per-tier tint plus a gray plus-lighter layer (Skia BlendMode 'plus'). Draw the sheet gradient and the coupon in ONE canvas so the blend has the sheet to add against. The VIP/Red ambient shadow must be its own layer painted underneath — never a filter/mask on the coupon group, which isolates the blend and washes the fills (this exact bug shipped twice in the web prototype).",
+          "code": "import { Canvas, RoundedRect, Group, Path, Skia, Shadow } from '@shopify/react-native-skia';\n\n// Perforation: rounded card MINUS 7 holes + 2 edge half-moon notches (even-odd)\nexport function couponPath({ w, h, radius, seam, holes, holeR, notchR }) {\n  const p = Skia.Path.Make();\n  p.addRRect(Skia.RRectXY(Skia.XYWHRect(0, 0, w, h), radius, radius));\n  p.addCircle(seam, 0, notchR);   // top grip notch\n  p.addCircle(seam, h, notchR);   // bottom grip notch\n  holes.forEach(y => p.addCircle(seam, y, holeR));\n  p.setFillType(1 /* FillType.EvenOdd */);\n  return p;\n}\n\n// Inside the sheet <Canvas>:\n// 1. (VIP/Red) ambient shadow UNDER the coupon — separate transparent rect\n// 2. clip to couponPath, then:\n<Group clip={couponPath(COUPON)}>\n  {tier.tint && <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h}\n                             r={COUPON.radius} color={tier.tint} />}\n  <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h} r={COUPON.radius}\n               color={`rgba(173,173,173,${tier.lighter})`} blendMode=\"plus\" />\n</Group>\n// The pull tab is the same fills clipped right of the seam, transformed by the gesture."
+        },
+        {
+          "t": "Rip gesture (Reanimated)",
+          "note": "Elastic pull with staggered hole pops. Travel is tanh-damped; holes pop top-down between 30% and 100% of the tear point; the tab hinges around the topmost intact hole. A released half-pull springs back and re-arms every hole.",
+          "code": "const N = COUPON.holes.length;                       // 7\nconst travel = (dx: number) =>\n  GESTURE.stretch * Math.tanh(dx / GESTURE.resistance);       // elastic resistance\nconst popAt = (i: number) =>\n  GESTURE.tearAt * (0.30 + 0.70 * (i / (N - 1)));             // staggered thresholds\n\nconst pan = Gesture.Pan()\n  .onUpdate(e => {\n    const d = travel(Math.max(0, e.translationX));\n    drag.value = d;\n    for (let i = popped.value; i < N; i++) {\n      if (d < popAt(i)) break;\n      popped.value = i + 1;                 // hole i splits into half-moons\n      runOnJS(popFx)(i);                    // ring burst + ejected disc + 2px card recoil\n    }\n    if (popped.value === N) runOnJS(tear)(); // fly-off + WHITE confetti + heal\n  })\n  .onEnd(() => {\n    if (!torn.value) {                      // partial pull -> spring back, RESET holes\n      popped.value = 0;\n      drag.value = withSpring(0, { damping: 12, stiffness: 180 }); // overshoot wobble\n    }\n  });\n\n// Tab transform while holes remain (hinge = seam x, y of topmost intact hole):\nconst tabStyle = useAnimatedStyle(() => ({\n  transformOrigin: `${COUPON.seam}px ${hingeY(popped.value)}px`,\n  transform: [\n    { translateX: drag.value * 0.10 },\n    { rotate: `${drag.value * 0.26}deg` },\n  ],\n}));\n// Heal after tear: animate the card's clip inset back to full width over 550ms.\n// Redeemed face: 'Redeemed' + dashed promo chip + white Checkout pill\n// (white bg, #ED1C24 text, radius 60, height 42) — no check mark."
+        },
+        {
+          "t": "Haptics",
+          "note": "The web prototype could only vibrate on Android — on RN you get the real iOS haptics, which is the intended feel.",
+          "code": "import * as Haptics from 'expo-haptics';\nconst popFx  = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);  // each hole\nconst tearFx = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);"
+        },
+        {
+          "t": "Materials & type",
+          "note": "The close button is the global Liquid Glass material — implementation and the live recipe live in the Design System tab (Glass Lab handoff). Adaptive contrast: Bronze/Silver get a dark #0B0E12 icon, Gold/VIP/Red white. Fonts: DietStation uses Urbane Rounded + Proxima Nova (licensed, in this folder); the dot brand font ships from the Type Lab.",
+          "code": null
+        }
+      ]
     }
   ]
 }

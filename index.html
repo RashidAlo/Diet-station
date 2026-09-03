@@ -107,6 +107,28 @@
   .dl { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; }
   .dl a { color: var(--red); text-decoration: none; font-size: 13.5px; border-bottom: 1px solid var(--red-soft); }
   .dl a:hover { border-bottom-color: var(--red); }
+
+  /* ---- React Native kit (inside handoff) ---- */
+  .rnkit { margin-top: 22px; border-top: 0.5px solid var(--line); padding-top: 18px; }
+  .rnkit .rnhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .rnkit h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin-right: auto; }
+  .rnkit .copykit { font: 500 12px/1 'Urbane Rounded', sans-serif; cursor: pointer;
+    border: none; border-radius: 999px; padding: 8px 14px; background: var(--ground); color: var(--ink); }
+  .rnkit .copykit:hover { background: #e9e9ec; }
+  .rnsec { margin-top: 16px; }
+  .rnsec h4 { font: 600 14px/1.4 'Urbane Rounded', sans-serif; letter-spacing: -.005em; }
+  .rnsec .rnnote { color: var(--ink-soft); font-size: 13.5px; margin: 4px 0 0; max-width: 66ch; }
+  .codewrap { position: relative; margin-top: 10px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+    tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
   footer { margin-top: 48px; color: var(--ink-soft); font-size: 12.5px; text-align: center; }
   @media (max-width: 480px) { .kv { grid-template-columns: 1fr; gap: 2px 0; } .kv dt { margin-top: 8px; } }
 
@@ -224,7 +246,7 @@ document.querySelectorAll('.seg-btn').forEach(b =>
   b.addEventListener('click', () => setTab(b.dataset.tab)));
 
 /* ================= prototypes list ================= */
-fetch('flows.json').then(r => r.json()).then(({ flows }) => {
+fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
   document.getElementById('count').textContent =
     flows.length + (flows.length === 1 ? ' flow' : ' flows');
   const root = document.getElementById('flows');
@@ -265,9 +287,47 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
       const open = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', open);
     };
+    if (f.rn && f.rn.length) {
+      const kit = document.createElement('div');
+      kit.className = 'rnkit';
+      kit.innerHTML = '<div class="rnhead"><h3>React Native kit</h3>' +
+        '<button class="copykit">Copy full kit</button></div>' +
+        '<p class="rnnote" style="color:var(--ink-soft);font-size:13.5px">Everything a React Native dev needs to recreate this flow — stack, Figma-exact tokens, and the interaction math, ready to paste.</p>';
+      for (const s of f.rn) {
+        const sec = document.createElement('div');
+        sec.className = 'rnsec';
+        sec.innerHTML = `<h4>${s.t}</h4><p class="rnnote">${s.note}</p>`;
+        if (s.code) {
+          const w = document.createElement('div');
+          w.className = 'codewrap';
+          const pre = document.createElement('pre');
+          pre.textContent = s.code;
+          const c = document.createElement('button');
+          c.className = 'copycode'; c.textContent = 'Copy';
+          c.onclick = () => copyFeedback(c, s.code, 'Copy');
+          w.append(pre, c);
+          sec.appendChild(w);
+        }
+        kit.appendChild(sec);
+      }
+      kit.querySelector('.copykit').onclick = e => {
+        const md = `# ${f.title} — React Native kit\n\n` + f.rn.map(s =>
+          `## ${s.t}\n\n${s.note}` + (s.code ? `\n\n\`\`\`\n${s.code}\n\`\`\`` : '')).join('\n\n');
+        copyFeedback(e.target, md, 'Copy full kit');
+      };
+      panel.appendChild(kit);
+    }
     root.appendChild(card);
   }
 });
+
+function copyFeedback(btn, text, label) {
+  (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+    .then(() => {
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => btn.textContent = label, 1400);
+    }).catch(() => {});
+}
 
 /* initial tab from URL hash */
 setTab(location.hash === '#design-system' ? 'system' : 'prototypes');
