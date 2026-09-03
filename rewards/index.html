@@ -86,7 +86,7 @@
     width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
 
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
-    background: #a6a6a6; }
+    background: var(--backdrop, #a6a6a6); }
   body.desktop .phone { border-radius: 46px; }
 
   .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
@@ -105,6 +105,7 @@
     --check-bg: rgba(255,255,255,.22); --spark:#ffdf8e;
     --voucher-shadow: none; }
   .phone[data-level="bronze"] { /* frame 17137:76256 */
+    --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #d5bb9f 24.41%, #c9a682 91.259%);
     --tint: transparent;
     --lighter: rgba(173,173,173,.12);
@@ -113,6 +114,7 @@
     --badge-border:#ffffff; --badge-text: rgba(76,64,51,.42);
     --check-bg: rgba(0,0,0,.10); --spark:#8a5f36; }
   .phone[data-level="silver"] { /* frame 17137:76130 */
+    --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #e5e7eb 19.152%, #d1d5db 86.283%);
     --tint: transparent;
     --lighter: rgba(173,173,173,.06);
@@ -121,6 +123,7 @@
     --badge-border:#e4e4e7; --badge-text: rgba(82,82,91,.46);
     --check-bg: rgba(0,0,0,.08); --spark:#9aa0a8; }
   .phone[data-level="vip"] { /* frame 17137:75818 */
+    --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #270f0f 0.461%, #0f0e0d 100%);
     --tint: transparent;
     --lighter: rgba(173,173,173,.12);
@@ -133,6 +136,7 @@
   /* red theme — frame 16842:87694: flat brand red, only the badge keeps the
      tier's styling (badge vars deliberately NOT overridden here) */
   .phone[data-theme="red"] {
+    --backdrop: #a6a6a6;
     --sheet-grad: linear-gradient(to top, #ed1c24, #ed1c24);
     --tint: rgba(237,28,36,.35);
     --lighter: rgba(173,173,173,.12);
@@ -174,12 +178,12 @@
   .qualify { position: absolute; left: 24px; top: 149px; height: 24px;
     display: flex; align-items: center; gap: 7px;
     font: 400 14px/20px 'Urbane Rounded', sans-serif; color: var(--t-head); }
-  /* Figma stroke is INSIDE a 24px pill — an inset ring, not a CSS border
-     (border grows the box 4px and reads as a bolted-on white outline) */
+  /* Figma RENDERS the badge with no visible ring (the spec'd stroke matches
+     the fill) — just a soft top bevel highlight + the drop-shadow stack */
   .lvlbadge { display: inline-flex; align-items: center; justify-content: center;
     padding: 4px 10px; border-radius: 99px;
     background: var(--badge-bg);
-    box-shadow: inset 0 0 0 2px var(--badge-border),
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.35),
       0 4px 2px rgba(0,0,0,.06), 0 2px 2px rgba(0,0,0,.06), 0 0 1px rgba(0,0,0,.06);
     font: 600 12px/16px 'Urbane Rounded', sans-serif; color: var(--badge-text); }
   .qbtn { width: 16px; height: 16px; border: none; border-radius: 12px; cursor: pointer;
@@ -218,7 +222,7 @@
     border-radius: 50%; pointer-events: none; z-index: 7; }
   .chad { position: absolute; border-radius: 50%; pointer-events: none; z-index: 7; }
 
-  .coupon .hit { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
+  .coupon .hit { position: absolute; left: 243px; top: 0; width: 125px; height: 125px;
     z-index: 6; cursor: grab; touch-action: none; }
   .coupon .hit:active { cursor: grabbing; }
 
@@ -229,11 +233,11 @@
     background: var(--lighter); mix-blend-mode: plus-lighter; pointer-events: none; }
 
   /* stub label lives in both base and piece, same Figma position */
-  .coupon .stublabel { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
+  .coupon .stublabel { position: absolute; left: 243px; top: 0; width: 125px; height: 125px;
     display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .coupon .stublabel p { text-align: center; }
 
-  .coupon .content { position: absolute; left: 25px; top: 28px; bottom: 29px; width: 220px;
+  .coupon .content { position: absolute; left: 25px; top: 28px; bottom: 29px; width: 210px;
     display: flex; flex-direction: column; justify-content: center; z-index: 1;
     transition: opacity .25s ease; }
   .coupon .expires { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--t-sub); }
@@ -522,10 +526,11 @@ const lvlBadge = document.getElementById('lvlBadge');
    Alpha mask: one even-odd path — the circles are true transparent holes. */
 const HOLES = Array.from({ length: 7 }, (_, i) => 15 + i * 16);   // y centers, 15..111
 const HOLE_R = 3;
+const SEAM = 243, TAB_W = 125;   // pull tab widened to 125px (Rashid 2026-09-03)
 const holeMask = () => {
   const r = HOLE_R;
   const holes = HOLES.map(y =>
-    `M${277 - r} ${y}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`).join('');
+    `M${SEAM - r} ${y}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="368" height="125">` +
     `<path fill-rule="evenodd" fill="white" d="M0 0H368V125H0Z${holes}"/></svg>`;
   return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
@@ -584,7 +589,7 @@ function buildCoupons() {
       <div class="fill-tint"></div><div class="fill-lighter"></div>
       ${stubLabel}`);
     applyMask(piece);
-    piece.style.clipPath = 'inset(0px 0px 0px 277px)';
+    piece.style.clipPath = `inset(0px 0px 0px ${SEAM}px)`;
 
     el.appendChild(base);
     el.appendChild(lighter);
@@ -623,8 +628,8 @@ function attachPull(coupon, base, piece, lighter, face) {
     if (split) return;
     split = true;
     base.style.transition = lighter.style.transition = 'none';
-    base.style.clipPath = 'inset(0px 91px 0px 0px)';
-    lighter.style.clipPath = 'inset(0px 91px 0px 0px)';
+    base.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
+    lighter.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
     baseLabel.style.opacity = '0';
     piece.style.visibility = 'visible';
     piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.16))';
@@ -633,7 +638,7 @@ function attachPull(coupon, base, piece, lighter, face) {
   const hingeY = () => popped < N ? HOLES[popped] : 125;
 
   const pieceTransform = (d) => {
-    piece.style.transformOrigin = `277px ${hingeY()}px`;
+    piece.style.transformOrigin = `${SEAM}px ${hingeY()}px`;
     return `rotate(${(d * 0.26).toFixed(2)}deg) translateX(${(d * 0.10).toFixed(1)}px)`;
   };
 
@@ -643,7 +648,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     // ring burst at the hole
     const ring = document.createElement('div');
     ring.className = 'popring';
-    ring.style.left = (277 - 5) + 'px'; ring.style.top = (y - 5) + 'px';
+    ring.style.left = (SEAM - 5) + 'px'; ring.style.top = (y - 5) + 'px';
     ring.style.width = ring.style.height = '10px';
     coupon.appendChild(ring);
     ring.animate([
@@ -654,7 +659,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     // the punched-out disc flies off elastically
     const chad = document.createElement('div');
     chad.className = 'chad';
-    chad.style.left = (277 - HOLE_R) + 'px'; chad.style.top = (y - HOLE_R) + 'px';
+    chad.style.left = (SEAM - HOLE_R) + 'px'; chad.style.top = (y - HOLE_R) + 'px';
     chad.style.width = chad.style.height = (HOLE_R * 2) + 'px';
     chad.style.background = getComputedStyle(phone).getPropertyValue('--spark').trim() || '#fff';
     coupon.appendChild(chad);
@@ -770,7 +775,7 @@ function burst(coupon) {
     const size = 3 + Math.random() * 5;
     s.style.width = s.style.height = size + 'px';
     s.style.background = colors[i % colors.length];
-    s.style.left = (rect.left + 277 * stageScale) + 'px';
+    s.style.left = (rect.left + SEAM * stageScale) + 'px';
     s.style.top = (rect.top + rect.height * (0.2 + Math.random() * 0.6)) + 'px';
     document.body.appendChild(s);
     const dx = (30 + Math.random() * 130) * (Math.random() > .18 ? 1 : -0.4);
