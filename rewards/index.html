@@ -214,12 +214,6 @@
     width: 368px; height: 125px; overflow: hidden; border-radius: 24px;
     -webkit-backdrop-filter: var(--frost-filter, none);
     backdrop-filter: var(--frost-filter, none); }
-  /* soft dynamic shadow tinted from the active theme. Outer box-shadow on a
-     transparent box: the spec clips it OUTSIDE the border-box, so nothing
-     paints under the translucent coupon fills — no muddying. */
-  .coupon .cshadow { position: absolute; left: 0; top: 0; width: 368px; height: 125px;
-    border-radius: 24px; background: transparent; pointer-events: none;
-    box-shadow: 0 6px 16px -2px var(--cshadow, transparent); }
   .coupon .base { z-index: 0; }
   .coupon .lighter-ov { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; border-radius: 24px; z-index: 1;
@@ -227,6 +221,9 @@
   .coupon .face { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; z-index: 2; pointer-events: none; }
   .coupon .piece { z-index: 4; visibility: hidden; will-change: transform, opacity; }
+  /* while grabbed, the tab reads a touch LIGHTER than at rest */
+  .coupon .piece .fill-lighter { mix-blend-mode: normal;
+    background: rgba(255,255,255,.15); }
 
   /* pop effects at the perforation */
   .popring { position: absolute; border: 2px solid rgba(255,255,255,.85);
@@ -620,9 +617,6 @@ function buildCoupons() {
     applyMask(piece);
     piece.style.clipPath = `inset(0px 0px 0px ${SEAM}px)`;
 
-    const cshadow = document.createElement('div');
-    cshadow.className = 'cshadow';
-    el.appendChild(cshadow);
     el.appendChild(base);
     el.appendChild(lighter);
     el.appendChild(face);
@@ -650,7 +644,6 @@ function buildCoupons() {
    hole pops the tab rips free and the card heals into the redeemed state. */
 function attachPull(coupon, base, piece, lighter, face) {
   const hit = coupon.querySelector('.hit');
-  const cshadow = coupon.querySelector('.cshadow');
   const baseLabel = face.querySelector('.stublabel');
   const N = HOLES.length;
   const threshold = i => MODS.tearAt * (0.30 + 0.70 * i / (N - 1));
@@ -664,11 +657,19 @@ function attachPull(coupon, base, piece, lighter, face) {
     base.style.transition = lighter.style.transition = 'none';
     base.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
     lighter.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
-    // resize (don't clip) the shadow box: clip-path would crop its outer shadow
-    cshadow.style.width = SEAM + 'px';
     baseLabel.style.opacity = '0';
     piece.style.visibility = 'visible';
     piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.16))';
+  };
+
+  const unsplit = () => {
+    split = false;
+    base.style.clipPath = '';
+    lighter.style.clipPath = '';
+    baseLabel.style.opacity = '';
+    piece.style.visibility = 'hidden';
+    piece.style.transform = '';
+    piece.style.filter = '';
   };
 
   const hingeY = () => popped < N ? HOLES[popped] : 125;
@@ -734,6 +735,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     const raw = Math.max(0, (e.clientX - startX) / stageScale);
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
+      if (!dragging || torn) return;   // a queued frame can outlive the release
       const d = MODS.stretch * Math.tanh(raw / 90);   // elastic resistance
       setPull(d);
       if (popped >= N) tear(e.pointerId);
@@ -743,15 +745,19 @@ function attachPull(coupon, base, piece, lighter, face) {
   const onUp = () => {
     if (!dragging || torn) return;
     dragging = false;
-    // the tab settles back onto the card (popped holes stay torn)
+    // the tab settles back and the coupon fully resets (holes re-arm)
     const from = pieceTransform(disp);
-    piece.animate([
+    const anim = piece.animate([
       { transform: from },
       { transform: 'rotate(-0.5deg) translateX(-2px)', offset: .65 },
       { transform: 'rotate(0.2deg) translateX(1px)', offset: .85 },
       { transform: 'rotate(0deg) translateX(0px)' },
     ], { duration: 460, easing: 'cubic-bezier(.25,.9,.3,1)' });
     piece.style.transform = 'rotate(0deg) translateX(0px)';
+    popped = 0;
+    const refuse = () => { if (!dragging && !torn) unsplit(); };
+    anim.onfinish = refuse;
+    setTimeout(refuse, 540);   // fallback: timelines can stall in throttled tabs
     armHint();
   };
 
@@ -774,8 +780,6 @@ function attachPull(coupon, base, piece, lighter, face) {
         elm.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
         elm.style.clipPath = 'inset(0px 0px 0px 0px)';
       });
-      cshadow.style.transition = 'width .55s cubic-bezier(.3,1,.4,1)';
-      cshadow.style.width = '368px';
     }, 380);
   };
 

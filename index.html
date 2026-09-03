@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>DietStation Design Lab</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#ED1C24">
+<meta name="theme-color" content="#f5f5f7">
 <script>class Button {}</script>
 <script src="html2canvas.min.js"></script>
 <script src="liquid-glass-container.js"></script>
@@ -13,62 +13,94 @@
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Proxima Nova'; src: url('breathe/proxima-regular.otf'); font-weight: 400; }
   :root {
-    --ground: #FBF8F7;
-    --card: #FFFFFF;
-    --ink: #221A1B;
-    --ink-soft: #6E6264;
-    --line: #EFE6E5;
+    --ground: #f5f5f7;          /* apple canvas */
+    --card: #ffffff;
+    --ink: #1d1d1f;
+    --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08);
     --red: #ED1C24;
     --red-soft: #FFF2F2;
     --ok: #1F8A4C;
     --ok-soft: #EAF6EF;
   }
   * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
   body {
     background: var(--ground); color: var(--ink);
     font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
-    padding: 56px 20px 96px;
+    padding-bottom: 96px;
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
-  header .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--red);
-    display: inline-block; margin-right: 10px; animation: breathe 3.2s ease-in-out infinite; }
-  @keyframes breathe { 0%,100% { transform: scale(.82); opacity:.75 } 45% { transform: scale(1.12); opacity:1 } }
-  h1 { font: 600 28px/1.2 'Urbane Rounded', sans-serif; letter-spacing: 0; display: flex; align-items: center; }
-  .sub { color: var(--ink-soft); margin-top: 8px; max-width: 54ch; }
-  .count { margin: 40px 0 14px; font: 500 12px/1 'Urbane Rounded', sans-serif;
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---- frosted sticky header ---- */
+  header.bar { position: sticky; top: 0; z-index: 40;
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+
+  /* ---- hero ---- */
+  .hero { text-align: center; padding: 52px 0 8px; }
+  .hero h1 { font: 600 34px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 46ch; font-size: 16px; }
+
+  /* ---- segmented control ---- */
+  .seg { display: flex; justify-content: center; margin: 30px 0 36px; }
+  .seg-inner { display: inline-flex; background: #e9e9ec; border-radius: 999px; padding: 3px; }
+  .seg-btn { border: none; cursor: pointer; padding: 9px 22px; border-radius: 999px;
+    background: transparent; color: var(--ink-soft);
+    font: 600 13.5px/1 'Urbane Rounded', sans-serif;
+    transition: color .18s ease; position: relative; }
+  .seg-btn.on { background: #fff; color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.06); }
+
+  .tabpane { display: none; }
+  .tabpane.on { display: block; }
+
+  .count { margin: 0 0 14px; font: 500 12px/1 'Urbane Rounded', sans-serif;
     text-transform: uppercase; letter-spacing: .12em; color: var(--ink-soft); }
+
+  /* ---- cards ---- */
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    background: var(--card); border-radius: 18px;
     padding: 26px 26px 22px; margin-bottom: 18px;
-    box-shadow: 0 1px 2px rgba(34,26,27,.03), 0 12px 32px -24px rgba(34,26,27,.18);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14);
   }
   .card .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; margin-right: auto; }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; margin-right: auto;
+    letter-spacing: -.01em; }
   .pill { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em; text-transform: uppercase;
     padding: 6px 10px 5px; border-radius: 999px; white-space: nowrap; }
   .pill.in-progress { background: var(--red-soft); color: var(--red); }
   .pill.ready { background: var(--ok-soft); color: var(--ok); }
   .tag { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em; text-transform: uppercase;
-    padding: 6px 10px 5px; border-radius: 999px; border: 1px solid var(--line);
+    padding: 6px 10px 5px; border-radius: 999px; background: var(--ground);
     color: var(--ink-soft); white-space: nowrap; }
   .row { display: flex; gap: 22px; align-items: flex-start; }
   .row .body { flex: 1; min-width: 0; }
   .thumb { flex: none; display: block; }
   .thumb img { width: 96px; aspect-ratio: 402 / 874; object-fit: cover; display: block;
-    border-radius: 14px; border: 1px solid var(--line);
-    box-shadow: 0 10px 24px -16px rgba(34,26,27,.35); }
+    border-radius: 16px;
+    box-shadow: 0 0 0 0.5px var(--line), 0 12px 26px -16px rgba(0,0,0,.3); }
   @media (max-width: 480px) { .thumb img { width: 76px; } }
   .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 60ch; }
   .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 10px; }
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
   .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
-    border-radius: 999px; padding: 12px 20px; border: 1px solid transparent; }
+    border-radius: 999px; padding: 12px 20px; border: none; }
   .btn.primary { background: var(--red); color: #fff; }
   .btn.primary:hover { background: #d4141c; }
-  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-  .btn.ghost:hover { border-color: var(--ink-soft); }
-  .btn.ghost[aria-expanded="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .handoff { display: none; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .btn.ghost[aria-expanded="true"] { background: var(--ink); color: #fff; }
+  .handoff { display: none; margin-top: 20px; border-top: 0.5px solid var(--line); padding-top: 18px; }
   .handoff.open { display: block; }
   .handoff h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
     letter-spacing: .12em; color: var(--ink-soft); margin-bottom: 12px; }
@@ -78,9 +110,12 @@
   .dl { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; }
   .dl a { color: var(--red); text-decoration: none; font-size: 13.5px; border-bottom: 1px solid var(--red-soft); }
   .dl a:hover { border-bottom-color: var(--red); }
+  footer { margin-top: 48px; color: var(--ink-soft); font-size: 12.5px; text-align: center; }
+  @media (max-width: 480px) { .kv { grid-template-columns: 1fr; gap: 2px 0; } .kv dt { margin-top: 8px; } }
+
   /* ---- Glass Lab (global liquid-glass recipe) ---- */
   .glasslab .strip { position: relative; height: 128px; border-radius: 16px; margin-top: 18px;
-    overflow: hidden; border: 1px solid var(--line);
+    overflow: hidden;
     background: linear-gradient(90deg, #ED1C24 0 25%, #E4A70F 25% 50%, #E5E7EB 50% 75%, #1A1114 75% 100%); }
   .g-el { position: absolute; top: 50%; cursor: grab; overflow: hidden; touch-action: none;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -109,51 +144,91 @@
   .gmod output { font: 500 12px/18px 'Urbane Rounded', sans-serif; color: var(--red); }
   .gmod input[type=range] { width: 100%; accent-color: var(--red); margin: 4px 0 2px; display: block; }
   .gmod .md { font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); }
-  .glasslab .actions { align-items: center; }
   .savenote { font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ok);
     opacity: 0; transition: opacity .25s ease; }
   .savenote.show { opacity: 1; }
-  footer { margin-top: 48px; color: var(--ink-soft); font-size: 12.5px; }
-  @media (max-width: 480px) { .kv { grid-template-columns: 1fr; gap: 2px 0; } .kv dt { margin-top: 8px; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1><span class="dot"></span>DietStation Design Lab</h1>
-    <p class="sub">Living prototypes of every design feature in the works — open a flow to
-    test it on any device, or expand its handoff panel for the specs and assets developers need.</p>
-  </header>
-  <div class="count" style="margin-top:40px">System</div>
-  <section class="card glasslab">
-    <div class="top">
-      <h2>Liquid Glass — global recipe</h2>
-      <span class="tag">All flows</span>
-      <span class="pill ready">Live</span>
-    </div>
-    <p class="desc">One recipe for every glass button in every prototype, on every device.
-      Dial it here — changes preview live and hold on this device instantly. Hit
-      <b>Publish globally</b> and paste the copied line to Claude: it bakes the recipe into
-      the hub so all devices load it. Drag the samples across the bands to check refraction
-      and the adaptive contrast flip on light backdrops.</p>
-    <div class="strip" id="gStrip">
-      <div class="hintdrag">drag the samples &#8596;</div>
-    </div>
-    <div class="mods" id="gMods"></div>
-    <div class="actions">
-      <button class="btn primary" id="gPublish">Publish globally</button>
-      <button class="btn ghost" id="gReset">Reset to published</button>
-      <button class="btn ghost" id="gCopy">Copy recipe</button>
-      <span class="savenote" id="gSaved">Saved &#10003;</span>
-    </div>
-    <p class="meta" id="gDraft" style="display:none">This device is running a draft that
-      differs from the published recipe — Publish globally to sync every device.</p>
-  </section>
-  <div class="count" id="count"></div>
-  <main id="flows"></main>
-  <footer>Maintained by Rashid × Claude · sources in the dietstation-rive repo</footer>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="logo.png" alt="DietStation">
+    <div class="word">DietStation <span>Design Lab</span></div>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1 id="heroTitle">Prototypes</h1>
+  <p id="heroSub">Living prototypes of every feature in the works — open a flow to try it
+    on any device, or expand its handoff for the specs developers need.</p>
 </div>
+
+<div class="seg">
+  <div class="seg-inner">
+    <button class="seg-btn on" data-tab="prototypes">Prototypes</button>
+    <button class="seg-btn" data-tab="system">Design System</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="tabpane on" id="pane-prototypes">
+    <div class="count" id="count"></div>
+    <main id="flows"></main>
+  </section>
+
+  <section class="tabpane" id="pane-system">
+    <div class="count">System</div>
+    <section class="card glasslab">
+      <div class="top">
+        <h2>Liquid Glass — global recipe</h2>
+        <span class="tag">All flows</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">One recipe for every glass button in every prototype, on every device.
+        Dial it here — changes preview live and hold on this device instantly. Hit
+        <b>Publish globally</b> and paste the copied line to Claude: it bakes the recipe into
+        the hub so all devices load it. Drag the samples across the bands to check refraction
+        and the adaptive contrast flip on light backdrops.</p>
+      <div class="strip" id="gStrip">
+        <div class="hintdrag">drag the samples &#8596;</div>
+      </div>
+      <div class="mods" id="gMods"></div>
+      <div class="actions">
+        <button class="btn primary" id="gPublish">Publish globally</button>
+        <button class="btn ghost" id="gReset">Reset to published</button>
+        <button class="btn ghost" id="gCopy">Copy recipe</button>
+        <span class="savenote" id="gSaved">Saved &#10003;</span>
+      </div>
+      <p class="meta" id="gDraft" style="display:none">This device is running a draft that
+        differs from the published recipe — Publish globally to sync every device.</p>
+    </section>
+  </section>
+
+  <footer>Maintained by Rashid &times; Claude &middot; sources in the dietstation-rive repo</footer>
+</div>
+
 <script>
+/* ================= tabs ================= */
+const PANES = { prototypes: 'pane-prototypes', system: 'pane-system' };
+const HERO = {
+  prototypes: ['Prototypes', 'Living prototypes of every feature in the works — open a flow to try it on any device, or expand its handoff for the specs developers need.'],
+  system: ['Design System', 'The shared materials every prototype builds on. Dial them once here — every flow on every device follows.'],
+};
+function setTab(name) {
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  Object.entries(PANES).forEach(([k, id]) =>
+    document.getElementById(id).classList.toggle('on', k === name));
+  document.getElementById('heroTitle').textContent = HERO[name][0];
+  document.getElementById('heroSub').textContent = HERO[name][1];
+  history.replaceState(null, '', name === 'system' ? '#design-system' : '#prototypes');
+  if (name === 'system' && window.__ensureGlassLab) window.__ensureGlassLab();
+}
+document.querySelectorAll('.seg-btn').forEach(b =>
+  b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+/* ================= prototypes list ================= */
 fetch('flows.json').then(r => r.json()).then(({ flows }) => {
   document.getElementById('count').textContent =
     flows.length + (flows.length === 1 ? ' flow' : ' flows');
@@ -333,24 +408,36 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
     const pill = new Container({ borderRadius: 27, tintOpacity: GG.tintOpacity });
     pill.element.classList.add('g-el', 'g-pill');
     pill.element.insertAdjacentHTML('beforeend',
-      '<span>Let\u2019s get Started</span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>');
+      '<span>Let’s get Started</span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>');
     strip.appendChild(pill.element);
     els = [circle, pill];
     els.forEach(draggable);
     setTimeout(() => { applyAll(); adapt(); }, 1100);
     window.addEventListener('scroll', () => els.forEach(c => c.render && c.render()), { passive: true });
   }
-  fetch('glass.json?v=' + Date.now()).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(pub => {
-    PUBLISHED = { ...DEFAULTS, ...pub };
-    let draft = {}; try { draft = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) {}
-    GG = { ...PUBLISHED, ...draft };
-    window.glassControls = { ...GG };
-    [...modsRoot.children].forEach(d => d._sync && d._sync());
-    draftBadge();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(build, 400));
-    else setTimeout(build, 400);
-  });
+
+  /* lazy: the WebGL preview builds the first time the Design System tab shows
+     (building while hidden gives zero-sized canvases and a stale snapshot) */
+  const pubReady = fetch('glass.json?v=' + Date.now())
+    .then(r => r.ok ? r.json() : {}).catch(() => ({})).then(pub => {
+      PUBLISHED = { ...DEFAULTS, ...pub };
+      let draft = {}; try { draft = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) {}
+      GG = { ...PUBLISHED, ...draft };
+      window.glassControls = { ...GG };
+      [...modsRoot.children].forEach(d => d._sync && d._sync());
+      draftBadge();
+    });
+  let built = false;
+  window.__ensureGlassLab = () => {
+    if (built) return; built = true;
+    pubReady.then(() =>
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+        .then(() => setTimeout(build, 350)));
+  };
 })();
+
+/* initial tab from URL hash */
+setTab(location.hash === '#design-system' ? 'system' : 'prototypes');
 </script>
 </body>
 </html>
