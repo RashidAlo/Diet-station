@@ -102,7 +102,14 @@
   /* Liquid Glass nav buttons: liquid-glass-js containers (WebGL refraction) */
   .chrome .closebtn, .chrome .cta { pointer-events: auto; cursor: pointer;
     overflow: hidden; transition: transform .18s cubic-bezier(.3,.8,.3,1);
-    -webkit-user-select: none; user-select: none; }
+    -webkit-user-select: none; user-select: none;
+    /* glass seat: always-visible rim + lift; refraction canvas shows through */
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.30),
+      inset 0 0 0 .6px rgba(255,255,255,.38),
+      inset 0 -1px 1.5px rgba(0,0,0,.10),
+      0 10px 26px -12px rgba(0,0,0,.35),
+      0 1px 2px rgba(0,0,0,.10); }
   .chrome .closebtn canvas, .chrome .cta canvas { box-shadow: none !important; }
   /* adaptive contrast: sampled backdrop luminance flips glass content dark */
   .glass-dark-content { color: #0b0e12 !important; }
