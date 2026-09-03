@@ -14,17 +14,85 @@
   @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; background: #94969b; }
+  html, body { height: 100%; overflow: hidden; background: #0f0f12; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     touch-action: none; overscroll-behavior: none;
     -webkit-user-select: none; user-select: none; }
 
+  /* ================= playground shell (desktop) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #16161a; border-right: 1px solid rgba(255,255,255,.07);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y;
+    display: none; }
+  body.desktop #side { display: block; }
+
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ff5a5f; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #fff; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.55);
+    margin-bottom: 26px; }
+
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.38);
+    margin-bottom: 12px; }
+
+  .lvl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lvl-grid button { display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 12px; background: rgba(255,255,255,.03);
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.65);
+    transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .lvl-grid button:hover { background: rgba(255,255,255,.07); }
+  .lvl-grid button.on { background: rgba(255,255,255,.12); color: #fff;
+    border-color: rgba(255,255,255,.35); }
+  .lvl-dot { width: 12px; height: 12px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), 0 0 0 1px rgba(0,0,0,.25); }
+
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ff5a5f; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.35); }
+
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    transition: filter .15s ease, background .15s ease; }
+  #sReset { background: #ff5a5f; color: #fff; }
+  #sReset:hover { filter: brightness(1.08); }
+  #sCopy { background: rgba(255,255,255,.09); color: rgba(255,255,255,.85); }
+  #sCopy:hover { background: rgba(255,255,255,.15); }
+
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
+
+  /* ================= stage + device frame ================= */
   #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body.desktop #stage { left: 316px; }
+
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.85), 0 6px 20px rgba(0,0,0,.4),
+      inset 0 0 0 2px #34343a, inset 0 0 0 7px #000;
+  }
+  /* hardware buttons */
+  body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
+    width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
+    box-shadow: 0 -70px 0 #2c2c32; }
+  body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
+    width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
+
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
-    background: #a6a6a6; transform-origin: center center; }
-  /* desktop playground: framed device; mobile: edge-to-edge (JS toggles) */
-  .phone.framed { border-radius: 42px;
-    box-shadow: 0 34px 90px -24px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.18); }
+    background: #a6a6a6; }
+  body.desktop .phone { border-radius: 46px; }
+
+  .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+    width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
+    pointer-events: none; }
+  body.desktop .island { display: block; }
 
   /* ---- level theming (exact values from Figma section 17137:76380) --- */
   .phone { /* gold — frame 17137:75698 */
@@ -109,23 +177,32 @@
 
   .coupon { position: relative; width: 368px; height: 125px; filter: var(--voucher-shadow); }
 
-  /* body + stub are liquid-glass containers (liquid-glass-js) */
+  /* ONE glass card (liquid-glass-js) + a torn-off "piece" overlay.
+     At rest only .base renders — a single seamless coupon. On grab, .base is
+     clipped to a jagged tear polygon and .piece (same full-size glass, the
+     complementary polygon) becomes the rippable tab. */
   .glass-container { position: absolute; }
-  .coupon .body { left: 0; top: 0; width: 278px; height: 125px; z-index: 0;
-    overflow: hidden; border-radius: 24px;
-    will-change: transform, width; }
-  .coupon .stub { left: 278px; top: 0; width: 90px; height: 125px; z-index: 0;
-    overflow: hidden; border-radius: 24px; cursor: grab;
-    display: flex; align-items: center; justify-content: center;
-    touch-action: none; will-change: transform, opacity; }
-  .coupon .stub:active { cursor: grabbing; }
+  .coupon .base { left: 0; top: 0; width: 368px; height: 125px; z-index: 0;
+    overflow: hidden; border-radius: 24px; }
+  .coupon .piece { left: 0; top: 0; width: 368px; height: 125px; z-index: 4;
+    overflow: hidden; border-radius: 24px; visibility: hidden;
+    will-change: transform, opacity; }
   .coupon .glass-container canvas { box-shadow: none !important; }
+
+  .coupon .hit { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
+    z-index: 6; cursor: grab; touch-action: none; }
+  .coupon .hit:active { cursor: grabbing; }
 
   /* Figma fill stack layered over the refraction canvas */
   .coupon .fill-tint { position: absolute; inset: 0; border-radius: inherit;
     background: var(--tint); pointer-events: none; }
   .coupon .fill-lighter { position: absolute; inset: 0; border-radius: inherit;
     background: var(--lighter); mix-blend-mode: plus-lighter; pointer-events: none; }
+
+  /* stub label lives in both base and piece, same Figma position */
+  .coupon .stublabel { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
+    display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .coupon .stublabel p { text-align: center; }
 
   .coupon .content { position: absolute; left: 25px; top: 28px; bottom: 29px; width: 220px;
     display: flex; flex-direction: column; justify-content: center; z-index: 1;
@@ -143,12 +220,11 @@
   .coupon .perf img { width: 110px; height: 1px; transform: rotate(90deg); display: block;
     flex: none; }
 
-  .coupon .stub p { position: relative; z-index: 1; text-align: center; pointer-events: none; }
-  .coupon .stub .pull { display: block; font: 600 15px/22px 'Urbane Rounded', sans-serif; color: var(--t-body); }
-  .coupon .stub .tored { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: var(--t-head); }
+  .coupon .pull { display: block; font: 600 15px/22px 'Urbane Rounded', sans-serif; color: var(--t-body); }
+  .coupon .tored { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: var(--t-head); }
 
   /* redeemed state */
-  .coupon .done-face { position: absolute; inset: 0; z-index: 3; border-radius: 24px;
+  .coupon .done-face { position: absolute; inset: 0; z-index: 5; border-radius: 24px;
     display: flex; align-items: center; gap: 14px; padding: 0 25px;
     opacity: 0; pointer-events: none; }
   .coupon .check { width: 44px; height: 44px; border-radius: 50%; flex: none;
@@ -162,22 +238,22 @@
     border: 1.5px dashed var(--t-sub); border-radius: 8px;
     font: 600 13px/18px 'Urbane Rounded', sans-serif; color: var(--t-body); letter-spacing: 1.5px; }
 
-  .coupon.redeemed .body { width: 368px;
-    transition: width .45s cubic-bezier(.3,1.3,.4,1); }
   .coupon.redeemed .content { opacity: 0; }
   .coupon.redeemed .perf { display: none; }
+  .coupon.redeemed .hit { display: none; }
   .coupon.redeemed .done-face { opacity: 1; pointer-events: auto;
     transition: opacity .35s ease .18s; }
 
   .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 6; }
 
-  /* ---- dev bar ------------------------------------------------------- */
+  /* ---- mobile dev bar (hidden on desktop; sidebar replaces it) ------- */
   .devbar { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
     transform: translateX(-50%); z-index: 50;
     display: flex; gap: 6px; align-items: center; padding: 6px;
     border-radius: 999px; background: rgba(20,20,24,.72);
     -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
     box-shadow: 0 10px 30px -10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
+  body.desktop .devbar { display: none; }
   .devbar button { border: none; cursor: pointer; padding: 8px 14px; border-radius: 999px;
     background: transparent; color: rgba(255,255,255,.65);
     font: 600 12px/16px 'Urbane Rounded', sans-serif;
@@ -188,18 +264,85 @@
 </head>
 <body>
 
+<aside id="side">
+  <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <h2>Rewards — Pull to Redeem</h2>
+  <p class="s-desc">Loyalty coupon sheet with four member tiers, themed 1:1 from Figma.
+    Grab a voucher's stub and pull right — it stretches with elastic resistance and tears
+    off past the threshold, bursting confetti and revealing the promo code. Coupons are
+    liquid glass: live WebGL refraction of the sheet behind them.</p>
+
+  <div class="s-sec">
+    <div class="s-label">User level</div>
+    <div class="s-note">Applies that tier's Figma variant — sheet gradient, badge pill,
+      text colors — and re-captures the glass snapshot.</div>
+    <div class="lvl-grid" id="lvlGrid">
+      <button data-lvl="bronze"><span class="lvl-dot" style="background:linear-gradient(180deg,#d5bb9f,#c9a682)"></span>Bronze</button>
+      <button data-lvl="silver"><span class="lvl-dot" style="background:linear-gradient(180deg,#e5e7eb,#d1d5db)"></span>Silver</button>
+      <button data-lvl="gold" class="on"><span class="lvl-dot" style="background:linear-gradient(0deg,#f2b90d,#ffca2a)"></span>Gold</button>
+      <button data-lvl="vip"><span class="lvl-dot" style="background:linear-gradient(180deg,#3a2a2a,#0f0e0d)"></span>VIP</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Gesture modifiers</div>
+    <div class="s-note">Live — pull a stub to feel each change.</div>
+    <div class="mod">
+      <div class="mod-head"><label>Tear point</label><output id="vTear">62px</output></div>
+      <input type="range" id="mTear" min="40" max="90" step="1" value="62">
+      <div class="mod-desc">Travel at which the stub rips off. Lower = easier redeem.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Stretch</label><output id="vStretch">96px</output></div>
+      <input type="range" id="mStretch" min="60" max="140" step="2" value="96">
+      <div class="mod-desc">Max elastic travel of the pull — how far the stub can stretch.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Confetti</label><output id="vConfetti">14</output></div>
+      <input type="range" id="mConfetti" min="0" max="30" step="1" value="14">
+      <div class="mod-desc">Particles bursting from the perforation on tear.</div>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Glass modifiers</div>
+    <div class="s-note">Uniforms on the liquid-glass shader (liquid-glass-js).</div>
+    <div class="mod">
+      <div class="mod-head"><label>Frost tint</label><output id="vTint">0.14</output></div>
+      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
+      <div class="mod-desc">White frost mixed into the refraction. 0 = clear glass.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Blur</label><output id="vBlur">5.0</output></div>
+      <input type="range" id="mBlur" min="1" max="12" step="0.5" value="5">
+      <div class="mod-desc">Softness of the refracted backdrop behind each coupon.</div>
+    </div>
+  </div>
+
+  <div class="s-actions">
+    <button id="sReset">Reset coupons</button>
+    <button id="sCopy">Copy values</button>
+  </div>
+
+  <div class="s-foot">Figma: Diet Station 4.0 &middot; section 17137-76380.
+    Copy values puts this recipe on the clipboard — read it to Claude to bake it in.</div>
+</aside>
+
 <div id="stage">
-  <div class="phone" id="phone" data-level="gold">
-    <div class="sheet">
-      <button class="closebtn" id="closeBtn" title="close"><img src="rewards-close.svg" alt=""></button>
-      <h1 class="title">Renew and Save on your subscriptions</h1>
-      <div class="qualify">
-        <span>You qualify to&nbsp;</span>
-        <span class="lvlbadge" id="lvlBadge">Gold</span>
-        <span>Benefits:</span>
-        <button class="qbtn"><img src="rewards-question.svg" alt="?"></button>
+  <div class="device" id="device">
+    <div class="phone" id="phone" data-level="gold">
+      <div class="sheet">
+        <button class="closebtn" id="closeBtn" title="close"><img src="rewards-close.svg" alt=""></button>
+        <h1 class="title">Renew and Save on your subscriptions</h1>
+        <div class="qualify">
+          <span>You qualify to&nbsp;</span>
+          <span class="lvlbadge" id="lvlBadge">Gold</span>
+          <span>Benefits:</span>
+          <button class="qbtn"><img src="rewards-question.svg" alt="?"></button>
+        </div>
+        <div class="coupons" id="coupons"></div>
       </div>
-      <div class="coupons" id="coupons"></div>
+      <div class="island"></div>
     </div>
   </div>
 </div>
@@ -214,6 +357,10 @@
 </div>
 
 <script>
+/* ---------------- modifiers (sidebar-tunable) ---------------- */
+const MODS = { tearAt: 62, stretch: 96, confetti: 14, tint: 0.14, blur: 5 };
+window.glassControls = { blurRadius: MODS.blur };
+
 /* ---------------- level data ---------------- */
 const LEVELS = {
   bronze: { label: 'Bronze', q: 'rewards-question-bronze.svg', perf: 'rewards-perforation-bronze.svg' },
@@ -240,10 +387,10 @@ let liveGlass = [];
 
 function makeGlass(cls) {
   if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
-  const c = new Container({ borderRadius: 24, tintOpacity: 0.14 });
+  const c = new Container({ borderRadius: 24, tintOpacity: MODS.tint });
   c.element.classList.add(cls);
   // The lib sizes canvases from getBoundingClientRect(), which is wrong inside
-  // our scaled .phone: backing store must be the on-screen (scaled) size for
+  // our scaled stage: backing store must be the on-screen (scaled) size for
   // correct snapshot sampling, while the canvas CSS size must stay 100% of the
   // layout box. Border radius scales with the stage too.
   c.resizeGlass = () => {
@@ -280,6 +427,18 @@ function destroyGlass() {
   }
 }
 
+function applyGlassParams() {
+  window.glassControls.blurRadius = MODS.blur;
+  liveGlass.forEach(c => {
+    if (c.gl_refs.gl) {
+      c.gl_refs.gl.uniform1f(c.gl_refs.tintOpacityLoc, MODS.tint);
+      c.gl_refs.gl.uniform1f(c.gl_refs.blurRadiusLoc, MODS.blur);
+      c.render && c.render();
+    }
+    c.tintOpacity = MODS.tint;
+  });
+}
+
 /* repaint a set of glass containers for `ms` milliseconds (during motion) */
 function paintDuring(glasses, ms) {
   const t0 = performance.now();
@@ -292,8 +451,21 @@ function paintDuring(glasses, ms) {
 
 /* ---------------- build coupons ---------------- */
 const phone = document.getElementById('phone');
+const device = document.getElementById('device');
 const list = document.getElementById('coupons');
 const lvlBadge = document.getElementById('lvlBadge');
+
+/* jagged tear line down the perforation: fixed x=277 with organic wiggle */
+function makeTearLine() {
+  const pts = [];
+  for (let y = 0; y <= 125; y += 9) {
+    const wiggle = (y === 0 || y >= 125) ? 0 : (Math.random() * 8 - 4);
+    pts.push([277 + wiggle, Math.min(y, 125)]);
+  }
+  if (pts[pts.length - 1][1] !== 125) pts.push([277, 125]);
+  return pts;
+}
+const poly = (pts) => pts.map(p => `${p[0].toFixed(1)}px ${p[1]}px`).join(', ');
 
 function buildCoupons() {
   destroyGlass();
@@ -304,22 +476,31 @@ function buildCoupons() {
     const el = document.createElement('div');
     el.className = 'coupon';
 
-    const body = makeGlass('body');
-    body.element.insertAdjacentHTML('beforeend', `
+    const tear = makeTearLine();
+    const baseClip  = `polygon(0px 0px, ${poly(tear)}, 0px 125px)`;
+    const pieceClip = `polygon(${poly(tear)}, 368px 125px, 368px 0px)`;
+    const healClip  = `polygon(0px 0px, ${poly(tear.map(p => [p[0] + 96, p[1]]))}, 0px 125px)`;
+
+    const stubLabel = `<div class="stublabel"><p><span class="pull">Pull</span><span class="tored">to Redeem</span></p></div>`;
+
+    const base = makeGlass('base');
+    base.element.insertAdjacentHTML('beforeend', `
       <div class="fill-tint"></div><div class="fill-lighter"></div>
       <div class="content">
         <div class="expires">Expires in 1 Day</div>
         <div class="headline">${def.headline}</div>
         <div class="sub">${def.sub}</div>
-      </div>`);
+      </div>
+      ${stubLabel}`);
 
-    const stub = makeGlass('stub');
-    stub.element.insertAdjacentHTML('beforeend', `
+    const piece = makeGlass('piece');
+    piece.element.insertAdjacentHTML('beforeend', `
       <div class="fill-tint"></div><div class="fill-lighter"></div>
-      <p><span class="pull">Pull</span><span class="tored">to Redeem</span></p>`);
+      ${stubLabel}`);
+    piece.element.style.clipPath = pieceClip;
 
-    el.appendChild(body.element);
-    el.appendChild(stub.element);
+    el.appendChild(base.element);
+    el.appendChild(piece.element);
     el.insertAdjacentHTML('beforeend', `
       <div class="perf"><img src="${theme.perf}" alt=""></div>
       <div class="done-face">
@@ -329,31 +510,56 @@ function buildCoupons() {
           <div class="done-sub">Applied to your next renewal</div>
           <span class="code">${def.code}</span>
         </div>
-      </div>`);
+      </div>
+      <div class="hit"></div>`);
     list.appendChild(el);
-    attachPull(el, body, stub);
+    attachPull(el, base, piece, { baseClip, healClip });
   });
 }
 
-/* ---------------- pull-to-redeem gesture ---------------- */
-const MAX_PULL = 96;    // px of visual travel at full stretch
-const TEAR_AT  = 62;    // visual px at which the stub tears off
-
-function attachPull(coupon, bodyC, stubC) {
-  const stub = stubC.element;
-  const body = bodyC.element;
+/* ---------------- rip-to-redeem gesture ----------------
+   At rest: one seamless glass card. On grab, the card splits along a jagged
+   polygon: .base keeps the left of the tear, .piece becomes the tab. The
+   piece peels away (rotation biased so the top separates first); past the
+   threshold it rips free, and the torn base edge heals rightward into the
+   full redeemed card. */
+function attachPull(coupon, baseC, pieceC, clips) {
+  const base = baseC.element;
+  const piece = pieceC.element;
+  const hit = coupon.querySelector('.hit');
   const perf = coupon.querySelector('.perf img');
-  let dragging = false, torn = false, startX = 0, raf = 0, disp = 0;
+  const baseLabel = base.querySelector('.stublabel');
+  let dragging = false, torn = false, split = false, startX = 0, raf = 0, disp = 0;
   let hintTimer = 0, interacted = false;
-  const paint = () => { bodyC.render && bodyC.render(); stubC.render && stubC.render(); };
+  const paint = () => { baseC.render && baseC.render(); pieceC.render && pieceC.render(); };
+
+  const doSplit = () => {
+    if (split) return;
+    split = true;
+    base.style.transition = 'none';
+    base.style.clipPath = clips.baseClip;
+    baseLabel.style.opacity = '0';
+    piece.style.visibility = 'visible';
+    piece.style.transformOrigin = '277px 85%';   // grip low, top separates first
+    piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.18))';
+  };
+  const unsplit = () => {
+    split = false;
+    base.style.clipPath = '';
+    baseLabel.style.opacity = '';
+    piece.style.visibility = 'hidden';
+    piece.style.transform = '';
+    piece.style.filter = '';
+  };
+
+  const pieceTransform = (d) =>
+    `translate(${d}px, ${d * 0.08}px) rotate(${d * 0.11}deg)`;
 
   const setPull = (d) => {
     disp = d;
-    const p = Math.min(d / TEAR_AT, 1);
-    stub.style.transform = `translateX(${d}px) rotate(${d * 0.055}deg)`;
-    body.style.transform = `translateX(${-d * 0.07}px)`;
-    perf.style.opacity = 1 - p * 0.75;
-    stub.style.filter = `brightness(${1 + p * 0.18})`;
+    const p = Math.min(d / MODS.tearAt, 1);
+    piece.style.transform = pieceTransform(d);
+    perf.style.opacity = 1 - p * 0.85;
     paint();
   };
 
@@ -361,8 +567,9 @@ function attachPull(coupon, bodyC, stubC) {
     if (torn) return;
     interacted = true; clearTimeout(hintTimer);
     dragging = true; startX = e.clientX;
-    stub.setPointerCapture(e.pointerId);
-    stub.style.transition = body.style.transition = 'none';
+    hit.setPointerCapture(e.pointerId);
+    doSplit();
+    paint();
   };
 
   const onMove = (e) => {
@@ -370,58 +577,54 @@ function attachPull(coupon, bodyC, stubC) {
     const raw = Math.max(0, (e.clientX - startX) / stageScale);
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
-      const d = MAX_PULL * Math.tanh(raw / 90);   // elastic resistance
+      const d = MODS.stretch * Math.tanh(raw / 90);   // elastic resistance
       setPull(d);
-      if (d >= TEAR_AT) tear(e.pointerId);
+      if (d >= MODS.tearAt) tear(e.pointerId);
     });
   };
 
   const onUp = () => {
     if (!dragging || torn) return;
     dragging = false;
-    // spring back with a little overshoot wobble
-    stub.animate([
-      { transform: `translateX(${disp}px) rotate(${disp * 0.055}deg)` },
-      { transform: 'translateX(-5px) rotate(-0.4deg)', offset: .6 },
-      { transform: 'translateX(2px)', offset: .82 },
-      { transform: 'translateX(0)' },
-    ], { duration: 480, easing: 'cubic-bezier(.25,.9,.3,1)' });
-    body.animate([
-      { transform: `translateX(${-disp * 0.07}px)` },
-      { transform: 'translateX(1px)', offset: .7 },
-      { transform: 'translateX(0)' },
-    ], { duration: 480, easing: 'cubic-bezier(.25,.9,.3,1)' });
-    stub.style.transform = 'translateX(0)';
-    body.style.transform = 'translateX(0)';
-    perf.style.opacity = 1; stub.style.filter = '';
-    paintDuring([bodyC, stubC], 520);
+    // the tab settles back into the card with a little wobble, then re-fuses
+    const anim = piece.animate([
+      { transform: pieceTransform(disp) },
+      { transform: 'translate(-3px, 0px) rotate(-0.4deg)', offset: .65 },
+      { transform: 'translate(1px, 0px)', offset: .85 },
+      { transform: 'translate(0px, 0px)' },
+    ], { duration: 460, easing: 'cubic-bezier(.25,.9,.3,1)' });
+    piece.style.transform = 'translate(0px, 0px)';
+    perf.style.opacity = 1;
+    paintDuring([baseC, pieceC], 500);
+    anim.onfinish = () => { if (!dragging && !torn) unsplit(); paint(); };
     armHint();
   };
 
   const tear = (pointerId) => {
     torn = true; dragging = false;
-    try { stub.releasePointerCapture(pointerId); } catch (_) {}
+    try { hit.releasePointerCapture(pointerId); } catch (_) {}
     try { navigator.vibrate && navigator.vibrate(25); } catch (_) {}
-    // stub rips off and flies away
-    stub.animate([
-      { transform: `translateX(${disp}px) rotate(${disp * 0.055}deg)`, opacity: 1 },
-      { transform: `translateX(${disp + 150}px) translateY(14px) rotate(21deg)`, opacity: 0 },
-    ], { duration: 420, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' });
+    // the tab rips free: keeps peeling, tumbles and falls away
+    piece.animate([
+      { transform: pieceTransform(disp), opacity: 1 },
+      { transform: `translate(${disp + 120}px, 30px) rotate(17deg)`, opacity: 1, offset: .45 },
+      { transform: `translate(${disp + 210}px, 95px) rotate(32deg)`, opacity: 0 },
+    ], { duration: 520, easing: 'cubic-bezier(.3,.5,.5,1)', fill: 'forwards' });
     burst(coupon);
-    // coupon body relaxes, then expands into redeemed state
-    body.style.transform = 'translateX(0)';
+    paintDuring([baseC, pieceC], 750);
+    // torn edge heals rightward into the full-width redeemed card
     setTimeout(() => {
       coupon.classList.add('redeemed');
-      // resize the glass to the expanded body once the spring settles
-      setTimeout(() => { bodyC.resizeGlass && bodyC.resizeGlass(); paintDuring([bodyC], 120); }, 500);
-    }, 140);
-    paintDuring([bodyC, stubC], 700);
+      base.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
+      base.style.clipPath = clips.healClip;
+      paintDuring([baseC], 600);
+    }, 380);
   };
 
-  stub.addEventListener('pointerdown', onDown);
-  stub.addEventListener('pointermove', onMove);
-  stub.addEventListener('pointerup', onUp);
-  stub.addEventListener('pointercancel', onUp);
+  hit.addEventListener('pointerdown', onDown);
+  hit.addEventListener('pointermove', onMove);
+  hit.addEventListener('pointerup', onUp);
+  hit.addEventListener('pointercancel', onUp);
 
   /* idle nudge hint until first touch */
   const armHint = () => {
@@ -429,14 +632,14 @@ function attachPull(coupon, bodyC, stubC) {
     if (interacted || torn) return;
     hintTimer = setTimeout(() => {
       if (interacted || torn) return;
-      stub.animate([
+      baseLabel.animate([
         { transform: 'translateX(0)' },
-        { transform: 'translateX(9px) rotate(.5deg)', offset: .3 },
+        { transform: 'translateX(7px)', offset: .3 },
         { transform: 'translateX(0)', offset: .55 },
-        { transform: 'translateX(6px)', offset: .75 },
+        { transform: 'translateX(4px)', offset: .75 },
         { transform: 'translateX(0)' },
       ], { duration: 900, easing: 'ease-in-out' });
-      paintDuring([stubC], 950);
+      paintDuring([baseC], 950);
       armHint();
     }, 2600 + Math.random() * 1800);
   };
@@ -448,7 +651,7 @@ function burst(coupon) {
   const rect = coupon.getBoundingClientRect();
   const cs = getComputedStyle(phone);
   const colors = ['#ffffff', cs.getPropertyValue('--spark').trim(), 'rgba(255,255,255,.7)'];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < MODS.confetti; i++) {
     const s = document.createElement('div');
     s.className = 'spark';
     const size = 3 + Math.random() * 5;
@@ -467,16 +670,42 @@ function burst(coupon) {
   }
 }
 
-/* ---------------- level switching / dev bar ---------------- */
-document.getElementById('devbar').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'resetBtn') { requestAnimationFrame(buildCoupons); return; }
-  const lvl = b.dataset.lvl; if (!lvl) return;
-  document.querySelectorAll('.devbar [data-lvl]').forEach(x => x.classList.toggle('on', x === b));
+/* ---------------- level switching (sidebar + mobile dev bar) ---------------- */
+function setLevel(lvl) {
+  document.querySelectorAll('[data-lvl]').forEach(x => x.classList.toggle('on', x.dataset.lvl === lvl));
   phone.dataset.level = lvl;
   lvlBadge.textContent = LEVELS[lvl].label;
   // rebuild next frame so the fresh page snapshot sees the new theme
   requestAnimationFrame(buildCoupons);
+}
+document.querySelectorAll('#lvlGrid [data-lvl], .devbar [data-lvl]').forEach(b =>
+  b.addEventListener('click', () => setLevel(b.dataset.lvl)));
+document.getElementById('resetBtn').addEventListener('click', () => requestAnimationFrame(buildCoupons));
+document.getElementById('sReset').addEventListener('click', () => requestAnimationFrame(buildCoupons));
+
+/* ---------------- modifier wiring ---------------- */
+function bindMod(id, out, key, fmt, after) {
+  const el = document.getElementById(id), o = document.getElementById(out);
+  el.addEventListener('input', () => {
+    MODS[key] = parseFloat(el.value);
+    o.textContent = fmt(MODS[key]);
+    after && after();
+  });
+}
+bindMod('mTear', 'vTear', 'tearAt', v => v + 'px');
+bindMod('mStretch', 'vStretch', 'stretch', v => v + 'px');
+bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
+bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2), applyGlassParams);
+bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1), applyGlassParams);
+
+document.getElementById('sCopy').addEventListener('click', () => {
+  const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
+    `confetti ${MODS.confetti}, glass tint ${MODS.tint.toFixed(2)}, glass blur ${MODS.blur.toFixed(1)}, ` +
+    `level ${phone.dataset.level}`;
+  const b = document.getElementById('sCopy');
+  navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
+    b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
+  }).catch(() => { b.textContent = spec; });
 });
 
 document.getElementById('closeBtn').addEventListener('click', () => {
@@ -489,13 +718,15 @@ function fit() {
   const mobile = matchMedia('(max-width: 500px)').matches ||
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
-    phone.classList.remove('framed');
+    document.body.classList.remove('desktop');
     stageScale = Math.min(innerWidth / 402, innerHeight / 874);
   } else {
-    phone.classList.add('framed');
-    stageScale = Math.min(1, (innerWidth - 48) / 402, (innerHeight - 48) / 874);
+    document.body.classList.add('desktop');
+    const availW = innerWidth - 316;         // sidebar
+    const frameW = 402 + 24, frameH = 874 + 24; // device bezel
+    stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
   }
-  phone.style.transform = `scale(${stageScale})`;
+  device.style.transform = `scale(${stageScale})`;
   liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
 }
 addEventListener('resize', fit);

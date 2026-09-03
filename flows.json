@@ -37,7 +37,7 @@
       "title": "Rewards — Pull to Redeem",
       "status": "in-progress",
       "updated": "2026-09-03",
-      "description": "Loyalty coupon redeem sheet with four level themes — Bronze, Silver, Gold, VIP — pulled 1:1 from Figma. Coupons are real liquid glass (WebGL refraction via liquid-glass-js). Each voucher's stub tears off along the perforation with an elastic pull gesture: resistance, tear threshold, confetti burst, and a redeemed state with promo code. Desktop opens the framed playground with the level dev bar; mobile goes fullscreen.",
+      "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. Each voucher is one seamless liquid-glass card (WebGL refraction via liquid-glass-js) with a rippable tab: pull it and the card splits along a jagged tear line, the tab peels, tumbles off with confetti, and the torn edge heals into the redeemed card with the promo code. Desktop opens the full playground — sidebar with level, gesture and glass modifiers, device frame; mobile is fullscreen.",
       "path": "rewards/",
       "handoff": {
         "Design source": "Figma · Diet Station 4.0 · Rewards states (section 17137-76380; Gold frame 17137-75698)",
@@ -51,7 +51,9 @@
         "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder)",
         "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()",
         "Coupon material": "Liquid glass via github.com/dashersw/liquid-glass-js (Container class, borderRadius 24, tintOpacity 0.14): WebGL refraction of an html2canvas page snapshot, one canvas per coupon half; Figma fill stack layered above it (gold tint rgba(240,168,60,.35) + rgba(173,173,173,.12) plus-lighter, Silver .06). Snapshot re-captured on level switch; contexts disposed via WEBGL_lose_context. Native SwiftUI equivalent = .glassEffect() on the coupon shape.",
-        "Viewport behavior": "Desktop: framed device (radius 42, capped at 1x) + dev bar playground. Mobile (<=500px or coarse pointer): fullscreen fit."
+        "Viewport behavior": "Desktop (>500px, fine pointer): sidebar + framed device. Mobile: fullscreen fit, sidebar hidden.",
+        "Rip mechanic": "One full-size glass card at rest; on grab it splits into two full-size glass layers clipped by complementary jagged polygons (clip-path) along the perforation at x=277. The tab peels from origin 277px/85% (rotate d*0.11deg, sag d*0.08), rips at the tear point, tumbles off; the base clip-path then animates +96px right to 'heal' into the full redeemed card (.55s cubic-bezier(.3,1,.4,1)).",
+        "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar."
       },
       "downloads": [
         {
