@@ -360,8 +360,12 @@
 
 <script>
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
-const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 18, tint: 0.14, blur: 5 };
-window.glassControls = { blurRadius: MODS.blur };
+/* the hub's Glass Lab saves a global glass recipe; flows load it on open */
+const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
+const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 18,
+  tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
+  blur: GG.blurRadius !== undefined ? GG.blurRadius : 5 };
+window.glassControls = { ...GG, blurRadius: MODS.blur };
 
 /* ---------------- level data ---------------- */
 const LEVELS = {
@@ -733,6 +737,11 @@ bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
 bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
 bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2), applyGlassParams);
 bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1), applyGlassParams);
+/* sync slider positions to the loaded global recipe */
+document.getElementById('mTint').value = MODS.tint;
+document.getElementById('vTint').textContent = MODS.tint.toFixed(2);
+document.getElementById('mBlur').value = MODS.blur;
+document.getElementById('vBlur').textContent = MODS.blur.toFixed(1);
 
 document.getElementById('sCopy').addEventListener('click', () => {
   const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +

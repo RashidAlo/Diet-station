@@ -5,6 +5,9 @@
 <title>DietStation Design Lab</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ED1C24">
+<script>class Button {}</script>
+<script src="html2canvas.min.js"></script>
+<script src="liquid-glass-container.js"></script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -75,6 +78,35 @@
   .dl { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; }
   .dl a { color: var(--red); text-decoration: none; font-size: 13.5px; border-bottom: 1px solid var(--red-soft); }
   .dl a:hover { border-bottom-color: var(--red); }
+  /* ---- Glass Lab (global liquid-glass recipe) ---- */
+  .glasslab .strip { position: relative; height: 128px; border-radius: 16px; margin-top: 18px;
+    overflow: hidden; border: 1px solid var(--line);
+    background: linear-gradient(90deg, #ED1C24 0 25%, #E4A70F 25% 50%, #E5E7EB 50% 75%, #1A1114 75% 100%); }
+  .g-el { position: absolute; top: 50%; cursor: grab; overflow: hidden; touch-action: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    -webkit-user-select: none; user-select: none; }
+  .g-el:active { cursor: grabbing; }
+  .g-circle { left: 36px; width: 56px; height: 56px; border-radius: 50%; transform: translateY(-50%); }
+  .g-circle svg { width: 18px; height: 18px; display: block; }
+  .g-pill { left: 124px; width: 178px; height: 54px; border-radius: 999px; transform: translateY(-50%);
+    font: 500 15px/1 'Urbane Rounded', sans-serif; color: #fff; }
+  .g-el canvas { box-shadow: none !important; }
+  .g-el svg, .g-el span { position: relative; pointer-events: none; }
+  .glass-dark-content { color: #0b0e12 !important; }
+  .glass-dark-content svg { filter: brightness(0) opacity(.88); }
+  .strip .hintdrag { position: absolute; right: 12px; bottom: 8px; font-size: 11px;
+    color: rgba(255,255,255,.75); pointer-events: none; }
+  .mods { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 26px; margin-top: 20px; }
+  @media (max-width: 560px) { .mods { grid-template-columns: 1fr; } }
+  .gmod .mh { display: flex; justify-content: space-between; align-items: baseline; }
+  .gmod label { font: 500 13px/18px 'Urbane Rounded', sans-serif; }
+  .gmod output { font: 500 12px/18px 'Urbane Rounded', sans-serif; color: var(--red); }
+  .gmod input[type=range] { width: 100%; accent-color: var(--red); margin: 4px 0 2px; display: block; }
+  .gmod .md { font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); }
+  .glasslab .actions { align-items: center; }
+  .savenote { font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ok);
+    opacity: 0; transition: opacity .25s ease; }
+  .savenote.show { opacity: 1; }
   footer { margin-top: 48px; color: var(--ink-soft); font-size: 12.5px; }
   @media (max-width: 480px) { .kv { grid-template-columns: 1fr; gap: 2px 0; } .kv dt { margin-top: 8px; } }
 </style>
@@ -86,6 +118,26 @@
     <p class="sub">Living prototypes of every design feature in the works — open a flow to
     test it on any device, or expand its handoff panel for the specs and assets developers need.</p>
   </header>
+  <div class="count" style="margin-top:40px">System</div>
+  <section class="card glasslab">
+    <div class="top">
+      <h2>Liquid Glass — global recipe</h2>
+      <span class="tag">All flows</span>
+      <span class="pill ready">Live</span>
+    </div>
+    <p class="desc">One recipe for every glass button in every prototype. Dial it here —
+      values save automatically and each flow loads them on open. Drag the samples across
+      the bands to check refraction and the adaptive contrast flip on light backdrops.</p>
+    <div class="strip" id="gStrip">
+      <div class="hintdrag">drag the samples &#8596;</div>
+    </div>
+    <div class="mods" id="gMods"></div>
+    <div class="actions">
+      <button class="btn primary" id="gReset">Reset defaults</button>
+      <button class="btn ghost" id="gCopy">Copy recipe</button>
+      <span class="savenote" id="gSaved">Saved &#10003;</span>
+    </div>
+  </section>
   <div class="count" id="count"></div>
   <main id="flows"></main>
   <footer>Maintained by Rashid × Claude · sources in the dietstation-rive repo</footer>
@@ -135,6 +187,137 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
     root.appendChild(card);
   }
 });
+
+/* ================= Glass Lab: global liquid-glass recipe ================= */
+(() => {
+  const KEY = 'ds-glass-global-v1';
+  const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+  const DEFS = [
+    ['blurRadius',   'Blur',          1,    12,  0.5,   5,    v => v.toFixed(1), 'Softness of the refracted backdrop behind the glass.'],
+    ['tintOpacity',  'Frost tint',    0,    0.4, 0.01,  0.14, v => v.toFixed(2), 'White frost mixed into the refraction. 0 = fully clear.'],
+    ['rimIntensity', 'Rim strength',  0,    0.15,0.005, 0.05, v => v.toFixed(3), 'Specular refraction pull right at the edge.'],
+    ['rimDistance',  'Rim width',     0.2,  1.5, 0.05,  0.8,  v => v.toFixed(2), 'How far the rim band reaches into the glass.'],
+    ['edgeIntensity','Edge strength', 0,    0.05,0.002, 0.01, v => v.toFixed(3), 'Broader bend of the backdrop near the edge.'],
+    ['edgeDistance', 'Edge width',    0.05, 0.5, 0.01,  0.15, v => v.toFixed(2), 'Reach of that bend — reads as glass thickness.'],
+    ['cornerBoost',  'Corner boost',  0,    0.1, 0.005, 0.02, v => v.toFixed(3), 'Extra refraction kick concentrated in the corners.'],
+    ['rippleEffect', 'Ripple',        0,    0.3, 0.01,  0.1,  v => v.toFixed(2), 'Wavy distortion running along the rim.'],
+  ];
+  const DEFAULTS = Object.fromEntries(DEFS.map(d => [d[0], d[5]]));
+  let GG = { ...DEFAULTS };
+  try { GG = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (_) {}
+  window.glassControls = { ...GG };
+
+  const strip = document.getElementById('gStrip');
+  const modsRoot = document.getElementById('gMods');
+  let els = [];
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(GG)); } catch (_) {}
+    const n = document.getElementById('gSaved');
+    n.classList.add('show');
+    clearTimeout(save._t); save._t = setTimeout(() => n.classList.remove('show'), 1200);
+  }
+  function applyAll() {
+    window.glassControls = { ...GG };
+    els.forEach(c => {
+      c.tintOpacity = GG.tintOpacity;
+      if (!c.gl_refs || !c.gl_refs.gl) return;
+      const gl = c.gl_refs.gl;
+      DEFS.forEach(([key]) => {
+        const loc = c.gl_refs[key + 'Loc'];
+        if (loc) gl.uniform1f(loc, GG[key]);
+      });
+      c.render && c.render();
+    });
+  }
+  function adapt() {
+    if (!GLASS_OK || !Container.pageSnapshot) return;
+    let sctx; try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    els.forEach(c => {
+      const r = c.canvas.getBoundingClientRect();
+      const x = Math.max(8, Math.round(r.left + r.width / 2 + window.scrollX));
+      const y = Math.max(8, Math.round(r.top + r.height / 2 + window.scrollY));
+      try {
+        const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
+        let l = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 10) continue;
+          l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
+        }
+        c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
+      } catch (_) {}
+    });
+  }
+  function draggable(c) {
+    const el = c.element;
+    let sx = 0, left = 0, dragging = false;
+    el.addEventListener('pointerdown', e => {
+      dragging = true; sx = e.clientX; left = el.offsetLeft;
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const max = strip.clientWidth - el.offsetWidth - 8;
+      el.style.left = Math.max(8, Math.min(max, left + e.clientX - sx)) + 'px';
+      c.render && c.render();
+      adapt();
+    });
+    const up = () => { dragging = false; };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
+
+  /* sliders */
+  DEFS.forEach(([key, label, min, max, step, def, fmt, desc]) => {
+    const d = document.createElement('div');
+    d.className = 'gmod';
+    d.innerHTML = `<div class="mh"><label>${label}</label><output>${fmt(GG[key])}</output></div>
+      <input type="range" min="${min}" max="${max}" step="${step}" value="${GG[key]}">
+      <div class="md">${desc}</div>`;
+    const inp = d.querySelector('input'), out = d.querySelector('output');
+    inp.addEventListener('input', () => {
+      GG[key] = parseFloat(inp.value);
+      out.textContent = fmt(GG[key]);
+      applyAll(); save();
+    });
+    d._sync = () => { inp.value = GG[key]; out.textContent = fmt(GG[key]); };
+    modsRoot.appendChild(d);
+  });
+
+  document.getElementById('gReset').onclick = () => {
+    GG = { ...DEFAULTS };
+    [...modsRoot.children].forEach(d => d._sync && d._sync());
+    applyAll(); save();
+  };
+  document.getElementById('gCopy').onclick = () => {
+    const spec = 'glass global: ' + DEFS.map(([k, l, , , , , fmt]) => `${k} ${fmt(GG[k])}`).join(', ');
+    const b = document.getElementById('gCopy');
+    navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
+      b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy recipe', 1200);
+    }).catch(() => { b.textContent = spec; });
+  };
+
+  function build() {
+    if (!GLASS_OK) return;
+    const circle = new Container({ borderRadius: 28, tintOpacity: GG.tintOpacity });
+    circle.element.classList.add('g-el', 'g-circle');
+    circle.element.insertAdjacentHTML('beforeend',
+      '<svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>');
+    strip.appendChild(circle.element);
+    const pill = new Container({ borderRadius: 27, tintOpacity: GG.tintOpacity });
+    pill.element.classList.add('g-el', 'g-pill');
+    pill.element.insertAdjacentHTML('beforeend',
+      '<span>Let\u2019s get Started</span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>');
+    strip.appendChild(pill.element);
+    els = [circle, pill];
+    els.forEach(draggable);
+    setTimeout(() => { applyAll(); adapt(); }, 1100);
+    window.addEventListener('scroll', () => els.forEach(c => c.render && c.render()), { passive: true });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(build, 400));
+  else setTimeout(build, 400);
+})();
 </script>
 </body>
 </html>

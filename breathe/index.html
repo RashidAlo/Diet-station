@@ -228,8 +228,14 @@
 
   /* ---- liquid glass plumbing (liquid-glass-js) ---- */
   const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
-  const GV = { blur: 5, tint: 0.14, rim: 0.05, edge: 0.01 };
-  window.glassControls = { blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+  /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
+  const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
+  const GV = {
+    blur: GG.blurRadius !== undefined ? GG.blurRadius : 5,
+    tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
+    rim: GG.rimIntensity !== undefined ? GG.rimIntensity : 0.05,
+    edge: GG.edgeIntensity !== undefined ? GG.edgeIntensity : 0.01 };
+  window.glassControls = { ...GG, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
   let stageScale = 1;
   let liveGlass = [];
   function makeGlass(cls, radius) {
@@ -258,7 +264,7 @@
     return c;
   }
   function applyGlass() {
-    window.glassControls = { blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+    window.glassControls = { ...GG, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
     liveGlass.forEach(c => {
       c.tintOpacity = GV.tint;
       if (c.gl_refs.gl) {
@@ -418,6 +424,11 @@
   bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2));
   bindMod('mRim', 'vRim', 'rim', v => v.toFixed(3));
   bindMod('mEdge', 'vEdge', 'edge', v => v.toFixed(3));
+  /* sync slider positions to the loaded global recipe */
+  [['mBlur','vBlur','blur',v=>v.toFixed(1)],['mTint','vTint','tint',v=>v.toFixed(2)],
+   ['mRim','vRim','rim',v=>v.toFixed(3)],['mEdge','vEdge','edge',v=>v.toFixed(3)]].forEach(([i,o,k,f]) => {
+    $(i).value = GV[k]; $(o).textContent = f(GV[k]);
+  });
   $('sCopy').onclick = () => {
     const spec = `nav glass (liquid-glass-js): blur ${GV.blur.toFixed(1)}, ` +
       `frost tint ${GV.tint.toFixed(2)}, rim ${GV.rim.toFixed(3)}, edge ${GV.edge.toFixed(3)}`;
