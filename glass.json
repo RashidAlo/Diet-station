@@ -1,10 +1,10 @@
 {
   "blurRadius": 5,
-  "tintOpacity": 0.13,
+  "tintOpacity": 0.07,
   "rimIntensity": 0.015,
   "rimDistance": 0.8,
-  "edgeIntensity": 0.008,
-  "edgeDistance": 0.15,
-  "cornerBoost": 0.02,
+  "edgeIntensity": 0,
+  "edgeDistance": 0.14,
+  "cornerBoost": 0.03,
   "rippleEffect": 0.06
 }
