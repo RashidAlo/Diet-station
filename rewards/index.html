@@ -403,6 +403,7 @@ function makeGlass(cls, radius) {
   const c = new Container({ borderRadius: radius, tintOpacity: MODS.tint });
   c.element.classList.add(cls);
   c.baseRadius = radius;
+  c.contextScale = stageScale;   // shader normalizes the effect by display scale
   // The lib sizes canvases from getBoundingClientRect(), which is wrong inside
   // our scaled stage: backing store must be the on-screen (scaled) size for
   // correct snapshot sampling, while the canvas CSS size must stay 100% of the
@@ -411,6 +412,7 @@ function makeGlass(cls, radius) {
     const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
     const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
     c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
+    c.contextScale = stageScale;
     c.canvas.width = w; c.canvas.height = h;
     c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
     if (c.gl_refs.gl) {
@@ -418,6 +420,7 @@ function makeGlass(cls, radius) {
       gl.viewport(0, 0, w, h);
       gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
       gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
+      if (c.gl_refs.contextScaleLoc) gl.uniform1f(c.gl_refs.contextScaleLoc, stageScale);
       c.render && c.render();
     }
   };

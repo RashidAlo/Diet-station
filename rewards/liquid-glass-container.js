@@ -274,6 +274,7 @@ class Container {
       uniform float u_cornerBoost;
       uniform float u_rippleEffect;
       uniform float u_tintOpacity;
+      uniform float u_contextScale;
     varying vec2 v_texcoord;
 
       // Function to calculate distance from rounded rectangle edge
@@ -396,7 +397,7 @@ class Container {
         float distFromEdge = distFromEdgeShape / min(u_resolution.x, u_resolution.y);
         
         // Smooth glass refraction using shape-aware normal
-        float normalizedDistance = distFromEdge * min(u_resolution.x, u_resolution.y);
+        float normalizedDistance = distFromEdge * min(u_resolution.x, u_resolution.y) / max(u_contextScale, 0.001);
         float baseIntensity = 1.0 - exp(-normalizedDistance * u_baseDistance);
         float edgeIntensity = exp(-normalizedDistance * u_edgeDistance);
         float rimIntensity = exp(-normalizedDistance * u_rimDistance);
@@ -410,7 +411,7 @@ class Container {
         float cornerProximityX = min(distFromLeft, distFromRight);
         float cornerProximityY = min(distFromTop, distFromBottom);
         float cornerDistance = max(cornerProximityX, cornerProximityY);
-        float cornerNormalized = cornerDistance * min(u_resolution.x, u_resolution.y);
+        float cornerNormalized = cornerDistance * min(u_resolution.x, u_resolution.y) / max(u_contextScale, 0.001);
         
         float cornerBoost = exp(-cornerNormalized * 0.3) * u_cornerBoost;
         vec2 cornerRefraction = shapeNormal * cornerBoost;
@@ -420,12 +421,12 @@ class Container {
         vec2 textureRefraction = perpendicular * rippleEffect;
         
         vec2 totalRefraction = baseRefraction + cornerRefraction + textureRefraction;
-        textureCoord += totalRefraction;
+        textureCoord += totalRefraction * (700.0 * max(u_contextScale, 0.001)) / u_textureSize;
         
         // Gaussian blur
         vec4 color = vec4(0.0);
         vec2 texelSize = 1.0 / u_textureSize;
-        float sigma = u_blurRadius / 2.0;
+        float sigma = (u_blurRadius * max(u_contextScale, 0.001)) / 2.0;
         vec2 blurStep = texelSize * sigma;
         
         float totalWeight = 0.0;
@@ -550,6 +551,7 @@ class Container {
     const cornerBoostLoc = gl.getUniformLocation(program, 'u_cornerBoost')
     const rippleEffectLoc = gl.getUniformLocation(program, 'u_rippleEffect')
     const tintOpacityLoc = gl.getUniformLocation(program, 'u_tintOpacity')
+    const contextScaleLoc = gl.getUniformLocation(program, 'u_contextScale')
     const imageLoc = gl.getUniformLocation(program, 'u_image')
 
     // Create texture
@@ -585,6 +587,7 @@ class Container {
       cornerBoostLoc,
       rippleEffectLoc,
       tintOpacityLoc,
+      contextScaleLoc,
       imageLoc,
       positionBuffer,
       texcoordBuffer
@@ -617,6 +620,7 @@ class Container {
     gl.uniform1f(cornerBoostLoc, window.glassControls?.cornerBoost || 0.02)
     gl.uniform1f(rippleEffectLoc, window.glassControls?.rippleEffect || 0.1)
     gl.uniform1f(tintOpacityLoc, this.tintOpacity)
+    gl.uniform1f(contextScaleLoc, this.contextScale || 1)
 
     // Set initial position (will be updated in render loop)
     const position = this.getPosition()
