@@ -103,6 +103,7 @@
     --badge-bg: linear-gradient(to top, #f2b90d 45%, #ffca2a 55%);
     --badge-border:#fefae7; --badge-text:#c59300;
     --check-bg: rgba(255,255,255,.22); --spark:#ffdf8e;
+    --cshadow: rgba(146,100,10,.42);
     --voucher-shadow: none; }
   .phone[data-level="bronze"] { /* frame 17137:76256 */
     --backdrop: #ffffff;
@@ -112,7 +113,8 @@
     --t-head:#0b0e12; --t-body:#0b0e12; --t-sub:#5c3f21;
     --badge-bg: linear-gradient(to bottom, #d5bb9f 45%, #c9a682 55%);
     --badge-border:#ffffff; --badge-text: rgba(76,64,51,.42);
-    --check-bg: rgba(0,0,0,.10); --spark:#8a5f36; }
+    --check-bg: rgba(0,0,0,.10); --spark:#8a5f36;
+    --cshadow: rgba(118,88,58,.38); }
   .phone[data-level="silver"] { /* frame 17137:76130 */
     --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #e5e7eb 19.152%, #d1d5db 86.283%);
@@ -121,7 +123,8 @@
     --t-head:#0b0e12; --t-body:#0b0e12; --t-sub:#7a7a7a;
     --badge-bg: linear-gradient(to bottom, #e5e7eb 45%, #d1d5db 55%);
     --badge-border:#e4e4e7; --badge-text: rgba(82,82,91,.46);
-    --check-bg: rgba(0,0,0,.08); --spark:#9aa0a8; }
+    --check-bg: rgba(0,0,0,.08); --spark:#9aa0a8;
+    --cshadow: rgba(92,100,112,.32); }
   .phone[data-level="vip"] { /* frame 17137:75818 */
     --backdrop: #ffffff;
     --sheet-grad: linear-gradient(to bottom, #270f0f 0.461%, #0f0e0d 100%);
@@ -132,6 +135,7 @@
                 linear-gradient(180deg, #57524d 45%, #2d2a27 55%);
     --badge-border:#f9f9f9; --badge-text:#fff;
     --check-bg: rgba(255,255,255,.22); --spark:#f2c94c;
+    --cshadow: rgba(0,0,0,.55);
     --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
   /* red theme — frame 16842:87694: flat brand red, only the badge keeps the
      tier's styling (badge vars deliberately NOT overridden here) */
@@ -142,6 +146,7 @@
     --lighter: rgba(173,173,173,.12);
     --t-head:#f9f9f9; --t-body:#fff; --t-sub:#f9f9f9;
     --spark:#ffffff;
+    --cshadow: rgba(112,6,10,.48);
     --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
 
   /* ---- sheet (bottom-anchored: the backdrop strip above absorbs any
@@ -209,6 +214,13 @@
     width: 368px; height: 125px; overflow: hidden; border-radius: 24px;
     -webkit-backdrop-filter: var(--frost-filter, none);
     backdrop-filter: var(--frost-filter, none); }
+  /* soft dynamic shadow: a blurred underlay tinted from the active theme —
+     also darkens what shows through the punched holes so they read clearly.
+     (Must be an element, not filter on .coupon: filter would isolate the
+     plus-lighter blend and wash the coupons white.) */
+  .coupon .cshadow { position: absolute; inset: 0; border-radius: 24px;
+    background: var(--cshadow, transparent); filter: blur(9px);
+    transform: translateY(4px); pointer-events: none; }
   .coupon .base { z-index: 0; }
   .coupon .lighter-ov { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; border-radius: 24px; z-index: 1;
@@ -242,9 +254,9 @@
     transition: opacity .25s ease; }
   .coupon .expires { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--t-sub); }
   .coupon .headline { color: var(--t-body); white-space: nowrap; }
-  .coupon .headline .big  { font: 600 30px/40px 'Urbane Rounded', sans-serif; }
-  .coupon .headline .mid  { font: 600 20px/28px 'Urbane Rounded', sans-serif; }
-  .coupon .headline .tail { font: 600 18px/28px 'Urbane Rounded', sans-serif; color: var(--t-head); }
+  .coupon .headline .big  { font: 600 26px/34px 'Urbane Rounded', sans-serif; }
+  .coupon .headline .mid  { font: 600 17px/24px 'Urbane Rounded', sans-serif; }
+  .coupon .headline .tail { font: 600 16px/24px 'Urbane Rounded', sans-serif; color: var(--t-head); }
   .coupon .sub { font: 400 10px/13px 'Proxima Nova', sans-serif; color: var(--t-sub); }
 
 
@@ -549,7 +561,14 @@ function buildCoupons() {
   cb.element.title = 'close';
   cb.element.addEventListener('click', () => { location.href = '../'; });
   document.querySelector('.sheet').appendChild(cb.element);
-  setTimeout(adaptGlassContrast, 900);   // after the fresh snapshot lands
+  // adapt as soon as the fresh snapshot lands (retry — capture time varies)
+  let adaptTries = 0;
+  clearInterval(buildCoupons._adaptT);
+  buildCoupons._adaptT = setInterval(() => {
+    if (GLASS_OK && Container.pageSnapshot) {
+      adaptGlassContrast(); clearInterval(buildCoupons._adaptT);
+    } else if (++adaptTries > 24) clearInterval(buildCoupons._adaptT);
+  }, 250);
 
   list.innerHTML = '';
   couponDefs(phone.dataset.level).forEach(def => {
@@ -591,6 +610,9 @@ function buildCoupons() {
     applyMask(piece);
     piece.style.clipPath = `inset(0px 0px 0px ${SEAM}px)`;
 
+    const cshadow = document.createElement('div');
+    cshadow.className = 'cshadow';
+    el.appendChild(cshadow);
     el.appendChild(base);
     el.appendChild(lighter);
     el.appendChild(face);
@@ -617,6 +639,7 @@ function buildCoupons() {
    hole pops the tab rips free and the card heals into the redeemed state. */
 function attachPull(coupon, base, piece, lighter, face) {
   const hit = coupon.querySelector('.hit');
+  const cshadow = coupon.querySelector('.cshadow');
   const baseLabel = face.querySelector('.stublabel');
   const N = HOLES.length;
   const threshold = i => MODS.tearAt * (0.30 + 0.70 * i / (N - 1));
@@ -630,6 +653,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     base.style.transition = lighter.style.transition = 'none';
     base.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
     lighter.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
+    cshadow.style.clipPath = `inset(0px ${TAB_W}px 0px 0px)`;
     baseLabel.style.opacity = '0';
     piece.style.visibility = 'visible';
     piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.16))';
@@ -733,7 +757,7 @@ function attachPull(coupon, base, piece, lighter, face) {
     // the card heals into the full-width redeemed state
     setTimeout(() => {
       coupon.classList.add('redeemed');
-      [base, lighter].forEach(elm => {
+      [base, lighter, cshadow].forEach(elm => {
         elm.style.webkitMaskImage = ''; elm.style.maskImage = '';
         elm.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
         elm.style.clipPath = 'inset(0px 0px 0px 0px)';
