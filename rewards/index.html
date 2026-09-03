@@ -182,16 +182,28 @@
 
   .coupon { position: relative; width: 368px; height: 125px; filter: var(--voucher-shadow); }
 
-  /* ONE frosted card (Figma material: tint + plus-lighter over backdrop blur)
-     + a torn-off "piece" overlay. At rest only .base renders — a single
-     seamless coupon. On grab, .base is clipped to a jagged tear polygon and
-     .piece (the complementary polygon) becomes the rippable tab. */
+  /* ONE card with the exact Figma fill stack + a torn-off "piece" overlay.
+     Layering matters: the plus-lighter layer (.lighter-ov) is a SIBLING so it
+     blends with the sheet gradient like Figma — inside a clipped/masked box it
+     would blend against nothing and wash the coupon white. The perforation is
+     PUNCHED HOLES (even-odd SVG mask straddling x=277) — each hole splits into
+     half-moons when the tab peels around the lowest intact hole. */
   .coupon .base, .coupon .piece { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; overflow: hidden; border-radius: 24px;
-    -webkit-backdrop-filter: blur(var(--frost, 18px));
-    backdrop-filter: blur(var(--frost, 18px)); }
+    -webkit-backdrop-filter: var(--frost-filter, none);
+    backdrop-filter: var(--frost-filter, none); }
   .coupon .base { z-index: 0; }
+  .coupon .lighter-ov { position: absolute; left: 0; top: 0;
+    width: 368px; height: 125px; border-radius: 24px; z-index: 1;
+    background: var(--lighter); mix-blend-mode: plus-lighter; pointer-events: none; }
+  .coupon .face { position: absolute; left: 0; top: 0;
+    width: 368px; height: 125px; z-index: 2; pointer-events: none; }
   .coupon .piece { z-index: 4; visibility: hidden; will-change: transform, opacity; }
+
+  /* pop effects at the perforation */
+  .popring { position: absolute; border: 2px solid rgba(255,255,255,.85);
+    border-radius: 50%; pointer-events: none; z-index: 7; }
+  .chad { position: absolute; border-radius: 50%; pointer-events: none; z-index: 7; }
 
   .coupon .hit { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
     z-index: 6; cursor: grab; touch-action: none; }
@@ -218,11 +230,6 @@
   .coupon .headline .tail { font: 600 18px/28px 'Urbane Rounded', sans-serif; color: var(--t-head); }
   .coupon .sub { font: 400 10px/13px 'Proxima Nova', sans-serif; color: var(--t-sub); }
 
-  .coupon .perf { position: absolute; left: 277px; top: 50%; height: 110px; width: 0;
-    transform: translateY(-50%); z-index: 2; pointer-events: none;
-    display: flex; align-items: center; justify-content: center; }
-  .coupon .perf img { width: 110px; height: 1px; transform: rotate(90deg); display: block;
-    flex: none; }
 
   .coupon .pull { display: block; font: 600 15px/22px 'Urbane Rounded', sans-serif; color: var(--t-body); }
   .coupon .tored { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: var(--t-head); }
@@ -243,7 +250,6 @@
     font: 600 13px/18px 'Urbane Rounded', sans-serif; color: var(--t-body); letter-spacing: 1.5px; }
 
   .coupon.redeemed .content { opacity: 0; }
-  .coupon.redeemed .perf { display: none; }
   .coupon.redeemed .hit { display: none; }
   .coupon.redeemed .done-face { opacity: 1; pointer-events: auto;
     transition: opacity .35s ease .18s; }
@@ -272,9 +278,10 @@
   <div class="s-kicker">DietStation &middot; Design Lab</div>
   <h2>Rewards — Pull to Redeem</h2>
   <p class="s-desc">Loyalty coupon sheet with four member tiers, themed 1:1 from Figma.
-    Grab a voucher's stub and pull right — it stretches with elastic resistance and tears
-    off past the threshold, bursting confetti and revealing the promo code. Coupons are
-    frosted glass per Figma; the nav X is liquid glass (WebGL refraction).</p>
+    The perforation is punched holes — grab the stub and pull: holes pop one by one with
+    an elastic recoil (haptic tick on supported phones), each ejecting its punched-out
+    disc, until the tab rips free with confetti and the promo code. The nav X is liquid
+    glass on the global recipe.</p>
 
   <div class="s-sec">
     <div class="s-label">User level</div>
@@ -294,7 +301,8 @@
     <div class="mod">
       <div class="mod-head"><label>Tear point</label><output id="vTear">62px</output></div>
       <input type="range" id="mTear" min="40" max="90" step="1" value="62">
-      <div class="mod-desc">Travel at which the stub rips off. Lower = easier redeem.</div>
+      <div class="mod-desc">Pull at which the last hole pops and the tab rips free.
+        Pops stagger from 30% of this to 100%.</div>
     </div>
     <div class="mod">
       <div class="mod-head"><label>Stretch</label><output id="vStretch">96px</output></div>
@@ -310,12 +318,12 @@
 
   <div class="s-sec">
     <div class="s-label">Material modifiers</div>
-    <div class="s-note">Coupons are frosted (Figma fills + backdrop blur). The nav X's
-      liquid glass follows the global recipe — dial it in the hub's Glass Lab.</div>
+    <div class="s-note">Coupons use the exact Figma fill stack. The nav X's liquid glass
+      follows the global recipe — dial it in the hub's Glass Lab.</div>
     <div class="mod">
-      <div class="mod-head"><label>Coupon frost</label><output id="vFrost">18px</output></div>
-      <input type="range" id="mFrost" min="0" max="30" step="1" value="18">
-      <div class="mod-desc">Backdrop blur behind the coupon fills. 0 = flat Figma fills.</div>
+      <div class="mod-head"><label>Coupon frost</label><output id="vFrost">0px</output></div>
+      <input type="range" id="mFrost" min="0" max="30" step="1" value="0">
+      <div class="mod-desc">Optional backdrop blur under the fills. 0 = pure Figma.</div>
     </div>
   </div>
 
@@ -359,7 +367,7 @@
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
-const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 18,
+const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 0,
   tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
   blur: GG.blurRadius !== undefined ? GG.blurRadius : 5 };
 window.glassControls = { ...GG, blurRadius: MODS.blur };
@@ -447,7 +455,8 @@ function applyGlassParams() {
 }
 
 function applyFrost() {
-  phone.style.setProperty('--frost', MODS.frost + 'px');
+  if (MODS.frost > 0) phone.style.setProperty('--frost-filter', `blur(${MODS.frost}px)`);
+  else phone.style.removeProperty('--frost-filter');
 }
 
 /* readability: sample the page snapshot behind each glass element and flip
@@ -490,17 +499,18 @@ const device = document.getElementById('device');
 const list = document.getElementById('coupons');
 const lvlBadge = document.getElementById('lvlBadge');
 
-/* jagged tear line down the perforation: fixed x=277 with organic wiggle */
-function makeTearLine() {
-  const pts = [];
-  for (let y = 0; y <= 125; y += 9) {
-    const wiggle = (y === 0 || y >= 125) ? 0 : (Math.random() * 8 - 4);
-    pts.push([277 + wiggle, Math.min(y, 125)]);
-  }
-  if (pts[pts.length - 1][1] !== 125) pts.push([277, 125]);
-  return pts;
-}
-const poly = (pts) => pts.map(p => `${p[0].toFixed(1)}px ${p[1]}px`).join(', ');
+/* punched perforation: 7 holes straddling the seam at x=277, r=3.
+   Alpha mask: one even-odd path — the circles are true transparent holes. */
+const HOLES = Array.from({ length: 7 }, (_, i) => 15 + i * 16);   // y centers, 15..111
+const HOLE_R = 3;
+const holeMask = () => {
+  const r = HOLE_R;
+  const holes = HOLES.map(y =>
+    `M${277 - r} ${y}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="368" height="125">` +
+    `<path fill-rule="evenodd" fill="white" d="M0 0H368V125H0Z${holes}"/></svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+};
 
 function buildCoupons() {
   destroyGlass();
@@ -522,17 +532,25 @@ function buildCoupons() {
     const el = document.createElement('div');
     el.className = 'coupon';
 
-    const tear = makeTearLine();
-    const baseClip  = `polygon(0px 0px, ${poly(tear)}, 0px 125px)`;
-    const pieceClip = `polygon(${poly(tear)}, 368px 125px, 368px 0px)`;
-    const healClip  = `polygon(0px 0px, ${poly(tear.map(p => [p[0] + 96, p[1]]))}, 0px 125px)`;
-
+    const mask = holeMask();
     const stubLabel = `<div class="stublabel"><p><span class="pull">Pull</span><span class="tored">to Redeem</span></p></div>`;
+    const applyMask = (elm) => { elm.style.webkitMaskImage = mask; elm.style.maskImage = mask; };
 
+    // 1. tint fill (masked, clipped on split)
     const base = document.createElement('div');
     base.className = 'base';
-    base.insertAdjacentHTML('beforeend', `
-      <div class="fill-tint"></div><div class="fill-lighter"></div>
+    base.insertAdjacentHTML('beforeend', `<div class="fill-tint"></div>`);
+    applyMask(base);
+
+    // 2. plus-lighter layer as a sibling: blends with the sheet, per Figma
+    const lighter = document.createElement('div');
+    lighter.className = 'lighter-ov';
+    applyMask(lighter);
+
+    // 3. content + stub label above the fills
+    const face = document.createElement('div');
+    face.className = 'face';
+    face.insertAdjacentHTML('beforeend', `
       <div class="content">
         <div class="expires">Expires in 1 Day</div>
         <div class="headline">${def.headline}</div>
@@ -540,17 +558,20 @@ function buildCoupons() {
       </div>
       ${stubLabel}`);
 
+    // 4. the rippable tab (carries its own fill stack while moving)
     const piece = document.createElement('div');
     piece.className = 'piece';
     piece.insertAdjacentHTML('beforeend', `
       <div class="fill-tint"></div><div class="fill-lighter"></div>
       ${stubLabel}`);
-    piece.style.clipPath = pieceClip;
+    applyMask(piece);
+    piece.style.clipPath = 'inset(0px 0px 0px 277px)';
 
     el.appendChild(base);
+    el.appendChild(lighter);
+    el.appendChild(face);
     el.appendChild(piece);
     el.insertAdjacentHTML('beforeend', `
-      <div class="perf"><img src="${theme.perf}" alt=""></div>
       <div class="done-face">
         <div class="check">&#10003;</div>
         <div>
@@ -561,57 +582,91 @@ function buildCoupons() {
       </div>
       <div class="hit"></div>`);
     list.appendChild(el);
-    attachPull(el, base, piece, { baseClip, healClip });
+    attachPull(el, base, piece, lighter, face);
   });
 }
 
-/* ---------------- rip-to-redeem gesture ----------------
-   At rest: one seamless glass card. On grab, the card splits along a jagged
-   polygon: .base keeps the left of the tear, .piece becomes the tab. The
-   piece peels away (rotation biased so the top separates first); past the
-   threshold it rips free, and the torn base edge heals rightward into the
-   full redeemed card. */
-function attachPull(coupon, base, piece, clips) {
+/* ---------------- pop-the-perforation gesture ----------------
+   At rest: one seamless card with punched holes. On grab, the card splits
+   cleanly at the seam and the tab peels around the topmost intact hole.
+   As you pull, holes pop one by one — each pop ejects its punched-out disc
+   with an elastic jolt (and a haptic tick where supported). When the last
+   hole pops the tab rips free and the card heals into the redeemed state. */
+function attachPull(coupon, base, piece, lighter, face) {
   const hit = coupon.querySelector('.hit');
-  const perf = coupon.querySelector('.perf img');
-  const baseLabel = base.querySelector('.stublabel');
+  const baseLabel = face.querySelector('.stublabel');
+  const N = HOLES.length;
+  const threshold = i => MODS.tearAt * (0.30 + 0.70 * i / (N - 1));
   let dragging = false, torn = false, split = false, startX = 0, raf = 0, disp = 0;
+  let popped = 0;                       // holes 0..popped-1 are popped (top-down)
   let hintTimer = 0, interacted = false;
 
   const doSplit = () => {
     if (split) return;
     split = true;
-    base.style.transition = 'none';
-    base.style.clipPath = clips.baseClip;
+    base.style.transition = lighter.style.transition = 'none';
+    base.style.clipPath = 'inset(0px 91px 0px 0px)';
+    lighter.style.clipPath = 'inset(0px 91px 0px 0px)';
     baseLabel.style.opacity = '0';
     piece.style.visibility = 'visible';
-    piece.style.transformOrigin = '277px 85%';   // grip low, top separates first
-    piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.18))';
-  };
-  const unsplit = () => {
-    split = false;
-    base.style.clipPath = '';
-    baseLabel.style.opacity = '';
-    piece.style.visibility = 'hidden';
-    piece.style.transform = '';
-    piece.style.filter = '';
+    piece.style.filter = 'drop-shadow(-3px 2px 5px rgba(0,0,0,.16))';
   };
 
-  const pieceTransform = (d) =>
-    `translate(${d}px, ${d * 0.08}px) rotate(${d * 0.11}deg)`;
+  const hingeY = () => popped < N ? HOLES[popped] : 125;
+
+  const pieceTransform = (d) => {
+    piece.style.transformOrigin = `277px ${hingeY()}px`;
+    return `rotate(${(d * 0.26).toFixed(2)}deg) translateX(${(d * 0.10).toFixed(1)}px)`;
+  };
+
+  const popFx = (i) => {
+    const y = HOLES[i];
+    try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+    // ring burst at the hole
+    const ring = document.createElement('div');
+    ring.className = 'popring';
+    ring.style.left = (277 - 5) + 'px'; ring.style.top = (y - 5) + 'px';
+    ring.style.width = ring.style.height = '10px';
+    coupon.appendChild(ring);
+    ring.animate([
+      { transform: 'scale(.5)', opacity: .95 },
+      { transform: 'scale(2.1)', opacity: 0 },
+    ], { duration: 340, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' })
+      .onfinish = () => ring.remove();
+    // the punched-out disc flies off elastically
+    const chad = document.createElement('div');
+    chad.className = 'chad';
+    chad.style.left = (277 - HOLE_R) + 'px'; chad.style.top = (y - HOLE_R) + 'px';
+    chad.style.width = chad.style.height = (HOLE_R * 2) + 'px';
+    chad.style.background = getComputedStyle(phone).getPropertyValue('--spark').trim() || '#fff';
+    coupon.appendChild(chad);
+    const dx = 26 + Math.random() * 44, dy = (Math.random() - 0.4) * 36;
+    chad.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * 0.4}px, ${dy * 0.4}px) scale(1.5)`, opacity: 1, offset: .35 },
+      { transform: `translate(${dx}px, ${dy + 26}px) scale(.4)`, opacity: 0 },
+    ], { duration: 420, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' })
+      .onfinish = () => chad.remove();
+    // elastic jolt: the card recoils a touch as the hole lets go
+    base.animate([
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-1.6px)', offset: .35 },
+      { transform: 'translateX(.6px)', offset: .7 },
+      { transform: 'translateX(0)' },
+    ], { duration: 150, easing: 'ease-out' });
+  };
 
   const setPull = (d) => {
     disp = d;
-    const p = Math.min(d / MODS.tearAt, 1);
+    while (popped < N && d >= threshold(popped)) { popFx(popped); popped++; }
     piece.style.transform = pieceTransform(d);
-    perf.style.opacity = 1 - p * 0.85;
   };
 
   const onDown = (e) => {
     if (torn) return;
     interacted = true; clearTimeout(hintTimer);
     dragging = true; startX = e.clientX;
-    hit.setPointerCapture(e.pointerId);
+    try { hit.setPointerCapture(e.pointerId); } catch (_) {}
     doSplit();
   };
 
@@ -622,42 +677,44 @@ function attachPull(coupon, base, piece, clips) {
     raf = requestAnimationFrame(() => {
       const d = MODS.stretch * Math.tanh(raw / 90);   // elastic resistance
       setPull(d);
-      if (d >= MODS.tearAt) tear(e.pointerId);
+      if (popped >= N) tear(e.pointerId);
     });
   };
 
   const onUp = () => {
     if (!dragging || torn) return;
     dragging = false;
-    // the tab settles back into the card with a little wobble, then re-fuses
-    const anim = piece.animate([
-      { transform: pieceTransform(disp) },
-      { transform: 'translate(-3px, 0px) rotate(-0.4deg)', offset: .65 },
-      { transform: 'translate(1px, 0px)', offset: .85 },
-      { transform: 'translate(0px, 0px)' },
+    // the tab settles back onto the card (popped holes stay torn)
+    const from = pieceTransform(disp);
+    piece.animate([
+      { transform: from },
+      { transform: 'rotate(-0.5deg) translateX(-2px)', offset: .65 },
+      { transform: 'rotate(0.2deg) translateX(1px)', offset: .85 },
+      { transform: 'rotate(0deg) translateX(0px)' },
     ], { duration: 460, easing: 'cubic-bezier(.25,.9,.3,1)' });
-    piece.style.transform = 'translate(0px, 0px)';
-    perf.style.opacity = 1;
-    anim.onfinish = () => { if (!dragging && !torn) unsplit(); };
+    piece.style.transform = 'rotate(0deg) translateX(0px)';
     armHint();
   };
 
   const tear = (pointerId) => {
     torn = true; dragging = false;
     try { hit.releasePointerCapture(pointerId); } catch (_) {}
-    try { navigator.vibrate && navigator.vibrate(25); } catch (_) {}
-    // the tab rips free: keeps peeling, tumbles and falls away
+    try { navigator.vibrate && navigator.vibrate([14, 40, 22]); } catch (_) {}
+    // the freed tab swings off its last hinge and tumbles away
     piece.animate([
       { transform: pieceTransform(disp), opacity: 1 },
-      { transform: `translate(${disp + 120}px, 30px) rotate(17deg)`, opacity: 1, offset: .45 },
-      { transform: `translate(${disp + 210}px, 95px) rotate(32deg)`, opacity: 0 },
+      { transform: `translate(${disp + 110}px, 34px) rotate(20deg)`, opacity: 1, offset: .45 },
+      { transform: `translate(${disp + 200}px, 100px) rotate(34deg)`, opacity: 0 },
     ], { duration: 520, easing: 'cubic-bezier(.3,.5,.5,1)', fill: 'forwards' });
     burst(coupon);
-    // torn edge heals rightward into the full-width redeemed card
+    // the card heals into the full-width redeemed state
     setTimeout(() => {
       coupon.classList.add('redeemed');
-      base.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
-      base.style.clipPath = clips.healClip;
+      [base, lighter].forEach(elm => {
+        elm.style.webkitMaskImage = ''; elm.style.maskImage = '';
+        elm.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
+        elm.style.clipPath = 'inset(0px 0px 0px 0px)';
+      });
     }, 380);
   };
 
