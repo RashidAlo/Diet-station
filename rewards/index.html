@@ -14,6 +14,8 @@
   @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
   html, body { height: 100%; overflow: hidden; background: #0f0f12; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     touch-action: none; overscroll-behavior: none;
@@ -143,7 +145,7 @@
     --backdrop: #a6a6a6;
     --sheet-grad: linear-gradient(to top, #ed1c24, #ed1c24);
     --tint: rgba(237,28,36,.35);
-    --lighter: rgba(173,173,173,.16);   /* a touch lighter than the tiered .12 */
+    --lighter: rgba(196,196,196,.28);   /* boosted: coupons must read clearly on flat red */
     --t-head:#f9f9f9; --t-body:#fff; --t-sub:#f9f9f9;
     --spark:#ffffff;
     --cshadow: rgba(112,6,10,.48);
@@ -391,6 +393,7 @@
   </div>
 </div>
 
+<div id="safeProbe"></div>
 <div class="devbar" id="devbar">
   <button data-lvl="bronze">Bronze</button>
   <button data-lvl="silver">Silver</button>
@@ -884,14 +887,24 @@ let stageScale = 1;
 function fit() {
   const mobile = matchMedia('(max-width: 500px)').matches ||
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  const sheetEl = document.querySelector('.sheet');
   if (mobile) {
     document.body.classList.remove('desktop');
-    // cover the screen: fill the width, let the backdrop strip absorb extra height
+    // dynamic viewport: fill the width, size the phone to the VISUAL viewport
+    // (Safari's collapsing toolbar) and shrink the sheet on shorter screens so
+    // nothing crops — the backdrop strip absorbs the safe area + slack
     stageScale = innerWidth / 402;
-    phone.style.height = Math.max(innerHeight / stageScale, 874) + 'px';
+    const probe = document.getElementById('safeProbe');
+    const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
+    const vh = (window.visualViewport ? window.visualViewport.height : innerHeight);
+    const Hd = vh / stageScale;
+    phone.style.height = Hd + 'px';
+    const strip = Math.max(24, st / stageScale + 10);
+    sheetEl.style.height = Math.min(806, Math.max(650, Hd - strip)) + 'px';
   } else {
     document.body.classList.add('desktop');
     phone.style.height = '874px';
+    sheetEl.style.height = '806px';
     const availW = innerWidth - 316;         // sidebar
     const frameW = 402 + 24, frameH = 874 + 24; // device bezel
     stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
@@ -900,6 +913,8 @@ function fit() {
   liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
 }
 addEventListener('resize', fit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 250));
 fit();
 /* global recipe: published glass.json (all devices) under this device's draft */
 const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
