@@ -131,8 +131,9 @@
     --check-bg: rgba(255,255,255,.22); --spark:#f2c94c;
     --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
 
-  /* ---- sheet --------------------------------------------------------- */
-  .sheet { position: absolute; left: 0; top: 68px; width: 402px; height: 806px;
+  /* ---- sheet (bottom-anchored: the backdrop strip above absorbs any
+     extra viewport height on mobile so the page runs edge-to-edge) ------ */
+  .sheet { position: absolute; left: 0; bottom: 0; width: 402px; height: 806px;
     border-radius: 38px 38px 0 0; overflow: hidden;
     background: var(--sheet-grad); }
 
@@ -241,11 +242,6 @@
   .coupon .done-face { position: absolute; inset: 0; z-index: 5; border-radius: 24px;
     display: flex; align-items: center; gap: 14px; padding: 0 25px;
     opacity: 0; pointer-events: none; }
-  .coupon .check { width: 44px; height: 44px; border-radius: 50%; flex: none;
-    background: var(--check-bg);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.4);
-    display: flex; align-items: center; justify-content: center;
-    font: 600 22px/1 'Urbane Rounded', sans-serif; color: var(--t-body); }
   .coupon .done-title { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: var(--t-body); }
   .coupon .done-sub { font: 400 11px/15px 'Proxima Nova', sans-serif; color: var(--t-sub); opacity: .9; }
   .coupon .code { display: inline-block; margin-top: 5px; padding: 3px 10px;
@@ -576,7 +572,6 @@ function buildCoupons() {
     el.appendChild(piece);
     el.insertAdjacentHTML('beforeend', `
       <div class="done-face">
-        <div class="check">&#10003;</div>
         <div>
           <div class="done-title">Redeemed</div>
           <div class="done-sub">Applied to your next renewal</div>
@@ -748,8 +743,7 @@ function attachPull(coupon, base, piece, lighter, face) {
 /* confetti burst at the perforation */
 function burst(coupon) {
   const rect = coupon.getBoundingClientRect();
-  const cs = getComputedStyle(phone);
-  const colors = ['#ffffff', cs.getPropertyValue('--spark').trim(), 'rgba(255,255,255,.7)'];
+  const colors = ['#ffffff', 'rgba(255,255,255,.85)', 'rgba(255,255,255,.65)'];
   for (let i = 0; i < MODS.confetti; i++) {
     const s = document.createElement('div');
     s.className = 'spark';
@@ -812,9 +806,12 @@ function fit() {
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
     document.body.classList.remove('desktop');
-    stageScale = Math.min(innerWidth / 402, innerHeight / 874);
+    // cover the screen: fill the width, let the backdrop strip absorb extra height
+    stageScale = innerWidth / 402;
+    phone.style.height = Math.max(innerHeight / stageScale, 874) + 'px';
   } else {
     document.body.classList.add('desktop');
+    phone.style.height = '874px';
     const availW = innerWidth - 316;         // sidebar
     const frameW = 402 + 24, frameH = 874 + 24; // device bezel
     stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
