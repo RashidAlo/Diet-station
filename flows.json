@@ -58,7 +58,7 @@
         "Themes": "Two themes x four tiers. Tiered: whole sheet takes the tier's Figma variant. Red (Figma 16842-87694): flat brand red #ED1C24 sheet, coupon tint rgba(237,28,36,.35) + rgba(173,173,173,.12) plus-lighter, voucher drop-shadow 0 0 12 rgba(56,64,74,.12), white text — only the loyalty badge pill reflects the tier. Toggle in the playground sidebar (desktop) or the Red chip (mobile).",
         "Backdrop": "Strip behind the sheet: #A6A6A6 on Gold and Red themes, #FFFFFF on Bronze/Silver/VIP (per the Figma frames).",
         "Pull tab": "Widened to 125pt (from Figma's 90pt) for comfortable thumb reach — Rashid 2026-09-03. Seam/perforation at x=243.",
-        "Coupon shadow": "Soft theme-tinted OUTER box-shadow (0 6 16 -2, alpha color per theme: gold rgba(146,100,10,.42) · bronze rgba(118,88,58,.38) · silver rgba(92,100,112,.32) · VIP rgba(0,0,0,.55) · red rgba(112,6,10,.48)) on a transparent box — outer shadows are spec-clipped outside the border-box, so nothing paints under the translucent fills. Hole visibility comes from a hairline rgba(0,0,0,.20) inner-edge ring on each punched hole.",
+        "Coupon shadow": "Soft theme-tinted OUTER box-shadow (0 6 16 -2; gold rgba(146,100,10,.42) - bronze rgba(118,88,58,.38) - silver rgba(92,100,112,.32) - VIP rgba(0,0,0,.55) - red rgba(112,6,10,.48)) on a transparent box - outer shadows are spec-clipped outside the border-box so nothing paints under the translucent fills. Holes are clean hollow cutouts.",
         "Type scale": "Coupon headline reduced for breathing room next to the 125pt tab: big 26/34, mid 17/24, tail 16/24 (from 30/20/18)."
       },
       "downloads": [
