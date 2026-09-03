@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DietStation Dot — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Light.woff2') format('woff2');
+    font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Regular.woff2') format('woff2');
+    font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Medium.woff2') format('woff2');
+    font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Bold.woff2') format('woff2');
+    font-weight: 700; font-display: swap; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .bar-inner .back { margin-left: auto; font: 500 13px/1 'Urbane Rounded', sans-serif;
+    color: var(--ink); text-decoration: none; background: #e9e9ec;
+    padding: 9px 16px; border-radius: 999px; }
+  .bar-inner .back:hover { background: #e0e0e4; }
+  .hero { text-align: center; padding: 44px 0 26px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 12px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
+    border-radius: 999px; padding: 12px 20px; border: none; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: #d4141c; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .savenote { font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ok);
+    opacity: 0; transition: opacity .25s ease; }
+  .savenote.show { opacity: 1; }
+
+  /* ---- specimen ---- */
+  .tools { display: flex; gap: 14px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+  .tools input[type=text] { flex: 1 1 220px; min-width: 0; font: 400 15px/1.4 'Proxima Nova', sans-serif;
+    color: var(--ink); background: var(--ground); border: none; border-radius: 12px;
+    padding: 12px 16px; outline: none; }
+  .tools input[type=text]:focus { box-shadow: 0 0 0 2px var(--red-soft); }
+  .tchip { padding: 12px 16px; }
+  .sizer { display: flex; align-items: center; gap: 10px;
+    font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ink-soft); }
+  .sizer input { width: 130px; accent-color: var(--red); }
+  .sizer output { color: var(--red); min-width: 24px; }
+  .stage { margin-top: 16px; padding: 8px 24px; border-radius: 16px; background: var(--ground); }
+  .trow { display: flex; align-items: baseline; gap: 18px; padding: 14px 0;
+    border-bottom: 0.5px solid var(--line); }
+  .trow:last-child { border-bottom: 0; }
+  .wtag { flex: none; width: 84px; font: 500 11px/1 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); }
+  .tline { flex: 1; min-width: 0; font-family: 'DietStation Dot', monospace;
+    color: var(--ink); line-height: 1.25; white-space: nowrap; overflow-x: auto;
+    scrollbar-width: none; }
+  .tline::-webkit-scrollbar { display: none; }
+  .glyphs { margin-top: 16px; padding: 18px 24px; border-radius: 16px; background: var(--ground);
+    font-family: 'DietStation Dot', monospace; font-weight: 400; font-size: 21px; line-height: 2;
+    color: var(--ink-soft); overflow-wrap: anywhere; }
+  .glyphs .gl-ar { display: block; }
+  @media (max-width: 560px) { .wtag { width: 64px; } .stage { padding: 4px 16px; } }
+
+  /* ---- embedded Font Lab ---- */
+  .editorcard { padding: 0; overflow: hidden; }
+  .editorcard .edhead { padding: 24px 26px 0; }
+  .editorcard iframe { display: block; width: 100%; height: 780px; border: 0; margin-top: 18px;
+    border-top: 0.5px solid var(--line); background: #FBF8F7; }
+  @media (max-width: 560px) { .editorcard iframe { height: 640px; } }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+    <a class="back" href="../#design-system">&#8249; Design System</a>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>DietStation Dot</h1>
+  <p>The brand's dot-matrix animation, compiled into a real font family — four weights,
+    Latin and Arabic, with full contextual shaping. Proof it below, then dial the glyphs
+    themselves in the editor.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>Specimen</h2>
+    <p class="desc">Latin comes straight from the animation's typewriter grid; Arabic is
+      traced from Avenir Next World onto the same 9-row dot grid — letters join through
+      initial, medial and final forms, lam-alef included. Weight is dot size: heavier cuts
+      grow the dots until they fuse into strokes. Type to proof any word across all four
+      weights.</p>
+    <div class="tools">
+      <input type="text" id="tText" dir="auto" value="Diet Station 0123" spellcheck="false"
+        aria-label="Preview text">
+      <button class="btn ghost tchip" id="tAr" title="Swap Arabic / Latin sample">&#1593;&#1585;&#1576;&#1610;</button>
+      <label class="sizer"><span>Size</span>
+        <input type="range" id="tSize" min="18" max="84" value="40">
+        <output id="tSizeOut">40</output></label>
+    </div>
+    <div class="stage">
+      <div class="trow"><span class="wtag">Light 300</span><div class="tline" style="font-weight:300" dir="auto"></div></div>
+      <div class="trow"><span class="wtag">Regular 400</span><div class="tline" style="font-weight:400" dir="auto"></div></div>
+      <div class="trow"><span class="wtag">Medium 500</span><div class="tline" style="font-weight:500" dir="auto"></div></div>
+      <div class="trow"><span class="wtag">Bold 700</span><div class="tline" style="font-weight:700" dir="auto"></div></div>
+    </div>
+    <div class="glyphs" id="tGlyphs"></div>
+    <div class="actions">
+      <a class="btn primary" href="../font/DietStationDot-family.zip" download>Download family (.zip)</a>
+      <button class="btn ghost" id="tCss">Copy CSS embed</button>
+      <span class="savenote" id="tCopied">Copied &#10003;</span>
+    </div>
+    <p class="meta">Unicase — caps and lowercase share one dot form &middot; OTF + WOFF2 per weight
+      (&#8776;3.6&nbsp;KB each on the web) &middot; weights = dot radius R49 / 55 / 62 / 70 on one grid.</p>
+  </section>
+
+  <section class="card editorcard">
+    <div class="edhead">
+      <h2>Glyph editor — Font Lab</h2>
+      <p class="desc">The live editor behind the font. Type a word, tap any glyph to open its
+        dot grid, toggle dots, add or trim rows and columns, and dial dot size, pitch, kashida
+        and letter air. When it feels right, hit <b>Copy handoff for Claude</b> and paste the
+        result to Claude with &ldquo;compile&rdquo; — a new font build lands here.</p>
+      <div class="actions" style="margin-top:14px">
+        <a class="btn ghost" href="fontlab.html" target="_blank" rel="noopener">Open full screen &#8599;</a>
+      </div>
+    </div>
+    <iframe src="fontlab.html" title="DietStation Font Lab" loading="lazy"></iframe>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const lines = [...document.querySelectorAll('.tline')];
+  const inp = document.getElementById('tText');
+  const size = document.getElementById('tSize'), out = document.getElementById('tSizeOut');
+  const LAT = 'Diet Station 0123', AR = 'دايت ستيشن';
+  function paint() {
+    lines.forEach(l => {
+      l.textContent = inp.value.trim() || LAT;
+      l.style.fontSize = size.value + 'px';
+    });
+    out.textContent = size.value;
+  }
+  inp.addEventListener('input', paint);
+  size.addEventListener('input', paint);
+  document.getElementById('tAr').addEventListener('click', () => {
+    inp.value = inp.value === AR ? LAT : AR; paint();
+  });
+  const g = document.getElementById('tGlyphs');
+  g.innerHTML = '<span dir="ltr">abcdefghijklmnopqrstuvwxyz 0123456789 !?’,-.</span>'
+    + '<span class="gl-ar" dir="rtl">ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي ى ة ء آ أ ؤ إ ئ لا ، ؟</span>';
+  document.getElementById('tCss').addEventListener('click', () => {
+    const base = 'https://rashidalo.github.io/Diet-station/font/DietStationDot-';
+    const css = [['Light', 300], ['Regular', 400], ['Medium', 500], ['Bold', 700]]
+      .map(([n, w]) => `@font-face{font-family:'DietStation Dot';src:url('${base}${n}.woff2') format('woff2');font-weight:${w};font-display:swap;}`)
+      .join('\n');
+    const note = document.getElementById('tCopied');
+    (navigator.clipboard ? navigator.clipboard.writeText(css) : Promise.reject()).then(() => {
+      note.classList.add('show');
+      clearTimeout(note._t); note._t = setTimeout(() => note.classList.remove('show'), 1400);
+    }).catch(() => {});
+  });
+  paint();
+})();
+</script>
+</body>
+</html>

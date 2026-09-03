@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DietStation Font Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --ground:#FBF8F7; --card:#fff; --ink:#221A1B; --soft:#6E6264;
+          --line:#EFE6E5; --red:#ED1C24; --dot:#FF3848; }
+  * { box-sizing:border-box; margin:0; font-family:-apple-system,'SF Pro',Helvetica,sans-serif; }
+  body { background:var(--ground); color:var(--ink); padding:22px 22px 80px; }
+  body.dark { --ground:#1C1416; --card:#241B1D; --ink:#F5EEEF; --soft:#A08F92; --line:#3A2E30; }
+  body.brand { --ground:#ED1C24; --card:#F13239; --ink:#fff; --soft:#FFD2D4; --line:#F4575D; }
+  h1 { font-size:19px; display:flex; align-items:center; gap:10px; }
+  h1 .dot { width:12px; height:12px; border-radius:50%; background:var(--red);
+            animation:br 3.2s ease-in-out infinite; }
+  body.brand h1 .dot { background:#fff; }
+  @keyframes br { 0%,100%{transform:scale(.8)} 45%{transform:scale(1.15)} }
+  .bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .bar .sp { flex:1; }
+  button, .chip { border:1px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  button.primary { background:var(--red); border-color:var(--red); color:#fff; font-weight:600; }
+  body.brand button.primary { background:#fff; color:var(--red); border-color:#fff; }
+  button.on { background:var(--ink); color:var(--ground); border-color:var(--ink); }
+  #text { width:100%; font-size:24px; padding:14px 16px; border:1px solid var(--line);
+    border-radius:14px; background:var(--card); color:var(--ink); direction:rtl; margin-bottom:14px; }
+  #wrap { background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:10px; overflow:auto; margin-bottom:14px; }
+  canvas { display:block; }
+  .controls { display:flex; gap:18px 26px; flex-wrap:wrap; background:var(--card);
+    border:1px solid var(--line); border-radius:16px; padding:14px 18px; margin-bottom:14px; }
+  .ctl { display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--soft);
+    text-transform:uppercase; letter-spacing:.06em; }
+  .ctl output { color:var(--ink); font-size:13px; text-transform:none; letter-spacing:0; }
+  input[type=range] { width:130px; accent-color:var(--red); }
+  #editor { display:none; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:16px 18px; }
+  #editor.open { display:block; }
+  #editor h2 { font-size:14px; margin-bottom:10px; display:flex; gap:10px; align-items:center; }
+  #editor h2 code { background:var(--ground); border:1px solid var(--line);
+    padding:2px 8px; border-radius:6px; font-size:12px; }
+  #grid { display:inline-grid; gap:3px; margin:8px 0 12px; }
+  #grid .c { width:26px; height:24px; border-radius:50%; border:1px solid var(--line);
+    background:transparent; cursor:pointer; }
+  #grid .c.on { background:var(--dot); border-color:var(--dot); }
+  #grid .c.base { box-shadow:0 0 0 1.5px var(--soft) inset; }
+  .ops { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .ops button { padding:6px 10px; font-size:12px; }
+  #changed { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  #changed .chip { font-size:12px; padding:5px 10px; }
+  #changed .chip b { color:var(--red); }
+  .note { font-size:12px; color:var(--soft); margin-top:10px; }
+  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--ground); padding:10px 18px; border-radius:999px;
+    font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1><span class="dot"></span>Font Lab</h1>
+  <span class="sp"></span>
+  <button data-w="Light">light</button><button data-w="Regular" class="on">regular</button>
+  <button data-w="Medium">medium</button><button data-w="Bold">bold</button>
+  <button id="theme">dark</button><button id="brand">red</button>
+  <span class="sp"></span>
+  <button id="handoff" class="primary">Copy handoff for Claude</button>
+</div>
+
+<input id="text" value="تغذية مخصصة لصحتك — dietstation" spellcheck="false">
+
+<div id="wrap"><canvas id="cv"></canvas></div>
+
+<div class="controls">
+  <label class="ctl">dot size <input type="range" id="R" min="30" max="82" value="55"><output id="Ro">55</output></label>
+  <label class="ctl">pitch x <input type="range" id="PX" min="100" max="190" value="140"><output id="PXo">140</output></label>
+  <label class="ctl">pitch y <input type="range" id="PY" min="90" max="170" value="120"><output id="PYo">120</output></label>
+  <label class="ctl">kashida <input type="range" id="KA" min="0" max="3" value="1"><output id="KAo">1</output></label>
+  <label class="ctl">letter air <input type="range" id="AIR" min="0" max="160" value="70"><output id="AIRo">70</output></label>
+  <label class="ctl">zoom <input type="range" id="Z" min="28" max="120" value="64"><output id="Zo">64</output></label>
+</div>
+
+<div id="editor">
+  <h2>editing <code id="ekey">—</code>
+    <button id="reset">reset glyph</button>
+    <button id="close">close</button></h2>
+  <div class="ops">
+    <button data-op="rowTop">+ row top</button><button data-op="rowBot">+ row bottom</button>
+    <button data-op="colL">+ col left</button><button data-op="colR">+ col right</button>
+    <button data-op="drowTop">− row top</button><button data-op="drowBot">− row bottom</button>
+    <button data-op="dcolL">− col left</button><button data-op="dcolR">− col right</button>
+    <button data-op="up">shift ↑</button><button data-op="down">shift ↓</button>
+  </div>
+  <div id="grid"></div>
+  <div class="note">click dots to toggle · ringed row = baseline · edits update the preview live</div>
+</div>
+
+<div id="changed"></div>
+<div class="note">Tap any glyph in the preview to edit it. “Copy handoff” puts your edits +
+style values on the clipboard — paste that to Claude and say “compile” to bake a new font build.</div>
+<div id="toast"></div>
+
+<script src="fontlab-data.js"></script>
+<script>
+const D = window.DOTDATA;
+const store = JSON.parse(localStorage.getItem('ds-fontlab-v2') || '{}');
+const OV = store.overrides || {};
+const G = Object.assign({R:55, PX:140, PY:120, KA:1, AIR:70, Z:64}, store.globals || {});
+let TEXT = store.text || document.getElementById('text').value;
+document.getElementById('text').value = TEXT;
+let selected = null, weight = store.weight || 'Regular';
+
+// ---- glyph lookup ---------------------------------------------------------
+const AR_BY_CODE = {};
+for (const [name, o] of Object.entries(D.arabic)) AR_BY_CODE[o.code] = name;
+const isAr = ch => AR_BY_CODE[ch.codePointAt(0)] !== undefined || D.punct[ch];
+const dual = name => D.arabic[name] && D.arabic[name].forms.init !== undefined;
+const joinsRight = name => D.arabic[name] && D.arabic[name].forms.fina !== undefined;
+
+function glyphFor(key) {                     // key: "name.form" | "L:ch" | "lamAlef.iso/fina"
+  if (OV[key]) return OV[key];
+  if (key.startsWith('L:')) return D.latin[key.slice(2)];
+  if (key.startsWith('lamAlef.')) return D.lamalef[key.split('.')[1]];
+  if (key.startsWith('P:')) return D.punct[key.slice(2)];
+  const i = key.lastIndexOf('.');
+  const entry = D.arabic[key.slice(0, i)];
+  return entry ? entry.forms[key.slice(i + 1)] : null;
+}
+
+// ---- shaping --------------------------------------------------------------
+function shape(text) {
+  const out = [];
+  const chars = [...text];
+  const toks = [];
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    if (ch === ' ') { toks.push({sp: true}); continue; }
+    const code = ch.codePointAt(0);
+    if (ch === 'ل' && i + 1 < chars.length && chars[i+1] === 'ا') {
+      toks.push({name: 'lamAlef', la: true}); i++; continue;
+    }
+    if (AR_BY_CODE[code]) toks.push({name: AR_BY_CODE[code]});
+    else if (D.punct[ch]) toks.push({punct: ch});
+    else if (D.latin[ch.toLowerCase()]) toks.push({latin: ch.toLowerCase()});
+    else toks.push({sp: true});
+  }
+  // latin runs render LTR inside the RTL line
+  for (let a = 0; a < toks.length; a++) {
+    if (toks[a].latin) {
+      let b = a;
+      while (b + 1 < toks.length && toks[b+1].latin) b++;
+      const run = toks.slice(a, b+1).reverse();
+      toks.splice(a, run.length, ...run);
+      a = b;
+    }
+  }
+  for (let i = 0; i < toks.length; i++) {
+    const t = toks[i];
+    if (t.sp || t.punct || t.latin) { out.push(t); continue; }
+    const prev = toks[i-1], next = toks[i+1];
+    const pj = prev && prev.name && !prev.la && dual(prev.name);
+    const nj = next && next.name && (t.la ? false : dual(t.name)) &&
+               (next.la || joinsRight(next.name));
+    let form;
+    if (t.la) form = pj ? 'fina' : 'iso';
+    else if (pj && nj) form = 'medi';
+    else if (pj) form = 'fina';
+    else if (nj) form = 'init';
+    else form = 'iso';
+    const forms = t.la ? D.lamalef : D.arabic[t.name].forms;
+    if (!forms[form]) form = forms.iso ? 'iso' : Object.keys(forms)[0];
+    out.push({key: (t.la ? 'lamAlef.' : t.name + '.') + form, form});
+  }
+  return out;
+}
+
+// ---- render ---------------------------------------------------------------
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let boxes = [];
+function render() {
+  const s = G.Z / 1000;
+  const px = G.PX * s, py = G.PY * s, r = G.R * s;
+  const glyphs = shape(TEXT);
+  // measure
+  let wsum = 0;
+  const items = glyphs.map(g => {
+    if (g.sp) return {adv: 3 * px, sp: true};
+    if (g.punct) { const f = glyphFor('P:' + g.punct);
+      return {key: 'P:' + g.punct, f, adv: (f[1][0].length + 1) * px}; }
+    if (g.latin) { const f = glyphFor('L:' + g.latin);
+      return f ? {key: 'L:' + g.latin, f, adv: (f[1][0].length + 1) * px} : {adv: 3*px, sp:true}; }
+    let f = glyphFor(g.key);
+    if (!f) return {adv: 3 * px, sp: true};
+    let [top, rows] = f;
+    const tight = g.key.endsWith('.medi') || g.key.endsWith('.fina');
+    if (tight && G.KA > 0) {
+      const bi = 6 - top;
+      rows = rows.map((row, i) => row + (i === bi ? '1'.repeat(G.KA) : '0'.repeat(G.KA)));
+    }
+    const adv = tight ? rows[0].length * px : (rows[0].length + 1) * px + G.AIR * s;
+    return {key: g.key, f: [top, rows], adv, tight};
+  });
+  const tot = items.reduce((a, b) => a + b.adv, 0);
+  const H = 15 * py + 40;
+  cv.width = Math.max(tot + 60, 300) * devicePixelRatio;
+  cv.height = H * devicePixelRatio;
+  cv.style.width = (cv.width / devicePixelRatio) + 'px';
+  cv.style.height = H + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  const ink = getComputedStyle(document.body).getPropertyValue('--ink').trim();
+  const line = getComputedStyle(document.body).getPropertyValue('--line').trim();
+  const base = 9 * py + 20;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.strokeStyle = line; ctx.lineWidth = 1;
+  for (const row of [0, 2, 6, 8]) {                      // guides: asc, xh, base, desc
+    const y = base - (6 - row) * py;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cv.width, y); ctx.stroke();
+  }
+  boxes = [];
+  let x = tot + 40;                                       // draw RTL
+  const selKey = selected;
+  for (const it of items) {
+    x -= it.adv;
+    if (it.sp || !it.f) continue;
+    const [top, rows] = it.f;
+    const w = rows[0].length;
+    const gx = x + (it.tight ? 0 : (px - 0)) * 0 + px * 0.5;
+    ctx.fillStyle = (it.key === selKey) ? '#FF3848' : ink;
+    for (let ri = 0; ri < rows.length; ri++)
+      for (let c = 0; c < w; c++)
+        if (rows[ri][c] === '1') {
+          const cx = x + px * 0.7 + c * px;
+          const cy = base - (6 - (top + ri)) * py;
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill();
+        }
+    boxes.push({x, w: it.adv, key: it.key});
+  }
+}
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const hit = boxes.find(b => x >= b.x && x <= b.x + b.w);
+  if (hit) openEditor(hit.key);
+});
+
+// ---- editor ---------------------------------------------------------------
+const ed = document.getElementById('editor'), gridEl = document.getElementById('grid');
+function curGrid() {
+  const f = glyphFor(selected);
+  return f ? [f[0], f[1].slice()] : null;
+}
+function setOverride(top, rows) {
+  OV[selected] = [top, rows];
+  persist(); render(); drawGrid(); listChanged();
+}
+function openEditor(key) {
+  selected = key;
+  document.getElementById('ekey').textContent = key;
+  ed.classList.add('open'); drawGrid(); render();
+  ed.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+function drawGrid() {
+  const g = curGrid(); if (!g) return;
+  const [top, rows] = g;
+  gridEl.style.gridTemplateColumns = `repeat(${rows[0].length}, 26px)`;
+  gridEl.innerHTML = '';
+  rows.forEach((row, ri) => {
+    [...row].forEach((b, c) => {
+      const d = document.createElement('div');
+      d.className = 'c' + (b === '1' ? ' on' : '') + (top + ri === 6 ? ' base' : '');
+      d.onclick = () => {
+        const rs = rows.slice();
+        rs[ri] = rs[ri].slice(0, c) + (b === '1' ? '0' : '1') + rs[ri].slice(c + 1);
+        rows[ri] = rs[ri];
+        setOverride(top, rows.slice());
+      };
+      gridEl.appendChild(d);
+    });
+  });
+}
+document.querySelectorAll('.ops button').forEach(b => b.onclick = () => {
+  const g = curGrid(); if (!g) return;
+  let [top, rows] = g; const w = rows[0].length;
+  const z = '0'.repeat(w);
+  const op = b.dataset.op;
+  if (op === 'rowTop') { rows = [z, ...rows]; top -= 1; }
+  if (op === 'rowBot') rows = [...rows, z];
+  if (op === 'drowTop' && rows.length > 1) { rows = rows.slice(1); top += 1; }
+  if (op === 'drowBot' && rows.length > 1) rows = rows.slice(0, -1);
+  if (op === 'colL') rows = rows.map(r => '0' + r);
+  if (op === 'colR') rows = rows.map(r => r + '0');
+  if (op === 'dcolL' && w > 1) rows = rows.map(r => r.slice(1));
+  if (op === 'dcolR' && w > 1) rows = rows.map(r => r.slice(0, -1));
+  if (op === 'up') top -= 1;
+  if (op === 'down') top += 1;
+  setOverride(top, rows);
+});
+document.getElementById('reset').onclick = () => {
+  delete OV[selected]; persist(); render(); drawGrid(); listChanged();
+};
+document.getElementById('close').onclick = () => {
+  ed.classList.remove('open'); selected = null; render();
+};
+function listChanged() {
+  const el = document.getElementById('changed');
+  el.innerHTML = Object.keys(OV).map(k =>
+    `<span class="chip" data-k="${k}"><b>●</b> ${k}</span>`).join('');
+  el.querySelectorAll('.chip').forEach(c => c.onclick = () => openEditor(c.dataset.k));
+}
+
+// ---- controls -------------------------------------------------------------
+for (const id of ['R','PX','PY','KA','AIR','Z']) {
+  const el = document.getElementById(id);
+  el.value = G[id];
+  document.getElementById(id + 'o').textContent = G[id];
+  el.oninput = () => {
+    G[id] = +el.value;
+    document.getElementById(id + 'o').textContent = el.value;
+    persist(); render();
+  };
+}
+document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-w]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); weight = b.dataset.w;
+  G.R = D.weights[weight];
+  document.getElementById('R').value = G.R;
+  document.getElementById('Ro').textContent = G.R;
+  persist(); render();
+});
+document.getElementById('theme').onclick = () => {
+  document.body.classList.toggle('dark'); document.body.classList.remove('brand'); render(); };
+document.getElementById('brand').onclick = () => {
+  document.body.classList.toggle('brand'); document.body.classList.remove('dark'); render(); };
+document.getElementById('text').oninput = e => { TEXT = e.target.value; persist(); render(); };
+
+function persist() {
+  localStorage.setItem('ds-fontlab-v2',
+    JSON.stringify({overrides: OV, globals: G, text: TEXT, weight}));
+}
+
+// ---- handoff --------------------------------------------------------------
+document.getElementById('handoff').onclick = async () => {
+  const payload = JSON.stringify({v: 2, weight, globals: G, overrides: OV}, null, 1);
+  try { await navigator.clipboard.writeText(payload); toast('Copied — paste it to Claude'); }
+  catch (e) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([payload], {type: 'application/json'}));
+    a.download = 'dotfont-handoff.json'; a.click();
+    toast('Downloaded dotfont-handoff.json — send it to Claude');
+  }
+};
+function toast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+listChanged(); render();
+const wrapEl = document.getElementById('wrap');
+wrapEl.scrollLeft = wrapEl.scrollWidth;
+</script>
+</body>
+</html>
