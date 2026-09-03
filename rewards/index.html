@@ -537,17 +537,21 @@ const device = document.getElementById('device');
 const list = document.getElementById('coupons');
 const lvlBadge = document.getElementById('lvlBadge');
 
-/* punched perforation: 7 holes straddling the seam at x=277, r=3.
-   Alpha mask: one even-odd path — the circles are true transparent holes. */
-const HOLES = Array.from({ length: 7 }, (_, i) => 15 + i * 16);   // y centers, 15..111
+/* punched perforation along the seam: half-moon notches bitten into the top
+   and bottom edges (the real-coupon grip that invites the tear) with 7 punched
+   holes evenly between them. Alpha mask: one even-odd path — the circles are
+   true transparent cutouts. */
+const NOTCH_R = 7;
+const HOLES = Array.from({ length: 7 }, (_, i) => 18 + i * (89 / 6));  // y centers, 18..107
 const HOLE_R = 3;
 const SEAM = 243, TAB_W = 125;   // pull tab widened to 125px (Rashid 2026-09-03)
 const holeMask = () => {
-  const r = HOLE_R;
-  const holes = HOLES.map(y =>
-    `M${SEAM - r} ${y}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`).join('');
+  const circle = (cx, cy, r) =>
+    `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`;
+  const cuts = HOLES.map(y => circle(SEAM, y, HOLE_R)).join('') +
+    circle(SEAM, 0, NOTCH_R) + circle(SEAM, 125, NOTCH_R);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="368" height="125">` +
-    `<path fill-rule="evenodd" fill="white" d="M0 0H368V125H0Z${holes}"/></svg>`;
+    `<path fill-rule="evenodd" fill="white" d="M0 0H368V125H0Z${cuts}"/></svg>`;
   return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 };
 
