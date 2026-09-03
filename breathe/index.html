@@ -368,8 +368,24 @@
   window.addEventListener('orientationchange', () => setTimeout(refit, 250));
   refit();
   const navGo = () => { try { buildNav(); } catch (e) { console.error('buildNav failed:', e); } };
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(navGo, 50));
-  else navGo();
+  /* global recipe: published glass.json (all devices) under this device's draft */
+  const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
+    .then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  Promise.all([document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(), loadGlobalGlass])
+    .then(([, pub]) => {
+      let draft = {}; try { draft = JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) {}
+      const g = { ...pub, ...draft };
+      if (g.blurRadius !== undefined) GV.blur = g.blurRadius;
+      if (g.tintOpacity !== undefined) GV.tint = g.tintOpacity;
+      if (g.rimIntensity !== undefined) GV.rim = g.rimIntensity;
+      if (g.edgeIntensity !== undefined) GV.edge = g.edgeIntensity;
+      window.glassControls = { ...g, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+      [['mBlur','vBlur','blur',v=>v.toFixed(1)],['mTint','vTint','tint',v=>v.toFixed(2)],
+       ['mRim','vRim','rim',v=>v.toFixed(3)],['mEdge','vEdge','edge',v=>v.toFixed(3)]].forEach(([i,o,k,f]) => {
+        $(i).value = GV[k]; $(o).textContent = f(GV[k]);
+      });
+      setTimeout(navGo, 50);
+    });
   const chipEls = document.querySelectorAll('#chips .chip');
   const sideEls = document.querySelectorAll('#stateGrid button');
   let curSel = 0, stInput = null;

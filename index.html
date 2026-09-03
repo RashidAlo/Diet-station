@@ -125,18 +125,23 @@
       <span class="tag">All flows</span>
       <span class="pill ready">Live</span>
     </div>
-    <p class="desc">One recipe for every glass button in every prototype. Dial it here —
-      values save automatically and each flow loads them on open. Drag the samples across
-      the bands to check refraction and the adaptive contrast flip on light backdrops.</p>
+    <p class="desc">One recipe for every glass button in every prototype, on every device.
+      Dial it here — changes preview live and hold on this device instantly. Hit
+      <b>Publish globally</b> and paste the copied line to Claude: it bakes the recipe into
+      the hub so all devices load it. Drag the samples across the bands to check refraction
+      and the adaptive contrast flip on light backdrops.</p>
     <div class="strip" id="gStrip">
       <div class="hintdrag">drag the samples &#8596;</div>
     </div>
     <div class="mods" id="gMods"></div>
     <div class="actions">
-      <button class="btn primary" id="gReset">Reset defaults</button>
+      <button class="btn primary" id="gPublish">Publish globally</button>
+      <button class="btn ghost" id="gReset">Reset to published</button>
       <button class="btn ghost" id="gCopy">Copy recipe</button>
       <span class="savenote" id="gSaved">Saved &#10003;</span>
     </div>
+    <p class="meta" id="gDraft" style="display:none">This device is running a draft that
+      differs from the published recipe — Publish globally to sync every device.</p>
   </section>
   <div class="count" id="count"></div>
   <main id="flows"></main>
@@ -203,9 +208,13 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
     ['rippleEffect', 'Ripple',        0,    0.3, 0.01,  0.1,  v => v.toFixed(2), 'Wavy distortion running along the rim.'],
   ];
   const DEFAULTS = Object.fromEntries(DEFS.map(d => [d[0], d[5]]));
+  let PUBLISHED = { ...DEFAULTS };
   let GG = { ...DEFAULTS };
-  try { GG = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch (_) {}
   window.glassControls = { ...GG };
+  function draftBadge() {
+    const differs = JSON.stringify(GG) !== JSON.stringify(PUBLISHED);
+    document.getElementById('gDraft').style.display = differs ? 'block' : 'none';
+  }
 
   const strip = document.getElementById('gStrip');
   const modsRoot = document.getElementById('gMods');
@@ -216,6 +225,7 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
     const n = document.getElementById('gSaved');
     n.classList.add('show');
     clearTimeout(save._t); save._t = setTimeout(() => n.classList.remove('show'), 1200);
+    draftBadge();
   }
   function applyAll() {
     window.glassControls = { ...GG };
@@ -286,9 +296,18 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
   });
 
   document.getElementById('gReset').onclick = () => {
-    GG = { ...DEFAULTS };
+    GG = { ...PUBLISHED };
+    try { localStorage.removeItem(KEY); } catch (_) {}
     [...modsRoot.children].forEach(d => d._sync && d._sync());
-    applyAll(); save();
+    applyAll(); draftBadge();
+  };
+  document.getElementById('gPublish').onclick = () => {
+    const b = document.getElementById('gPublish');
+    const line = 'publish glass ' + JSON.stringify(GG);
+    navigator.clipboard && navigator.clipboard.writeText(line).then(() => {
+      b.textContent = 'Copied — paste to Claude';
+      setTimeout(() => b.textContent = 'Publish globally', 2600);
+    }).catch(() => { b.textContent = line; });
   };
   document.getElementById('gCopy').onclick = () => {
     const spec = 'glass global: ' + DEFS.map(([k, l, , , , , fmt]) => `${k} ${fmt(GG[k])}`).join(', ');
@@ -315,8 +334,16 @@ fetch('flows.json').then(r => r.json()).then(({ flows }) => {
     setTimeout(() => { applyAll(); adapt(); }, 1100);
     window.addEventListener('scroll', () => els.forEach(c => c.render && c.render()), { passive: true });
   }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(build, 400));
-  else setTimeout(build, 400);
+  fetch('glass.json?v=' + Date.now()).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(pub => {
+    PUBLISHED = { ...DEFAULTS, ...pub };
+    let draft = {}; try { draft = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) {}
+    GG = { ...PUBLISHED, ...draft };
+    window.glassControls = { ...GG };
+    [...modsRoot.children].forEach(d => d._sync && d._sync());
+    draftBadge();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(build, 400));
+    else setTimeout(build, 400);
+  });
 })();
 </script>
 </body>
