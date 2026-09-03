@@ -54,7 +54,8 @@
         "Viewport behavior": "Desktop (>500px, fine pointer): sidebar + framed device. Mobile: fullscreen fit, sidebar hidden.",
         "Rip mechanic": "Punched-hole perforation: 7 true cutout holes (r3, even-odd SVG alpha mask) straddling x=277 so each splits into half-moons as the tab moves. Tab peels by rotating around the topmost intact hole (0.26deg/px + 0.10px/px slide); holes pop top-down at staggered thresholds (30%..100% of tear point), each pop = ring burst + ejected disc + 1.6px card recoil + navigator.vibrate(8). Last pop rips the tab free (vibrate [14,40,22]); clip-path inset heals the card into the redeemed state. Popped holes persist across released pulls.",
         "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar.",
-        "Nav glass": "X button = liquid-glass-js Container (radius 20, tintOpacity 0.14, blur 5). Adaptive contrast: page-snapshot luminance behind the button > 0.5 flips icon/text dark (#0B0E12), else white — so Bronze/Silver themes get a dark X, Gold/VIP keep white."
+        "Nav glass": "X button = liquid-glass-js Container (radius 20, tintOpacity 0.14, blur 5). Adaptive contrast: page-snapshot luminance behind the button > 0.5 flips icon/text dark (#0B0E12), else white — so Bronze/Silver themes get a dark X, Gold/VIP keep white.",
+        "Themes": "Two themes x four tiers. Tiered: whole sheet takes the tier's Figma variant. Red (Figma 16842-87694): flat brand red #ED1C24 sheet, coupon tint rgba(237,28,36,.35) + rgba(173,173,173,.12) plus-lighter, voucher drop-shadow 0 0 12 rgba(56,64,74,.12), white text — only the loyalty badge pill reflects the tier. Toggle in the playground sidebar (desktop) or the Red chip (mobile)."
       },
       "downloads": [
         {

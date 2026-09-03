@@ -130,6 +130,15 @@
     --badge-border:#f9f9f9; --badge-text:#fff;
     --check-bg: rgba(255,255,255,.22); --spark:#f2c94c;
     --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
+  /* red theme — frame 16842:87694: flat brand red, only the badge keeps the
+     tier's styling (badge vars deliberately NOT overridden here) */
+  .phone[data-theme="red"] {
+    --sheet-grad: linear-gradient(to top, #ed1c24, #ed1c24);
+    --tint: rgba(237,28,36,.35);
+    --lighter: rgba(173,173,173,.12);
+    --t-head:#f9f9f9; --t-body:#fff; --t-sub:#f9f9f9;
+    --spark:#ffffff;
+    --voucher-shadow: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
 
   /* ---- sheet (bottom-anchored: the backdrop strip above absorbs any
      extra viewport height on mobile so the page runs edge-to-edge) ------ */
@@ -283,6 +292,16 @@
     glass on the global recipe.</p>
 
   <div class="s-sec">
+    <div class="s-label">Theme</div>
+    <div class="s-note">Tiered themes the whole sheet per level; Red keeps the brand-red
+      sheet and only the badge reflects the tier (Figma 16842-87694).</div>
+    <div class="lvl-grid" id="themeGrid">
+      <button data-theme="tier" class="on"><span class="lvl-dot" style="background:linear-gradient(135deg,#ffca2a,#d5bb9f,#2a2b33)"></span>Tiered</button>
+      <button data-theme="red"><span class="lvl-dot" style="background:#ed1c24"></span>Red</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
     <div class="s-label">User level</div>
     <div class="s-note">Applies that tier's Figma variant — sheet gradient, badge pill,
       text colors — and re-captures the glass snapshot.</div>
@@ -359,6 +378,7 @@
   <button data-lvl="gold" class="on">Gold</button>
   <button data-lvl="vip">VIP</button>
   <div class="sep"></div>
+  <button id="themeChip">Red</button>
   <button id="resetBtn">Reset</button>
 </div>
 
@@ -773,6 +793,18 @@ function setLevel(lvl) {
 }
 document.querySelectorAll('#lvlGrid [data-lvl], .devbar [data-lvl]').forEach(b =>
   b.addEventListener('click', () => setLevel(b.dataset.lvl)));
+
+function setTheme(theme) {
+  phone.dataset.theme = theme;
+  document.querySelectorAll('#themeGrid [data-theme]').forEach(x =>
+    x.classList.toggle('on', x.dataset.theme === theme));
+  document.getElementById('themeChip').classList.toggle('on', theme === 'red');
+  requestAnimationFrame(buildCoupons);
+}
+document.querySelectorAll('#themeGrid [data-theme]').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.theme)));
+document.getElementById('themeChip').addEventListener('click', () =>
+  setTheme(phone.dataset.theme === 'red' ? 'tier' : 'red'));
 document.getElementById('resetBtn').addEventListener('click', () => requestAnimationFrame(buildCoupons));
 document.getElementById('sReset').addEventListener('click', () => requestAnimationFrame(buildCoupons));
 
@@ -792,7 +824,8 @@ bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
 
 document.getElementById('sCopy').addEventListener('click', () => {
   const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
-    `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, level ${phone.dataset.level}`;
+    `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, level ${phone.dataset.level}, ` +
+    `theme ${phone.dataset.theme || 'tier'}`;
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
     b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
