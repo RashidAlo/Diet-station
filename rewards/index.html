@@ -310,22 +310,12 @@
 
   <div class="s-sec">
     <div class="s-label">Material modifiers</div>
-    <div class="s-note">Coupons are frosted (Figma fills + backdrop blur); the nav X is
-      liquid glass (liquid-glass-js shader).</div>
+    <div class="s-note">Coupons are frosted (Figma fills + backdrop blur). The nav X's
+      liquid glass follows the global recipe — dial it in the hub's Glass Lab.</div>
     <div class="mod">
       <div class="mod-head"><label>Coupon frost</label><output id="vFrost">18px</output></div>
       <input type="range" id="mFrost" min="0" max="30" step="1" value="18">
       <div class="mod-desc">Backdrop blur behind the coupon fills. 0 = flat Figma fills.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Nav glass tint</label><output id="vTint">0.14</output></div>
-      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
-      <div class="mod-desc">White frost mixed into the X button's refraction.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Nav glass blur</label><output id="vBlur">5.0</output></div>
-      <input type="range" id="mBlur" min="1" max="12" step="0.5" value="5">
-      <div class="mod-desc">Softness of the refracted backdrop in the X button.</div>
     </div>
   </div>
 
@@ -745,19 +735,10 @@ bindMod('mTear', 'vTear', 'tearAt', v => v + 'px');
 bindMod('mStretch', 'vStretch', 'stretch', v => v + 'px');
 bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
 bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
-bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2), applyGlassParams);
-bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1), applyGlassParams);
-/* sync slider positions to the loaded global recipe */
-document.getElementById('mTint').value = MODS.tint;
-document.getElementById('vTint').textContent = MODS.tint.toFixed(2);
-document.getElementById('mBlur').value = MODS.blur;
-document.getElementById('vBlur').textContent = MODS.blur.toFixed(1);
 
 document.getElementById('sCopy').addEventListener('click', () => {
   const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
-    `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, ` +
-    `nav glass tint ${MODS.tint.toFixed(2)}, nav glass blur ${MODS.blur.toFixed(1)}, ` +
-    `level ${phone.dataset.level}`;
+    `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, level ${phone.dataset.level}`;
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
     b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
@@ -792,10 +773,6 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   if (g.tintOpacity !== undefined) MODS.tint = g.tintOpacity;
   if (g.blurRadius !== undefined) MODS.blur = g.blurRadius;
   window.glassControls = { ...g, blurRadius: MODS.blur };
-  document.getElementById('mTint').value = MODS.tint;
-  document.getElementById('vTint').textContent = MODS.tint.toFixed(2);
-  document.getElementById('mBlur').value = MODS.blur;
-  document.getElementById('vBlur').textContent = MODS.blur.toFixed(1);
   setTimeout(buildCoupons, 50);
 });
 </script>

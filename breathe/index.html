@@ -64,8 +64,6 @@
     transition: filter .15s ease, background .15s ease; }
   #sIntro { background: #ff5a5f; color: #fff; }
   #sIntro:hover { filter: brightness(1.08); }
-  #sCopy { background: rgba(255,255,255,.09); color: rgba(255,255,255,.85); }
-  #sCopy:hover { background: rgba(255,255,255,.15); }
   .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
     font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
 
@@ -168,39 +166,13 @@
     </div>
   </div>
 
-  <div class="s-sec">
-    <div class="s-label">Liquid glass modifiers</div>
-    <div class="s-note">Live uniforms on the X + CTA glass shader (liquid-glass-js).</div>
-    <div class="mod">
-      <div class="mod-head"><label>Blur</label><output id="vBlur">5.0</output></div>
-      <input type="range" id="mBlur" min="1" max="12" step="0.5" value="5">
-      <div class="mod-desc">Softness of the refracted backdrop behind the button.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Frost tint</label><output id="vTint">0.14</output></div>
-      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
-      <div class="mod-desc">White frost mixed into the refraction. 0 = clear glass.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Rim</label><output id="vRim">0.05</output></div>
-      <input type="range" id="mRim" min="0" max="0.15" step="0.005" value="0.05">
-      <div class="mod-desc">Refraction pull along the button's edge — the specular rim.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Edge</label><output id="vEdge">0.010</output></div>
-      <input type="range" id="mEdge" min="0" max="0.05" step="0.002" value="0.01">
-      <div class="mod-desc">Wider bend of the backdrop near the edge — glass thickness.</div>
-    </div>
-  </div>
-
   <div class="s-actions">
     <button id="sIntro">Back to intro</button>
-    <button id="sCopy">Copy values</button>
   </div>
 
   <div class="s-foot">Figma: Diet Station 4.0 &middot; Step 2 (node 17034-157443) &middot;
-    Rive artboard "DietStation Breathe". Copy values puts the glass recipe on the
-    clipboard — read it to Claude to bake it in.</div>
+    Rive artboard "DietStation Breathe". The X + CTA liquid glass follows the global
+    recipe — dial it in the hub’s Glass Lab.</div>
 </aside>
 
 <div id="stage">
@@ -390,10 +362,6 @@
       if (g.rimIntensity !== undefined) GV.rim = g.rimIntensity;
       if (g.edgeIntensity !== undefined) GV.edge = g.edgeIntensity;
       window.glassControls = { ...g, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
-      [['mBlur','vBlur','blur',v=>v.toFixed(1)],['mTint','vTint','tint',v=>v.toFixed(2)],
-       ['mRim','vRim','rim',v=>v.toFixed(3)],['mEdge','vEdge','edge',v=>v.toFixed(3)]].forEach(([i,o,k,f]) => {
-        $(i).value = GV[k]; $(o).textContent = f(GV[k]);
-      });
       setTimeout(navGo, 50);
     });
   const chipEls = document.querySelectorAll('#chips .chip');
@@ -437,32 +405,6 @@
   });
   $('sIntro').onclick = () => { if (stInput) stInput.value = 0; };
 
-  /* glass modifier dials -> shader uniforms (X + CTA share them) */
-  function bindMod(id, out, key, fmt) {
-    const el = $(id), o = $(out);
-    el.addEventListener('input', () => {
-      GV[key] = parseFloat(el.value);
-      o.textContent = fmt(GV[key]);
-      applyGlass();
-    });
-  }
-  bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1));
-  bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2));
-  bindMod('mRim', 'vRim', 'rim', v => v.toFixed(3));
-  bindMod('mEdge', 'vEdge', 'edge', v => v.toFixed(3));
-  /* sync slider positions to the loaded global recipe */
-  [['mBlur','vBlur','blur',v=>v.toFixed(1)],['mTint','vTint','tint',v=>v.toFixed(2)],
-   ['mRim','vRim','rim',v=>v.toFixed(3)],['mEdge','vEdge','edge',v=>v.toFixed(3)]].forEach(([i,o,k,f]) => {
-    $(i).value = GV[k]; $(o).textContent = f(GV[k]);
-  });
-  $('sCopy').onclick = () => {
-    const spec = `nav glass (liquid-glass-js): blur ${GV.blur.toFixed(1)}, ` +
-      `frost tint ${GV.tint.toFixed(2)}, rim ${GV.rim.toFixed(3)}, edge ${GV.edge.toFixed(3)}`;
-    const b = $('sCopy');
-    navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
-      b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
-    }).catch(() => { b.textContent = spec; });
-  };
 })();
 </script>
 </body>
