@@ -16,7 +16,7 @@
         "Layout": "402pt design width · animation stage 450×554pt, ball center at 39% of stage height · header pinned to safe-area top, actions pinned above home bar",
         "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)",
         "Brand rule": "Ball dots are red #FF3848 on #ED1C24; icons+headlines resolve to white. Never recolor.",
-        "Nav buttons": "Liquid Glass (iOS 26) in CSS: backdrop-filter blur(7px) saturate(100%), fill rgba(255,255,255,0), rim 0.30, depth 0.35 (specular insets + drop scaled by rim/depth); native SwiftUI equivalent = .glassEffect()",
+        "Nav buttons": "X + CTA = liquid-glass-js Containers (WebGL refraction of a page snapshot; X circle r22, CTA pill r27; tintOpacity 0.14, blur 5, rim 0.05, edge 0.01 — all tunable in the playground sidebar). Adaptive contrast flips content dark over light backdrops. Supersedes the earlier CSS backdrop-filter recipe. Native SwiftUI equivalent = .glassEffect().",
         "Playground": "Desktop (standard shell): sidebar with description, health-need state selector (drives ViewModel Machine.state, synced with the in-phone segmented control), and live Liquid Glass dials (blur, saturation, fill, rim, depth) + Copy values; device frame with Dynamic Island, fixed 874pt canvas. Mobile: original fullscreen adaptive layout with safe-area handling."
       },
       "downloads": [
@@ -38,12 +38,11 @@
       "title": "Rewards — Pull to Redeem",
       "status": "in-progress",
       "updated": "2026-09-03",
-      "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. Each voucher is one seamless liquid-glass card (WebGL refraction via liquid-glass-js) with a rippable tab: pull it and the card splits along a jagged tear line, the tab peels, tumbles off with confetti, and the torn edge heals into the redeemed card with the promo code. Desktop opens the full playground — sidebar with level, gesture and glass modifiers, device frame; mobile is fullscreen.",
+      "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. Each voucher is one seamless frosted-glass card (Figma fill stack + backdrop blur) with a rippable tab: pull it and the card splits along a jagged tear line, peels, tumbles off with confetti, and heals into the redeemed card with the promo code. Nav X is liquid glass (liquid-glass-js) with adaptive contrast. Desktop opens the full playground; mobile is fullscreen.",
       "path": "rewards/",
       "handoff": {
         "Design source": "Figma · Diet Station 4.0 · Rewards states (section 17137-76380; Gold frame 17137-75698)",
         "Level themes": "Sheet gradients — Bronze #D5BB9F→#C9A682 (to bottom) · Silver #E5E7EB→#D1D5DB (to bottom) · Gold #E4A70F→#FFBC2A (to top) · VIP #270F0F→#0F0E0D (to bottom)",
-        "Coupon fill": "Gold adds rgba(240,168,60,.35) tint; every level adds a rgba(173,173,173,.12) plus-lighter layer (Silver uses .06); VIP vouchers add drop-shadow 0 0 12 rgba(56,64,74,.12)",
         "Text colors": "Gold/VIP: heading #F9F9F9, body white · Bronze: heading #0B0E12, secondary #5C3F21 · Silver: heading #0B0E12, secondary #7A7A7A",
         "Badge pills": "2px border + 45/55 two-stop gradient per level · Gold border #FEFAE7 text #C59300 · Bronze border white text rgba(76,64,51,.42) · Silver border #E4E4E7 text rgba(82,82,91,.46) · VIP border #F9F9F9 text white on #270F0F→#0F0E0D",
         "Gesture": "Pull stub right · travel = 96px·tanh(drag/90) elastic resistance · tears at 62px · below threshold springs back with overshoot wobble · haptic navigator.vibrate(25) where supported",
@@ -51,10 +50,11 @@
         "Layout": "402pt design width · sheet 806pt, top radius 38 · vouchers 368×125 radius 24 · stub 90pt · perforation 110pt dashed 8/8",
         "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder)",
         "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()",
-        "Coupon material": "Liquid glass via github.com/dashersw/liquid-glass-js (Container class, borderRadius 24, tintOpacity 0.14): WebGL refraction of an html2canvas page snapshot, one canvas per coupon half; Figma fill stack layered above it (gold tint rgba(240,168,60,.35) + rgba(173,173,173,.12) plus-lighter, Silver .06). Snapshot re-captured on level switch; contexts disposed via WEBGL_lose_context. Native SwiftUI equivalent = .glassEffect() on the coupon shape.",
+        "Coupon material": "FROSTED, not refractive (Rashid 2026-09-03): the exact Figma fill stack — per-level tint (gold rgba(240,168,60,.35), others none) + rgba(173,173,173,.12) plus-lighter (Silver .06) — over backdrop-filter blur(18px) (tunable 0-30px in the playground). Native equivalent: .ultraThinMaterial + tint overlays.",
         "Viewport behavior": "Desktop (>500px, fine pointer): sidebar + framed device. Mobile: fullscreen fit, sidebar hidden.",
         "Rip mechanic": "One full-size glass card at rest; on grab it splits into two full-size glass layers clipped by complementary jagged polygons (clip-path) along the perforation at x=277. The tab peels from origin 277px/85% (rotate d*0.11deg, sag d*0.08), rips at the tear point, tumbles off; the base clip-path then animates +96px right to 'heal' into the full redeemed card (.55s cubic-bezier(.3,1,.4,1)).",
-        "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar."
+        "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar.",
+        "Nav glass": "X button = liquid-glass-js Container (radius 20, tintOpacity 0.14, blur 5). Adaptive contrast: page-snapshot luminance behind the button > 0.5 flips icon/text dark (#0B0E12), else white — so Bronze/Silver themes get a dark X, Gold/VIP keep white."
       },
       "downloads": [
         {

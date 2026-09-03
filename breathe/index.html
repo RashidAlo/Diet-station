@@ -8,6 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ED1C24">
+<script>class Button {}</script>
+<script src="html2canvas.min.js"></script>
+<script src="liquid-glass-container.js"></script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
@@ -96,29 +99,22 @@
   .chrome .para { position: absolute; bottom: calc(var(--sabd, 0px) + 112px); left: 50%;
     transform: translateX(-50%); width: 240px; text-align: center;
     font: 400 14px/20px 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif; color: #F9F9F9; }
-  /* Liquid Glass (iOS 26) nav buttons - rendered natively: backdrop
-     refraction + specular rim + gel press. No raster. */
-  .glass {
-    border: none; padding: 0; pointer-events: auto; cursor: pointer;
-    background: rgba(255, 255, 255, var(--g-fill, 0));
-    -webkit-backdrop-filter: blur(var(--g-blur, 7px)) saturate(var(--g-sat, 100%));
-    backdrop-filter: blur(var(--g-blur, 7px)) saturate(var(--g-sat, 100%));
-    box-shadow:
-      inset 0 1.5px 1px rgba(255,255,255, calc(.50 * var(--g-rim, 0.3))),
-      inset 0 -1px 1.5px rgba(255,255,255, calc(.14 * var(--g-rim, 0.3))),
-      inset 2px 4px 9px -4px rgba(255,255,255, calc(.62 * var(--g-rim, 0.3))),
-      inset -3px -5px 10px -5px rgba(110,0,6, calc(.38 * var(--g-depth, 0.35))),
-      0 12px 28px -12px rgba(70,0,4, calc(.55 * var(--g-depth, 0.35))),
-      0 1px 2px rgba(70,0,4, calc(.18 * var(--g-depth, 0.35)));
-    transition: transform .18s cubic-bezier(.3,.8,.3,1), background .18s ease;
-  }
-  .glass:active { background: rgba(255,255,255,.19); }
+  /* Liquid Glass nav buttons: liquid-glass-js containers (WebGL refraction) */
+  .chrome .closebtn, .chrome .cta { pointer-events: auto; cursor: pointer;
+    overflow: hidden; transition: transform .18s cubic-bezier(.3,.8,.3,1);
+    -webkit-user-select: none; user-select: none; }
+  .chrome .closebtn canvas, .chrome .cta canvas { box-shadow: none !important; }
+  /* adaptive contrast: sampled backdrop luminance flips glass content dark */
+  .glass-dark-content { color: #0b0e12 !important; }
+  .glass-dark-content svg { filter: brightness(0) opacity(.88); }
   .chrome .closebtn { position: absolute; left: 21px; top: calc(var(--satd, 0px) + 20px);
     width: 44px; height: 44px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; }
   .chrome .closebtn:active { transform: scale(.92); }
+  .chrome .closebtn svg, .chrome .cta .ctalabel { position: relative; pointer-events: none; }
   .chrome .closebtn svg { width: 16px; height: 16px; display: block; }
   .chrome .cta { position: absolute; bottom: calc(var(--sabd, 0px) + 30px); left: 50%;
+    border-radius: 999px;
     transform: translateX(-50%); width: 284px; height: 54px; border-radius: 999px;
     display: flex; align-items: center; justify-content: center; gap: 8px;
     font: 500 16px/1 'Urbane Rounded', -apple-system, sans-serif; color: #fff;
@@ -167,31 +163,26 @@
 
   <div class="s-sec">
     <div class="s-label">Liquid glass modifiers</div>
-    <div class="s-note">Live dials on the X + CTA glass (iOS 26 recipe in CSS).</div>
+    <div class="s-note">Live uniforms on the X + CTA glass shader (liquid-glass-js).</div>
     <div class="mod">
-      <div class="mod-head"><label>Blur</label><output id="vBlur">7px</output></div>
-      <input type="range" id="mBlur" min="0" max="20" step="0.5" value="7">
-      <div class="mod-desc">Backdrop refraction radius behind the button.</div>
+      <div class="mod-head"><label>Blur</label><output id="vBlur">5.0</output></div>
+      <input type="range" id="mBlur" min="1" max="12" step="0.5" value="5">
+      <div class="mod-desc">Softness of the refracted backdrop behind the button.</div>
     </div>
     <div class="mod">
-      <div class="mod-head"><label>Saturation</label><output id="vSat">100%</output></div>
-      <input type="range" id="mSat" min="100" max="250" step="5" value="100">
-      <div class="mod-desc">Color punch pulled through the glass.</div>
+      <div class="mod-head"><label>Frost tint</label><output id="vTint">0.14</output></div>
+      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
+      <div class="mod-desc">White frost mixed into the refraction. 0 = clear glass.</div>
     </div>
     <div class="mod">
-      <div class="mod-head"><label>Fill</label><output id="vFill">0.00</output></div>
-      <input type="range" id="mFill" min="0" max="0.30" step="0.01" value="0">
-      <div class="mod-desc">White wash inside the button. 0 = fully clear.</div>
+      <div class="mod-head"><label>Rim</label><output id="vRim">0.05</output></div>
+      <input type="range" id="mRim" min="0" max="0.15" step="0.005" value="0.05">
+      <div class="mod-desc">Refraction pull along the button's edge — the specular rim.</div>
     </div>
     <div class="mod">
-      <div class="mod-head"><label>Rim</label><output id="vRim">0.30</output></div>
-      <input type="range" id="mRim" min="0" max="1" step="0.05" value="0.30">
-      <div class="mod-desc">Specular highlight strength on the top edge.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Depth</label><output id="vDepth">0.35</output></div>
-      <input type="range" id="mDepth" min="0" max="1" step="0.05" value="0.35">
-      <div class="mod-desc">Inner shading + drop shadow — how "thick" the glass feels.</div>
+      <div class="mod-head"><label>Edge</label><output id="vEdge">0.010</output></div>
+      <input type="range" id="mEdge" min="0" max="0.05" step="0.002" value="0.01">
+      <div class="mod-desc">Wider bend of the backdrop near the edge — glass thickness.</div>
     </div>
   </div>
 
@@ -210,10 +201,8 @@
     <div class="phone-wrap" id="phoneWrap">
       <div class="phone" id="phone">
         <div id="overlay"><canvas id="rive"></canvas></div>
-        <div class="chrome">
-          <button class="closebtn glass" id="closeBtn" title="close"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <div class="chrome" id="chrome">
           <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
-          <button class="cta glass" id="ctaBtn"><span class="ctalabel" style="display:contents">Let&rsquo;s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span></button>
         </div>
         <div class="chips" id="chips">
           <div class="thumb" id="chipThumb"></div>
@@ -236,6 +225,90 @@
   const phone = $('phone'), wrap = $('phoneWrap'), device = $('device'),
     overlay = $('overlay'), canvas = $('rive');
   let r = null;
+
+  /* ---- liquid glass plumbing (liquid-glass-js) ---- */
+  const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+  const GV = { blur: 5, tint: 0.14, rim: 0.05, edge: 0.01 };
+  window.glassControls = { blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+  let stageScale = 1;
+  let liveGlass = [];
+  function makeGlass(cls, radius) {
+    if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
+    const c = new Container({ borderRadius: radius, tintOpacity: GV.tint });
+    c.element.classList.add(cls);
+    c.baseRadius = radius;
+    // lib sizes from getBoundingClientRect(), wrong inside our scaled stage:
+    // backing store = on-screen size, CSS size stays 100% of the layout box
+    c.resizeGlass = () => {
+      const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
+      const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
+      c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
+      c.canvas.width = w; c.canvas.height = h;
+      c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
+      if (c.gl_refs.gl) {
+        const gl = c.gl_refs.gl;
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
+        gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
+        c.render && c.render();
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(c.resizeGlass));
+    liveGlass.push(c);
+    return c;
+  }
+  function applyGlass() {
+    window.glassControls = { blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+    liveGlass.forEach(c => {
+      c.tintOpacity = GV.tint;
+      if (c.gl_refs.gl) {
+        const gl = c.gl_refs.gl;
+        gl.uniform1f(c.gl_refs.blurRadiusLoc, GV.blur);
+        gl.uniform1f(c.gl_refs.tintOpacityLoc, GV.tint);
+        gl.uniform1f(c.gl_refs.rimIntensityLoc, GV.rim);
+        gl.uniform1f(c.gl_refs.edgeIntensityLoc, GV.edge);
+        c.render && c.render();
+      }
+    });
+  }
+  /* readability: sample the page snapshot behind each glass element and flip
+     its icon/text to dark when the backdrop is light */
+  function adaptGlassContrast() {
+    if (!GLASS_OK || !Container.pageSnapshot) return;
+    let sctx;
+    try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    liveGlass.forEach(c => {
+      if (!c.canvas) return;
+      const rct = c.canvas.getBoundingClientRect();
+      const x = Math.max(8, Math.round(rct.left + rct.width / 2));
+      const y = Math.max(8, Math.round(rct.top + rct.height / 2));
+      try {
+        const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
+        let l = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 10) continue;
+          l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
+        }
+      c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
+      } catch (_) {}
+    });
+  }
+  function buildNav() {
+    const chrome = $('chrome');
+    const cb = makeGlass('closebtn', 22);
+    cb.element.title = 'close';
+    cb.element.insertAdjacentHTML('beforeend',
+      '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>');
+    cb.element.addEventListener('click', () => { location.href = '../'; });
+    chrome.appendChild(cb.element);
+    const cta = makeGlass('cta', 27);
+    cta.element.insertAdjacentHTML('beforeend',
+      '<span class="ctalabel" style="display:contents">Let\u2019s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span>');
+    chrome.appendChild(cta.element);
+    setTimeout(adaptGlassContrast, 900);   // after the snapshot lands
+  }
+
   function safeInsets() {
     const cs = getComputedStyle($('safeProbe'));
     return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
@@ -281,11 +354,16 @@
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     if (r) r.resizeDrawingSurfaceToCanvas();
+    stageScale = k;
+    liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
   }
   window.addEventListener('resize', refit);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
   window.addEventListener('orientationchange', () => setTimeout(refit, 250));
   refit();
+  const navGo = () => { try { buildNav(); } catch (e) { console.error('buildNav failed:', e); } };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(navGo, 50));
+  else navGo();
   const chipEls = document.querySelectorAll('#chips .chip');
   const sideEls = document.querySelectorAll('#stateGrid button');
   let curSel = 0, stInput = null;
@@ -327,15 +405,7 @@
   });
   $('sIntro').onclick = () => { if (stInput) stInput.value = 0; };
 
-  /* glass modifier dials (X + CTA share the recipe) */
-  const GV = { blur: 7, sat: 100, fill: 0, rim: 0.30, depth: 0.35 };
-  function applyGlass() {
-    phone.style.setProperty('--g-blur', GV.blur + 'px');
-    phone.style.setProperty('--g-sat', GV.sat + '%');
-    phone.style.setProperty('--g-fill', GV.fill);
-    phone.style.setProperty('--g-rim', GV.rim);
-    phone.style.setProperty('--g-depth', GV.depth);
-  }
+  /* glass modifier dials -> shader uniforms (X + CTA share them) */
   function bindMod(id, out, key, fmt) {
     const el = $(id), o = $(out);
     el.addEventListener('input', () => {
@@ -344,22 +414,18 @@
       applyGlass();
     });
   }
-  bindMod('mBlur', 'vBlur', 'blur', v => v + 'px');
-  bindMod('mSat', 'vSat', 'sat', v => v + '%');
-  bindMod('mFill', 'vFill', 'fill', v => v.toFixed(2));
-  bindMod('mRim', 'vRim', 'rim', v => v.toFixed(2));
-  bindMod('mDepth', 'vDepth', 'depth', v => v.toFixed(2));
+  bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1));
+  bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2));
+  bindMod('mRim', 'vRim', 'rim', v => v.toFixed(3));
+  bindMod('mEdge', 'vEdge', 'edge', v => v.toFixed(3));
   $('sCopy').onclick = () => {
-    const spec = `glass: blur ${GV.blur}px, saturate ${GV.sat}%, fill ${GV.fill.toFixed(2)}, ` +
-      `rim ${GV.rim.toFixed(2)}, depth ${GV.depth.toFixed(2)}`;
+    const spec = `nav glass (liquid-glass-js): blur ${GV.blur.toFixed(1)}, ` +
+      `frost tint ${GV.tint.toFixed(2)}, rim ${GV.rim.toFixed(3)}, edge ${GV.edge.toFixed(3)}`;
     const b = $('sCopy');
     navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
       b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
     }).catch(() => { b.textContent = spec; });
   };
-
-  $('ctaBtn').onclick = () => {};
-  $('closeBtn').onclick = () => { location.href = '../'; };
 })();
 </script>
 </body>

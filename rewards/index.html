@@ -136,22 +136,20 @@
     border-radius: 38px 38px 0 0; overflow: hidden;
     background: var(--sheet-grad); }
 
-  .closebtn { position: absolute; left: 24px; top: 24px; width: 40px; height: 40px;
-    border-radius: 50%; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,.06);
-    -webkit-backdrop-filter: blur(9px) saturate(175%);
-    backdrop-filter: blur(9px) saturate(175%);
-    box-shadow:
-      inset 0 1.5px 1px rgba(255,255,255,.15),
-      inset 0 -1px 1.5px rgba(255,255,255,.05),
-      inset 2px 4px 9px -4px rgba(255,255,255,.20),
-      inset -3px -5px 10px -5px rgba(0,0,0,.14),
-      0 12px 28px -12px rgba(0,0,0,.20),
-      0 1px 2px rgba(0,0,0,.07);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1), background .18s ease; }
-  .closebtn:active { transform: scale(.92); background: rgba(255,255,255,.19); }
-  .closebtn img { width: 20px; height: 20px; display: block; }
+  /* nav X: liquid-glass-js container (the configured glass) */
+  .glass-container.closebtn { position: absolute; left: 24px; top: 24px;
+    width: 40px; height: 40px; border-radius: 50%; overflow: hidden; z-index: 10;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+  .glass-container.closebtn:active { transform: scale(.92); }
+  .glass-container.closebtn img { width: 20px; height: 20px; display: block;
+    position: relative; pointer-events: none; }
+  .glass-container.closebtn canvas { box-shadow: none !important; }
+
+  /* adaptive contrast: sampled backdrop luminance flips glass content dark */
+  .glass-dark-content { color: #0b0e12 !important; }
+  .glass-dark-content img, .glass-dark-content svg {
+    filter: brightness(0) opacity(.88); }
 
   .title { position: absolute; left: 24px; top: 79px; width: 330px;
     font: 500 30px/32px 'Urbane Rounded', sans-serif; color: var(--t-head); letter-spacing: 0; }
@@ -177,23 +175,22 @@
 
   .coupon { position: relative; width: 368px; height: 125px; filter: var(--voucher-shadow); }
 
-  /* ONE glass card (liquid-glass-js) + a torn-off "piece" overlay.
-     At rest only .base renders — a single seamless coupon. On grab, .base is
-     clipped to a jagged tear polygon and .piece (same full-size glass, the
-     complementary polygon) becomes the rippable tab. */
-  .glass-container { position: absolute; }
-  .coupon .base { left: 0; top: 0; width: 368px; height: 125px; z-index: 0;
-    overflow: hidden; border-radius: 24px; }
-  .coupon .piece { left: 0; top: 0; width: 368px; height: 125px; z-index: 4;
-    overflow: hidden; border-radius: 24px; visibility: hidden;
-    will-change: transform, opacity; }
-  .coupon .glass-container canvas { box-shadow: none !important; }
+  /* ONE frosted card (Figma material: tint + plus-lighter over backdrop blur)
+     + a torn-off "piece" overlay. At rest only .base renders — a single
+     seamless coupon. On grab, .base is clipped to a jagged tear polygon and
+     .piece (the complementary polygon) becomes the rippable tab. */
+  .coupon .base, .coupon .piece { position: absolute; left: 0; top: 0;
+    width: 368px; height: 125px; overflow: hidden; border-radius: 24px;
+    -webkit-backdrop-filter: blur(var(--frost, 18px));
+    backdrop-filter: blur(var(--frost, 18px)); }
+  .coupon .base { z-index: 0; }
+  .coupon .piece { z-index: 4; visibility: hidden; will-change: transform, opacity; }
 
   .coupon .hit { position: absolute; left: 278px; top: 0; width: 90px; height: 125px;
     z-index: 6; cursor: grab; touch-action: none; }
   .coupon .hit:active { cursor: grabbing; }
 
-  /* Figma fill stack layered over the refraction canvas */
+  /* Figma fill stack (exact layers from the design) */
   .coupon .fill-tint { position: absolute; inset: 0; border-radius: inherit;
     background: var(--tint); pointer-events: none; }
   .coupon .fill-lighter { position: absolute; inset: 0; border-radius: inherit;
@@ -270,7 +267,7 @@
   <p class="s-desc">Loyalty coupon sheet with four member tiers, themed 1:1 from Figma.
     Grab a voucher's stub and pull right — it stretches with elastic resistance and tears
     off past the threshold, bursting confetti and revealing the promo code. Coupons are
-    liquid glass: live WebGL refraction of the sheet behind them.</p>
+    frosted glass per Figma; the nav X is liquid glass (WebGL refraction).</p>
 
   <div class="s-sec">
     <div class="s-label">User level</div>
@@ -305,17 +302,23 @@
   </div>
 
   <div class="s-sec">
-    <div class="s-label">Glass modifiers</div>
-    <div class="s-note">Uniforms on the liquid-glass shader (liquid-glass-js).</div>
+    <div class="s-label">Material modifiers</div>
+    <div class="s-note">Coupons are frosted (Figma fills + backdrop blur); the nav X is
+      liquid glass (liquid-glass-js shader).</div>
     <div class="mod">
-      <div class="mod-head"><label>Frost tint</label><output id="vTint">0.14</output></div>
-      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
-      <div class="mod-desc">White frost mixed into the refraction. 0 = clear glass.</div>
+      <div class="mod-head"><label>Coupon frost</label><output id="vFrost">18px</output></div>
+      <input type="range" id="mFrost" min="0" max="30" step="1" value="18">
+      <div class="mod-desc">Backdrop blur behind the coupon fills. 0 = flat Figma fills.</div>
     </div>
     <div class="mod">
-      <div class="mod-head"><label>Blur</label><output id="vBlur">5.0</output></div>
+      <div class="mod-head"><label>Nav glass tint</label><output id="vTint">0.14</output></div>
+      <input type="range" id="mTint" min="0" max="0.40" step="0.01" value="0.14">
+      <div class="mod-desc">White frost mixed into the X button's refraction.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Nav glass blur</label><output id="vBlur">5.0</output></div>
       <input type="range" id="mBlur" min="1" max="12" step="0.5" value="5">
-      <div class="mod-desc">Softness of the refracted backdrop behind each coupon.</div>
+      <div class="mod-desc">Softness of the refracted backdrop in the X button.</div>
     </div>
   </div>
 
@@ -332,7 +335,6 @@
   <div class="device" id="device">
     <div class="phone" id="phone" data-level="gold">
       <div class="sheet">
-        <button class="closebtn" id="closeBtn" title="close"><img src="rewards-close.svg" alt=""></button>
         <h1 class="title">Renew and Save on your subscriptions</h1>
         <div class="qualify">
           <span>You qualify to&nbsp;</span>
@@ -358,7 +360,7 @@
 
 <script>
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
-const MODS = { tearAt: 62, stretch: 96, confetti: 14, tint: 0.14, blur: 5 };
+const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 18, tint: 0.14, blur: 5 };
 window.glassControls = { blurRadius: MODS.blur };
 
 /* ---------------- level data ---------------- */
@@ -385,10 +387,11 @@ function couponDefs(lvl) {
 const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
 let liveGlass = [];
 
-function makeGlass(cls) {
+function makeGlass(cls, radius) {
   if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
-  const c = new Container({ borderRadius: 24, tintOpacity: MODS.tint });
+  const c = new Container({ borderRadius: radius, tintOpacity: MODS.tint });
   c.element.classList.add(cls);
+  c.baseRadius = radius;
   // The lib sizes canvases from getBoundingClientRect(), which is wrong inside
   // our scaled stage: backing store must be the on-screen (scaled) size for
   // correct snapshot sampling, while the canvas CSS size must stay 100% of the
@@ -396,7 +399,7 @@ function makeGlass(cls) {
   c.resizeGlass = () => {
     const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
     const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
-    c.width = w; c.height = h; c.borderRadius = 24 * stageScale;
+    c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
     c.canvas.width = w; c.canvas.height = h;
     c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
     if (c.gl_refs.gl) {
@@ -439,6 +442,34 @@ function applyGlassParams() {
   });
 }
 
+function applyFrost() {
+  phone.style.setProperty('--frost', MODS.frost + 'px');
+}
+
+/* readability: sample the page snapshot behind each glass element and flip
+   its icon/text to dark when the backdrop is light */
+function adaptGlassContrast() {
+  if (!GLASS_OK || !Container.pageSnapshot) return;
+  let sctx;
+  try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
+  const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+  liveGlass.forEach(c => {
+    if (!c.canvas) return;
+    const r = c.canvas.getBoundingClientRect();
+    const x = Math.max(8, Math.round(r.left + r.width / 2));
+    const y = Math.max(8, Math.round(r.top + r.height / 2));
+    try {
+      const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
+      let l = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] < 10) continue;
+        l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
+      }
+      c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
+    } catch (_) {}
+  });
+}
+
 /* repaint a set of glass containers for `ms` milliseconds (during motion) */
 function paintDuring(glasses, ms) {
   const t0 = performance.now();
@@ -469,8 +500,19 @@ const poly = (pts) => pts.map(p => `${p[0].toFixed(1)}px ${p[1]}px`).join(', ');
 
 function buildCoupons() {
   destroyGlass();
+  applyFrost();
   const theme = LEVELS[phone.dataset.level];
   document.querySelector('.qbtn img').src = theme.q;
+
+  // nav X: liquid-glass-js (rebuilt per theme so the snapshot matches the sheet)
+  document.querySelectorAll('.closebtn').forEach(el => el.remove());
+  const cb = makeGlass('closebtn', 20);
+  cb.element.insertAdjacentHTML('beforeend', `<img src="rewards-close.svg" alt="">`);
+  cb.element.title = 'close';
+  cb.element.addEventListener('click', () => { location.href = '../'; });
+  document.querySelector('.sheet').appendChild(cb.element);
+  setTimeout(adaptGlassContrast, 900);   // after the fresh snapshot lands
+
   list.innerHTML = '';
   couponDefs(phone.dataset.level).forEach(def => {
     const el = document.createElement('div');
@@ -483,8 +525,9 @@ function buildCoupons() {
 
     const stubLabel = `<div class="stublabel"><p><span class="pull">Pull</span><span class="tored">to Redeem</span></p></div>`;
 
-    const base = makeGlass('base');
-    base.element.insertAdjacentHTML('beforeend', `
+    const base = document.createElement('div');
+    base.className = 'base';
+    base.insertAdjacentHTML('beforeend', `
       <div class="fill-tint"></div><div class="fill-lighter"></div>
       <div class="content">
         <div class="expires">Expires in 1 Day</div>
@@ -493,14 +536,15 @@ function buildCoupons() {
       </div>
       ${stubLabel}`);
 
-    const piece = makeGlass('piece');
-    piece.element.insertAdjacentHTML('beforeend', `
+    const piece = document.createElement('div');
+    piece.className = 'piece';
+    piece.insertAdjacentHTML('beforeend', `
       <div class="fill-tint"></div><div class="fill-lighter"></div>
       ${stubLabel}`);
-    piece.element.style.clipPath = pieceClip;
+    piece.style.clipPath = pieceClip;
 
-    el.appendChild(base.element);
-    el.appendChild(piece.element);
+    el.appendChild(base);
+    el.appendChild(piece);
     el.insertAdjacentHTML('beforeend', `
       <div class="perf"><img src="${theme.perf}" alt=""></div>
       <div class="done-face">
@@ -523,15 +567,12 @@ function buildCoupons() {
    piece peels away (rotation biased so the top separates first); past the
    threshold it rips free, and the torn base edge heals rightward into the
    full redeemed card. */
-function attachPull(coupon, baseC, pieceC, clips) {
-  const base = baseC.element;
-  const piece = pieceC.element;
+function attachPull(coupon, base, piece, clips) {
   const hit = coupon.querySelector('.hit');
   const perf = coupon.querySelector('.perf img');
   const baseLabel = base.querySelector('.stublabel');
   let dragging = false, torn = false, split = false, startX = 0, raf = 0, disp = 0;
   let hintTimer = 0, interacted = false;
-  const paint = () => { baseC.render && baseC.render(); pieceC.render && pieceC.render(); };
 
   const doSplit = () => {
     if (split) return;
@@ -560,7 +601,6 @@ function attachPull(coupon, baseC, pieceC, clips) {
     const p = Math.min(d / MODS.tearAt, 1);
     piece.style.transform = pieceTransform(d);
     perf.style.opacity = 1 - p * 0.85;
-    paint();
   };
 
   const onDown = (e) => {
@@ -569,7 +609,6 @@ function attachPull(coupon, baseC, pieceC, clips) {
     dragging = true; startX = e.clientX;
     hit.setPointerCapture(e.pointerId);
     doSplit();
-    paint();
   };
 
   const onMove = (e) => {
@@ -595,8 +634,7 @@ function attachPull(coupon, baseC, pieceC, clips) {
     ], { duration: 460, easing: 'cubic-bezier(.25,.9,.3,1)' });
     piece.style.transform = 'translate(0px, 0px)';
     perf.style.opacity = 1;
-    paintDuring([baseC, pieceC], 500);
-    anim.onfinish = () => { if (!dragging && !torn) unsplit(); paint(); };
+    anim.onfinish = () => { if (!dragging && !torn) unsplit(); };
     armHint();
   };
 
@@ -611,13 +649,11 @@ function attachPull(coupon, baseC, pieceC, clips) {
       { transform: `translate(${disp + 210}px, 95px) rotate(32deg)`, opacity: 0 },
     ], { duration: 520, easing: 'cubic-bezier(.3,.5,.5,1)', fill: 'forwards' });
     burst(coupon);
-    paintDuring([baseC, pieceC], 750);
     // torn edge heals rightward into the full-width redeemed card
     setTimeout(() => {
       coupon.classList.add('redeemed');
       base.style.transition = 'clip-path .55s cubic-bezier(.3,1,.4,1)';
       base.style.clipPath = clips.healClip;
-      paintDuring([baseC], 600);
     }, 380);
   };
 
@@ -639,7 +675,6 @@ function attachPull(coupon, baseC, pieceC, clips) {
         { transform: 'translateX(4px)', offset: .75 },
         { transform: 'translateX(0)' },
       ], { duration: 900, easing: 'ease-in-out' });
-      paintDuring([baseC], 950);
       armHint();
     }, 2600 + Math.random() * 1800);
   };
@@ -695,21 +730,19 @@ function bindMod(id, out, key, fmt, after) {
 bindMod('mTear', 'vTear', 'tearAt', v => v + 'px');
 bindMod('mStretch', 'vStretch', 'stretch', v => v + 'px');
 bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
+bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
 bindMod('mTint', 'vTint', 'tint', v => v.toFixed(2), applyGlassParams);
 bindMod('mBlur', 'vBlur', 'blur', v => v.toFixed(1), applyGlassParams);
 
 document.getElementById('sCopy').addEventListener('click', () => {
   const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
-    `confetti ${MODS.confetti}, glass tint ${MODS.tint.toFixed(2)}, glass blur ${MODS.blur.toFixed(1)}, ` +
+    `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, ` +
+    `nav glass tint ${MODS.tint.toFixed(2)}, nav glass blur ${MODS.blur.toFixed(1)}, ` +
     `level ${phone.dataset.level}`;
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
     b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
   }).catch(() => { b.textContent = spec; });
-});
-
-document.getElementById('closeBtn').addEventListener('click', () => {
-  location.href = '../';
 });
 
 /* ---------------- stage scaling: desktop playground vs mobile fullscreen -- */
@@ -731,7 +764,7 @@ function fit() {
 }
 addEventListener('resize', fit);
 fit();
-document.fonts.ready.then(() => requestAnimationFrame(buildCoupons));
+document.fonts.ready.then(() => setTimeout(buildCoupons, 50));
 </script>
 </body>
 </html>
