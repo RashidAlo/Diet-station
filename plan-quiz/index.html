@@ -404,37 +404,31 @@
     text-transform: uppercase; color: rgba(11,14,18,.55); margin: 14px 0 9px; }
 
   /* --- XY dial pad --- */
-  .pad { position: relative; height: 204px; border: 1.4px solid #E4E4E8; border-radius: var(--qr);
-    background: #fff; margin: 4px 0 12px; touch-action: none; cursor: pointer; overflow: hidden; }
-  .pad .gl { position: absolute; background: #ECECEF; pointer-events: none; }
-  .pad .gl.v { top: 0; bottom: 0; width: 1px; }
-  .pad .gl.h { left: 0; right: 0; height: 1px; }
-  .pad .ax { position: absolute; font: 600 9.5px/12px 'Urbane Rounded', sans-serif;
-    letter-spacing: 1.2px; text-transform: uppercase; color: #B4B4BC; pointer-events: none; z-index: 3; }
-  .pad .ax-t { top: 8px; left: 50%; transform: translateX(-50%); }
-  .pad .ax-b { bottom: 8px; left: 50%; transform: translateX(-50%); }
-  .pad .ax-l { left: 10px; top: 50%; transform: translateY(-50%); }
-  .pad .ax-r { right: 10px; top: 50%; transform: translateY(-50%); text-align: right; }
-  .pad-band { position: absolute; left: 0; right: 0; top: 33.33%; height: 33.34%;
-    background: #FAFAFB; pointer-events: none;
-    display: flex; align-items: center; justify-content: flex-end; }
-  .pad-band span { font: 600 8.5px/1 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
-    text-transform: uppercase; color: #D3D3D9; margin-right: 52px; }
-  .pad-cv { position: absolute; top: 0; bottom: 0; width: 1.2px; background: #F5C2C4;
-    pointer-events: none; z-index: 1; transition: left .18s cubic-bezier(.3,.8,.3,1); }
-  .pad-ch { position: absolute; left: 0; right: 0; height: 1.2px; background: #F5C2C4;
-    pointer-events: none; z-index: 1; transition: top .18s cubic-bezier(.3,.8,.3,1); }
-  .pad-knob { position: absolute; width: 26px; height: 26px; border-radius: 50%;
+  .pad-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px;
+    margin: 2px 0 12px; -webkit-user-select: none; user-select: none; }
+  .pad-row { display: flex; align-items: center; gap: 12px; }
+  .axo { font: 600 9px/12px 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #C2C2C9; text-align: center; }
+  .axo.side { text-align: right; min-width: 44px; }
+  .pad { position: relative; width: 176px; height: 176px; flex: 0 0 176px;
+    border: 1.4px solid #E4E4E8; border-radius: 30px; background: #fff;
+    touch-action: none; cursor: pointer; }
+  .pad .pd { position: absolute; width: 7px; height: 7px; border-radius: 50%;
+    background: #E7E7EA; transform: translate(-50%, -50%); pointer-events: none; }
+  .pad-knob { position: absolute; width: 24px; height: 24px; border-radius: 50%;
     background: #ED1C24; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(237,28,36,.4),
-    0 0 0 1.4px #ED1C24; transform: translate(-50%, -50%); pointer-events: none; z-index: 2;
-    transition: left .18s cubic-bezier(.3,.8,.3,1), top .18s cubic-bezier(.3,.8,.3,1); }
+    0 0 0 1.4px #ED1C24; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; }
+  .pad-knob.snap { transition: left .22s cubic-bezier(.2,.7,.3,1.25),
+    top .22s cubic-bezier(.2,.7,.3,1.25); }
   .derived { display: inline-block; font: 600 12px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
     border: 1px solid #F5C2C4; border-radius: 99px; padding: 7px 12px; margin-bottom: 14px;
     background: #FFF6F6; }
   /* abstract experience card */
   .xp-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
-    padding: 13px 16px 13px; }
-  .xp-card .xp-blurb { min-height: 38px; }
+    padding: 13px 16px 13px; text-align: center; }
+  .xp-card .xp-blurb { min-height: 19px; margin-bottom: 11px; }
+  .xp-rates3 .rt3 label { text-align: center; }
+  .xp-rates3 .rt-dots { justify-content: center; }
   .xp-meta { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: .6px;
     color: #ED1C24; margin-bottom: 5px; }
   .xp-title { font: 600 23px/28px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 6px; }
@@ -964,17 +958,17 @@
     const tz = i.zx;
     const M = {
       lose: [
-        ['The Comfort Cut', 'Food you’d order anyway — portions and timing do the quiet work. Slower on the scale, but it never feels like a diet.'],
-        ['The Steady Reset', 'Balanced plates, familiar flavors, a drop you can live with. The middle path most people actually finish.'],
-        ['The Shred', 'Lean, tight, to the point. Every meal earns its place — the fastest drop on the menu, and it asks the most of you.']],
+        ['The Comfort Cut', 'Food you’d order anyway — slow on the scale, but it sticks.'],
+        ['The Steady Reset', 'Balanced plates, a steady drop you can live with.'],
+        ['The Shred', 'Strict and fast — every meal earns its place.']],
       gain: [
-        ['The Happy Bulk', 'Generous, comforting plates with protein hiding everywhere. You’ll enjoy every bite of getting bigger.'],
-        ['The Builder', 'A clean surplus timed around your training. Steady gains, mostly muscle, nothing extreme.'],
-        ['The Performance Build', 'Fuel, not food. Precision portions and training-timed protein for the fastest clean mass.']],
+        ['The Happy Bulk', 'Generous plates, protein everywhere — gaining you’ll enjoy.'],
+        ['The Builder', 'A clean surplus timed around training. Mostly muscle.'],
+        ['The Performance Build', 'Fuel, not food — the fastest clean mass.']],
       maintain: [
-        ['The Good Life', 'Your weight holds while the food stays fun. The upgrades hide inside meals you already love.'],
-        ['The Tune-Up', 'Same you, better inputs. Energy smooths out, cravings calm down, the scale doesn’t move a gram.'],
-        ['The Clean Machine', 'Dialed-in maintenance — performance eating without the surplus. Maximum output, zero drift.']],
+        ['The Good Life', 'Weight holds, food stays fun — upgrades hide in favorites.'],
+        ['The Tune-Up', 'Same you, better inputs — steadier energy, calmer cravings.'],
+        ['The Clean Machine', 'Dialed-in maintenance — max output, zero drift.']],
     };
     const [title, blurb] = M[i.dir][tz];
     const results = i.dir === 'maintain' ? 2 : [3, 4, 5][tz];
@@ -1604,18 +1598,20 @@
       const i = dialInfo();
       return '<div class="q-kicker">Your direction</div>' +
         '<div class="q-title">Dial your plan in</div>' +
-        '<div class="q-sub" style="margin-bottom:16px">Tap a zone — calories up–down, taste left–right. Nine combos, no sliders.</div>' +
+        '<div class="q-sub" style="margin-bottom:14px">Move the dot — calories up–down, taste left–right. It lands on one of nine plans.</div>' +
+        '<div class="pad-wrap">' +
+        '<span class="axo">More fuel</span>' +
+        '<div class="pad-row"><span class="axo side">Full<br>flavor</span>' +
         '<div class="pad" id="pad">' +
-        '<span class="ax ax-t">More fuel</span><span class="ax ax-b">Fewer calories</span>' +
-        '<span class="ax ax-l">Full<br>flavor</span><span class="ax ax-r">All<br>results</span>' +
-        '<div class="pad-band"><span>steady zone</span></div>' +
-        '<i class="gl v" style="left:33.33%"></i><i class="gl v" style="left:66.66%"></i>' +
-        '<i class="gl h" style="top:33.33%"></i><i class="gl h" style="top:66.66%"></i>' +
-        '<div class="pad-cv" id="padCv"></div><div class="pad-ch" id="padCh"></div>' +
-        '<div class="pad-knob" id="padKnob"></div>' +
+        DIAL_CENTERS.map(py => DIAL_CENTERS.map(px =>
+          '<i class="pd" style="left:' + (px * 100) + '%;top:' + (py * 100) + '%"></i>').join('')).join('') +
+        '<div class="pad-knob snap" id="padKnob"></div>' +
+        '</div>' +
+        '<span class="axo side" style="text-align:left">All<br>results</span></div>' +
+        '<span class="axo">Fewer calories</span>' +
         '</div>' +
         '<div class="xp-card" id="xpCard">' + dialXpHTML(i) + '</div>' +
-        noteHTML({ t: 'Nine combos, one screen', x: 'The pad snaps to a 3×3 grid — each cell is a named experience + blurb + three 1–5 ratings. No scrolling, no continuum; same answers written underneath.' }, 'right:6px;top:2px;') +
+        noteHTML({ t: 'Free move, firm landing', x: 'The dot moves freely and snaps to the nearest of nine dots on release — the explainer below previews the landing cell live while dragging.' }, 'right:6px;top:2px;') +
         '<div class="q-foot"><button class="q-cta" id="qNext">This feels right</button></div>';
     }
     if (step.type === 'forecast') {
@@ -1758,16 +1754,15 @@
     if (wIn) wIn.addEventListener('input', () => {
       state.answers.w = +wIn.value;
       $('wVal').innerHTML = wIn.value + ' <small>kg</small>'; });
-    /* XY dial pad */
+    /* XY dial pad — free movement, snaps to the nearest of nine dots on release */
     const pad = $('pad');
     if (pad) {
-      const knob = $('padKnob'), cv = $('padCv'), ch = $('padCh');
+      const knob = $('padKnob');
+      const snap = v => DIAL_CENTERS[v < 1 / 3 ? 0 : v < 2 / 3 ? 1 : 2];
       const paint = () => {
         const d = state.answers.dial;
         knob.style.left = (d.x * 100) + '%';
         knob.style.top = ((1 - d.y) * 100) + '%';
-        cv.style.left = (d.x * 100) + '%';
-        ch.style.top = ((1 - d.y) * 100) + '%';
         const i = dialApply();
         $('xpCard').innerHTML = dialXpHTML(i);
       };
@@ -1777,18 +1772,24 @@
         const nx = (ev.clientX - r.left) / r.width;
         const ny = 1 - (ev.clientY - r.top) / r.height;
         if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
-        // snap to the 3x3 grid — nine combos, not a continuum
-        const snap = v => DIAL_CENTERS[v < 1 / 3 ? 0 : v < 2 / 3 ? 1 : 2];
         state.answers.dial = {
-          x: snap(Math.max(0, Math.min(1, nx))),
-          y: snap(Math.max(0, Math.min(1, ny))) };
+          x: Math.max(0, Math.min(1, nx)),
+          y: Math.max(0, Math.min(1, ny)) };
+        paint();   // explainer previews the landing cell live
+      };
+      const settle = () => {
+        const d = state.answers.dial;
+        state.answers.dial = { x: snap(d.x), y: snap(d.y) };
+        knob.classList.add('snap');
         paint();
       };
       pad.addEventListener('pointerdown', ev => {
         try { pad.setPointerCapture(ev.pointerId); } catch (_) {}
+        knob.classList.remove('snap');
         move(ev);
         const mv = e => move(e);
-        const up = () => { pad.removeEventListener('pointermove', mv);
+        const up = () => { settle();
+          pad.removeEventListener('pointermove', mv);
           pad.removeEventListener('pointerup', up); pad.removeEventListener('pointercancel', up); };
         pad.addEventListener('pointermove', mv);
         pad.addEventListener('pointerup', up);
