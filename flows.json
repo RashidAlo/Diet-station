@@ -60,6 +60,51 @@
       ]
     },
     {
+      "id": "plan-quiz",
+      "title": "Plan Builder — Intelligent Questionnaire",
+      "status": "in-progress",
+      "updated": "2026-09-04",
+      "description": "Interactive UX wireframes for the diet-plan questionnaire. Opens on the Breathe intro (live Rive), then asks one question per screen and branches by goal — Weight control, Muscle building, Pregnancy, Gut comfort — ending in a plan preview computed from the answers. The playground flips core UX decisions live: answer pattern (cards / list / chips), progress style, auto-advance vs Continue, plus toggleable sticky UX annotations.",
+      "path": "plan-quiz/",
+      "handoff": {
+        "Fidelity": "Deliberate lo-fi wireframes after the intro — grayscale #FBFBFC ground, dashed image placeholders, brand red #ED1C24 reserved for selection and progress. Pattern first, skin later.",
+        "Flow map": "Intro (Breathe, Rive) → Goal → Identity → Age → Body sliders → Activity → Branch A → Branch B → Food rules → Meals → Building (3s) → Plan preview. 8–9 questions depending on branch.",
+        "Branching": "Goal picks Branch A/B: Weight = pace + cravings · Muscle = training days + target · Pregnancy = trimester + eating comfort (identity screen auto-skipped) · Gut = symptoms + trigger foods (multi-select).",
+        "Question grammar": "One decision per screen. Single-select auto-advances after 260ms (toggleable to a Continue button); multi-select always uses Continue, which reads 'Skip for now' at zero selections. Recommended options are pre-highlighted, never pre-selected.",
+        "Building screen": "3s of perceived intelligence — pulsing dot-ball (brand red, CSS) + four checklist lines that echo the user's actual answers, then auto-advances.",
+        "Plan preview": "kcal/protein/carbs/fat computed from answers: sex + activity baseline, goal adjustment (pace −250/−420/−560 · muscle +120/+280/+450 · trimester +60/+340/+450/+330), protein = weight-slider kg × goal factor (1.6/1.9/1.1/1.2 g/kg). Meal names are sample content per goal.",
+        "Playground": "Desktop (standard shell): screens jump grid, goal-branch override, answer pattern (cards/list/chips), progress (bar/dots/count), advance behavior, corner-radius dial, UX-notes toggle, Copy values. Mobile: fullscreen + floating pill (pattern cycle, notes, restart).",
+        "Intro": "Byte-identical Breathe recipe — same Rive artboard, glass X + CTA (global glass.json recipe), segmented control. CTA enters the quiz; goal selection syncs Machine.state so backing out keeps the blob in the matching state.",
+        "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)."
+      },
+      "downloads": [
+        {
+          "label": "Prototype source (index.html)",
+          "href": "plan-quiz/index.html"
+        }
+      ],
+      "platform": "iOS",
+      "area": "Onboarding",
+      "preview": "plan-quiz/preview.png",
+      "rn": [
+        {
+          "t": "Flow state machine",
+          "note": "The whole questionnaire is one data-driven wizard: a steps array rebuilt whenever the goal answer changes. Branch questions and smart skips (identity screen removed on Pregnancy) come from the builder, not from navigation code.",
+          "code": "type Goal = 'weight' | 'muscle' | 'pregnancy' | 'gut';\n\nfunction buildSteps(goal: Goal): Step[] {\n  return [\n    GOAL_STEP,\n    ...(goal !== 'pregnancy' ? [IDENTITY_STEP] : []),  // smart skip\n    AGE_STEP, BODY_STEP, ACTIVITY_STEP,\n    BRANCH_A[goal], BRANCH_B[goal],                    // goal-specific pair\n    FOOD_RULES_STEP, MEALS_STEP,\n    BUILDING_STEP, PLAN_STEP,\n  ];\n}\n// Single-select: auto-advance ~260ms after tap (or Continue, per UX flag).\n// Multi-select: Continue always; label flips to 'Skip for now' at 0 picks."
+        },
+        {
+          "t": "Plan math",
+          "note": "The final screen must visibly derive from the answers — kcal and protein are computed, only meal content is sample. Keep the factors in one tokens file so nutrition can tune them without touching flow code.",
+          "code": "const base = (sex === 'male' ? 1900 : 1750) + activityIdx * 160;\nconst goalAdj = {\n  weight:    { gentle: -250, steady: -420, ambitious: -560 },\n  muscle:    { lean: +280, bulk: +450, recomp: +120 },\n  pregnancy: { t1: +60, t2: +340, t3: +450, pp: +330 },\n  gut:       {},\n};\nconst PROTEIN_PER_KG = { weight: 1.6, muscle: 1.9, pregnancy: 1.1, gut: 1.2 };\nconst protein = Math.round(weightKg * PROTEIN_PER_KG[goal]);\n// fat = 30% kcal / 9 · carbs fill the remainder / 4"
+        },
+        {
+          "t": "Intro hand-off",
+          "note": "Screen 0 is the Breathe flow unchanged (same .riv, same state machine). The CTA pushes the wizard; picking a goal writes Machine.state back so returning to the intro shows the matching blob.",
+          "code": "// on goal select:\nriveRef.current?.setNumberState('Machine', 'state', GOAL_STATE[goal]); // 1–4\n// back from the first question → pop to the intro, blob already matches"
+        }
+      ]
+    },
+    {
       "id": "rewards",
       "title": "Rewards — Pull to Redeem",
       "status": "in-progress",

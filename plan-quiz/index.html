@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DietStation — Plan Builder Questionnaire</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ED1C24">
+<script>class Button {}</script>
+<script src="html2canvas.min.js"></script>
+<script src="liquid-glass-container.js"></script>
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #ED1C24; overflow: hidden; }
+  body.desktop { background: #0f0f12; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+
+  /* ================= playground shell (desktop standard) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #16161a; border-right: 1px solid rgba(255,255,255,.07);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y;
+    display: none; -webkit-user-select: none; user-select: none; }
+  body.desktop #side { display: block; }
+
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ff5a5f; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #fff; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.55);
+    margin-bottom: 26px; }
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.38);
+    margin-bottom: 12px; }
+
+  .lvl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lvl-grid button { display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 12px; background: rgba(255,255,255,.03);
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.65);
+    transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .lvl-grid button:hover { background: rgba(255,255,255,.07); }
+  .lvl-grid button.on { background: rgba(255,255,255,.12); color: #fff;
+    border-color: rgba(255,255,255,.35); }
+  .lvl-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ff5a5f; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.35); }
+
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    transition: filter .15s ease, background .15s ease; }
+  #sCopy { background: #ff5a5f; color: #fff; }
+  #sCopy:hover { filter: brightness(1.08); }
+  #sRestart { background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); }
+  #sRestart:hover { background: rgba(255,255,255,.14); }
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
+
+  /* ================= stage + device frame ================= */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body.desktop #stage { left: 316px; }
+
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.85), 0 6px 20px rgba(0,0,0,.4),
+      inset 0 0 0 2px #34343a, inset 0 0 0 7px #000; }
+  body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
+    width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
+    box-shadow: 0 -70px 0 #2c2c32; }
+  body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
+    width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
+  .island { display: none; position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
+    width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
+    pointer-events: none; }
+  body.desktop .island { display: block; }
+
+  .phone { position: relative; width: 402px; background: #ED1C24; overflow: hidden; }
+  body.desktop .phone { border-radius: 46px; }
+
+  /* ================= intro layer (the Breathe screen) ================= */
+  #introLayer { position: absolute; inset: 0; background: #ED1C24;
+    transition: opacity .38s ease; }
+  #introLayer.gone { opacity: 0; pointer-events: none; }
+  #overlay { position: absolute; }
+  #rive { width: 100%; height: 100%; display: block; }
+  .chrome { position: absolute; inset: 0; pointer-events: none; }
+  .chrome .para { position: absolute; bottom: calc(var(--sabd, 0px) + 112px); left: 50%;
+    transform: translateX(-50%); width: 240px; text-align: center;
+    font: 400 14px/20px 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif; color: #F9F9F9; }
+  .chrome .closebtn, .chrome .cta { pointer-events: auto; cursor: pointer;
+    overflow: hidden; transition: transform .18s cubic-bezier(.3,.8,.3,1);
+    -webkit-user-select: none; user-select: none;
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.30),
+      inset 0 0 0 .6px rgba(255,255,255,.38),
+      inset 0 -1px 1.5px rgba(0,0,0,.10),
+      0 10px 26px -12px rgba(0,0,0,.35),
+      0 1px 2px rgba(0,0,0,.10); }
+  .chrome .closebtn canvas, .chrome .cta canvas { box-shadow: none !important; }
+  .glass-dark-content { color: #0b0e12 !important; }
+  .glass-dark-content svg { filter: brightness(0) opacity(.88); }
+  .chrome .closebtn { position: absolute; left: 21px; top: calc(var(--satd, 0px) + 20px);
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; }
+  .chrome .closebtn:active { transform: scale(.92); }
+  .chrome .closebtn svg, .chrome .cta .ctalabel { position: relative; pointer-events: none; }
+  .chrome .closebtn svg { width: 16px; height: 16px; display: block; }
+  .chrome .cta { position: absolute; bottom: calc(var(--sabd, 0px) + 30px); left: 50%;
+    transform: translateX(-50%); width: 284px; height: 54px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font: 500 16px/1 'Urbane Rounded', -apple-system, sans-serif; color: #fff; }
+  .chrome .cta:active { transform: translateX(-50%) scale(.97); }
+  .chips { position: absolute; bottom: calc(var(--sabd, 0px) + 181px); left: 50%;
+    transform: translateX(-50%); display: flex; flex-wrap: nowrap; gap: 0;
+    justify-content: center; z-index: 20;
+    padding: 3px; border: 1px solid #E5E5E5; border-radius: 1024px; }
+  .chip { height: 38px; padding: 0 13px; border: none; border-radius: 1024px;
+    white-space: nowrap; background: transparent; color: #fff;
+    font: 500 14px/1 'Urbane Rounded', -apple-system, sans-serif;
+    display: flex; align-items: center; cursor: pointer;
+    position: relative; z-index: 1; transition: color .25s ease; }
+  .chip.sel { color: #ED1C24; }
+  .chips .thumb { position: absolute; top: 3px; left: 0; height: 38px; width: 0;
+    background: #FFF2F2; border-radius: 1024px; opacity: 0; z-index: 0;
+    box-shadow: 0 1px 15px -15px rgba(56,64,74,0.1);
+    transition: left .4s cubic-bezier(.3,.8,.3,1), width .4s cubic-bezier(.3,.8,.3,1),
+      opacity .25s ease; }
+
+  /* ================= quiz layer (wireframes) ================= */
+  #quizLayer { position: absolute; inset: 0; background: #FBFBFC; display: none;
+    flex-direction: column; --qr: 16px; }
+  #quizLayer.show { display: flex; }
+
+  .q-head { flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+    padding: calc(var(--satd, 0px) + 14px) 20px 10px; }
+  .q-navbtn { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%;
+    border: 1.2px solid #E4E4E8; background: #fff; cursor: pointer; color: #0B0E12;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s ease, opacity .2s ease; }
+  .q-navbtn:active { transform: scale(.92); }
+  .q-navbtn svg { width: 15px; height: 15px; display: block; }
+  .q-navbtn.hidden { opacity: 0; pointer-events: none; }
+  .q-progress { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 40px; }
+  .p-bar { width: 100%; max-width: 190px; height: 5px; border-radius: 3px; background: #ECECEF;
+    overflow: hidden; }
+  .p-bar i { display: block; height: 100%; border-radius: 3px; background: #ED1C24;
+    transition: width .35s cubic-bezier(.3,.8,.3,1); }
+  .p-dots { display: flex; gap: 6px; }
+  .p-dots i { width: 7px; height: 7px; border-radius: 50%; background: #E1E1E5;
+    transition: background .25s ease, transform .25s ease; }
+  .p-dots i.done { background: #F5A6A9; }
+  .p-dots i.cur { background: #ED1C24; transform: scale(1.25); }
+  .p-count { font: 600 13px/1 'Urbane Rounded', sans-serif; color: #8A8A93; }
+  .p-count b { color: #0B0E12; }
+
+  .q-scroll { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; }
+  .q-view { padding: 8px 24px calc(var(--sabd, 0px) + 120px); min-height: 100%; position: relative; }
+  .q-view.anim-f { animation: qInF .34s cubic-bezier(.25,.8,.35,1); }
+  .q-view.anim-b { animation: qInB .34s cubic-bezier(.25,.8,.35,1); }
+  @keyframes qInF { from { opacity: 0; transform: translateX(46px); } to { opacity: 1; transform: none; } }
+  @keyframes qInB { from { opacity: 0; transform: translateX(-46px); } to { opacity: 1; transform: none; } }
+
+  .q-kicker { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ED1C24; margin: 10px 0 10px; }
+  .q-title { font: 600 27px/34px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 8px; }
+  .q-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #8A8A93; margin-bottom: 24px; }
+
+  /* --- answer pattern: CARDS --- */
+  .opt-cards { display: flex; flex-direction: column; gap: 12px; }
+  .o-card { position: relative; display: flex; align-items: center; gap: 14px; text-align: left;
+    border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff; cursor: pointer;
+    padding: 15px 16px; transition: border-color .18s ease, background .18s ease, transform .12s ease; }
+  .o-card:active { transform: scale(.98); }
+  .o-card .thumb { flex: 0 0 46px; width: 46px; height: 46px; border-radius: 50%;
+    border: 1.4px dashed #C9C9CF; position: relative; overflow: hidden; }
+  .o-card .thumb::before, .o-card .thumb::after { content: ''; position: absolute;
+    left: 50%; top: 50%; width: 130%; height: 1.2px; background: #DDDDE2; }
+  .o-card .thumb::before { transform: translate(-50%,-50%) rotate(45deg); }
+  .o-card .thumb::after { transform: translate(-50%,-50%) rotate(-45deg); }
+  .o-card .txt { flex: 1; min-width: 0; }
+  .o-card .lab { font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .o-card .sub { font: 400 12.5px/17px 'Proxima Nova', sans-serif; color: #8A8A93; margin-top: 2px; }
+  .o-card .tick { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%;
+    border: 1.4px solid #DDDDE2; display: flex; align-items: center; justify-content: center;
+    transition: all .18s ease; color: transparent; }
+  .o-card .tick svg { width: 12px; height: 12px; }
+  .o-card.sel { border-color: #ED1C24; background: #FFF6F6; }
+  .o-card.sel .tick { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+  .o-card.rec::after { content: 'Recommended'; position: absolute; top: -9px; right: 14px;
+    font: 600 9.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .8px; text-transform: uppercase;
+    color: #ED1C24; background: #fff; border: 1px solid #F5C2C4; border-radius: 99px;
+    padding: 4px 8px; }
+
+  /* --- answer pattern: LIST --- */
+  .opt-list { border-top: 1px solid #ECECEF; }
+  .o-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: none; border: none; border-bottom: 1px solid #ECECEF; cursor: pointer;
+    padding: 16px 4px; transition: background .15s ease; }
+  .o-row:active { background: #F5F5F7; }
+  .o-row .txt { flex: 1; min-width: 0; }
+  .o-row .lab { font: 600 15.5px/21px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .o-row .sub { font: 400 12.5px/17px 'Proxima Nova', sans-serif; color: #8A8A93; margin-top: 1px; }
+  .o-row .rectag { font: 600 9.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .8px;
+    text-transform: uppercase; color: #ED1C24; border: 1px solid #F5C2C4; border-radius: 99px;
+    padding: 4px 8px; margin-right: 2px; }
+  .o-row .tick { flex: 0 0 23px; width: 23px; height: 23px; border-radius: 50%;
+    border: 1.4px solid #DDDDE2; display: flex; align-items: center; justify-content: center;
+    transition: all .18s ease; color: transparent; }
+  .o-row .tick svg { width: 11px; height: 11px; }
+  .o-row .tick.sq { border-radius: 7px; }
+  .o-row.sel .lab { color: #ED1C24; }
+  .o-row.sel .tick { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+
+  /* --- answer pattern: CHIPS --- */
+  .opt-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .o-chip { border: 1.4px solid #E4E4E8; border-radius: 999px; background: #fff; cursor: pointer;
+    padding: 13px 18px; font: 600 14.5px/1 'Urbane Rounded', sans-serif; color: #0B0E12;
+    transition: all .15s ease; }
+  .o-chip:active { transform: scale(.95); }
+  .o-chip.sel { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+
+  /* --- sliders (body screen) --- */
+  .sl-group { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 18px 18px 20px; margin-bottom: 14px; }
+  .sl-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .sl-head label { font: 600 13px/18px 'Urbane Rounded', sans-serif; color: #8A8A93; }
+  .sl-val { font: 600 30px/34px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .sl-val small { font: 600 15px/1 'Urbane Rounded', sans-serif; color: #8A8A93; }
+  .sl-group input[type=range] { width: 100%; accent-color: #ED1C24; height: 30px; margin-top: 6px; }
+  .sl-ruler { display: flex; justify-content: space-between; margin-top: 2px; }
+  .sl-ruler i { width: 1px; height: 6px; background: #DDDDE2; }
+  .sl-ruler i:nth-child(5n+1) { height: 10px; }
+
+  /* --- footer CTA inside quiz --- */
+  .q-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+    padding: 14px 24px calc(var(--sabd, 0px) + 18px);
+    background: linear-gradient(to top, #FBFBFC 62%, rgba(251,251,252,0)); pointer-events: none; }
+  .q-cta { pointer-events: auto; width: 100%; height: 54px; border: none; border-radius: 999px;
+    background: #ED1C24; color: #fff; cursor: pointer;
+    font: 500 16px/1 'Urbane Rounded', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 12px 26px -12px rgba(237,28,36,.5);
+    transition: transform .15s ease, filter .15s ease; }
+  .q-cta:active { transform: scale(.97); }
+  .q-cta.ghost { background: #fff; color: #0B0E12; border: 1.4px solid #E4E4E8; box-shadow: none; }
+  .q-skip { pointer-events: auto; display: block; margin: 10px auto 0; background: none; border: none;
+    cursor: pointer; font: 400 13px/1 'Proxima Nova', sans-serif; color: #8A8A93;
+    text-decoration: underline; text-underline-offset: 3px; }
+
+  /* --- building screen --- */
+  .build-wrap { display: flex; flex-direction: column; align-items: center; padding-top: 44px; }
+  .dotball { position: relative; width: 190px; height: 190px; margin-bottom: 40px; }
+  .dotball i { position: absolute; border-radius: 50%; background: #ED1C24;
+    animation: dotPulse 1.6s ease-in-out infinite; }
+  @keyframes dotPulse { 0%,100% { transform: scale(.55); opacity: .35; }
+    50% { transform: scale(1); opacity: 1; } }
+  .build-lines { width: 100%; max-width: 280px; }
+  .b-line { display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .45s ease, transform .45s ease; }
+  .b-line.on { opacity: 1; transform: none; }
+  .b-line .bt { width: 20px; height: 20px; border-radius: 50%; flex: 0 0 20px;
+    border: 1.4px solid #DDDDE2; display: flex; align-items: center; justify-content: center;
+    color: transparent; transition: all .3s ease; }
+  .b-line.done .bt { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+  .b-line .bt svg { width: 10px; height: 10px; }
+  .b-line span { font: 400 14px/19px 'Proxima Nova', sans-serif; color: #55555E; }
+
+  /* --- plan screen --- */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+  .stat { border: 1.4px solid #E4E4E8; border-radius: calc(var(--qr) - 3px); background: #fff;
+    padding: 11px 6px 10px; text-align: center; }
+  .stat b { display: block; font: 600 17px/22px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .stat span { font: 600 9.5px/13px 'Urbane Rounded', sans-serif; letter-spacing: 1px;
+    text-transform: uppercase; color: #9B9BA3; }
+  .day-row { display: flex; gap: 6px; margin-bottom: 18px; }
+  .day { flex: 1; height: 44px; border: 1.4px solid #E4E4E8; border-radius: 12px; background: #fff;
+    cursor: pointer; font: 600 12.5px/1 'Urbane Rounded', sans-serif; color: #8A8A93;
+    transition: all .15s ease; }
+  .day.sel { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+  .meal { display: flex; align-items: center; gap: 13px; border: 1.4px solid #E4E4E8;
+    border-radius: var(--qr); background: #fff; padding: 13px 14px; margin-bottom: 10px; }
+  .meal .thumb { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 12px;
+    border: 1.4px dashed #C9C9CF; position: relative; overflow: hidden; }
+  .meal .thumb::before, .meal .thumb::after { content: ''; position: absolute; left: 50%; top: 50%;
+    width: 140%; height: 1.2px; background: #DDDDE2; }
+  .meal .thumb::before { transform: translate(-50%,-50%) rotate(38deg); }
+  .meal .thumb::after { transform: translate(-50%,-50%) rotate(-38deg); }
+  .meal .txt { flex: 1; min-width: 0; }
+  .meal .mk { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #ED1C24; }
+  .meal .mn { font: 600 14.5px/19px 'Urbane Rounded', sans-serif; color: #0B0E12; margin: 1px 0 2px; }
+  .meal .mm { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .meal .swap { flex: 0 0 auto; border: 1.2px solid #E4E4E8; background: #fff; color: #8A8A93;
+    border-radius: 99px; padding: 7px 11px; cursor: pointer;
+    font: 600 11px/1 'Urbane Rounded', sans-serif; }
+  .plan-note { display: flex; align-items: center; gap: 8px; margin: 6px 0 0;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .plan-note .nd { width: 7px; height: 7px; border-radius: 50%; background: #ED1C24; flex: 0 0 7px; }
+
+  /* --- UX annotations --- */
+  .ux-note { position: absolute; z-index: 25; max-width: 218px; pointer-events: none;
+    background: #FFF6C8; border: 1px solid #EBD983; border-radius: 3px 12px 12px 12px;
+    padding: 9px 11px; font: 400 11.5px/15px 'Proxima Nova', sans-serif; color: #6B5D1E;
+    box-shadow: 0 8px 18px -10px rgba(120,100,20,.45); transform: rotate(-1.2deg); }
+  .ux-note b { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
+    text-transform: uppercase; display: block; margin-bottom: 2px; color: #8A7716; }
+  body:not(.notes) .ux-note { display: none; }
+
+  /* --- mobile floating pill --- */
+  #pill { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    transform: translateX(-50%); z-index: 70; display: none; gap: 4px; padding: 5px;
+    border-radius: 999px; background: rgba(18,18,22,.82); backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px); box-shadow: 0 12px 30px -10px rgba(0,0,0,.5); }
+  body:not(.desktop).piled #pill { display: flex; }
+  #pill button { border: none; background: transparent; color: rgba(255,255,255,.85);
+    font: 600 12px/1 'Urbane Rounded', sans-serif; border-radius: 999px; padding: 10px 14px;
+    cursor: pointer; white-space: nowrap; }
+  #pill button.on { background: rgba(255,255,255,.16); color: #fff; }
+</style>
+</head>
+<body>
+
+<aside id="side">
+  <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <h2>Plan Builder — Questionnaire</h2>
+  <p class="s-desc">Wireframes for the intelligent diet-plan questionnaire. It opens on the
+    Breathe intro, then asks one question per screen and branches by goal — Weight, Muscle,
+    Pregnancy, Gut. The final plan is computed from the answers. Everything below is a UX
+    decision we can flip live and compare.</p>
+
+  <div class="s-sec">
+    <div class="s-label">Screens</div>
+    <div class="s-note">Jump anywhere — the flow keeps whatever answers exist.</div>
+    <div class="lvl-grid" id="jumpGrid"></div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Goal branch</div>
+    <div class="s-note">Sets the goal answer — branch questions and the final plan follow it.</div>
+    <div class="lvl-grid" id="goalGrid">
+      <button data-goal="weight" class="on">Weight</button>
+      <button data-goal="muscle">Muscle</button>
+      <button data-goal="pregnancy">Pregnancy</button>
+      <button data-goal="gut">Gut</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Answer pattern</div>
+    <div class="s-note">The core wireframe decision — same questions, three treatments.</div>
+    <div class="lvl-grid g3" id="patGrid">
+      <button data-pat="cards" class="on">Cards</button>
+      <button data-pat="list">List</button>
+      <button data-pat="chips">Chips</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Progress indicator</div>
+    <div class="lvl-grid g3" id="progGrid">
+      <button data-prog="bar" class="on">Bar</button>
+      <button data-prog="dots">Dots</button>
+      <button data-prog="count">Count</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Advance behavior</div>
+    <div class="s-note">Single-choice questions only — multi-select always needs Continue.</div>
+    <div class="lvl-grid" id="advGrid">
+      <button data-adv="auto" class="on">Auto on tap</button>
+      <button data-adv="next">Continue button</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Live modifiers</div>
+    <div class="mod">
+      <div class="mod-head"><label>Corner radius</label><output id="radOut">16px</output></div>
+      <input type="range" id="radIn" min="8" max="26" step="1" value="16">
+      <div class="mod-desc">Softness of cards, sliders and meal tiles.</div>
+    </div>
+    <div class="lvl-grid" id="noteGrid">
+      <button data-note="off" class="on">Notes hidden</button>
+      <button data-note="on">UX notes on</button>
+    </div>
+  </div>
+
+  <div class="s-actions">
+    <button id="sCopy">Copy values</button>
+    <button id="sRestart">Restart flow</button>
+  </div>
+
+  <div class="s-foot">Starts on the Breathe intro (Rive, artboard &ldquo;DietStation Breathe&rdquo;).
+    All post-intro screens are lo-fi wireframes on purpose — pattern first, skin later.
+    Plan numbers are computed from the answers (weight slider &times; goal factor), not canned.</div>
+</aside>
+
+<div id="stage">
+  <div class="device" id="device">
+    <div class="phone-wrap" id="phoneWrap">
+      <div class="phone" id="phone">
+
+        <div id="introLayer">
+          <div id="overlay"><canvas id="rive"></canvas></div>
+          <div class="chrome" id="chrome">
+            <div class="para">An intelligent diet program supervised by our certified nutritionists</div>
+          </div>
+          <div class="chips" id="chips">
+            <div class="thumb" id="chipThumb"></div>
+            <button class="chip" data-state="1">Weight</button>
+            <button class="chip" data-state="2">Muscle</button>
+            <button class="chip" data-state="3">Pregnancy</button>
+            <button class="chip" data-state="4">Gut</button>
+          </div>
+        </div>
+
+        <div id="quizLayer">
+          <div class="q-head">
+            <button class="q-navbtn" id="qBack" title="back">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5L5 8l5.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="q-progress" id="qProg"></div>
+            <button class="q-navbtn" id="qClose" title="close">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="q-scroll" id="qScroll"></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="island"></div>
+  </div>
+</div>
+
+<div id="pill">
+  <button id="pPat">Cards</button>
+  <button id="pNotes">Notes</button>
+  <button id="pRestart">Restart</button>
+</div>
+
+<div id="safeProbe"></div>
+<script src="rive.js"></script>
+<script>
+(() => {
+  rive.RuntimeLoader.setWasmUrl('rive.wasm');
+  const $ = id => document.getElementById(id);
+  const phone = $('phone'), wrap = $('phoneWrap'), device = $('device'),
+    overlay = $('overlay'), canvas = $('rive');
+  let r = null;
+
+  /* ================================================================
+     liquid glass plumbing — identical recipe to the Breathe flow
+  ================================================================ */
+  const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+  const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
+  const GV = {
+    blur: GG.blurRadius !== undefined ? GG.blurRadius : 5,
+    tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
+    rim: GG.rimIntensity !== undefined ? GG.rimIntensity : 0.05,
+    edge: GG.edgeIntensity !== undefined ? GG.edgeIntensity : 0.01 };
+  window.glassControls = { ...GG, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+  let stageScale = 1;
+  let liveGlass = [];
+  function makeGlass(cls, radius) {
+    if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
+    const c = new Container({ borderRadius: radius, tintOpacity: GV.tint });
+    c.element.classList.add(cls);
+    c.baseRadius = radius;
+    c.contextScale = stageScale;
+    c.resizeGlass = () => {
+      const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
+      const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
+      c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
+      c.contextScale = stageScale;
+      c.canvas.width = w; c.canvas.height = h;
+      c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
+      if (c.gl_refs.gl) {
+        const gl = c.gl_refs.gl;
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
+        gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
+        if (c.gl_refs.contextScaleLoc) gl.uniform1f(c.gl_refs.contextScaleLoc, stageScale);
+        c.render && c.render();
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(c.resizeGlass));
+    liveGlass.push(c);
+    return c;
+  }
+  function adaptGlassContrast() {
+    if (!GLASS_OK || !Container.pageSnapshot) return;
+    let sctx;
+    try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    liveGlass.forEach(c => {
+      if (!c.canvas) return;
+      const rct = c.canvas.getBoundingClientRect();
+      const x = Math.max(8, Math.round(rct.left + rct.width / 2));
+      const y = Math.max(8, Math.round(rct.top + rct.height / 2));
+      try {
+        const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
+        let l = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 10) continue;
+          l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
+        }
+        c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
+      } catch (_) {}
+    });
+  }
+  function buildNav() {
+    const chrome = $('chrome');
+    const cb = makeGlass('closebtn', 22);
+    cb.element.title = 'close';
+    cb.element.insertAdjacentHTML('beforeend',
+      '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>');
+    cb.element.addEventListener('click', () => { location.href = '../'; });
+    chrome.appendChild(cb.element);
+    const cta = makeGlass('cta', 27);
+    cta.element.insertAdjacentHTML('beforeend',
+      '<span class="ctalabel" style="display:contents">Let’s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span>');
+    cta.element.addEventListener('click', () => enterQuiz(true));
+    chrome.appendChild(cta.element);
+    setTimeout(adaptGlassContrast, 900);
+  }
+
+  /* ================================================================
+     layout / device fit — same math as Breathe
+  ================================================================ */
+  function safeInsets() {
+    const cs = getComputedStyle($('safeProbe'));
+    return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  }
+  const isMobile = () => matchMedia('(max-width: 500px)').matches ||
+    (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  function refit() {
+    const W = window.innerWidth, H = window.innerHeight;
+    let k, Hd, satd, sabd;
+    if (isMobile()) {
+      document.body.classList.remove('desktop');
+      k = W / 402; Hd = H / k;
+      const si = safeInsets();
+      satd = si.top / k; sabd = si.bottom / k;
+      device.style.transform = 'none';
+      wrap.style.transform = `scale(${k})`;
+      wrap.style.transformOrigin = 'top left';
+      wrap.style.width = (402 * k) + 'px';
+      wrap.style.height = H + 'px';
+    } else {
+      document.body.classList.add('desktop');
+      Hd = 874; satd = 24; sabd = 12;
+      const availW = W - 316;
+      k = Math.min(1, (availW - 56) / 426, (H - 56) / 898);
+      wrap.style.transform = 'none';
+      wrap.style.width = '402px';
+      wrap.style.height = '874px';
+      device.style.transform = `scale(${k})`;
+    }
+    phone.style.height = Hd + 'px';
+    phone.style.setProperty('--satd', satd.toFixed(1) + 'px');
+    phone.style.setProperty('--sabd', sabd.toFixed(1) + 'px');
+    const bandTop = satd + 70;
+    const chipsTop = Hd - sabd - 181 - 46;
+    const e = Math.max(0.6, Math.min(1, (chipsTop - bandTop) / 386));
+    const w = 450 * e, h = 554 * e;
+    overlay.style.left = (201 - w / 2) + 'px';
+    overlay.style.top = ((bandTop + chipsTop) / 2 - 26 * e - 0.3906 * h) + 'px';
+    overlay.style.width = w + 'px';
+    overlay.style.height = h + 'px';
+    const dpr = (window.devicePixelRatio || 1) * k;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    if (r) r.resizeDrawingSurfaceToCanvas();
+    stageScale = k;
+    liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
+  }
+  window.addEventListener('resize', refit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
+  window.addEventListener('orientationchange', () => setTimeout(refit, 250));
+  refit();
+
+  const navGo = () => { try { buildNav(); } catch (e) { console.error('buildNav failed:', e); } };
+  const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
+    .then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  Promise.all([document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(), loadGlobalGlass])
+    .then(([, pub]) => {
+      let draft = {}; try { draft = JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) {}
+      const g = { ...pub, ...draft };
+      if (g.blurRadius !== undefined) GV.blur = g.blurRadius;
+      if (g.tintOpacity !== undefined) GV.tint = g.tintOpacity;
+      if (g.rimIntensity !== undefined) GV.rim = g.rimIntensity;
+      if (g.edgeIntensity !== undefined) GV.edge = g.edgeIntensity;
+      window.glassControls = { ...g, blurRadius: GV.blur, rimIntensity: GV.rim, edgeIntensity: GV.edge };
+      setTimeout(navGo, 50);
+    });
+
+  /* ================================================================
+     Rive intro — segmented control drives Machine.state
+  ================================================================ */
+  const chipEls = document.querySelectorAll('#chips .chip');
+  let stInput = null;
+  function setSel(v) {
+    let selEl = null;
+    chipEls.forEach(c => {
+      const on = parseInt(c.dataset.state, 10) === v;
+      c.classList.toggle('sel', on);
+      if (on) selEl = c;
+    });
+    const th = $('chipThumb');
+    if (selEl) {
+      th.style.opacity = 1;
+      th.style.left = selEl.offsetLeft + 'px';
+      th.style.width = selEl.offsetWidth + 'px';
+    } else {
+      th.style.opacity = 0;
+    }
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setSel(0));
+  fetch('dietstation.riv').then(res => res.arrayBuffer()).then(buffer => {
+    r = new rive.Rive({
+      buffer, canvas, autoplay: true, autoBind: true,
+      stateMachines: 'State Machine 1',
+      onLoad: () => {
+        r.resizeDrawingSurfaceToCanvas();
+        try {
+          const st = r.viewModelInstance.number('state');
+          stInput = st;
+          setSel(Math.round(st.value));
+          st.on(v => setSel(Math.round(v)));
+          chipEls.forEach(c => c.onclick = () => { st.value = parseInt(c.dataset.state, 10); });
+        } catch (_) {}
+      },
+    });
+  });
+
+  /* ================================================================
+     QUESTIONNAIRE — data model
+  ================================================================ */
+  const GOALS = {
+    weight:    { label: 'Weight control',  sub: 'Lose, hold or reset — no crash diets',   state: 1 },
+    muscle:    { label: 'Muscle building', sub: 'Fuel training with protein-forward meals', state: 2 },
+    pregnancy: { label: 'Pregnancy',       sub: 'Trimester-safe nutrition for two',        state: 3 },
+    gut:       { label: 'Gut comfort',     sub: 'Calm bloating, reflux and sensitivity',   state: 4 },
+  };
+
+  const BRANCH_A = {
+    weight: { id: 'pace', short: 'Pace', kicker: 'Weight control', title: 'Pick your pace',
+      sub: 'Slower paces are easier to keep — you can change this any week.',
+      note: { t: 'Branch screen', x: 'Only the Weight branch sees this. The recommended option is pre-highlighted, never pre-selected.' },
+      options: [
+        { id: 'gentle', label: 'Gentle', sub: 'About −0.25 kg a week' },
+        { id: 'steady', label: 'Steady', sub: 'About −0.5 kg a week', rec: true },
+        { id: 'ambitious', label: 'Ambitious', sub: 'About −0.75 kg a week — harder to hold' }] },
+    muscle: { id: 'train', short: 'Training', kicker: 'Muscle building', title: 'How many training days?',
+      sub: 'Meals and protein get timed around your sessions.',
+      note: { t: 'Branch screen', x: 'Only the Muscle branch sees this — the answer scales calories and protein timing.' },
+      options: [
+        { id: 't12', label: '1–2 days', sub: 'Getting started' },
+        { id: 't34', label: '3–4 days', sub: 'A steady split', rec: true },
+        { id: 't56', label: '5–6 days', sub: 'High volume' }] },
+    pregnancy: { id: 'trimester', short: 'Trimester', kicker: 'Pregnancy', title: 'Where are you now?',
+      sub: 'Calories and key nutrients shift by trimester.',
+      note: { t: 'Branch screen', x: 'Trimester drives the calorie add-on (+340 in T2, +450 in T3) and nutrient focus on the plan.' },
+      options: [
+        { id: 't1', label: 'First trimester', sub: 'Weeks 1–12' },
+        { id: 't2', label: 'Second trimester', sub: 'Weeks 13–27' },
+        { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
+        { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] },
+    gut: { id: 'symptoms', short: 'Symptoms', kicker: 'Gut comfort', title: 'What bothers you most?',
+      sub: 'Pick everything that applies.', multi: true,
+      note: { t: 'Branch screen', x: 'Multi-select — symptoms map to a low-trigger meal filter, not a diagnosis.' },
+      options: [
+        { id: 'bloat', label: 'Bloating' },
+        { id: 'reflux', label: 'Reflux' },
+        { id: 'irregular', label: 'Irregularity' },
+        { id: 'sensitive', label: 'Food sensitivity' }] },
+  };
+
+  const BRANCH_B = {
+    weight: { id: 'cravings', short: 'Cravings', kicker: 'Weight control', title: 'When do cravings hit?',
+      sub: 'Pick everything that applies — we plan around them, not against them.', multi: true,
+      options: [
+        { id: 'night', label: 'Late night' },
+        { id: 'between', label: 'Between meals' },
+        { id: 'sweet', label: 'Sweet tooth' },
+        { id: 'portions', label: 'Big portions' },
+        { id: 'rare', label: 'Rarely' }] },
+    muscle: { id: 'target', short: 'Target', kicker: 'Muscle building', title: 'What’s the target?',
+      sub: 'This sets your calorie surplus.',
+      options: [
+        { id: 'lean', label: 'Lean gain', sub: 'Small surplus, minimal fat', rec: true },
+        { id: 'bulk', label: 'Bulk', sub: 'Bigger surplus, faster mass' },
+        { id: 'recomp', label: 'Recomp', sub: 'Build while holding weight' }] },
+    pregnancy: { id: 'comfort', short: 'Comfort', kicker: 'Pregnancy', title: 'Anything making eating hard?',
+      sub: 'Pick everything that applies right now.', multi: true,
+      options: [
+        { id: 'nausea', label: 'Nausea' },
+        { id: 'aversion', label: 'Food aversions' },
+        { id: 'heartburn', label: 'Heartburn' },
+        { id: 'none', label: 'None of these' }] },
+    gut: { id: 'triggers', short: 'Triggers', kicker: 'Gut comfort', title: 'Known trigger foods?',
+      sub: 'Pick any you already suspect — or let the plan find them.', multi: true,
+      options: [
+        { id: 'dairy', label: 'Dairy' },
+        { id: 'gluten', label: 'Gluten' },
+        { id: 'fried', label: 'Fried food' },
+        { id: 'spicy', label: 'Spicy' },
+        { id: 'caffeine', label: 'Caffeine' },
+        { id: 'unsure', label: 'Not sure' }] },
+  };
+
+  const state = {
+    pat: 'cards', prog: 'bar', adv: 'auto', notes: false, radius: 16,
+    step: 0, started: false,
+    answers: { goal: null, sex: null, age: null, h: 170, w: 76,
+      activity: null, a: null, b: [], excl: [], meals: null },
+  };
+
+  function goalKey() { return state.answers.goal || 'weight'; }
+
+  function buildSteps() {
+    const g = goalKey();
+    const steps = [];
+    steps.push({ id: 'goal', short: 'Goal', kicker: 'Your goal', title: 'What brings you to DietStation?',
+      sub: 'Pick one — your whole plan is built around it.', field: 'goal', q: true,
+      note: { t: 'The branch point', x: 'One decision per screen. This answer decides which questions come next and what the plan optimizes for.' },
+      options: Object.entries(GOALS).map(([id, o]) => ({ id, label: o.label, sub: o.sub })) });
+    if (g !== 'pregnancy')
+      steps.push({ id: 'sex', short: 'You', kicker: 'About you', title: 'How do you identify?',
+        sub: 'It changes the calorie baseline.', field: 'sex', q: true,
+        note: { t: 'Smart skip', x: 'This screen is skipped entirely when the goal is Pregnancy — never ask what you already know.' },
+        options: [
+          { id: 'female', label: 'Female' },
+          { id: 'male', label: 'Male' },
+          { id: 'na', label: 'Prefer not to say' }] });
+    steps.push({ id: 'age', short: 'Age', kicker: 'About you', title: 'How old are you?',
+      sub: 'Ranges are enough — no forms here.', field: 'age', q: true,
+      note: { t: 'Ranges, not inputs', x: 'A tap beats typing. Precision the plan doesn’t need is friction the user feels.' },
+      options: [
+        { id: 'a18', label: '18–29' },
+        { id: 'a30', label: '30–44' },
+        { id: 'a45', label: '45–59' },
+        { id: 'a60', label: '60+' }] });
+    steps.push({ id: 'body', short: 'Body', kicker: 'About you', title: 'Your numbers',
+      sub: 'Used only to size portions and protein.', q: true, type: 'sliders',
+      note: { t: 'Feeds the math', x: 'The weight slider sets protein on the final plan (g per kg by goal) — answers visibly matter.' } });
+    steps.push({ id: 'activity', short: 'Activity', kicker: 'About you', title: 'How active is a normal week?',
+      sub: 'Outside of workouts too — desk days count.', field: 'activity', q: true,
+      options: [
+        { id: 'seated', label: 'Mostly seated', sub: 'Desk days, little walking' },
+        { id: 'light', label: 'Lightly active', sub: 'Walks, errands, on your feet some' },
+        { id: 'active', label: 'Active', sub: 'Regular exercise most weeks' },
+        { id: 'hard', label: 'Training hard', sub: 'Intense sessions 4+ days' }] });
+    const a = { ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' };
+    const b = { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' };
+    steps.push(a, b);
+    steps.push({ id: 'excl', short: 'Food rules', kicker: 'Food rules', title: 'Anything you don’t eat?',
+      sub: 'Allergies, faith or preference — all treated the same.', field: 'excl', q: true, multi: true,
+      options: [
+        { id: 'dairy', label: 'Dairy' },
+        { id: 'gluten', label: 'Gluten' },
+        { id: 'nuts', label: 'Nuts' },
+        { id: 'seafood', label: 'Seafood' },
+        { id: 'redmeat', label: 'Red meat' },
+        { id: 'none', label: 'I eat everything' }] });
+    steps.push({ id: 'meals', short: 'Meals', kicker: 'Rhythm', title: 'How many meals a day?',
+      sub: 'The plan matches your real day, not the other way round.', field: 'meals', q: true,
+      options: [
+        { id: 'm3', label: '3 meals', sub: 'Classic — no snacks' },
+        { id: 'm3s', label: '3 meals + snacks', sub: 'Most popular rhythm', rec: true },
+        { id: 'm5', label: '5 small meals', sub: 'Grazing through the day' }] });
+    steps.push({ id: 'building', short: 'Building', type: 'building' });
+    steps.push({ id: 'plan', short: 'Plan', type: 'plan' });
+    return steps;
+  }
+  let steps = buildSteps();
+
+  /* ================================================================
+     rendering
+  ================================================================ */
+  const qScroll = $('qScroll');
+  const svgTick = '<svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2L4.8 9L10 3.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function qIndexInfo() {
+    const qs = steps.filter(s => s.q);
+    const cur = steps[state.step];
+    return { total: qs.length, pos: qs.indexOf(cur) };
+  }
+
+  function renderProgress() {
+    const el = $('qProg');
+    const { total, pos } = qIndexInfo();
+    if (pos < 0) { el.innerHTML = ''; return; }
+    if (state.prog === 'bar') {
+      el.innerHTML = '<div class="p-bar"><i style="width:' + Math.round(((pos + 1) / total) * 100) + '%"></i></div>';
+    } else if (state.prog === 'dots') {
+      let h = '<div class="p-dots">';
+      for (let i = 0; i < total; i++)
+        h += '<i class="' + (i < pos ? 'done' : i === pos ? 'cur' : '') + '"></i>';
+      el.innerHTML = h + '</div>';
+    } else {
+      el.innerHTML = '<div class="p-count"><b>' + (pos + 1) + '</b> of ' + total + '</div>';
+    }
+  }
+
+  function noteHTML(note, place) {
+    if (!note) return '';
+    return '<div class="ux-note" style="' + (place || 'right:6px;top:2px;') + '"><b>' + note.t + '</b>' + note.x + '</div>';
+  }
+
+  function optionsHTML(step) {
+    const val = state.answers[step.field];
+    const isSel = id => step.multi ? (val || []).includes(id) : val === id;
+    if (state.pat === 'chips') {
+      return '<div class="opt-chips">' + step.options.map(o =>
+        '<button class="o-chip' + (isSel(o.id) ? ' sel' : '') + '" data-opt="' + o.id + '">' + o.label + '</button>').join('') + '</div>';
+    }
+    if (state.pat === 'list') {
+      return '<div class="opt-list">' + step.options.map(o =>
+        '<button class="o-row' + (isSel(o.id) ? ' sel' : '') + '" data-opt="' + o.id + '">' +
+        '<div class="txt"><div class="lab">' + o.label + '</div>' +
+        (o.sub ? '<div class="sub">' + o.sub + '</div>' : '') + '</div>' +
+        (o.rec ? '<span class="rectag">Rec</span>' : '') +
+        '<span class="tick' + (step.multi ? ' sq' : '') + '">' + svgTick + '</span></button>').join('') + '</div>';
+    }
+    return '<div class="opt-cards">' + step.options.map(o =>
+      '<button class="o-card' + (isSel(o.id) ? ' sel' : '') + (o.rec ? ' rec' : '') + '" data-opt="' + o.id + '">' +
+      '<span class="thumb"></span>' +
+      '<div class="txt"><div class="lab">' + o.label + '</div>' +
+      (o.sub ? '<div class="sub">' + o.sub + '</div>' : '') + '</div>' +
+      '<span class="tick">' + svgTick + '</span></button>').join('') + '</div>';
+  }
+
+  function slidersHTML() {
+    const a = state.answers;
+    const ruler = '<div class="sl-ruler">' + '<i></i>'.repeat(21) + '</div>';
+    return '<div class="sl-group"><div class="sl-head"><label>Height</label>' +
+      '<div class="sl-val" id="hVal">' + a.h + ' <small>cm</small></div></div>' +
+      '<input type="range" id="hIn" min="140" max="210" value="' + a.h + '">' + ruler + '</div>' +
+      '<div class="sl-group"><div class="sl-head"><label>Weight</label>' +
+      '<div class="sl-val" id="wVal">' + a.w + ' <small>kg</small></div></div>' +
+      '<input type="range" id="wIn" min="40" max="160" value="' + a.w + '">' + ruler + '</div>';
+  }
+
+  function buildLines() {
+    const g = goalKey();
+    const gl = {
+      weight: 'Pacing your deficit gently',
+      muscle: 'Timing protein around training',
+      pregnancy: 'Adding folate & iron-rich picks',
+      gut: 'Filtering out your triggers',
+    }[g];
+    return ['Setting your calories', 'Balancing your macros', gl, 'Picking meals you’ll enjoy'];
+  }
+
+  function planData() {
+    const a = state.answers, g = goalKey();
+    const actIdx = { seated: 0, light: 1, active: 2, hard: 3 }[a.activity] ?? 1;
+    let kcal = (a.sex === 'male' ? 1900 : 1750) + actIdx * 160;
+    let focus = '';
+    if (g === 'weight') {
+      kcal -= { gentle: 250, steady: 420, ambitious: 560 }[a.a] || 420;
+      focus = 'Steady deficit · high satiety';
+    } else if (g === 'muscle') {
+      kcal += { lean: 280, bulk: 450, recomp: 120 }[typeof a.b === 'string' ? a.b : 'lean'] || 280;
+      kcal += actIdx * 40;
+      focus = 'Surplus · protein at every meal';
+    } else if (g === 'pregnancy') {
+      kcal += { t1: 60, t2: 340, t3: 450, pp: 330 }[a.a] || 340;
+      focus = 'Folate, iron & calcium forward';
+    } else {
+      focus = 'Low-trigger · gentle fibre build-up';
+    }
+    const pf = { weight: 1.6, muscle: 1.9, pregnancy: 1.1, gut: 1.2 }[g];
+    const protein = Math.round(a.w * pf);
+    const fat = Math.round(kcal * 0.3 / 9);
+    const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+    return { kcal: Math.round(kcal / 10) * 10, protein, carbs, fat, focus };
+  }
+
+  const PLAN_MEALS = {
+    weight: [
+      ['Breakfast', 'Shakshuka, extra whites', '420 kcal · 28g protein'],
+      ['Lunch', 'Grilled chicken tabbouleh bowl', '520 kcal · 42g protein'],
+      ['Snack', 'Greek yogurt & berries', '180 kcal · 15g protein'],
+      ['Dinner', 'Seared salmon, charred greens', '540 kcal · 38g protein']],
+    muscle: [
+      ['Breakfast', 'Oats, whey & banana', '560 kcal · 38g protein'],
+      ['Lunch', 'Beef machboos, extra rice', '720 kcal · 46g protein'],
+      ['Post-workout', 'Chicken wrap & dates', '430 kcal · 34g protein'],
+      ['Dinner', 'Grilled hammour, potatoes', '640 kcal · 44g protein']],
+    pregnancy: [
+      ['Breakfast', 'Spinach omelette, wholegrain toast', '440 kcal · folate + iron'],
+      ['Lunch', 'Lentil soup & citrus salad', '510 kcal · iron + vit C'],
+      ['Snack', 'Laban, almonds & apricots', '230 kcal · calcium'],
+      ['Dinner', 'Baked salmon & sweet potato', '560 kcal · omega-3']],
+    gut: [
+      ['Breakfast', 'Overnight oats, low-FODMAP', '390 kcal · gentle fibre'],
+      ['Lunch', 'Ginger chicken & rice', '480 kcal · low-trigger'],
+      ['Snack', 'Kiwi & lactose-free yogurt', '170 kcal · probiotic'],
+      ['Dinner', 'Steamed sea bass & zucchini', '450 kcal · easy digest']],
+  };
+
+  function viewHTML(step) {
+    if (step.type === 'building') {
+      return '<div class="build-wrap">' +
+        '<div class="q-kicker">One moment</div>' +
+        '<div class="q-title" style="text-align:center">Building your plan</div>' +
+        '<div class="q-sub" style="text-align:center">' + (GOALS[goalKey()].label) + ' · tuned to your answers</div>' +
+        '<div class="dotball" id="dotball"></div>' +
+        '<div class="build-lines" id="buildLines">' +
+        buildLines().map(t => '<div class="b-line"><span class="bt">' + svgTick + '</span><span>' + t + '</span></div>').join('') +
+        '</div>' +
+        noteHTML({ t: 'Perceived intelligence', x: 'Three seconds of honest theatre — each line echoes a real answer the user just gave.' }, 'left:24px;bottom:96px;') +
+        '</div>';
+    }
+    if (step.type === 'plan') {
+      const p = planData(), g = goalKey();
+      const title = { weight: 'Your weight plan', muscle: 'Your muscle plan',
+        pregnancy: 'Your pregnancy plan', gut: 'Your gut-comfort plan' }[g];
+      return '<div class="q-kicker">Ready</div>' +
+        '<div class="q-title">' + title + '</div>' +
+        '<div class="q-sub">' + p.focus + ' · reviewed by certified nutritionists</div>' +
+        '<div class="stat-row">' +
+        '<div class="stat"><b>' + p.kcal + '</b><span>kcal</span></div>' +
+        '<div class="stat"><b>' + p.protein + 'g</b><span>protein</span></div>' +
+        '<div class="stat"><b>' + p.carbs + 'g</b><span>carbs</span></div>' +
+        '<div class="stat"><b>' + p.fat + 'g</b><span>fat</span></div></div>' +
+        '<div class="day-row">' + ['S','M','T','W','T','F','S'].map((d, i) =>
+          '<button class="day' + (i === 1 ? ' sel' : '') + '" data-day="' + i + '">' + d + '</button>').join('') + '</div>' +
+        PLAN_MEALS[g].map(m =>
+          '<div class="meal"><span class="thumb"></span>' +
+          '<div class="txt"><div class="mk">' + m[0] + '</div><div class="mn">' + m[1] + '</div>' +
+          '<div class="mm">' + m[2] + '</div></div>' +
+          '<button class="swap">Swap</button></div>').join('') +
+        '<div class="plan-note"><span class="nd"></span>Numbers above are computed from your answers — sample content.</div>' +
+        noteHTML({ t: 'Answers visible', x: 'kcal & protein derive from goal, pace/trimester, activity and the weight slider — the questionnaire provably mattered.' }, 'right:6px;top:150px;') +
+        '<div style="height:20px"></div>' +
+        '<div class="q-foot" style="position:static;padding:0;background:none">' +
+        '<button class="q-cta" id="qDone">Start my plan</button>' +
+        '<button class="q-skip" id="qTweak">Tweak my answers</button></div>';
+    }
+    let inner;
+    if (step.type === 'sliders') inner = slidersHTML();
+    else inner = optionsHTML(step);
+    const val = state.answers[step.field];
+    const needsBtn = step.type === 'sliders' || step.multi || state.adv === 'next';
+    const btnLabel = step.multi && (!val || !val.length) ? 'Skip for now' : 'Continue';
+    return '<div class="q-kicker">' + step.kicker + '</div>' +
+      '<div class="q-title">' + step.title + '</div>' +
+      '<div class="q-sub">' + step.sub + '</div>' +
+      inner +
+      noteHTML(step.note, 'right:6px;top:2px;') +
+      (needsBtn ? '<div class="q-foot"><button class="q-cta' +
+        ((step.multi && (!val || !val.length)) ? ' ghost' : '') + '" id="qNext">' + btnLabel + '</button></div>' : '');
+  }
+
+  let animDir = 'f';
+  function render() {
+    const step = steps[state.step];
+    renderProgress();
+    $('qBack').classList.toggle('hidden', step.type === 'building');
+    qScroll.innerHTML = '<div class="q-view anim-' + animDir + '">' + viewHTML(step) + '</div>';
+    qScroll.scrollTop = 0;
+    bindView(step);
+    if (step.type === 'building') runBuilding();
+  }
+
+  function bindView(step) {
+    qScroll.querySelectorAll('[data-opt]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.opt;
+        if (step.multi) {
+          const arr = state.answers[step.field] || [];
+          const i = arr.indexOf(id);
+          if (i >= 0) arr.splice(i, 1); else arr.push(id);
+          state.answers[step.field] = arr;
+          const nx = $('qNext');
+          if (nx) { nx.textContent = arr.length ? 'Continue' : 'Skip for now';
+            nx.classList.toggle('ghost', !arr.length); }
+          btn.classList.toggle('sel');
+        } else {
+          state.answers[step.field] = id;
+          if (step.field === 'goal') onGoalChosen(id);
+          qScroll.querySelectorAll('[data-opt]').forEach(b =>
+            b.classList.toggle('sel', b === btn));
+          if (state.adv === 'auto') setTimeout(() => go(1), 260);
+        }
+      });
+    });
+    const hIn = $('hIn'), wIn = $('wIn');
+    if (hIn) hIn.addEventListener('input', () => {
+      state.answers.h = +hIn.value;
+      $('hVal').innerHTML = hIn.value + ' <small>cm</small>'; });
+    if (wIn) wIn.addEventListener('input', () => {
+      state.answers.w = +wIn.value;
+      $('wVal').innerHTML = wIn.value + ' <small>kg</small>'; });
+    const nx = $('qNext');
+    if (nx) nx.addEventListener('click', () => go(1));
+    const done = $('qDone');
+    if (done) done.addEventListener('click', () => { location.href = '../'; });
+    const tweak = $('qTweak');
+    if (tweak) tweak.addEventListener('click', () => { animDir = 'b'; state.step = 0; render(); });
+    qScroll.querySelectorAll('.day').forEach(d => d.addEventListener('click', () => {
+      qScroll.querySelectorAll('.day').forEach(x => x.classList.toggle('sel', x === d));
+    }));
+  }
+
+  function onGoalChosen(id) {
+    steps = buildSteps();
+    if (stInput) stInput.value = GOALS[id].state;
+    document.querySelectorAll('#goalGrid button').forEach(b =>
+      b.classList.toggle('on', b.dataset.goal === id));
+    buildJump();
+  }
+
+  function runBuilding() {
+    const ball = $('dotball');
+    if (ball) {
+      const N = 9, R = 4.5, cell = 190 / N;
+      let h = '';
+      for (let gy = 0; gy < N; gy++) for (let gx = 0; gx < N; gx++) {
+        const dx = gx - 4, dy = gy - 4, d = Math.hypot(dx, dy);
+        if (d > R) continue;
+        const sz = 10;
+        h += '<i style="left:' + (gx * cell + (cell - sz) / 2) + 'px;top:' + (gy * cell + (cell - sz) / 2) +
+          'px;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (d * 0.14).toFixed(2) + 's"></i>';
+      }
+      ball.innerHTML = h;
+    }
+    const lines = qScroll.querySelectorAll('.b-line');
+    lines.forEach((l, i) => {
+      setTimeout(() => l.classList.add('on'), 260 + i * 520);
+      setTimeout(() => l.classList.add('done'), 260 + i * 520 + 430);
+    });
+    setTimeout(() => { if (steps[state.step] && steps[state.step].type === 'building') go(1); },
+      260 + lines.length * 520 + 700);
+  }
+
+  function go(dir) {
+    animDir = dir > 0 ? 'f' : 'b';
+    const next = state.step + dir;
+    if (next < 0) { exitToIntro(); return; }
+    if (next >= steps.length) return;
+    state.step = next;
+    render();
+  }
+
+  /* ================================================================
+     layer switching
+  ================================================================ */
+  function enterQuiz(reset) {
+    if (reset) { state.step = 0; animDir = 'f'; }
+    state.started = true;
+    $('introLayer').classList.add('gone');
+    $('quizLayer').classList.add('show');
+    document.body.classList.add('piled');
+    render();
+  }
+  function exitToIntro() {
+    $('introLayer').classList.remove('gone');
+    $('quizLayer').classList.remove('show');
+    document.body.classList.remove('piled');
+    setTimeout(adaptGlassContrast, 400);
+  }
+  $('qBack').addEventListener('click', () => go(-1));
+  $('qClose').addEventListener('click', () => { location.href = '../'; });
+
+  /* ================================================================
+     sidebar controls
+  ================================================================ */
+  function buildJump() {
+    const grid = $('jumpGrid');
+    grid.innerHTML = '<button data-jump="intro">Intro (Breathe)</button>' +
+      steps.map((s, i) => '<button data-jump="' + i + '">' + s.short + '</button>').join('');
+    grid.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.jump === 'intro') { exitToIntro(); return; }
+      state.step = +b.dataset.jump; animDir = 'f';
+      if (!state.started || !$('quizLayer').classList.contains('show')) enterQuiz(false);
+      else render();
+    }));
+  }
+  buildJump();
+
+  function wireGrid(id, attr, fn) {
+    document.querySelectorAll('#' + id + ' button').forEach(b =>
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b));
+        fn(b.dataset[attr]);
+      }));
+  }
+  wireGrid('goalGrid', 'goal', v => {
+    state.answers.goal = v; state.answers.a = null; state.answers.b = [];
+    steps = buildSteps(); buildJump();
+    if (stInput) stInput.value = GOALS[v].state;
+    if (state.step >= steps.length) state.step = steps.length - 1;
+    if ($('quizLayer').classList.contains('show')) render();
+  });
+  wireGrid('patGrid', 'pat', v => { state.pat = v; syncPill();
+    if ($('quizLayer').classList.contains('show')) render(); });
+  wireGrid('progGrid', 'prog', v => { state.prog = v; renderProgress(); });
+  wireGrid('advGrid', 'adv', v => { state.adv = v;
+    if ($('quizLayer').classList.contains('show')) render(); });
+  wireGrid('noteGrid', 'note', v => { state.notes = v === 'on';
+    document.body.classList.toggle('notes', state.notes); syncPill(); });
+
+  $('radIn').addEventListener('input', e => {
+    state.radius = +e.target.value;
+    $('radOut').textContent = state.radius + 'px';
+    $('quizLayer').style.setProperty('--qr', state.radius + 'px');
+  });
+
+  $('sCopy').addEventListener('click', () => {
+    const v = { answerPattern: state.pat, progress: state.prog, advance: state.adv,
+      cornerRadius: state.radius, uxNotes: state.notes, answers: state.answers };
+    navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(v, null, 2));
+    $('sCopy').textContent = 'Copied ✓';
+    setTimeout(() => { $('sCopy').textContent = 'Copy values'; }, 1200);
+  });
+  $('sRestart').addEventListener('click', () => {
+    state.answers = { goal: null, sex: null, age: null, h: 170, w: 76,
+      activity: null, a: null, b: [], excl: [], meals: null };
+    state.step = 0; steps = buildSteps(); buildJump();
+    document.querySelectorAll('#goalGrid button').forEach(b =>
+      b.classList.toggle('on', b.dataset.goal === 'weight'));
+    exitToIntro();
+    if (stInput) stInput.value = 0;
+  });
+
+  /* mobile pill */
+  const PATS = ['cards', 'list', 'chips'];
+  function syncPill() {
+    $('pPat').textContent = state.pat[0].toUpperCase() + state.pat.slice(1);
+    $('pNotes').classList.toggle('on', state.notes);
+  }
+  $('pPat').addEventListener('click', () => {
+    state.pat = PATS[(PATS.indexOf(state.pat) + 1) % PATS.length];
+    document.querySelectorAll('#patGrid button').forEach(x =>
+      x.classList.toggle('on', x.dataset.pat === state.pat));
+    syncPill();
+    if ($('quizLayer').classList.contains('show')) render();
+  });
+  $('pNotes').addEventListener('click', () => {
+    state.notes = !state.notes;
+    document.body.classList.toggle('notes', state.notes);
+    document.querySelectorAll('#noteGrid button').forEach(x =>
+      x.classList.toggle('on', x.dataset.note === (state.notes ? 'on' : 'off')));
+    syncPill();
+  });
+  $('pRestart').addEventListener('click', () => $('sRestart').click());
+  syncPill();
+
+})();
+</script>
+</body>
+</html>
