@@ -439,11 +439,12 @@
   <div class="s-kicker">DietStation &middot; Design Lab</div>
   <h2>Plan Builder — Questionnaire</h2>
   <p class="s-desc">Wireframes for the intelligent diet-plan questionnaire. It opens on the
-    Breathe intro, then asks one question per screen and branches by goal. The <b>Gut branch
-    is the deep one</b>: a 6-screen naturopath-style intake (symptoms, frequency, timing,
-    FODMAP trigger scan, stress, red-flag safety gate) that resolves into a named gut profile,
-    a foods-in-your-favor list, the 3-phase low-FODMAP journey, affordable plan tiers and —
-    when flagged or included in the tier — a consultation booking.</p>
+    Breathe intro, then asks one question per screen. <b>Three encapsulating directions</b> —
+    Feel lighter, Build up, Stay &amp; thrive — and a health-context checklist right after:
+    gut trouble, pregnancy, or a condition. Checking gut runs the 6-screen naturopath
+    deep-dive (profile, foods, low-FODMAP journey, tiers, consult); pregnancy adds a
+    trimester screen and stacks safe adjustments on any goal; a condition attaches a
+    consultation. Conditions are context, not competing goals.</p>
 
   <div class="s-sec">
     <div class="s-label">Screens</div>
@@ -453,12 +454,21 @@
 
   <div class="s-sec">
     <div class="s-label">Goal branch</div>
-    <div class="s-note">Sets the goal answer — branch questions and the final plan follow it.</div>
-    <div class="lvl-grid" id="goalGrid">
-      <button data-goal="weight" class="on">Weight</button>
-      <button data-goal="muscle">Muscle</button>
-      <button data-goal="pregnancy">Pregnancy</button>
-      <button data-goal="gut">Gut</button>
+    <div class="s-note">Sets the direction — branch questions and the final plan follow it.</div>
+    <div class="lvl-grid g3" id="goalGrid">
+      <button data-goal="lose" class="on">Lighter</button>
+      <button data-goal="gain">Build up</button>
+      <button data-goal="maintain">Steady</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Health context</div>
+    <div class="s-note">Toggles the health-check answers — gut adds the 6-screen deep-dive + results, pregnancy adds trimester + adjustments, condition adds a consult.</div>
+    <div class="lvl-grid g3" id="hcGrid">
+      <button data-hc="gut">Gut</button>
+      <button data-hc="pregnancy">Pregnancy</button>
+      <button data-hc="meds">Condition</button>
     </div>
   </div>
 
@@ -758,39 +768,63 @@
      QUESTIONNAIRE — data model
   ================================================================ */
   const GOALS = {
-    weight:    { label: 'Weight control',  sub: 'Lose, hold or reset — no crash diets',   state: 1 },
-    muscle:    { label: 'Muscle building', sub: 'Fuel training with protein-forward meals', state: 2 },
-    pregnancy: { label: 'Pregnancy',       sub: 'Trimester-safe nutrition for two',        state: 3 },
-    gut:       { label: 'Gut comfort',     sub: 'Calm bloating, reflux and sensitivity',   state: 4 },
+    lose:     { label: 'Feel lighter',  sub: 'Lose weight the kept-off way — no crash diets', state: 1 },
+    gain:     { label: 'Build up',      sub: 'Gain healthy weight, muscle first',             state: 2 },
+    maintain: { label: 'Stay & thrive', sub: 'Hold your weight — upgrade energy & habits',    state: 0 },
   };
 
+  /* Health context — conditions are CONTEXT every goal checks for, not competing goals */
+  const HEALTH_STEP = {
+    id: 'health', short: 'Health check', kicker: 'Health context', title: 'Does any of this apply?',
+    sub: 'We check so the plan can care — pick everything that does.', field: 'health', q: true, multi: true,
+    note: { t: 'The encapsulation', x: 'Gut and pregnancy stopped being goals and became context — every goal path screens for them here, then picks up the right module.' },
+    options: [
+      { id: 'gut', label: 'My gut acts up', sub: 'Bloating, reflux, cramps or irregularity' },
+      { id: 'pregnancy', label: 'Pregnant or breastfeeding', sub: 'We adjust everything around this' },
+      { id: 'meds', label: 'A condition or medication', sub: 'Diabetes, thyroid, blood pressure…' },
+      { id: 'none', label: 'None of these' }] };
+
+  const TRIMESTER_STEP = {
+    id: 'trimester', short: 'Trimester', kicker: 'Pregnancy context', title: 'Where are you now?',
+    sub: 'Calories and key nutrients shift by trimester.', field: 'trimester', q: true,
+    note: { t: 'Module screen', x: 'Exists only when pregnancy is checked. It stacks a calorie add-on and nutrient focus on top of whatever the main goal is.' },
+    options: [
+      { id: 't1', label: 'First trimester', sub: 'Weeks 1–12' },
+      { id: 't2', label: 'Second trimester', sub: 'Weeks 13–27' },
+      { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
+      { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] };
+
+  const gutOn = () => (state.answers.health || []).includes('gut');
+  const pregnantOn = () => (state.answers.health || []).includes('pregnancy');
+  const medsOn = () => (state.answers.health || []).includes('meds');
+
   const BRANCH_A = {
-    weight: { id: 'pace', short: 'Pace', kicker: 'Weight control', title: 'Pick your pace',
+    lose: { id: 'pace', short: 'Pace', kicker: 'Feel lighter', title: 'Pick your pace',
       sub: 'Slower paces are easier to keep — you can change this any week.',
       note: { t: 'Branch screen', x: 'Only the Weight branch sees this. The recommended option is pre-highlighted, never pre-selected.' },
       options: [
         { id: 'gentle', label: 'Gentle', sub: 'About −0.25 kg a week' },
         { id: 'steady', label: 'Steady', sub: 'About −0.5 kg a week', rec: true },
         { id: 'ambitious', label: 'Ambitious', sub: 'About −0.75 kg a week — harder to hold' }] },
-    muscle: { id: 'train', short: 'Training', kicker: 'Muscle building', title: 'How many training days?',
+    gain: { id: 'train', short: 'Training', kicker: 'Build up', title: 'How many training days?',
       sub: 'Meals and protein get timed around your sessions.',
-      note: { t: 'Branch screen', x: 'Only the Muscle branch sees this — the answer scales calories and protein timing.' },
+      note: { t: 'Branch screen', x: 'Only the Build up branch sees this — the answer scales calories and protein timing.' },
       options: [
         { id: 't12', label: '1–2 days', sub: 'Getting started' },
         { id: 't34', label: '3–4 days', sub: 'A steady split', rec: true },
         { id: 't56', label: '5–6 days', sub: 'High volume' }] },
-    pregnancy: { id: 'trimester', short: 'Trimester', kicker: 'Pregnancy', title: 'Where are you now?',
-      sub: 'Calories and key nutrients shift by trimester.',
-      note: { t: 'Branch screen', x: 'Trimester drives the calorie add-on (+340 in T2, +450 in T3) and nutrient focus on the plan.' },
+    maintain: { id: 'better', short: 'Feel better', kicker: 'Stay & thrive', title: 'What should feel better?',
+      sub: 'Maintenance isn’t standing still — pick what we’re upgrading.', multi: true,
+      note: { t: 'Encapsulating maintain', x: 'This is why “maintain” beats “maintain weight” — the scale holds, but energy, sleep and habits are the real product.' },
       options: [
-        { id: 't1', label: 'First trimester', sub: 'Weeks 1–12' },
-        { id: 't2', label: 'Second trimester', sub: 'Weeks 13–27' },
-        { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
-        { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] },
+        { id: 'energy', label: 'My energy', sub: 'Fewer crashes through the day' },
+        { id: 'sleep', label: 'My sleep', sub: 'Lighter dinners, better nights' },
+        { id: 'cravings', label: 'My cravings', sub: 'Calmer around sugar & snacks' },
+        { id: 'cleaner', label: 'Just eat cleaner', sub: 'Same me, better inputs' }] },
   };
 
   const BRANCH_B = {
-    weight: { id: 'cravings', short: 'Cravings', kicker: 'Weight control', title: 'When do cravings hit?',
+    lose: { id: 'cravings', short: 'Cravings', kicker: 'Feel lighter', title: 'When do cravings hit?',
       sub: 'Pick everything that applies — we plan around them, not against them.', multi: true,
       options: [
         { id: 'night', label: 'Late night' },
@@ -798,19 +832,20 @@
         { id: 'sweet', label: 'Sweet tooth' },
         { id: 'portions', label: 'Big portions' },
         { id: 'rare', label: 'Rarely' }] },
-    muscle: { id: 'target', short: 'Target', kicker: 'Muscle building', title: 'What’s the target?',
+    gain: { id: 'target', short: 'Target', kicker: 'Build up', title: 'What’s the target?',
       sub: 'This sets your calorie surplus.',
       options: [
         { id: 'lean', label: 'Lean gain', sub: 'Small surplus, minimal fat', rec: true },
         { id: 'bulk', label: 'Bulk', sub: 'Bigger surplus, faster mass' },
         { id: 'recomp', label: 'Recomp', sub: 'Build while holding weight' }] },
-    pregnancy: { id: 'comfort', short: 'Comfort', kicker: 'Pregnancy', title: 'Anything making eating hard?',
-      sub: 'Pick everything that applies right now.', multi: true,
+    maintain: { id: 'obstacle', short: 'Obstacles', kicker: 'Stay & thrive', title: 'What knocks you off track?',
+      sub: 'The plan defends against these, not just feeds you.', multi: true,
       options: [
-        { id: 'nausea', label: 'Nausea' },
-        { id: 'aversion', label: 'Food aversions' },
-        { id: 'heartburn', label: 'Heartburn' },
-        { id: 'none', label: 'None of these' }] },
+        { id: 'eatingout', label: 'Eating out a lot' },
+        { id: 'schedule', label: 'A chaotic schedule' },
+        { id: 'stress', label: 'Stress snacking' },
+        { id: 'portions', label: 'Portion creep' },
+        { id: 'none', label: 'Nothing really — keep me honest' }] },
   };
 
   /* ---- Gut deep-dive: naturopath-level intake, one low-FODMAP operation ---- */
@@ -884,7 +919,8 @@
     return (state.answers.gutFlags || []).some(x => x !== 'none');
   }
   function gutNeedsConsult() {
-    return gutFlagged() || state.answers.tier === 'guided' || state.answers.tier === 'clinical';
+    return gutFlagged() || medsOn() ||
+      state.answers.tier === 'guided' || state.answers.tier === 'clinical';
   }
   function gutProfile() {
     const a = state.answers;
@@ -943,7 +979,8 @@
     { n: 'Oats & quinoa (small serves)', s: 'Fibre that builds you up slowly' },
   ];
 
-  const freshAnswers = () => ({ goal: null, sex: null, age: null, h: 170, w: 76,
+  const freshAnswers = () => ({ goal: null, health: [], trimester: null,
+    sex: null, age: null, h: 170, w: 76,
     activity: null, a: null, b: [], excl: [], meals: null,
     gutSym: [], gutFreq: null, gutTime: null, gutTrig: [], gutStress: null,
     gutFlags: [], tier: null, consult: null });
@@ -954,19 +991,21 @@
   };
   state.answers = freshAnswers();
 
-  function goalKey() { return state.answers.goal || 'weight'; }
+  function goalKey() { return state.answers.goal || 'lose'; }
 
   function buildSteps() {
     const g = goalKey();
     const steps = [];
-    steps.push({ id: 'goal', short: 'Goal', kicker: 'Your goal', title: 'What brings you to DietStation?',
-      sub: 'Pick one — your whole plan is built around it.', field: 'goal', q: true,
-      note: { t: 'The branch point', x: 'One decision per screen. This answer decides which questions come next and what the plan optimizes for.' },
+    steps.push({ id: 'goal', short: 'Goal', kicker: 'Your direction', title: 'What brings you to DietStation?',
+      sub: 'Three directions — everything after this is tailored.', field: 'goal', q: true,
+      note: { t: 'Three, not four', x: 'The classic trio (lose / gain / maintain) but encapsulating — conditions like gut or pregnancy are context, screened next, not competing goals.' },
       options: Object.entries(GOALS).map(([id, o]) => ({ id, label: o.label, sub: o.sub })) });
-    if (g !== 'pregnancy')
+    steps.push(HEALTH_STEP);
+    if (pregnantOn()) steps.push(TRIMESTER_STEP);
+    if (!pregnantOn())
       steps.push({ id: 'sex', short: 'You', kicker: 'About you', title: 'How do you identify?',
         sub: 'It changes the calorie baseline.', field: 'sex', q: true,
-        note: { t: 'Smart skip', x: 'This screen is skipped entirely when the goal is Pregnancy — never ask what you already know.' },
+        note: { t: 'Smart skip', x: 'This screen disappears when pregnancy is checked on the health screen — never ask what you already know.' },
         options: [
           { id: 'female', label: 'Female' },
           { id: 'male', label: 'Male' },
@@ -989,12 +1028,9 @@
         { id: 'light', label: 'Lightly active', sub: 'Walks, errands, on your feet some' },
         { id: 'active', label: 'Active', sub: 'Regular exercise most weeks' },
         { id: 'hard', label: 'Training hard', sub: 'Intense sessions 4+ days' }] });
-    if (g === 'gut') {
-      steps.push(...GUT_ASSESS);
-    } else {
-      steps.push({ ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' },
-                 { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' });
-    }
+    steps.push({ ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' },
+               { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' });
+    if (gutOn()) steps.push(...GUT_ASSESS);
     steps.push({ id: 'excl', short: 'Food rules', kicker: 'Food rules', title: 'Anything you don’t eat?',
       sub: 'Allergies, faith or preference — all treated the same.', field: 'excl', q: true, multi: true,
       options: [
@@ -1011,12 +1047,14 @@
         { id: 'm3s', label: '3 meals + snacks', sub: 'Most popular rhythm', rec: true },
         { id: 'm5', label: '5 small meals', sub: 'Grazing through the day' }] });
     steps.push({ id: 'building', short: 'Building', type: 'building' });
-    if (g === 'gut') {
+    if (gutOn()) {
       steps.push({ id: 'profile', short: 'Profile', type: 'profile' });
       steps.push({ id: 'foods', short: 'Foods', type: 'foods' });
       steps.push({ id: 'journey', short: 'Journey', type: 'journey' });
       steps.push({ id: 'pricing', short: 'Plans', type: 'pricing' });
       if (gutNeedsConsult()) steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
+    } else if (medsOn()) {
+      steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
     }
     steps.push({ id: 'plan', short: 'Plan', type: 'plan' });
     return steps;
@@ -1092,48 +1130,59 @@
 
   function buildLines() {
     const g = goalKey();
-    if (g === 'gut') return ['Reading your symptom pattern', 'Scoring the food-family suspects',
-      'Building your elimination phase', 'Picking gentle meals you’ll enjoy'];
-    const gl = {
-      weight: 'Pacing your deficit gently',
-      muscle: 'Timing protein around training',
-      pregnancy: 'Adding folate & iron-rich picks',
-    }[g];
-    return ['Setting your calories', 'Balancing your macros', gl, 'Picking meals you’ll enjoy'];
+    const lines = ['Setting your calories', {
+      lose: 'Pacing your deficit gently',
+      gain: 'Timing protein around training',
+      maintain: 'Smoothing your energy curve',
+    }[g]];
+    if (gutOn()) lines.push('Reading your gut pattern', 'Filtering the food-family suspects out');
+    if (pregnantOn()) lines.push('Adding folate & iron-rich picks');
+    lines.push('Picking meals you’ll enjoy');
+    return lines;
   }
 
   function planData() {
     const a = state.answers, g = goalKey();
+    const preg = pregnantOn();
     const actIdx = { seated: 0, light: 1, active: 2, hard: 3 }[a.activity] ?? 1;
-    let kcal = (a.sex === 'male' ? 1900 : 1750) + actIdx * 160;
-    let focus = '';
-    if (g === 'weight') {
-      kcal -= { gentle: 250, steady: 420, ambitious: 560 }[a.a] || 420;
-      focus = 'Steady deficit · high satiety';
-    } else if (g === 'muscle') {
+    let kcal = ((preg || a.sex === 'female' || a.sex === 'na' || !a.sex) ? 1750 : 1900) + actIdx * 160;
+    let focus = '', deficitPaused = false;
+    if (g === 'lose') {
+      if (preg) { deficitPaused = true; focus = 'Nourished & steady'; }
+      else { kcal -= { gentle: 250, steady: 420, ambitious: 560 }[a.a] || 420;
+        focus = 'Steady deficit · high satiety'; }
+    } else if (g === 'gain') {
       kcal += { lean: 280, bulk: 450, recomp: 120 }[typeof a.b === 'string' ? a.b : 'lean'] || 280;
       kcal += actIdx * 40;
       focus = 'Surplus · protein at every meal';
-    } else if (g === 'pregnancy') {
-      kcal += { t1: 60, t2: 340, t3: 450, pp: 330 }[a.a] || 340;
-      focus = 'Folate, iron & calcium forward';
     } else {
-      focus = 'Phase 1 · Low-FODMAP elimination · weeks 1–4';
+      focus = 'Maintenance · habit upgrade';
     }
-    const pf = { weight: 1.6, muscle: 1.9, pregnancy: 1.1, gut: 1.2 }[g];
+    if (preg) kcal += { t1: 60, t2: 340, t3: 450, pp: 330 }[a.trimester] || 340;
+    const parts = [focus];
+    if (preg) parts.push('trimester-safe');
+    if (gutOn()) parts.push('low-FODMAP phase 1');
+    let pf = { lose: 1.6, gain: 1.9, maintain: 1.4 }[g];
+    if (preg) pf = Math.max(pf, 1.1);
     const protein = Math.round(a.w * pf);
     const fat = Math.round(kcal * 0.3 / 9);
     const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
-    return { kcal: Math.round(kcal / 10) * 10, protein, carbs, fat, focus };
+    return { kcal: Math.round(kcal / 10) * 10, protein, carbs, fat,
+      focus: parts.join(' · '), deficitPaused };
   }
 
   const PLAN_MEALS = {
-    weight: [
+    maintain: [
+      ['Breakfast', 'Eggs, labneh & saj', '430 kcal · steady start'],
+      ['Lunch', 'Chicken & freekeh bowl', '520 kcal · balanced plate'],
+      ['Snack', 'Fruit & a handful of nuts', '190 kcal · energy bridge'],
+      ['Dinner', 'Grilled fish, light rice', '540 kcal · sleep-friendly finish']],
+    lose: [
       ['Breakfast', 'Shakshuka, extra whites', '420 kcal · 28g protein'],
       ['Lunch', 'Grilled chicken tabbouleh bowl', '520 kcal · 42g protein'],
       ['Snack', 'Greek yogurt & berries', '180 kcal · 15g protein'],
       ['Dinner', 'Seared salmon, charred greens', '540 kcal · 38g protein']],
-    muscle: [
+    gain: [
       ['Breakfast', 'Oats, whey & banana', '560 kcal · 38g protein'],
       ['Lunch', 'Beef machboos, extra rice', '720 kcal · 46g protein'],
       ['Post-workout', 'Chicken wrap & dates', '430 kcal · 34g protein'],
@@ -1165,10 +1214,13 @@
     }
     if (step.type === 'plan') {
       const p = planData(), g = goalKey();
-      const title = { weight: 'Your weight plan', muscle: 'Your muscle plan',
-        pregnancy: 'Your pregnancy plan', gut: 'Your gut-comfort plan' }[g];
-      const gutExtras = g !== 'gut' ? '' :
-        (state.answers.tier ? '<div class="plan-tier"><b>' +
+      const title = { lose: 'Your lighter plan', gain: 'Your build-up plan',
+        maintain: 'Your steady plan' }[g];
+      const mealSet = gutOn() ? PLAN_MEALS.gut : pregnantOn() ? PLAN_MEALS.pregnancy : PLAN_MEALS[g];
+      const gutExtras =
+        (p.deficitPaused ?
+          '<div class="plan-tier"><b>Deficit paused for pregnancy</b><span> — we hold you nourished and steady now; lighter comes after.</span></div>' : '') +
+        (gutOn() && state.answers.tier ? '<div class="plan-tier"><b>' +
           { essentials: 'Essentials · KD 19/mo', guided: 'Guided · KD 39/mo', clinical: 'Clinical · KD 69/mo' }[state.answers.tier] +
           '</b><span> — change anytime</span></div>' : '') +
         (state.answers.consult && state.answers.consult.day ?
@@ -1186,7 +1238,7 @@
         '<div class="stat"><b>' + p.fat + 'g</b><span>fat</span></div></div>' +
         '<div class="day-row">' + ['S','M','T','W','T','F','S'].map((d, i) =>
           '<button class="day' + (i === 1 ? ' sel' : '') + '" data-day="' + i + '">' + d + '</button>').join('') + '</div>' +
-        PLAN_MEALS[g].map(m =>
+        mealSet.map(m =>
           '<div class="meal"><span class="thumb"></span>' +
           '<div class="txt"><div class="mk">' + m[0] + '</div><div class="mn">' + m[1] + '</div>' +
           '<div class="mm">' + m[2] + '</div></div>' +
@@ -1286,6 +1338,8 @@
         '<div class="q-title">Book your consultation</div>' +
         '<div class="q-sub">' + (gutFlagged()
           ? 'Included because of your flagged answer — 20 minutes, before Phase 1 starts.'
+          : medsOn() && !state.answers.tier
+          ? 'You told us about a condition or medication — 20 minutes to make the plan safe around it.'
           : 'Part of your tier — 20 minutes to fine-tune Phase 1 with a specialist.') + '</div>' +
         '<div class="doc-card"><span class="thumb"></span>' +
         '<div class="txt"><div class="mk">Gut specialist</div><div class="mn">Registered dietitian</div>' +
@@ -1321,6 +1375,7 @@
     $('qBack').classList.toggle('hidden', step.type === 'building');
     qScroll.innerHTML = '<div class="q-view anim-' + animDir + '">' + viewHTML(step) + '</div>';
     qScroll.scrollTop = 0;
+    if (typeof syncHcGrid === 'function') syncHcGrid();
     bindView(step);
     if (step.type === 'building') runBuilding();
   }
@@ -1400,6 +1455,7 @@
   }
 
   function onGoalChosen(id) {
+    state.answers.a = null; state.answers.b = [];
     steps = buildSteps();
     if (stInput) stInput.value = GOALS[id].state;
     document.querySelectorAll('#goalGrid button').forEach(b =>
@@ -1487,13 +1543,30 @@
   }
   wireGrid('goalGrid', 'goal', v => {
     state.answers.goal = v; state.answers.a = null; state.answers.b = [];
-    Object.assign(state.answers, { gutSym: [], gutFreq: null, gutTime: null,
-      gutTrig: [], gutStress: null, gutFlags: [], tier: null, consult: null });
     steps = buildSteps(); buildJump();
     if (stInput) stInput.value = GOALS[v].state;
     if (state.step >= steps.length) state.step = steps.length - 1;
     if ($('quizLayer').classList.contains('show')) render();
   });
+  /* health-context toggles (multi) */
+  document.querySelectorAll('#hcGrid button').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.hc;
+    const arr = state.answers.health || (state.answers.health = []);
+    const i = arr.indexOf(id);
+    if (i >= 0) arr.splice(i, 1); else { arr.push(id); const n = arr.indexOf('none'); if (n >= 0) arr.splice(n, 1); }
+    b.classList.toggle('on', arr.includes(id));
+    if (id === 'gut' && !arr.includes('gut'))
+      Object.assign(state.answers, { gutSym: [], gutFreq: null, gutTime: null,
+        gutTrig: [], gutStress: null, gutFlags: [], tier: null, consult: null });
+    if (id === 'pregnancy' && !arr.includes('pregnancy')) state.answers.trimester = null;
+    steps = buildSteps(); buildJump();
+    if (state.step >= steps.length) state.step = steps.length - 1;
+    if ($('quizLayer').classList.contains('show')) render();
+  }));
+  function syncHcGrid() {
+    document.querySelectorAll('#hcGrid button').forEach(b =>
+      b.classList.toggle('on', (state.answers.health || []).includes(b.dataset.hc)));
+  }
   wireGrid('patGrid', 'pat', v => { state.pat = v; syncPill();
     if ($('quizLayer').classList.contains('show')) render(); });
   wireGrid('progGrid', 'prog', v => { state.prog = v; renderProgress(); });
@@ -1519,7 +1592,8 @@
     state.answers = freshAnswers();
     state.step = 0; steps = buildSteps(); buildJump();
     document.querySelectorAll('#goalGrid button').forEach(b =>
-      b.classList.toggle('on', b.dataset.goal === 'weight'));
+      b.classList.toggle('on', b.dataset.goal === 'lose'));
+    syncHcGrid();
     exitToIntro();
     if (stInput) stInput.value = 0;
   });
