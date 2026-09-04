@@ -312,6 +312,106 @@
     font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
   .plan-note .nd { width: 7px; height: 7px; border-radius: 50%; background: #ED1C24; flex: 0 0 7px; }
 
+  /* --- gut profile / explainer --- */
+  .prof-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 16px 17px; margin-bottom: 20px;
+    font: 400 13.5px/19px 'Proxima Nova', sans-serif; color: #55555E; }
+  .prof-k { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: #ED1C24; margin-bottom: 6px; }
+  .prof-stress { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #E4E4E8;
+    color: #8A8A93; }
+  .sus-head { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 10px; }
+  .sus-head span { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .sus-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .sus-txt { flex: 0 0 168px; min-width: 0; }
+  .sus-txt b { display: block; font: 600 13.5px/18px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .sus-txt span { font: 400 11px/14px 'Proxima Nova', sans-serif; color: #9B9BA3;
+    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sus-bar { flex: 1; height: 8px; border-radius: 5px; background: #EFEFF2; overflow: hidden; }
+  .sus-bar i { display: block; height: 100%; border-radius: 5px; background: #ED1C24; opacity: .85; }
+  .flag-card { border: 1.4px solid #F3C6C8; background: #FFF2F2; border-radius: var(--qr);
+    padding: 13px 15px; margin: 16px 0 4px;
+    font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: #7A3A3E; }
+  .flag-card b { font: 600 12.5px/18px 'Urbane Rounded', sans-serif; color: #C0272E; }
+  .flag-card.slim { margin: 0 0 14px; }
+  .disclaim { margin-top: 14px; font: 400 11px/15px 'Proxima Nova', sans-serif; color: #ABABB3; }
+
+  /* --- foods screen --- */
+  .food-head { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; margin: 6px 0 10px; }
+  .food-head.ok { color: #1E9E56; }
+  .food-head.warn { color: #C98A0B; margin-top: 22px; }
+  .food-row { display: flex; align-items: flex-start; gap: 11px; padding: 9px 0;
+    border-bottom: 1px solid #F0F0F3; }
+  .fdot { flex: 0 0 10px; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
+  .fdot.ok { background: #2FB56A; }
+  .fdot.warn { background: #E8AA2E; }
+  .ftxt b { display: block; font: 600 14px/19px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .ftxt span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+
+  /* --- journey timeline --- */
+  .phase-wrap { position: relative; }
+  .phase-wrap::before { content: ''; position: absolute; left: 17px; top: 20px; bottom: 30px;
+    width: 1.6px; background: #E4E4E8; }
+  .phase { position: relative; display: flex; gap: 14px; margin-bottom: 16px; }
+  .ph-n { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #fff;
+    border: 1.4px solid #ED1C24; color: #ED1C24; z-index: 1;
+    font: 600 15px/1 'Urbane Rounded', sans-serif;
+    display: flex; align-items: center; justify-content: center; }
+  .ph-txt { flex: 1; border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 12px 14px; }
+  .ph-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .ph-head b { font: 600 15px/20px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .ph-head span { font: 600 10.5px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1px;
+    text-transform: uppercase; color: #ED1C24; }
+  .ph-sub { font: 400 12.5px/17px 'Proxima Nova', sans-serif; color: #8A8A93; margin-top: 3px; }
+
+  /* --- pricing tiers --- */
+  .tier { position: relative; display: block; width: 100%; text-align: left;
+    border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff; cursor: pointer;
+    padding: 15px 16px 13px; margin-bottom: 12px;
+    transition: border-color .18s ease, background .18s ease, transform .12s ease; }
+  .tier:active { transform: scale(.98); }
+  .tier.sel { border-color: #ED1C24; background: #FFF6F6; }
+  .t-badge { position: absolute; top: -9px; left: 14px;
+    font: 600 9.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .8px; text-transform: uppercase;
+    color: #1E9E56; background: #fff; border: 1px solid #BFE5CE; border-radius: 99px; padding: 4px 8px; }
+  .t-badge.hot { color: #ED1C24; border-color: #F5C2C4; }
+  .t-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+  .t-top b { font: 600 17px/22px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .t-price { font: 600 19px/22px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .t-price small { font: 600 12px/1 'Urbane Rounded', sans-serif; color: #9B9BA3; }
+  .t-feat { font: 400 12.5px/19px 'Proxima Nova', sans-serif; color: #7A7A83;
+    padding-left: 15px; position: relative; }
+  .t-feat::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px;
+    border-radius: 50%; background: #DDDDE2; }
+  .tier.sel .t-feat::before { background: #ED1C24; }
+
+  /* --- consult booking --- */
+  .doc-card { display: flex; align-items: center; gap: 13px; border: 1.4px solid #E4E4E8;
+    border-radius: var(--qr); background: #fff; padding: 13px 14px; margin-bottom: 18px; }
+  .doc-card .thumb { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 50%;
+    border: 1.4px dashed #C9C9CF; position: relative; overflow: hidden; }
+  .doc-card .thumb::before, .doc-card .thumb::after { content: ''; position: absolute;
+    left: 50%; top: 50%; width: 140%; height: 1.2px; background: #DDDDE2; }
+  .doc-card .thumb::before { transform: translate(-50%,-50%) rotate(38deg); }
+  .doc-card .thumb::after { transform: translate(-50%,-50%) rotate(-38deg); }
+  .doc-card .mk { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #ED1C24; }
+  .doc-card .mn { font: 600 14.5px/19px 'Urbane Rounded', sans-serif; color: #0B0E12; margin: 1px 0 2px; }
+  .doc-card .mm { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .slot-lab { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(11,14,18,.55); margin: 14px 0 9px; }
+
+  /* --- plan extras (gut) --- */
+  .plan-tier { font: 600 13px/18px 'Urbane Rounded', sans-serif; color: #0B0E12;
+    margin: -12px 0 14px; }
+  .plan-tier span { font: 400 12px/18px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .consult-ok { display: flex; align-items: center; gap: 9px; border: 1.4px solid #BFE5CE;
+    background: #F1FBF5; border-radius: calc(var(--qr) - 3px); padding: 10px 13px; margin-bottom: 16px;
+    font: 400 12.5px/17px 'Proxima Nova', sans-serif; color: #1E6E42; }
+  .consult-ok .cdot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #2FB56A; }
+
   /* --- UX annotations --- */
   .ux-note { position: absolute; z-index: 25; max-width: 218px; pointer-events: none;
     background: #FFF6C8; border: 1px solid #EBD983; border-radius: 3px 12px 12px 12px;
@@ -339,9 +439,11 @@
   <div class="s-kicker">DietStation &middot; Design Lab</div>
   <h2>Plan Builder — Questionnaire</h2>
   <p class="s-desc">Wireframes for the intelligent diet-plan questionnaire. It opens on the
-    Breathe intro, then asks one question per screen and branches by goal — Weight, Muscle,
-    Pregnancy, Gut. The final plan is computed from the answers. Everything below is a UX
-    decision we can flip live and compare.</p>
+    Breathe intro, then asks one question per screen and branches by goal. The <b>Gut branch
+    is the deep one</b>: a 6-screen naturopath-style intake (symptoms, frequency, timing,
+    FODMAP trigger scan, stress, red-flag safety gate) that resolves into a named gut profile,
+    a foods-in-your-favor list, the 3-phase low-FODMAP journey, affordable plan tiers and —
+    when flagged or included in the tier — a consultation booking.</p>
 
   <div class="s-sec">
     <div class="s-label">Screens</div>
@@ -408,7 +510,9 @@
 
   <div class="s-foot">Starts on the Breathe intro (Rive, artboard &ldquo;DietStation Breathe&rdquo;).
     All post-intro screens are lo-fi wireframes on purpose — pattern first, skin later.
-    Plan numbers are computed from the answers (weight slider &times; goal factor), not canned.</div>
+    Plan numbers are computed from the answers, not canned. Gut ops rule: naturopath depth
+    on intake, but every profile resolves to ONE low-FODMAP kitchen line — elimination meals
+    plus add-back sides — so operations never fork per condition.</div>
 </aside>
 
 <div id="stage">
@@ -683,14 +787,6 @@
         { id: 't2', label: 'Second trimester', sub: 'Weeks 13–27' },
         { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
         { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] },
-    gut: { id: 'symptoms', short: 'Symptoms', kicker: 'Gut comfort', title: 'What bothers you most?',
-      sub: 'Pick everything that applies.', multi: true,
-      note: { t: 'Branch screen', x: 'Multi-select — symptoms map to a low-trigger meal filter, not a diagnosis.' },
-      options: [
-        { id: 'bloat', label: 'Bloating' },
-        { id: 'reflux', label: 'Reflux' },
-        { id: 'irregular', label: 'Irregularity' },
-        { id: 'sensitive', label: 'Food sensitivity' }] },
   };
 
   const BRANCH_B = {
@@ -715,23 +811,148 @@
         { id: 'aversion', label: 'Food aversions' },
         { id: 'heartburn', label: 'Heartburn' },
         { id: 'none', label: 'None of these' }] },
-    gut: { id: 'triggers', short: 'Triggers', kicker: 'Gut comfort', title: 'Known trigger foods?',
-      sub: 'Pick any you already suspect — or let the plan find them.', multi: true,
-      options: [
-        { id: 'dairy', label: 'Dairy' },
-        { id: 'gluten', label: 'Gluten' },
-        { id: 'fried', label: 'Fried food' },
-        { id: 'spicy', label: 'Spicy' },
-        { id: 'caffeine', label: 'Caffeine' },
-        { id: 'unsure', label: 'Not sure' }] },
   };
 
+  /* ---- Gut deep-dive: naturopath-level intake, one low-FODMAP operation ---- */
+  const GUT_ASSESS = [
+    { id: 'gutSym', short: 'Symptoms', kicker: 'Gut check · 1 of 6', title: 'What are you feeling?',
+      sub: 'Pick everything that shows up regularly.', field: 'gutSym', q: true, multi: true,
+      note: { t: 'Naturopath intake', x: 'The symptom pattern picks the gut profile — fermentation, reflux, motility or mixed. Every option maps to an operational lever.' },
+      options: [
+        { id: 'bloat', label: 'Bloating & gas', sub: 'Belly swells as the day goes on' },
+        { id: 'pain', label: 'Cramps or pain', sub: 'Aching or sharp, comes in waves' },
+        { id: 'reflux', label: 'Reflux & heartburn', sub: 'Burning or a sour taste after meals' },
+        { id: 'constipation', label: 'Constipation', sub: 'Fewer than 3 comfortable trips a week' },
+        { id: 'diarrhea', label: 'Loose & urgent', sub: 'Fast, unpredictable trips' },
+        { id: 'fatigue', label: 'Food fatigue', sub: 'Heavy, foggy or drained after eating' }] },
+    { id: 'gutFreq', short: 'Frequency', kicker: 'Gut check · 2 of 6', title: 'How often does it flare?',
+      sub: 'Your honest average over the last month.', field: 'gutFreq', q: true,
+      options: [
+        { id: 'daily', label: 'Most days', sub: 'It shapes my day' },
+        { id: 'weekly', label: 'A few times a week' },
+        { id: 'sometimes', label: 'A few times a month' },
+        { id: 'rare', label: 'Only after certain meals' }] },
+    { id: 'gutTime', short: 'Timing', kicker: 'Gut check · 3 of 6', title: 'When does it usually hit?',
+      sub: 'Timing separates an upper-gut story from a lower-gut one.', field: 'gutTime', q: true,
+      note: { t: 'Diagnostic timing', x: 'Within the hour points upstream (stomach, reflux). 2–4 hours later points to fermentation further down.' },
+      options: [
+        { id: 'during', label: 'While eating or right after' },
+        { id: 'soon', label: 'Within the hour' },
+        { id: 'later', label: '2–4 hours after meals' },
+        { id: 'night', label: 'Evenings & nights' },
+        { id: 'random', label: 'No clear pattern' }] },
+    { id: 'gutTrig', short: 'Trigger scan', kicker: 'Gut check · 4 of 6', title: 'Which of these set you off?',
+      sub: 'Pick any you suspect — each maps to a food family we can test.', field: 'gutTrig', q: true, multi: true,
+      note: { t: 'FODMAP mapping', x: 'Onion/garlic → fructans · dairy → lactose · beans → GOS · apples/honey → fructose · sugar-free gum → polyols. Naturopath depth in, ONE low-FODMAP kitchen line out.' },
+      options: [
+        { id: 'onion', label: 'Onion & garlic' },
+        { id: 'wheat', label: 'Bread, pasta & wheat' },
+        { id: 'dairy', label: 'Milk & soft cheese' },
+        { id: 'legumes', label: 'Beans, lentils & hummus' },
+        { id: 'fruit', label: 'Apples, honey & mango' },
+        { id: 'sweetener', label: 'Sugar-free gum & sweets' },
+        { id: 'fried', label: 'Fried & spicy food' },
+        { id: 'coffee', label: 'Coffee & fizzy drinks' },
+        { id: 'unsure', label: 'Not sure — find them for me' }] },
+    { id: 'gutStress', short: 'Stress', kicker: 'Gut check · 5 of 6', title: 'How’s stress been lately?',
+      sub: 'The gut and the brain share a nerve — stress is a real trigger, not a footnote.', field: 'gutStress', q: true,
+      options: [
+        { id: 'low', label: 'Mostly calm' },
+        { id: 'mid', label: 'Comes and goes' },
+        { id: 'high', label: 'Running high', sub: 'Sleep or mood taking a hit' }] },
+    { id: 'gutFlags', short: 'Safety', kicker: 'Gut check · 6 of 6', title: 'Last one — any of these?',
+      sub: 'These change our advice from a plan to a person.', field: 'gutFlags', q: true, multi: true,
+      note: { t: 'Safety gate', x: 'Any red flag routes the flow through a consultation and softens the profile claims — this is screening, never diagnosis.' },
+      options: [
+        { id: 'weight', label: 'Unintended weight loss' },
+        { id: 'blood', label: 'Blood where it shouldn’t be' },
+        { id: 'nightpain', label: 'Pain that wakes you at night' },
+        { id: 'family', label: 'Family history of IBD / celiac' },
+        { id: 'none', label: 'None of these' }] },
+  ];
+
+  const FODMAP_GROUPS = {
+    fructans:  { name: 'Fructans',  foods: 'Onion, garlic, wheat bread & pasta' },
+    lactose:   { name: 'Lactose',   foods: 'Milk, soft cheese, milky karak' },
+    gos:       { name: 'GOS',       foods: 'Beans, lentils, hummus' },
+    fructose:  { name: 'Fructose',  foods: 'Apples, honey, mango' },
+    polyols:   { name: 'Polyols',   foods: 'Sugar-free gum, stone fruits' },
+    irritants: { name: 'Irritants', foods: 'Fried & spicy, coffee, fizzy drinks' },
+  };
+
+  function gutFlagged() {
+    return (state.answers.gutFlags || []).some(x => x !== 'none');
+  }
+  function gutNeedsConsult() {
+    return gutFlagged() || state.answers.tier === 'guided' || state.answers.tier === 'clinical';
+  }
+  function gutProfile() {
+    const a = state.answers;
+    const sym = a.gutSym || [], trig = a.gutTrig || [];
+    const c = { ferment: 0, reflux: 0, slow: 0, fast: 0 };
+    if (sym.includes('bloat')) c.ferment += 2;
+    if (sym.includes('pain')) c.ferment += 1;
+    if (sym.includes('fatigue')) c.ferment += 1;
+    if (sym.includes('reflux')) c.reflux += 2;
+    if (sym.includes('constipation')) c.slow += 2;
+    if (sym.includes('diarrhea')) c.fast += 2;
+    if (a.gutTime === 'during' || a.gutTime === 'soon') c.reflux += 1;
+    if (a.gutTime === 'later') c.ferment += 1;
+    let key = 'ferment';
+    if (c.slow > 0 && c.fast > 0) key = 'mixed';
+    else key = Object.keys(c).reduce((m, k) => c[k] > c[m] ? k : m, 'ferment');
+    if (Math.max(...Object.values(c)) === 0) key = 'ferment';
+    const PROFILES = {
+      ferment: { name: 'Fermentation-sensitive gut',
+        body: 'Certain carbohydrates aren’t fully absorbed, so gut bacteria ferment them — the gas stretches the gut wall, and a sensitive wall reads that as bloating and pain. Common, manageable, and very responsive to a short low-FODMAP reset.' },
+      reflux: { name: 'Reflux-prone gut',
+        body: 'Your pattern points upstream — the valve above the stomach is letting acid drift where it shouldn’t. Meal size, timing and a few specific irritants matter more for you than any single food group.' },
+      slow: { name: 'Slow-motility gut',
+        body: 'Things are moving through slower than they should, which lets fermentation and discomfort build up. Gentle fibre, fluids and rhythm do the heavy lifting — with a short low-FODMAP calm-down first.' },
+      fast: { name: 'Fast-motility gut',
+        body: 'Your gut is moving too fast to finish the job, which points at specific fermentable sugars pulling water in. A short elimination usually calms it quickly — then we find the one or two real culprits.' },
+      mixed: { name: 'Mixed-pattern gut (IBS-like)',
+        body: 'You swing between slow and fast — the classic mixed pattern. It responds best to the full three-phase approach: calm everything first, then test food families one at a time.' },
+    };
+    const sev = { daily: 'High', weekly: 'Moderate', sometimes: 'Mild', rare: 'Mild' }[a.gutFreq] || 'Moderate';
+    const g = { fructans: 0, lactose: 0, gos: 0, fructose: 0, polyols: 0, irritants: 0 };
+    if (trig.includes('onion')) g.fructans += 2;
+    if (trig.includes('wheat')) { g.fructans += 1; g.gos += 1; }
+    if (trig.includes('dairy')) g.lactose += 2;
+    if (trig.includes('legumes')) g.gos += 2;
+    if (trig.includes('fruit')) g.fructose += 2;
+    if (trig.includes('sweetener')) g.polyols += 2;
+    if (trig.includes('fried')) g.irritants += 1;
+    if (trig.includes('coffee')) g.irritants += 1;
+    const unsure = trig.includes('unsure') || !trig.length;
+    let suspects = Object.entries(g).filter(([, v]) => v > 0)
+      .sort((x, y) => y[1] - x[1]).slice(0, 3)
+      .map(([k, v]) => ({ key: k, ...FODMAP_GROUPS[k], score: v }));
+    if (!suspects.length) suspects = ['fructans', 'lactose', 'gos']
+      .map(k => ({ key: k, ...FODMAP_GROUPS[k], score: 1 }));
+    return { key, ...PROFILES[key], sev, suspects, unsure,
+      stress: a.gutStress === 'high', flagged: gutFlagged() };
+  }
+
+  const GUT_SAFE_FOODS = [
+    { n: 'Rice, rice noodles & potatoes', s: 'Your safest base — zero fermentable load' },
+    { n: 'Eggs, chicken, fish & hammour', s: 'Protein is FODMAP-free by nature' },
+    { n: 'Zucchini, carrot & cucumber', s: 'Gentle vegetables, cooked or raw' },
+    { n: 'Ripe banana, kiwi & orange', s: 'Fruit that behaves itself' },
+    { n: 'Lactose-free laban & hard cheese', s: 'Dairy taste without the lactose' },
+    { n: 'Oats & quinoa (small serves)', s: 'Fibre that builds you up slowly' },
+  ];
+
+  const freshAnswers = () => ({ goal: null, sex: null, age: null, h: 170, w: 76,
+    activity: null, a: null, b: [], excl: [], meals: null,
+    gutSym: [], gutFreq: null, gutTime: null, gutTrig: [], gutStress: null,
+    gutFlags: [], tier: null, consult: null });
   const state = {
     pat: 'cards', prog: 'bar', adv: 'auto', notes: false, radius: 16,
     step: 0, started: false,
-    answers: { goal: null, sex: null, age: null, h: 170, w: 76,
-      activity: null, a: null, b: [], excl: [], meals: null },
+    answers: null,
   };
+  state.answers = freshAnswers();
 
   function goalKey() { return state.answers.goal || 'weight'; }
 
@@ -768,9 +989,12 @@
         { id: 'light', label: 'Lightly active', sub: 'Walks, errands, on your feet some' },
         { id: 'active', label: 'Active', sub: 'Regular exercise most weeks' },
         { id: 'hard', label: 'Training hard', sub: 'Intense sessions 4+ days' }] });
-    const a = { ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' };
-    const b = { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' };
-    steps.push(a, b);
+    if (g === 'gut') {
+      steps.push(...GUT_ASSESS);
+    } else {
+      steps.push({ ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' },
+                 { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' });
+    }
     steps.push({ id: 'excl', short: 'Food rules', kicker: 'Food rules', title: 'Anything you don’t eat?',
       sub: 'Allergies, faith or preference — all treated the same.', field: 'excl', q: true, multi: true,
       options: [
@@ -787,6 +1011,13 @@
         { id: 'm3s', label: '3 meals + snacks', sub: 'Most popular rhythm', rec: true },
         { id: 'm5', label: '5 small meals', sub: 'Grazing through the day' }] });
     steps.push({ id: 'building', short: 'Building', type: 'building' });
+    if (g === 'gut') {
+      steps.push({ id: 'profile', short: 'Profile', type: 'profile' });
+      steps.push({ id: 'foods', short: 'Foods', type: 'foods' });
+      steps.push({ id: 'journey', short: 'Journey', type: 'journey' });
+      steps.push({ id: 'pricing', short: 'Plans', type: 'pricing' });
+      if (gutNeedsConsult()) steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
+    }
     steps.push({ id: 'plan', short: 'Plan', type: 'plan' });
     return steps;
   }
@@ -861,11 +1092,12 @@
 
   function buildLines() {
     const g = goalKey();
+    if (g === 'gut') return ['Reading your symptom pattern', 'Scoring the food-family suspects',
+      'Building your elimination phase', 'Picking gentle meals you’ll enjoy'];
     const gl = {
       weight: 'Pacing your deficit gently',
       muscle: 'Timing protein around training',
       pregnancy: 'Adding folate & iron-rich picks',
-      gut: 'Filtering out your triggers',
     }[g];
     return ['Setting your calories', 'Balancing your macros', gl, 'Picking meals you’ll enjoy'];
   }
@@ -886,7 +1118,7 @@
       kcal += { t1: 60, t2: 340, t3: 450, pp: 330 }[a.a] || 340;
       focus = 'Folate, iron & calcium forward';
     } else {
-      focus = 'Low-trigger · gentle fibre build-up';
+      focus = 'Phase 1 · Low-FODMAP elimination · weeks 1–4';
     }
     const pf = { weight: 1.6, muscle: 1.9, pregnancy: 1.1, gut: 1.2 }[g];
     const protein = Math.round(a.w * pf);
@@ -935,9 +1167,18 @@
       const p = planData(), g = goalKey();
       const title = { weight: 'Your weight plan', muscle: 'Your muscle plan',
         pregnancy: 'Your pregnancy plan', gut: 'Your gut-comfort plan' }[g];
+      const gutExtras = g !== 'gut' ? '' :
+        (state.answers.tier ? '<div class="plan-tier"><b>' +
+          { essentials: 'Essentials · KD 19/mo', guided: 'Guided · KD 39/mo', clinical: 'Clinical · KD 69/mo' }[state.answers.tier] +
+          '</b><span> — change anytime</span></div>' : '') +
+        (state.answers.consult && state.answers.consult.day ?
+          '<div class="consult-ok"><span class="cdot"></span>Consultation booked — ' +
+          state.answers.consult.day + ', ' + state.answers.consult.time +
+          ' · your dietitian sees this profile first</div>' : '');
       return '<div class="q-kicker">Ready</div>' +
         '<div class="q-title">' + title + '</div>' +
         '<div class="q-sub">' + p.focus + ' · reviewed by certified nutritionists</div>' +
+        gutExtras +
         '<div class="stat-row">' +
         '<div class="stat"><b>' + p.kcal + '</b><span>kcal</span></div>' +
         '<div class="stat"><b>' + p.protein + 'g</b><span>protein</span></div>' +
@@ -956,6 +1197,107 @@
         '<div class="q-foot" style="position:static;padding:0;background:none">' +
         '<button class="q-cta" id="qDone">Start my plan</button>' +
         '<button class="q-skip" id="qTweak">Tweak my answers</button></div>';
+    }
+    if (step.type === 'profile') {
+      const p = gutProfile();
+      const maxScore = Math.max(...p.suspects.map(s => s.score), 2);
+      return '<div class="q-kicker">Your gut, explained</div>' +
+        '<div class="q-title">' + p.name + '</div>' +
+        '<div class="q-sub">Severity: <b style="color:#0B0E12">' + p.sev + '</b> · from your ' +
+          ((state.answers.gutSym || []).length || 'reported') + ' symptoms & timing</div>' +
+        '<div class="prof-card"><div class="prof-k">What’s likely happening</div>' + p.body +
+        (p.stress ? '<div class="prof-stress">Your stress answer matters here — the gut-brain axis can amplify every symptom above. The plan builds in slow meals, not just safe ones.</div>' : '') +
+        '</div>' +
+        '<div class="sus-head">Food-family suspects' + (p.unsure ? ' <span>— we’ll confirm these in the test phase</span>' : '') + '</div>' +
+        p.suspects.map(s =>
+          '<div class="sus-row"><div class="sus-txt"><b>' + s.name + '</b><span>' + s.foods + '</span></div>' +
+          '<div class="sus-bar"><i style="width:' + Math.round(38 + 62 * (s.score / maxScore)) + '%"></i></div></div>').join('') +
+        (p.flagged ?
+          '<div class="flag-card"><b>One of your answers raised a flag.</b> The plan below is still safe to start, but we want a professional to look at you, not just your food. A consultation is included before your plan begins.</div>' : '') +
+        '<div class="disclaim">This is a screening profile from your answers — it explains, it doesn’t diagnose. ' +
+        (p.flagged ? 'Please also mention the flagged symptom to a doctor.' : 'A dietitian reviews every gut plan before it ships.') + '</div>' +
+        noteHTML({ t: 'Understand first', x: 'Name the pattern in plain words BEFORE showing food or price — comprehension is the product here.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">Show me my foods</button></div>';
+    }
+    if (step.type === 'foods') {
+      const p = gutProfile();
+      const excl = state.answers.excl || [];
+      const safe = GUT_SAFE_FOODS.filter(f =>
+        !(excl.includes('seafood') && /fish|hammour/i.test(f.n)) &&
+        !(excl.includes('dairy') && /laban|cheese/i.test(f.n)));
+      return '<div class="q-kicker">Foods in your favor</div>' +
+        '<div class="q-title">Eat freely, ease off gently</div>' +
+        '<div class="q-sub">Phase 1 is about abundance on the green list — not policing the amber one.</div>' +
+        '<div class="food-head ok">Works for you</div>' +
+        safe.map(f => '<div class="food-row"><span class="fdot ok"></span>' +
+          '<div class="ftxt"><b>' + f.n + '</b><span>' + f.s + '</span></div></div>').join('') +
+        '<div class="food-head warn">Ease off — for now, not forever</div>' +
+        p.suspects.map(s => '<div class="food-row"><span class="fdot warn"></span>' +
+          '<div class="ftxt"><b>' + s.foods + '</b><span>' + s.name +
+          ' family — back on the menu if it passes its test week</span></div></div>').join('') +
+        noteHTML({ t: 'Favor-first framing', x: 'Lead with what they CAN eat. The amber list is temporary and says so, twice.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">How the plan works</button></div>';
+    }
+    if (step.type === 'journey') {
+      const phases = [
+        ['1', 'Calm', 'Weeks 1–4', 'Full low-FODMAP menu. Symptoms settle so we get a clean baseline. Every meal ships from one kitchen line.'],
+        ['2', 'Test', 'Weeks 5–10', 'One food family returns per week — a real serving, on purpose. You log how it lands; we watch the pattern.'],
+        ['3', 'Free', 'Week 11+', 'Your personal list is done. Only your true triggers stay out — everything else comes back.'],
+      ];
+      return '<div class="q-kicker">The low-FODMAP route</div>' +
+        '<div class="q-title">Three phases, one kitchen</div>' +
+        '<div class="q-sub">Naturopath-level care that DietStation can actually cook every day.</div>' +
+        '<div class="phase-wrap">' + phases.map(p =>
+          '<div class="phase"><div class="ph-n">' + p[0] + '</div>' +
+          '<div class="ph-txt"><div class="ph-head"><b>' + p[1] + '</b><span>' + p[2] + '</span></div>' +
+          '<div class="ph-sub">' + p[3] + '</div></div></div>').join('') + '</div>' +
+        noteHTML({ t: 'Ops stay simple', x: 'All three phases run on ONE low-FODMAP menu line + add-back sides — no per-condition kitchens.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">Pick my plan</button></div>';
+    }
+    if (step.type === 'pricing') {
+      const flagged = gutFlagged();
+      const TIERS = [
+        { id: 'essentials', name: 'Essentials', price: '19', badge: 'Most affordable',
+          feats: ['Full 3-phase meal plan, delivered', 'Grocery & eating-out cheat sheets', 'Weekly symptom check-in'] },
+        { id: 'guided', name: 'Guided', price: '39', badge: 'Recommended', rec: true,
+          feats: ['Everything in Essentials', 'Monthly nutritionist review', 'Reintroduction coaching in Phase 2'] },
+        { id: 'clinical', name: 'Clinical', price: '69',
+          feats: ['Everything in Guided', '2 dietitian consultations / month', 'Doctor referral pathway'] },
+      ];
+      return '<div class="q-kicker">Choose your plan</div>' +
+        '<div class="q-title">Start where it’s comfortable</div>' +
+        '<div class="q-sub">Every tier runs the same food. You’re choosing how much human is beside you.</div>' +
+        (flagged ? '<div class="flag-card slim"><b>Because of your flagged answer,</b> a consultation is included before Phase 1 — whichever tier you pick.</div>' : '') +
+        TIERS.map(t =>
+          '<button class="tier' + (state.answers.tier === t.id ? ' sel' : '') + (t.rec ? ' rec' : '') + '" data-tier="' + t.id + '">' +
+          (t.badge ? '<span class="t-badge' + (t.rec ? ' hot' : '') + '">' + t.badge + '</span>' : '') +
+          '<div class="t-top"><b>' + t.name + '</b><div class="t-price">KD ' + t.price + '<small>/mo</small></div></div>' +
+          t.feats.map(f => '<div class="t-feat">' + f + '</div>').join('') +
+          '</button>').join('') +
+        noteHTML({ t: 'Affordable anchor', x: 'Cheapest tier is labeled, not hidden. Consultation attaches to Guided/Clinical — or to any tier when safety-flagged.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta' + (state.answers.tier ? '' : ' ghost') + '" id="qNext">' +
+        (state.answers.tier ? 'Continue' : 'Pick a tier to continue') + '</button></div>';
+    }
+    if (step.type === 'consult') {
+      const c = state.answers.consult || {};
+      const days = ['Today', 'Tomorrow', 'Sun', 'Mon'];
+      const times = ['10:00', '12:30', '17:00', '18:30'];
+      return '<div class="q-kicker">One more human</div>' +
+        '<div class="q-title">Book your consultation</div>' +
+        '<div class="q-sub">' + (gutFlagged()
+          ? 'Included because of your flagged answer — 20 minutes, before Phase 1 starts.'
+          : 'Part of your tier — 20 minutes to fine-tune Phase 1 with a specialist.') + '</div>' +
+        '<div class="doc-card"><span class="thumb"></span>' +
+        '<div class="txt"><div class="mk">Gut specialist</div><div class="mn">Registered dietitian</div>' +
+        '<div class="mm">Reviews your profile & answers before the call</div></div></div>' +
+        '<div class="slot-lab">Day</div><div class="opt-chips">' +
+        days.map(d => '<button class="o-chip' + (c.day === d ? ' sel' : '') + '" data-day="' + d + '">' + d + '</button>').join('') + '</div>' +
+        '<div class="slot-lab">Time</div><div class="opt-chips">' +
+        times.map(t => '<button class="o-chip' + (c.time === t ? ' sel' : '') + '" data-time="' + t + '">' + t + '</button>').join('') + '</div>' +
+        noteHTML({ t: 'No dead ends', x: 'This screen only exists when flagged or when the tier includes a human — never as an upsell wall. Skipping is allowed.' }, 'right:6px;top:288px;') +
+        '<div class="q-foot"><button class="q-cta' + (c.day && c.time ? '' : ' ghost') + '" id="qNext">' +
+        (c.day && c.time ? 'Book & see my plan' : 'Pick a slot — or skip') + '</button>' +
+        '<button class="q-skip" id="qSkipConsult">Skip for now</button></div>';
     }
     let inner;
     if (step.type === 'sliders') inner = slidersHTML();
@@ -988,9 +1330,16 @@
       btn.addEventListener('click', () => {
         const id = btn.dataset.opt;
         if (step.multi) {
-          const arr = state.answers[step.field] || [];
+          let arr = state.answers[step.field] || [];
           const i = arr.indexOf(id);
-          if (i >= 0) arr.splice(i, 1); else arr.push(id);
+          if (i >= 0) arr.splice(i, 1);
+          else {
+            // 'none' is exclusive: it clears the rest, and any real pick clears it
+            if (id === 'none') { arr = []; qScroll.querySelectorAll('[data-opt]').forEach(b => b.classList.remove('sel')); }
+            else { const n = arr.indexOf('none'); if (n >= 0) { arr.splice(n, 1);
+              const nb = qScroll.querySelector('[data-opt="none"]'); if (nb) nb.classList.remove('sel'); } }
+            arr.push(id);
+          }
           state.answers[step.field] = arr;
           const nx = $('qNext');
           if (nx) { nx.textContent = arr.length ? 'Continue' : 'Skip for now';
@@ -1012,8 +1361,35 @@
     if (wIn) wIn.addEventListener('input', () => {
       state.answers.w = +wIn.value;
       $('wVal').innerHTML = wIn.value + ' <small>kg</small>'; });
+    /* pricing tier cards */
+    qScroll.querySelectorAll('[data-tier]').forEach(t => t.addEventListener('click', () => {
+      state.answers.tier = t.dataset.tier;
+      qScroll.querySelectorAll('[data-tier]').forEach(x => x.classList.toggle('sel', x === t));
+      const nx2 = $('qNext');
+      if (nx2) { nx2.classList.remove('ghost'); nx2.textContent = 'Continue'; }
+    }));
+    /* consult slot chips */
+    const slotPick = (attr, key) => qScroll.querySelectorAll('[' + attr + ']').forEach(b =>
+      b.addEventListener('click', () => {
+        const c = state.answers.consult || (state.answers.consult = {});
+        c[key] = b.getAttribute(attr);
+        b.parentElement.querySelectorAll('[' + attr + ']').forEach(x => x.classList.toggle('sel', x === b));
+        const nx2 = $('qNext');
+        if (nx2 && c.day && c.time) { nx2.classList.remove('ghost'); nx2.textContent = 'Book & see my plan'; }
+      }));
+    slotPick('data-day', 'day');
+    slotPick('data-time', 'time');
+    const skipC = $('qSkipConsult');
+    if (skipC) skipC.addEventListener('click', () => { state.answers.consult = null; go(1); });
     const nx = $('qNext');
-    if (nx) nx.addEventListener('click', () => go(1));
+    if (nx) nx.addEventListener('click', () => {
+      if (step.type === 'pricing' && !state.answers.tier) return;   // gate: a tier must be picked
+      if (step.type === 'consult') {
+        const c = state.answers.consult;
+        if (!c || !c.day || !c.time) state.answers.consult = null;  // acts as skip
+      }
+      go(1);
+    });
     const done = $('qDone');
     if (done) done.addEventListener('click', () => { location.href = '../'; });
     const tweak = $('qTweak');
@@ -1056,6 +1432,9 @@
 
   function go(dir) {
     animDir = dir > 0 ? 'f' : 'b';
+    const before = steps.length;
+    steps = buildSteps();          // answers (red flags, tier) can add/remove screens ahead
+    if (steps.length !== before) buildJump();
     const next = state.step + dir;
     if (next < 0) { exitToIntro(); return; }
     if (next >= steps.length) return;
@@ -1108,6 +1487,8 @@
   }
   wireGrid('goalGrid', 'goal', v => {
     state.answers.goal = v; state.answers.a = null; state.answers.b = [];
+    Object.assign(state.answers, { gutSym: [], gutFreq: null, gutTime: null,
+      gutTrig: [], gutStress: null, gutFlags: [], tier: null, consult: null });
     steps = buildSteps(); buildJump();
     if (stInput) stInput.value = GOALS[v].state;
     if (state.step >= steps.length) state.step = steps.length - 1;
@@ -1135,8 +1516,7 @@
     setTimeout(() => { $('sCopy').textContent = 'Copy values'; }, 1200);
   });
   $('sRestart').addEventListener('click', () => {
-    state.answers = { goal: null, sex: null, age: null, h: 170, w: 76,
-      activity: null, a: null, b: [], excl: [], meals: null };
+    state.answers = freshAnswers();
     state.step = 0; steps = buildSteps(); buildJump();
     document.querySelectorAll('#goalGrid button').forEach(b =>
       b.classList.toggle('on', b.dataset.goal === 'weight'));

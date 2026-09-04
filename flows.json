@@ -64,18 +64,22 @@
       "title": "Plan Builder — Intelligent Questionnaire",
       "status": "in-progress",
       "updated": "2026-09-04",
-      "description": "Interactive UX wireframes for the diet-plan questionnaire. Opens on the Breathe intro (live Rive), then asks one question per screen and branches by goal — Weight control, Muscle building, Pregnancy, Gut comfort — ending in a plan preview computed from the answers. The playground flips core UX decisions live: answer pattern (cards / list / chips), progress style, auto-advance vs Continue, plus toggleable sticky UX annotations.",
+      "description": "Interactive UX wireframes for the diet-plan questionnaire. Opens on the Breathe intro (live Rive), asks one question per screen and branches by goal. The Gut branch goes naturopath-deep: a 6-screen intake (symptoms, frequency, timing, FODMAP trigger scan, stress, red-flag safety gate) resolving into a named gut profile with plain-language explainer, a foods-in-your-favor list, the 3-phase low-FODMAP journey, affordable plan tiers (KD 19/39/69) and a consultation booking when flagged or included in the tier. Playground flips answer pattern, progress style, advance behavior and sticky UX annotations live.",
       "path": "plan-quiz/",
       "handoff": {
         "Fidelity": "Deliberate lo-fi wireframes after the intro — grayscale #FBFBFC ground, dashed image placeholders, brand red #ED1C24 reserved for selection and progress. Pattern first, skin later.",
-        "Flow map": "Intro (Breathe, Rive) → Goal → Identity → Age → Body sliders → Activity → Branch A → Branch B → Food rules → Meals → Building (3s) → Plan preview. 8–9 questions depending on branch.",
-        "Branching": "Goal picks Branch A/B: Weight = pace + cravings · Muscle = training days + target · Pregnancy = trimester + eating comfort (identity screen auto-skipped) · Gut = symptoms + trigger foods (multi-select).",
+        "Flow map": "Intro (Breathe, Rive) → Goal → Identity → Age → Body sliders → Activity → branch → Food rules → Meals → Building → Plan. Gut branch swaps the 2 branch questions for a 6-screen intake, and inserts after Building: Gut profile → Foods → Journey → Pricing → Consult (conditional) → Plan.",
+        "Branching": "Goal picks the branch: Weight = pace + cravings · Muscle = training days + target · Pregnancy = trimester + eating comfort (identity screen auto-skipped) · Gut = full deep-dive intake.",
         "Question grammar": "One decision per screen. Single-select auto-advances after 260ms (toggleable to a Continue button); multi-select always uses Continue, which reads 'Skip for now' at zero selections. Recommended options are pre-highlighted, never pre-selected.",
         "Building screen": "3s of perceived intelligence — pulsing dot-ball (brand red, CSS) + four checklist lines that echo the user's actual answers, then auto-advances.",
         "Plan preview": "kcal/protein/carbs/fat computed from answers: sex + activity baseline, goal adjustment (pace −250/−420/−560 · muscle +120/+280/+450 · trimester +60/+340/+450/+330), protein = weight-slider kg × goal factor (1.6/1.9/1.1/1.2 g/kg). Meal names are sample content per goal.",
         "Playground": "Desktop (standard shell): screens jump grid, goal-branch override, answer pattern (cards/list/chips), progress (bar/dots/count), advance behavior, corner-radius dial, UX-notes toggle, Copy values. Mobile: fullscreen + floating pill (pattern cycle, notes, restart).",
         "Intro": "Byte-identical Breathe recipe — same Rive artboard, glass X + CTA (global glass.json recipe), segmented control. CTA enters the quiz; goal selection syncs Machine.state so backing out keeps the blob in the matching state.",
-        "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder)."
+        "Type": "Urbane Rounded Medium/DemiBold · Proxima Nova Regular (files in this folder).",
+        "Gut intake": "Naturopath-level, FODMAP-operational: symptoms (multi) → flare frequency (severity) → timing (upper vs lower gut) → trigger scan mapped to FODMAP families (onion/garlic→fructans, dairy→lactose, beans→GOS, apples/honey→fructose, sweeteners→polyols, fried/coffee→irritants) → stress (gut-brain axis) → red-flag safety gate (weight loss, blood, night pain, IBD/celiac history; 'none' is exclusive).",
+        "Gut profile": "Symptom pattern scores 4 axes → named profile: Fermentation-sensitive · Reflux-prone · Slow-motility · Fast-motility · Mixed (IBS-like). Severity from flare frequency. Top-3 FODMAP suspects shown as confidence bars; 'not sure' falls back to the default elimination set. Explicit disclaimer: screening, never diagnosis; a dietitian reviews every gut plan.",
+        "Result explainer": "Understand-first sequence: profile explainer (what's likely happening, in plain words) → foods in your favor (green list leads; amber list is 'for now, not forever', tied to suspect families) → 3-phase journey: Calm (wk 1–4 elimination) · Test (wk 5–10, one family back per week) · Free (wk 11+, personal list). Ops rule: all phases run on ONE low-FODMAP kitchen line + add-back sides.",
+        "Pricing & consult": "Three tiers, cheapest labeled 'Most affordable': Essentials KD 19/mo (plan + check-ins) · Guided KD 39/mo (+ monthly nutritionist, reintroduction coaching — Recommended) · Clinical KD 69/mo (+ 2 dietitian consults/mo, doctor referral). A tier must be picked to continue. Consultation booking screen (specialist card + day/time slots, skippable) appears for Guided/Clinical — and for EVERY tier when a red flag was raised; the flag also adds warning cards on profile and pricing. Booked slot confirms on the final plan."
       },
       "downloads": [
         {
@@ -101,6 +105,11 @@
           "t": "Intro hand-off",
           "note": "Screen 0 is the Breathe flow unchanged (same .riv, same state machine). The CTA pushes the wizard; picking a goal writes Machine.state back so returning to the intro shows the matching blob.",
           "code": "// on goal select:\nriveRef.current?.setNumberState('Machine', 'state', GOAL_STATE[goal]); // 1–4\n// back from the first question → pop to the intro, blob already matches"
+        },
+        {
+          "t": "Gut assessment → profile",
+          "note": "The intake is data, the profile is a pure function of it. Red flags gate the flow (consult inserted for any tier) but never block the plan — advice softens, food stays safe.",
+          "code": "const FAMILY = { onion:'fructans', wheat:'fructans', dairy:'lactose',\n  legumes:'gos', fruit:'fructose', sweetener:'polyols' };\n// symptom axes: bloat/pain/fatigue→ferment · reflux(+early timing)→reflux\n// constipation→slow · diarrhea→fast · slow+fast→mixed (IBS-like)\nconst flagged = flags.some(f => f !== 'none');\nconst needsConsult = flagged || tier === 'guided' || tier === 'clinical';\n// steps are rebuilt on every navigation — the consult screen exists only when needed"
         }
       ]
     },
