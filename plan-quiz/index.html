@@ -404,46 +404,49 @@
     text-transform: uppercase; color: rgba(11,14,18,.55); margin: 14px 0 9px; }
 
   /* --- XY dial pad --- */
-  .pad { position: relative; height: 258px; border: 1.4px solid #E4E4E8; border-radius: var(--qr);
-    background: #fff; margin: 4px 0 12px; touch-action: none; cursor: crosshair; overflow: hidden;
-    background-image:
-      repeating-linear-gradient(to right, transparent 0 calc(20% - 1px), #F2F2F5 calc(20% - 1px) 20%),
-      repeating-linear-gradient(to bottom, transparent 0 calc(20% - 1px), #F2F2F5 calc(20% - 1px) 20%); }
+  .pad { position: relative; height: 204px; border: 1.4px solid #E4E4E8; border-radius: var(--qr);
+    background: #fff; margin: 4px 0 12px; touch-action: none; cursor: pointer; overflow: hidden; }
+  .pad .gl { position: absolute; background: #ECECEF; pointer-events: none; }
+  .pad .gl.v { top: 0; bottom: 0; width: 1px; }
+  .pad .gl.h { left: 0; right: 0; height: 1px; }
   .pad .ax { position: absolute; font: 600 9.5px/12px 'Urbane Rounded', sans-serif;
     letter-spacing: 1.2px; text-transform: uppercase; color: #B4B4BC; pointer-events: none; z-index: 3; }
   .pad .ax-t { top: 8px; left: 50%; transform: translateX(-50%); }
   .pad .ax-b { bottom: 8px; left: 50%; transform: translateX(-50%); }
   .pad .ax-l { left: 10px; top: 50%; transform: translateY(-50%); }
   .pad .ax-r { right: 10px; top: 50%; transform: translateY(-50%); text-align: right; }
-  .pad-band { position: absolute; left: 0; right: 0; top: 38%; height: 24%;
-    background: #FAFAFB; border-top: 1px dashed #ECECEF; border-bottom: 1px dashed #ECECEF;
-    pointer-events: none; display: flex; align-items: center; justify-content: flex-end; }
+  .pad-band { position: absolute; left: 0; right: 0; top: 33.33%; height: 33.34%;
+    background: #FAFAFB; pointer-events: none;
+    display: flex; align-items: center; justify-content: flex-end; }
   .pad-band span { font: 600 8.5px/1 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
     text-transform: uppercase; color: #D3D3D9; margin-right: 52px; }
   .pad-cv { position: absolute; top: 0; bottom: 0; width: 1.2px; background: #F5C2C4;
-    pointer-events: none; z-index: 1; }
+    pointer-events: none; z-index: 1; transition: left .18s cubic-bezier(.3,.8,.3,1); }
   .pad-ch { position: absolute; left: 0; right: 0; height: 1.2px; background: #F5C2C4;
-    pointer-events: none; z-index: 1; }
+    pointer-events: none; z-index: 1; transition: top .18s cubic-bezier(.3,.8,.3,1); }
   .pad-knob { position: absolute; width: 26px; height: 26px; border-radius: 50%;
     background: #ED1C24; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(237,28,36,.4),
-    0 0 0 1.4px #ED1C24; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; }
+    0 0 0 1.4px #ED1C24; transform: translate(-50%, -50%); pointer-events: none; z-index: 2;
+    transition: left .18s cubic-bezier(.3,.8,.3,1), top .18s cubic-bezier(.3,.8,.3,1); }
   .derived { display: inline-block; font: 600 12px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
     border: 1px solid #F5C2C4; border-radius: 99px; padding: 7px 12px; margin-bottom: 14px;
     background: #FFF6F6; }
   /* abstract experience card */
   .xp-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
-    padding: 16px 18px 14px; }
+    padding: 13px 16px 13px; }
+  .xp-card .xp-blurb { min-height: 38px; }
   .xp-meta { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: .6px;
     color: #ED1C24; margin-bottom: 5px; }
   .xp-title { font: 600 23px/28px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 6px; }
   .xp-blurb { font: 400 13px/19px 'Proxima Nova', sans-serif; color: #7A7A83; margin-bottom: 13px; }
-  .xp-rates { border-top: 1px solid #F0F0F3; padding-top: 4px; }
-  .rt-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 0; }
-  .rt-row label { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
-    text-transform: uppercase; color: #9B9BA3; }
-  .rt-dots { display: flex; gap: 5px; }
-  .rt-dots i { width: 11px; height: 11px; border-radius: 50%; background: #EBEBEF;
-    transition: background .15s ease, transform .15s ease; }
+  .xp-rates3 { display: flex; gap: 10px; border-top: 1px solid #F0F0F3; padding-top: 11px; }
+  .rt3 { flex: 1; min-width: 0; }
+  .rt3 label { display: block; font: 600 9.5px/13px 'Urbane Rounded', sans-serif;
+    letter-spacing: 1px; text-transform: uppercase; color: #9B9BA3; margin-bottom: 5px;
+    white-space: nowrap; }
+  .rt-dots { display: flex; gap: 4px; }
+  .rt-dots i { width: 10px; height: 10px; border-radius: 50%; background: #EBEBEF;
+    transition: background .15s ease; }
   .rt-dots i.f { background: #ED1C24; }
   .gauges { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
     padding: 6px 16px 12px; }
@@ -929,31 +932,18 @@
       { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
       { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] };
 
-  /* ---- XY dial: granular alternative to the 3-goal cards ---- */
+  /* ---- XY dial: snaps to a 3x3 grid — nine combos, not a continuum ---- */
+  const DIAL_CENTERS = [1 / 6, 1 / 2, 5 / 6];
   function dialInfo() {
-    const d = state.answers.dial || { x: .35, y: .5 };
-    const y = d.y, x = d.x;
-    const kcal = Math.round((1300 + y * 1900) / 10) * 10;
-    let dir, dirTxt, pace = null, target = null;
-    if (y < 0.38) {
-      dir = 'lose';
-      pace = y < 0.13 ? 'ambitious' : y < 0.26 ? 'steady' : 'gentle';
-      dirTxt = { gentle: '−0.25 kg a week — the easy cut', steady: '−0.5 kg a week — the steady cut',
-        ambitious: '−0.75 kg a week — the hard cut' }[pace];
-    } else if (y > 0.62) {
-      dir = 'gain';
-      target = y > 0.87 ? 'bulk' : 'lean';
-      dirTxt = target === 'bulk' ? '+0.45 kg a week — bulking' : '+0.25 kg a week — lean gain';
-    } else {
-      dir = 'maintain';
-      dirTxt = 'Holding steady — quality over quantity';
-    }
-    const tasteTxt = x < 0.25 ? 'Comfort-first — food you’d order anyway'
-      : x < 0.5 ? 'Balanced — mostly delicious'
-      : x < 0.75 ? 'Performance-leaning — flavor sits back sometimes'
-      : 'All business — results over cravings';
-    const stick = Math.max(25, Math.min(98, Math.round(98 - Math.abs(y - 0.5) * 2 * 40 - x * 35)));
-    return { kcal, dir, dirTxt, pace, target, tasteTxt, stick, x, y };
+    const d = state.answers.dial || { x: .5, y: .5 };
+    const zx = d.x < 1 / 3 ? 0 : d.x < 2 / 3 ? 1 : 2;   // taste: comfort / balanced / business
+    const zy = d.y < 1 / 3 ? 0 : d.y < 2 / 3 ? 1 : 2;   // calories: cut / steady / fuel
+    const kcal = [1600, 2250, 2900][zy];
+    let dir, pace = null, target = null;
+    if (zy === 0) { dir = 'lose'; pace = ['gentle', 'steady', 'ambitious'][zx]; }
+    else if (zy === 2) { dir = 'gain'; target = zx === 1 ? 'lean' : 'bulk'; }
+    else dir = 'maintain';
+    return { kcal, dir, pace, target, zx, zy, x: d.x, y: d.y };
   }
   function dialApply() {
     const i = dialInfo();
@@ -971,7 +961,7 @@
   }
   /* abstract experience read: smart title + blurb + 1-5 ratings */
   function dialXp(i) {
-    const tz = i.x < 0.4 ? 0 : i.x < 0.7 ? 1 : 2;
+    const tz = i.zx;
     const M = {
       lose: [
         ['The Comfort Cut', 'Food you’d order anyway — portions and timing do the quiet work. Slower on the scale, but it never feels like a diet.'],
@@ -987,21 +977,20 @@
         ['The Clean Machine', 'Dialed-in maintenance — performance eating without the surplus. Maximum output, zero drift.']],
     };
     const [title, blurb] = M[i.dir][tz];
-    const ext = Math.abs(i.y - 0.5) * 2;
-    const results = i.dir === 'maintain' ? 2 : Math.max(2, Math.min(5, Math.round(2 + ext * 3.5)));
-    const joy = Math.max(1, Math.min(5, Math.round(5 - i.x * 4)));
-    const ease = Math.max(1, Math.min(5, Math.round(i.stick / 20)));
+    const results = i.dir === 'maintain' ? 2 : [3, 4, 5][tz];
+    const joy = [5, 4, 2][tz];
+    const ease = i.dir === 'maintain' ? [5, 4, 3][tz] : [4, 3, 2][tz];
     return { title, blurb, results, joy, ease };
   }
   function dialXpHTML(i) {
     const xp = dialXp(i);
     const dots = n => '<span class="rt-dots">' + Array.from({ length: 5 }, (_, k) =>
       '<i class="' + (k < n ? 'f' : '') + '"></i>').join('') + '</span>';
-    const rate = (label, n) => '<div class="rt-row"><label>' + label + '</label>' + dots(n) + '</div>';
+    const rate = (label, n) => '<div class="rt3"><label>' + label + '</label>' + dots(n) + '</div>';
     return '<div class="xp-meta">→ ' + GOALS[i.dir].label + ' · ≈' + i.kcal.toLocaleString() + ' kcal a day</div>' +
       '<div class="xp-title">' + xp.title + '</div>' +
       '<div class="xp-blurb">' + xp.blurb + '</div>' +
-      '<div class="xp-rates">' + rate('Results', xp.results) + rate('Food joy', xp.joy) + rate('Ease', xp.ease) + '</div>';
+      '<div class="xp-rates3">' + rate('Results', xp.results) + rate('Food joy', xp.joy) + rate('Ease', xp.ease) + '</div>';
   }
 
   const gutOn = () => (state.answers.health || []).includes('gut');
@@ -1276,7 +1265,7 @@
     { n: 'Oats & quinoa (small serves)', s: 'Fibre that builds you up slowly' },
   ];
 
-  const freshAnswers = () => ({ goal: null, dial: { x: .35, y: .5 }, health: [], trimester: null,
+  const freshAnswers = () => ({ goal: null, dial: { x: .5, y: .5 }, health: [], trimester: null,
     sex: null, age: null, h: 170, w: 76,
     activity: null, a: null, b: [], excl: [], meals: null,
     gutSym: [], gutFreq: null, gutTime: null, gutTrig: [], gutStress: null,
@@ -1615,16 +1604,18 @@
       const i = dialInfo();
       return '<div class="q-kicker">Your direction</div>' +
         '<div class="q-title">Dial your plan in</div>' +
-        '<div class="q-sub">Drag the dot. Up–down is calories; left–right is how much taste you’ll trade for results.</div>' +
+        '<div class="q-sub" style="margin-bottom:16px">Tap a zone — calories up–down, taste left–right. Nine combos, no sliders.</div>' +
         '<div class="pad" id="pad">' +
         '<span class="ax ax-t">More fuel</span><span class="ax ax-b">Fewer calories</span>' +
         '<span class="ax ax-l">Full<br>flavor</span><span class="ax ax-r">All<br>results</span>' +
         '<div class="pad-band"><span>steady zone</span></div>' +
+        '<i class="gl v" style="left:33.33%"></i><i class="gl v" style="left:66.66%"></i>' +
+        '<i class="gl h" style="top:33.33%"></i><i class="gl h" style="top:66.66%"></i>' +
         '<div class="pad-cv" id="padCv"></div><div class="pad-ch" id="padCh"></div>' +
         '<div class="pad-knob" id="padKnob"></div>' +
         '</div>' +
         '<div class="xp-card" id="xpCard">' + dialXpHTML(i) + '</div>' +
-        noteHTML({ t: 'Abstract, not analytic', x: 'The position becomes a named experience + a blurb + three 1–5 ratings — you feel the trade-off instead of reading four gauges. Same answers written underneath.' }, 'right:6px;top:2px;') +
+        noteHTML({ t: 'Nine combos, one screen', x: 'The pad snaps to a 3×3 grid — each cell is a named experience + blurb + three 1–5 ratings. No scrolling, no continuum; same answers written underneath.' }, 'right:6px;top:2px;') +
         '<div class="q-foot"><button class="q-cta" id="qNext">This feels right</button></div>';
     }
     if (step.type === 'forecast') {
@@ -1786,9 +1777,11 @@
         const nx = (ev.clientX - r.left) / r.width;
         const ny = 1 - (ev.clientY - r.top) / r.height;
         if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+        // snap to the 3x3 grid — nine combos, not a continuum
+        const snap = v => DIAL_CENTERS[v < 1 / 3 ? 0 : v < 2 / 3 ? 1 : 2];
         state.answers.dial = {
-          x: Math.max(0, Math.min(1, nx)),
-          y: Math.max(0, Math.min(1, ny)) };
+          x: snap(Math.max(0, Math.min(1, nx))),
+          y: snap(Math.max(0, Math.min(1, ny))) };
         paint();
       };
       pad.addEventListener('pointerdown', ev => {
