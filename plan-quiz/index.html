@@ -403,6 +403,67 @@
   .slot-lab { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
     text-transform: uppercase; color: rgba(11,14,18,.55); margin: 14px 0 9px; }
 
+  /* --- forecast chart --- */
+  .fc-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 12px 10px 8px; margin-bottom: 16px; }
+  .fc-chart { width: 100%; height: auto; display: block; }
+  .fc-grid { stroke: #EEEEF1; stroke-width: 1.2; stroke-dasharray: 3 4; }
+  .fc-line { fill: none; stroke: #ED1C24; stroke-width: 2.4; stroke-linecap: round;
+    stroke-linejoin: round; }
+  .fc-dot { fill: #ED1C24; }
+  .fc-dot0 { fill: #fff; stroke: #ED1C24; stroke-width: 2; }
+  .fc-val { font: 600 10.5px 'Urbane Rounded', sans-serif; fill: #0B0E12; text-anchor: middle; }
+  .fc-val0 { font: 600 10.5px 'Urbane Rounded', sans-serif; fill: #9B9BA3; text-anchor: start; }
+  .fc-m { font: 600 9px 'Urbane Rounded', sans-serif; fill: #B4B4BC; text-anchor: middle;
+    letter-spacing: 1px; }
+  .fc-band { font: 600 8px 'Urbane Rounded', sans-serif; fill: #C9A24B; text-anchor: middle;
+    letter-spacing: 1.4px; }
+  .mile { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid #F0F0F3;
+    font: 400 13px/18px 'Proxima Nova', sans-serif; color: #55555E; }
+  .mile .mdot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%;
+    background: #ED1C24; margin-top: 5px; }
+
+  /* --- plan picker --- */
+  .pick-lab { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(11,14,18,.55); margin: 4px 0 9px; }
+  .dur-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .dur { position: relative; border: 1.4px solid #E4E4E8; border-radius: calc(var(--qr) - 3px);
+    background: #fff; cursor: pointer; padding: 13px 8px 11px; text-align: center;
+    transition: border-color .15s ease, background .15s ease, transform .12s ease; }
+  .dur:active { transform: scale(.96); }
+  .dur b { display: block; font: 600 14px/18px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .dur .d-out { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ED1C24;
+    margin-top: 2px; }
+  .dur .d-disc { display: block; font: 400 10.5px/14px 'Proxima Nova', sans-serif; color: #9B9BA3;
+    margin-top: 1px; }
+  .dur.sel { border-color: #ED1C24; background: #FFF6F6; }
+  .d-badge { position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    white-space: nowrap; font: 600 8.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .8px;
+    text-transform: uppercase; color: #ED1C24; background: #fff; border: 1px solid #F5C2C4;
+    border-radius: 99px; padding: 3px 7px; }
+  .coach-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    border: 1.4px solid #E4E4E8; border-radius: calc(var(--qr) - 3px); background: #fff;
+    cursor: pointer; padding: 12px 14px; margin-bottom: 16px; transition: all .15s ease; }
+  .coach-row .tick { flex: 0 0 23px; width: 23px; height: 23px; border-radius: 7px;
+    border: 1.4px solid #DDDDE2; display: flex; align-items: center; justify-content: center;
+    color: transparent; transition: all .18s ease; }
+  .coach-row .tick svg { width: 11px; height: 11px; }
+  .coach-row.sel { border-color: #ED1C24; }
+  .coach-row.sel .tick { border-color: #ED1C24; background: #ED1C24; color: #fff; }
+  .coach-row.locked { background: #FFF6F6; cursor: default; }
+  .coach-row .txt b { display: block; font: 600 14px/19px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .coach-row .txt span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .price-card { border: 1.4px solid #0B0E12; border-radius: var(--qr); background: #fff;
+    padding: 14px 16px; }
+  .pc-row span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #9B9BA3; }
+  .pc-main { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+  .pc-main b { font: 600 30px/34px 'Urbane Rounded', sans-serif; color: #0B0E12; }
+  .pc-main span { font: 600 13px/18px 'Urbane Rounded', sans-serif; color: #9B9BA3; }
+  .pc-main em { font: 400 12px/16px 'Proxima Nova', sans-serif; font-style: normal;
+    color: #9B9BA3; margin-left: auto; text-align: right; }
+  .pc-save { margin-top: 6px; font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1E9E56; }
+
   /* --- plan extras (gut) --- */
   .plan-tier { font: 600 13px/18px 'Urbane Rounded', sans-serif; color: #0B0E12;
     margin: -12px 0 14px; }
@@ -442,9 +503,11 @@
     Breathe intro, then asks one question per screen. <b>Three encapsulating directions</b> —
     Feel lighter, Build up, Stay &amp; thrive — and a health-context checklist right after:
     gut trouble, pregnancy, or a condition. Checking gut runs the 6-screen naturopath
-    deep-dive (profile, foods, low-FODMAP journey, tiers, consult); pregnancy adds a
+    deep-dive (profile, foods, low-FODMAP journey); pregnancy adds a
     trimester screen and stacks safe adjustments on any goal; a condition attaches a
-    consultation. Conditions are context, not competing goals.</p>
+    consultation. Every path ends commercially: a drawn 12-week forecast from the user's own
+    numbers, then a duration &times; meal-count picker with a live calculated price — the chart
+    upsells the longer plan before pricing says a word.</p>
 
   <div class="s-sec">
     <div class="s-label">Screens</div>
@@ -919,8 +982,95 @@
     return (state.answers.gutFlags || []).some(x => x !== 'none');
   }
   function gutNeedsConsult() {
-    return gutFlagged() || medsOn() ||
-      state.answers.tier === 'guided' || state.answers.tier === 'clinical';
+    return gutFlagged() || medsOn() || !!(state.answers.plan && state.answers.plan.coach);
+  }
+
+  /* ---- forecast: the user's next 1-3 months, drawn from their own answers ---- */
+  function forecast() {
+    const a = state.answers, g = goalKey(), preg = pregnantOn();
+    let perWk = 0;
+    if (g === 'lose' && !preg) perWk = -({ gentle: .25, steady: .5, ambitious: .75 }[a.a] || .5);
+    if (g === 'gain') perWk = { lean: .25, bulk: .45, recomp: .1 }[typeof a.b === 'string' ? a.b : 'lean'] || .25;
+    if (preg) perWk = Math.max(perWk, 0) + ((a.trimester === 't2' || a.trimester === 't3') ? .35 : .15);
+    const at = wk => Math.round((a.w + perWk * wk) * 10) / 10;
+    const m = [at(4), at(8), at(12)];
+    const delta = mo => {
+      const d = Math.round(perWk * mo * 4 * 10) / 10;
+      return (d > 0 ? '+' : '') + d + ' kg';
+    };
+    let durLabels;
+    if (g === 'maintain' || perWk === 0)
+      durLabels = gutOn() ? ['Calm gut', 'Triggers found', 'Food freedom'] : ['Habits set', 'Rhythm locked', 'Autopilot'];
+    else durLabels = [delta(1), delta(2), delta(3)];
+    let miles;
+    if (preg && g === 'lose') miles = [
+      'Weeks 1–4 — nourishment first, deficit paused',
+      'Weeks 5–8 — healthy-gain band, energy steadier',
+      'Week 12 — reviewed with your trimester'];
+    else if (g === 'lose') miles = [
+      'Week 4 · ' + m[0] + ' kg — habits settling in',
+      'Week 8 · ' + m[1] + ' kg — visibly lighter',
+      'Week 12 · ' + m[2] + ' kg — the new normal'];
+    else if (g === 'gain') miles = [
+      'Week 4 · ' + m[0] + ' kg — strength arriving first',
+      'Week 8 · ' + m[1] + ' kg — visible in the mirror',
+      'Week 12 · ' + m[2] + ' kg — mostly kept muscle'];
+    else miles = [
+      'Week 4 — energy steadier through the day',
+      'Week 8 — cravings noticeably calmer',
+      'Week 12 — the habits run on autopilot'];
+    if (gutOn()) miles.push('Gut: calm by week 4 · triggers identified by week 10');
+    return { perWk, w0: a.w, m, miles, durLabels };
+  }
+  function chartSVG(f) {
+    const W = 320, H = 132, x = wk => 10 + (wk / 12) * (W - 20);
+    const vals = [f.w0, ...f.m];
+    const lo = Math.min(...vals) - 1.2, hi = Math.max(...vals) + 1.2;
+    const y = v => 14 + (hi - v) / (hi - lo || 1) * (H - 40);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="fc-chart" xmlns="http://www.w3.org/2000/svg">';
+    if (gutOn()) {
+      s += '<rect x="' + x(0) + '" y="6" width="' + (x(4) - x(0)) + '" height="' + (H - 24) + '" fill="#ED1C24" opacity=".05"/>' +
+           '<rect x="' + x(4) + '" y="6" width="' + (x(10) - x(4)) + '" height="' + (H - 24) + '" fill="#E8AA2E" opacity=".07"/>' +
+           '<text x="' + (x(2)) + '" y="14" class="fc-band">CALM</text>' +
+           '<text x="' + (x(7)) + '" y="14" class="fc-band">TEST</text>' +
+           '<text x="' + (x(11)) + '" y="14" class="fc-band">FREE</text>';
+    }
+    [4, 8].forEach(wk => { s += '<line x1="' + x(wk) + '" y1="10" x2="' + x(wk) + '" y2="' + (H - 18) + '" class="fc-grid"/>'; });
+    const pts = [[0, f.w0], [4, f.m[0]], [8, f.m[1]], [12, f.m[2]]];
+    s += '<polyline points="' + pts.map(p => x(p[0]) + ',' + y(p[1])).join(' ') + '" class="fc-line"/>';
+    pts.forEach((p, i) => {
+      s += '<circle cx="' + x(p[0]) + '" cy="' + y(p[1]) + '" r="' + (i ? 4 : 3) + '" class="' + (i ? 'fc-dot' : 'fc-dot0') + '"/>';
+      if (i) s += '<text x="' + x(p[0]) + '" y="' + (y(p[1]) + (f.perWk >= 0 ? 16 : -9)) + '" class="fc-val">' + p[1] + '</text>';
+      else s += '<text x="' + (x(0) + 4) + '" y="' + (y(p[1]) + (f.perWk >= 0 ? -8 : 15)) + '" class="fc-val0">' + p[1] + ' kg</text>';
+    });
+    ['M1', 'M2', 'M3'].forEach((t, i) => { s += '<text x="' + x((i + 1) * 4) + '" y="' + (H - 4) + '" class="fc-m">' + t + '</text>'; });
+    return s + '</svg>';
+  }
+
+  /* ---- plan picker: duration x meal count -> calculated price ---- */
+  const MEAL_OPTS = [
+    { id: 'two', label: '2 meals', sub: 'Lunch & dinner', perDay: 4.2, count: 2 },
+    { id: 'three', label: '3 meals', sub: 'The full day, no snacks', perDay: 5.8, count: 3 },
+    { id: 'full', label: '3 + snacks', sub: 'Everything, delivered', perDay: 7.2, count: 4 },
+  ];
+  const DUR_DISC = { 1: 1, 2: .9, 3: .82 };
+  function ensurePlanPick() {
+    if (!state.answers.plan) state.answers.plan = {
+      months: 3,
+      meals: state.answers.meals === 'm3' ? 'three' : 'full',
+      coach: false };
+    return state.answers.plan;
+  }
+  function pricePlan() {
+    const p = ensurePlanPick();
+    const mo = MEAL_OPTS.find(m => m.id === p.meals) || MEAL_OPTS[1];
+    let perDay = mo.perDay + (gutOn() ? 0.4 : 0) + (pregnantOn() ? 0.4 : 0);
+    const coachIncluded = gutFlagged() || medsOn();
+    const coachFee = p.coach && !coachIncluded ? 15 : 0;
+    const monthly = Math.round(perDay * 26 * DUR_DISC[p.months] + coachFee);
+    const fullMonthly = Math.round(perDay * 26 + coachFee);
+    return { monthly, total: monthly * p.months, save: (fullMonthly - monthly) * p.months,
+      perMeal: (monthly / (26 * mo.count)).toFixed(1), coachIncluded };
   }
   function gutProfile() {
     const a = state.answers;
@@ -983,7 +1133,7 @@
     sex: null, age: null, h: 170, w: 76,
     activity: null, a: null, b: [], excl: [], meals: null,
     gutSym: [], gutFreq: null, gutTime: null, gutTrig: [], gutStress: null,
-    gutFlags: [], tier: null, consult: null });
+    gutFlags: [], plan: null, consult: null });
   const state = {
     pat: 'cards', prog: 'bar', adv: 'auto', notes: false, radius: 16,
     step: 0, started: false,
@@ -1051,11 +1201,10 @@
       steps.push({ id: 'profile', short: 'Profile', type: 'profile' });
       steps.push({ id: 'foods', short: 'Foods', type: 'foods' });
       steps.push({ id: 'journey', short: 'Journey', type: 'journey' });
-      steps.push({ id: 'pricing', short: 'Plans', type: 'pricing' });
-      if (gutNeedsConsult()) steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
-    } else if (medsOn()) {
-      steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
     }
+    steps.push({ id: 'forecast', short: 'Forecast', type: 'forecast' });
+    steps.push({ id: 'picker', short: 'Plan & price', type: 'picker' });
+    if (gutNeedsConsult()) steps.push({ id: 'consult', short: 'Consult', type: 'consult' });
     steps.push({ id: 'plan', short: 'Plan', type: 'plan' });
     return steps;
   }
@@ -1137,7 +1286,7 @@
     }[g]];
     if (gutOn()) lines.push('Reading your gut pattern', 'Filtering the food-family suspects out');
     if (pregnantOn()) lines.push('Adding folate & iron-rich picks');
-    lines.push('Picking meals you’ll enjoy');
+    lines.push('Drawing your 12-week forecast', 'Picking meals you’ll enjoy');
     return lines;
   }
 
@@ -1217,12 +1366,14 @@
       const title = { lose: 'Your lighter plan', gain: 'Your build-up plan',
         maintain: 'Your steady plan' }[g];
       const mealSet = gutOn() ? PLAN_MEALS.gut : pregnantOn() ? PLAN_MEALS.pregnancy : PLAN_MEALS[g];
+      const pk = state.answers.plan, pkPrice = pk ? pricePlan() : null;
       const gutExtras =
         (p.deficitPaused ?
           '<div class="plan-tier"><b>Deficit paused for pregnancy</b><span> — we hold you nourished and steady now; lighter comes after.</span></div>' : '') +
-        (gutOn() && state.answers.tier ? '<div class="plan-tier"><b>' +
-          { essentials: 'Essentials · KD 19/mo', guided: 'Guided · KD 39/mo', clinical: 'Clinical · KD 69/mo' }[state.answers.tier] +
-          '</b><span> — change anytime</span></div>' : '') +
+        (pk ? '<div class="plan-tier"><b>' + pk.months + '-month plan · ' +
+          (MEAL_OPTS.find(m => m.id === pk.meals) || {}).label + ' · KD ' + pkPrice.monthly +
+          '/mo</b><span> — KD ' + pkPrice.total + ' total' +
+          (pkPrice.save > 0 ? ', saving KD ' + pkPrice.save : '') + '</span></div>' : '') +
         (state.answers.consult && state.answers.consult.day ?
           '<div class="consult-ok"><span class="cdot"></span>Consultation booked — ' +
           state.answers.consult.day + ', ' + state.answers.consult.time +
@@ -1306,29 +1457,48 @@
         noteHTML({ t: 'Ops stay simple', x: 'All three phases run on ONE low-FODMAP menu line + add-back sides — no per-condition kitchens.' }, 'right:6px;top:2px;') +
         '<div class="q-foot"><button class="q-cta" id="qNext">Pick my plan</button></div>';
     }
-    if (step.type === 'pricing') {
-      const flagged = gutFlagged();
-      const TIERS = [
-        { id: 'essentials', name: 'Essentials', price: '19', badge: 'Most affordable',
-          feats: ['Full 3-phase meal plan, delivered', 'Grocery & eating-out cheat sheets', 'Weekly symptom check-in'] },
-        { id: 'guided', name: 'Guided', price: '39', badge: 'Recommended', rec: true,
-          feats: ['Everything in Essentials', 'Monthly nutritionist review', 'Reintroduction coaching in Phase 2'] },
-        { id: 'clinical', name: 'Clinical', price: '69',
-          feats: ['Everything in Guided', '2 dietitian consultations / month', 'Doctor referral pathway'] },
-      ];
-      return '<div class="q-kicker">Choose your plan</div>' +
-        '<div class="q-title">Start where it’s comfortable</div>' +
-        '<div class="q-sub">Every tier runs the same food. You’re choosing how much human is beside you.</div>' +
-        (flagged ? '<div class="flag-card slim"><b>Because of your flagged answer,</b> a consultation is included before Phase 1 — whichever tier you pick.</div>' : '') +
-        TIERS.map(t =>
-          '<button class="tier' + (state.answers.tier === t.id ? ' sel' : '') + (t.rec ? ' rec' : '') + '" data-tier="' + t.id + '">' +
-          (t.badge ? '<span class="t-badge' + (t.rec ? ' hot' : '') + '">' + t.badge + '</span>' : '') +
-          '<div class="t-top"><b>' + t.name + '</b><div class="t-price">KD ' + t.price + '<small>/mo</small></div></div>' +
-          t.feats.map(f => '<div class="t-feat">' + f + '</div>').join('') +
-          '</button>').join('') +
-        noteHTML({ t: 'Affordable anchor', x: 'Cheapest tier is labeled, not hidden. Consultation attaches to Guided/Clinical — or to any tier when safety-flagged.' }, 'right:6px;top:2px;') +
-        '<div class="q-foot"><button class="q-cta' + (state.answers.tier ? '' : ' ghost') + '" id="qNext">' +
-        (state.answers.tier ? 'Continue' : 'Pick a tier to continue') + '</button></div>';
+    if (step.type === 'forecast') {
+      const f = forecast(), g = goalKey();
+      const title = { lose: 'Your next 3 months, drawn', gain: 'Your build-up curve',
+        maintain: 'Your next 3 months, steadier' }[g];
+      const sub = pregnantOn() && g === 'lose'
+        ? 'Deficit paused — this is your nourished, steady curve.'
+        : { lose: 'Your pace, your weight — this is the rhythm we computed.',
+            gain: 'Expected gain at your training load and target.',
+            maintain: 'The scale holds. Everything else improves.' }[g];
+      return '<div class="q-kicker">The forecast</div>' +
+        '<div class="q-title">' + title + '</div>' +
+        '<div class="q-sub">' + sub + '</div>' +
+        '<div class="fc-card">' + chartSVG(f) + '</div>' +
+        f.miles.map(mi => '<div class="mile"><span class="mdot"></span>' + mi + '</div>').join('') +
+        '<div class="disclaim">A projection from your answers, not a promise — your weekly check-ins re-draw it.</div>' +
+        noteHTML({ t: 'The upsell IS the picture', x: 'One month visibly stops mid-curve. The chart sells the third month before pricing says a word.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">Build my plan around this</button></div>';
+    }
+    if (step.type === 'picker') {
+      const p = ensurePlanPick(), f = forecast(), pr = pricePlan();
+      const durSub = ['1 month', '2 months', '3 months'];
+      return '<div class="q-kicker">Plan & price</div>' +
+        '<div class="q-title">Pick your commitment</div>' +
+        '<div class="q-sub">Duration × meals a day. The price is computed from your plan — nothing hidden.</div>' +
+        '<div class="pick-lab">How long</div>' +
+        '<div class="dur-grid">' + [1, 2, 3].map((mn, i) =>
+          '<button class="dur' + (p.months === mn ? ' sel' : '') + '" data-months="' + mn + '">' +
+          (mn === 3 ? '<span class="d-badge">Best value</span>' : '') +
+          '<b>' + durSub[i] + '</b><span class="d-out">' + f.durLabels[i] + '</span>' +
+          '<span class="d-disc">' + (mn === 1 ? 'base rate' : '−' + Math.round((1 - DUR_DISC[mn]) * 100) + '%') + '</span></button>').join('') + '</div>' +
+        '<div class="pick-lab">Meals a day</div>' +
+        '<div class="dur-grid">' + MEAL_OPTS.map(m =>
+          '<button class="dur' + (p.meals === m.id ? ' sel' : '') + '" data-mealsp="' + m.id + '">' +
+          '<b>' + m.label + '</b><span class="d-out">' + m.sub + '</span></button>').join('') + '</div>' +
+        '<button class="coach-row' + (p.coach || pr.coachIncluded ? ' sel' : '') + (pr.coachIncluded ? ' locked' : '') + '" id="coachRow">' +
+        '<span class="tick">' + svgTick + '</span>' +
+        '<div class="txt"><b>Nutritionist beside you</b><span>' +
+        (pr.coachIncluded ? 'Included for you — your answers asked for a human' : 'Monthly review & coaching · +KD 15/mo') +
+        '</span></div></button>' +
+        '<div class="price-card" id="priceCard">' + priceCardHTML() + '</div>' +
+        noteHTML({ t: 'Calculated, not tiered', x: 'Price = meals/day × 26 days × duration discount (+ gut kitchen, + coaching). Longer plans finish the curve AND cost less per month.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">Start my ' + p.months + '-month plan</button></div>';
     }
     if (step.type === 'consult') {
       const c = state.answers.consult || {};
@@ -1337,10 +1507,10 @@
       return '<div class="q-kicker">One more human</div>' +
         '<div class="q-title">Book your consultation</div>' +
         '<div class="q-sub">' + (gutFlagged()
-          ? 'Included because of your flagged answer — 20 minutes, before Phase 1 starts.'
-          : medsOn() && !state.answers.tier
+          ? 'Included because of your flagged answer — 20 minutes, before your plan starts.'
+          : medsOn()
           ? 'You told us about a condition or medication — 20 minutes to make the plan safe around it.'
-          : 'Part of your tier — 20 minutes to fine-tune Phase 1 with a specialist.') + '</div>' +
+          : 'Part of your coaching add-on — 20 minutes to fine-tune the plan with a specialist.') + '</div>' +
         '<div class="doc-card"><span class="thumb"></span>' +
         '<div class="txt"><div class="mk">Gut specialist</div><div class="mn">Registered dietitian</div>' +
         '<div class="mm">Reviews your profile & answers before the call</div></div></div>' +
@@ -1348,7 +1518,7 @@
         days.map(d => '<button class="o-chip' + (c.day === d ? ' sel' : '') + '" data-day="' + d + '">' + d + '</button>').join('') + '</div>' +
         '<div class="slot-lab">Time</div><div class="opt-chips">' +
         times.map(t => '<button class="o-chip' + (c.time === t ? ' sel' : '') + '" data-time="' + t + '">' + t + '</button>').join('') + '</div>' +
-        noteHTML({ t: 'No dead ends', x: 'This screen only exists when flagged or when the tier includes a human — never as an upsell wall. Skipping is allowed.' }, 'right:6px;top:288px;') +
+        noteHTML({ t: 'No dead ends', x: 'This screen only exists when flagged, a condition is checked, or coaching was added — never an upsell wall. Skipping is allowed.' }, 'right:6px;top:288px;') +
         '<div class="q-foot"><button class="q-cta' + (c.day && c.time ? '' : ' ghost') + '" id="qNext">' +
         (c.day && c.time ? 'Book & see my plan' : 'Pick a slot — or skip') + '</button>' +
         '<button class="q-skip" id="qSkipConsult">Skip for now</button></div>';
@@ -1366,6 +1536,17 @@
       noteHTML(step.note, 'right:6px;top:2px;') +
       (needsBtn ? '<div class="q-foot"><button class="q-cta' +
         ((step.multi && (!val || !val.length)) ? ' ghost' : '') + '" id="qNext">' + btnLabel + '</button></div>' : '');
+  }
+
+  function priceCardHTML() {
+    const p = ensurePlanPick(), pr = pricePlan();
+    return '<div class="pc-row"><span>' + p.months + ' month' + (p.months > 1 ? 's' : '') + ' · ' +
+      (MEAL_OPTS.find(m => m.id === p.meals) || {}).label +
+      (gutOn() ? ' · gut kitchen' : '') + (pregnantOn() ? ' · pregnancy-safe' : '') +
+      ((p.coach || pr.coachIncluded) ? ' · coaching' : '') + '</span></div>' +
+      '<div class="pc-main"><b>KD ' + pr.monthly + '</b><span>/month</span>' +
+      '<em>KD ' + pr.total + ' total · ~KD ' + pr.perMeal + ' a meal</em></div>' +
+      (pr.save > 0 ? '<div class="pc-save">You save KD ' + pr.save + ' vs paying month-to-month</div>' : '');
   }
 
   let animDir = 'f';
@@ -1416,13 +1597,29 @@
     if (wIn) wIn.addEventListener('input', () => {
       state.answers.w = +wIn.value;
       $('wVal').innerHTML = wIn.value + ' <small>kg</small>'; });
-    /* pricing tier cards */
-    qScroll.querySelectorAll('[data-tier]').forEach(t => t.addEventListener('click', () => {
-      state.answers.tier = t.dataset.tier;
-      qScroll.querySelectorAll('[data-tier]').forEach(x => x.classList.toggle('sel', x === t));
+    /* plan picker: duration + meal count + coaching -> live price */
+    const refreshPicker = () => {
+      const p = ensurePlanPick(), pr = pricePlan();
+      qScroll.querySelectorAll('[data-months]').forEach(x =>
+        x.classList.toggle('sel', +x.dataset.months === p.months));
+      qScroll.querySelectorAll('[data-mealsp]').forEach(x =>
+        x.classList.toggle('sel', x.dataset.mealsp === p.meals));
+      const cr = $('coachRow');
+      if (cr) cr.classList.toggle('sel', p.coach || pr.coachIncluded);
+      const pc = $('priceCard');
+      if (pc) pc.innerHTML = priceCardHTML();
       const nx2 = $('qNext');
-      if (nx2) { nx2.classList.remove('ghost'); nx2.textContent = 'Continue'; }
-    }));
+      if (nx2) nx2.textContent = 'Start my ' + p.months + '-month plan';
+    };
+    qScroll.querySelectorAll('[data-months]').forEach(b => b.addEventListener('click', () => {
+      ensurePlanPick().months = +b.dataset.months; refreshPicker(); }));
+    qScroll.querySelectorAll('[data-mealsp]').forEach(b => b.addEventListener('click', () => {
+      ensurePlanPick().meals = b.dataset.mealsp; refreshPicker(); }));
+    const coachRow = $('coachRow');
+    if (coachRow) coachRow.addEventListener('click', () => {
+      const p = ensurePlanPick();
+      if (!pricePlan().coachIncluded) { p.coach = !p.coach; refreshPicker(); }
+    });
     /* consult slot chips */
     const slotPick = (attr, key) => qScroll.querySelectorAll('[' + attr + ']').forEach(b =>
       b.addEventListener('click', () => {
@@ -1438,7 +1635,6 @@
     if (skipC) skipC.addEventListener('click', () => { state.answers.consult = null; go(1); });
     const nx = $('qNext');
     if (nx) nx.addEventListener('click', () => {
-      if (step.type === 'pricing' && !state.answers.tier) return;   // gate: a tier must be picked
       if (step.type === 'consult') {
         const c = state.answers.consult;
         if (!c || !c.day || !c.time) state.answers.consult = null;  // acts as skip
@@ -1557,7 +1753,7 @@
     b.classList.toggle('on', arr.includes(id));
     if (id === 'gut' && !arr.includes('gut'))
       Object.assign(state.answers, { gutSym: [], gutFreq: null, gutTime: null,
-        gutTrig: [], gutStress: null, gutFlags: [], tier: null, consult: null });
+        gutTrig: [], gutStress: null, gutFlags: [], consult: null });
     if (id === 'pregnancy' && !arr.includes('pregnancy')) state.answers.trimester = null;
     steps = buildSteps(); buildJump();
     if (state.step >= steps.length) state.step = steps.length - 1;
