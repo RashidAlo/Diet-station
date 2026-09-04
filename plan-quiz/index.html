@@ -430,6 +430,21 @@
   .derived { display: inline-block; font: 600 12px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
     border: 1px solid #F5C2C4; border-radius: 99px; padding: 7px 12px; margin-bottom: 14px;
     background: #FFF6F6; }
+  /* abstract experience card */
+  .xp-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 16px 18px 14px; }
+  .xp-meta { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: .6px;
+    color: #ED1C24; margin-bottom: 5px; }
+  .xp-title { font: 600 23px/28px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 6px; }
+  .xp-blurb { font: 400 13px/19px 'Proxima Nova', sans-serif; color: #7A7A83; margin-bottom: 13px; }
+  .xp-rates { border-top: 1px solid #F0F0F3; padding-top: 4px; }
+  .rt-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 0; }
+  .rt-row label { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #9B9BA3; }
+  .rt-dots { display: flex; gap: 5px; }
+  .rt-dots i { width: 11px; height: 11px; border-radius: 50%; background: #EBEBEF;
+    transition: background .15s ease, transform .15s ease; }
+  .rt-dots i.f { background: #ED1C24; }
   .gauges { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
     padding: 6px 16px 12px; }
   .g-row { padding-top: 11px; }
@@ -583,7 +598,8 @@
   <div class="s-sec">
     <div class="s-label">Goal screen</div>
     <div class="s-note">Experiment: the XY dial replaces the 3-goal cards AND the pace/target
-      screens — drag calories vs taste-compromise, gauges show the big picture live.</div>
+      screens. The position resolves into a named experience + blurb + three 1–5 dot ratings
+      (Results / Food joy / Ease) — abstract, not analytic.</div>
     <div class="lvl-grid" id="goalUiGrid">
       <button data-gui="cards" class="on">3 cards</button>
       <button data-gui="dial">XY dial</button>
@@ -953,14 +969,39 @@
     }
     return i;
   }
-  function dialGaugesHTML(i) {
-    const bar = (fill, cls) => '<div class="g-track"><i class="' + (cls || '') + '" style="width:' +
-      Math.round(fill * 100) + '%"></i></div>';
-    const stickCls = i.stick > 70 ? 'ok' : i.stick > 45 ? 'warn' : 'hot';
-    return '<div class="g-row"><div class="g-head"><label>Fuel</label><span>≈ ' + i.kcal + ' kcal/day</span></div>' + bar(i.y) + '</div>' +
-      '<div class="g-row"><div class="g-head"><label>The scale</label><span>' + i.dirTxt + '</span></div>' + bar(i.dir === 'lose' ? .5 - Math.abs(i.y - .5) : i.dir === 'gain' ? i.y : .5) + '</div>' +
-      '<div class="g-row"><div class="g-head"><label>Your food</label><span>' + i.tasteTxt + '</span></div>' + bar(i.x) + '</div>' +
-      '<div class="g-row"><div class="g-head"><label>Stick-with-it</label><span class="st-' + stickCls + '">' + i.stick + '%</span></div>' + bar(i.stick / 100, stickCls) + '</div>';
+  /* abstract experience read: smart title + blurb + 1-5 ratings */
+  function dialXp(i) {
+    const tz = i.x < 0.4 ? 0 : i.x < 0.7 ? 1 : 2;
+    const M = {
+      lose: [
+        ['The Comfort Cut', 'Food you’d order anyway — portions and timing do the quiet work. Slower on the scale, but it never feels like a diet.'],
+        ['The Steady Reset', 'Balanced plates, familiar flavors, a drop you can live with. The middle path most people actually finish.'],
+        ['The Shred', 'Lean, tight, to the point. Every meal earns its place — the fastest drop on the menu, and it asks the most of you.']],
+      gain: [
+        ['The Happy Bulk', 'Generous, comforting plates with protein hiding everywhere. You’ll enjoy every bite of getting bigger.'],
+        ['The Builder', 'A clean surplus timed around your training. Steady gains, mostly muscle, nothing extreme.'],
+        ['The Performance Build', 'Fuel, not food. Precision portions and training-timed protein for the fastest clean mass.']],
+      maintain: [
+        ['The Good Life', 'Your weight holds while the food stays fun. The upgrades hide inside meals you already love.'],
+        ['The Tune-Up', 'Same you, better inputs. Energy smooths out, cravings calm down, the scale doesn’t move a gram.'],
+        ['The Clean Machine', 'Dialed-in maintenance — performance eating without the surplus. Maximum output, zero drift.']],
+    };
+    const [title, blurb] = M[i.dir][tz];
+    const ext = Math.abs(i.y - 0.5) * 2;
+    const results = i.dir === 'maintain' ? 2 : Math.max(2, Math.min(5, Math.round(2 + ext * 3.5)));
+    const joy = Math.max(1, Math.min(5, Math.round(5 - i.x * 4)));
+    const ease = Math.max(1, Math.min(5, Math.round(i.stick / 20)));
+    return { title, blurb, results, joy, ease };
+  }
+  function dialXpHTML(i) {
+    const xp = dialXp(i);
+    const dots = n => '<span class="rt-dots">' + Array.from({ length: 5 }, (_, k) =>
+      '<i class="' + (k < n ? 'f' : '') + '"></i>').join('') + '</span>';
+    const rate = (label, n) => '<div class="rt-row"><label>' + label + '</label>' + dots(n) + '</div>';
+    return '<div class="xp-meta">→ ' + GOALS[i.dir].label + ' · ≈' + i.kcal.toLocaleString() + ' kcal a day</div>' +
+      '<div class="xp-title">' + xp.title + '</div>' +
+      '<div class="xp-blurb">' + xp.blurb + '</div>' +
+      '<div class="xp-rates">' + rate('Results', xp.results) + rate('Food joy', xp.joy) + rate('Ease', xp.ease) + '</div>';
   }
 
   const gutOn = () => (state.answers.health || []).includes('gut');
@@ -1582,9 +1623,8 @@
         '<div class="pad-cv" id="padCv"></div><div class="pad-ch" id="padCh"></div>' +
         '<div class="pad-knob" id="padKnob"></div>' +
         '</div>' +
-        '<div class="derived" id="dialDerived">→ ' + GOALS[i.dir].label + '</div>' +
-        '<div class="gauges" id="gauges">' + dialGaugesHTML(i) + '</div>' +
-        noteHTML({ t: 'Experiment', x: 'One control replaces the 3-goal choice AND the pace/target screens — the pad writes the exact same answers, just granularly. The gauges are the big picture, live.' }, 'right:6px;top:2px;') +
+        '<div class="xp-card" id="xpCard">' + dialXpHTML(i) + '</div>' +
+        noteHTML({ t: 'Abstract, not analytic', x: 'The position becomes a named experience + a blurb + three 1–5 ratings — you feel the trade-off instead of reading four gauges. Same answers written underneath.' }, 'right:6px;top:2px;') +
         '<div class="q-foot"><button class="q-cta" id="qNext">This feels right</button></div>';
     }
     if (step.type === 'forecast') {
@@ -1738,8 +1778,7 @@
         cv.style.left = (d.x * 100) + '%';
         ch.style.top = ((1 - d.y) * 100) + '%';
         const i = dialApply();
-        $('gauges').innerHTML = dialGaugesHTML(i);
-        $('dialDerived').textContent = '→ ' + GOALS[i.dir].label;
+        $('xpCard').innerHTML = dialXpHTML(i);
       };
       paint();
       const move = ev => {
