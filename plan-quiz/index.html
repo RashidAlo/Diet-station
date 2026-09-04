@@ -426,13 +426,17 @@
   /* abstract experience card */
   .xp-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
     padding: 13px 16px 13px; text-align: center; }
-  .xp-card .xp-blurb { min-height: 19px; margin-bottom: 11px; }
   .xp-rates3 .rt3 label { text-align: center; }
   .xp-rates3 .rt-dots { justify-content: center; }
-  .xp-meta { font: 600 11px/15px 'Urbane Rounded', sans-serif; letter-spacing: .6px;
-    color: #ED1C24; margin-bottom: 5px; }
-  .xp-title { font: 600 23px/28px 'Urbane Rounded', sans-serif; color: #0B0E12; margin-bottom: 6px; }
-  .xp-blurb { font: 400 13px/19px 'Proxima Nova', sans-serif; color: #7A7A83; margin-bottom: 13px; }
+  /* fixed slots for dynamic text — the card never changes size */
+  .xp-meta { font: 600 11px/18px 'Urbane Rounded', sans-serif; letter-spacing: .6px;
+    color: #ED1C24; height: 18px; margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xp-title { font: 600 22px/28px 'Urbane Rounded', sans-serif; color: #0B0E12;
+    height: 28px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; }
+  .xp-blurb { font: 400 13px/19px 'Proxima Nova', sans-serif; color: #7A7A83;
+    height: 38px; overflow: hidden; display: flex; align-items: center;
+    justify-content: center; margin-bottom: 11px; }
   .xp-rates3 { display: flex; gap: 10px; border-top: 1px solid #F0F0F3; padding-top: 11px; }
   .rt3 { flex: 1; min-width: 0; }
   .rt3 label { display: block; font: 600 9.5px/13px 'Urbane Rounded', sans-serif;
