@@ -682,6 +682,7 @@
 </div>
 
 <div id="pill">
+  <button id="pDial">Dial</button>
   <button id="pPat">Cards</button>
   <button id="pNotes">Notes</button>
   <button id="pRestart">Restart</button>
@@ -1966,12 +1967,30 @@
     if (stInput) stInput.value = 0;
   });
 
+  /* ?dial in the URL opens the XY-dial goal screen (mobile has no sidebar) */
+  if (new URLSearchParams(location.search).has('dial')) {
+    state.goalUI = 'dial';
+    steps = buildSteps(); buildJump();
+    document.querySelectorAll('#goalUiGrid button').forEach(b =>
+      b.classList.toggle('on', b.dataset.gui === 'dial'));
+  }
+
   /* mobile pill */
   const PATS = ['cards', 'list', 'chips'];
   function syncPill() {
     $('pPat').textContent = state.pat[0].toUpperCase() + state.pat.slice(1);
     $('pNotes').classList.toggle('on', state.notes);
+    $('pDial').classList.toggle('on', state.goalUI === 'dial');
   }
+  $('pDial').addEventListener('click', () => {
+    state.goalUI = state.goalUI === 'dial' ? 'cards' : 'dial';
+    document.querySelectorAll('#goalUiGrid button').forEach(b =>
+      b.classList.toggle('on', b.dataset.gui === state.goalUI));
+    steps = buildSteps(); buildJump();
+    if (state.step >= steps.length) state.step = steps.length - 1;
+    syncPill();
+    if ($('quizLayer').classList.contains('show')) render();
+  });
   $('pPat').addEventListener('click', () => {
     state.pat = PATS[(PATS.indexOf(state.pat) + 1) % PATS.length];
     document.querySelectorAll('#patGrid button').forEach(x =>
