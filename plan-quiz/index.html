@@ -403,6 +403,51 @@
   .slot-lab { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
     text-transform: uppercase; color: rgba(11,14,18,.55); margin: 14px 0 9px; }
 
+  /* --- XY dial pad --- */
+  .pad { position: relative; height: 258px; border: 1.4px solid #E4E4E8; border-radius: var(--qr);
+    background: #fff; margin: 4px 0 12px; touch-action: none; cursor: crosshair; overflow: hidden;
+    background-image:
+      repeating-linear-gradient(to right, transparent 0 calc(20% - 1px), #F2F2F5 calc(20% - 1px) 20%),
+      repeating-linear-gradient(to bottom, transparent 0 calc(20% - 1px), #F2F2F5 calc(20% - 1px) 20%); }
+  .pad .ax { position: absolute; font: 600 9.5px/12px 'Urbane Rounded', sans-serif;
+    letter-spacing: 1.2px; text-transform: uppercase; color: #B4B4BC; pointer-events: none; z-index: 3; }
+  .pad .ax-t { top: 8px; left: 50%; transform: translateX(-50%); }
+  .pad .ax-b { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .pad .ax-l { left: 10px; top: 50%; transform: translateY(-50%); }
+  .pad .ax-r { right: 10px; top: 50%; transform: translateY(-50%); text-align: right; }
+  .pad-band { position: absolute; left: 0; right: 0; top: 38%; height: 24%;
+    background: #FAFAFB; border-top: 1px dashed #ECECEF; border-bottom: 1px dashed #ECECEF;
+    pointer-events: none; display: flex; align-items: center; justify-content: flex-end; }
+  .pad-band span { font: 600 8.5px/1 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #D3D3D9; margin-right: 52px; }
+  .pad-cv { position: absolute; top: 0; bottom: 0; width: 1.2px; background: #F5C2C4;
+    pointer-events: none; z-index: 1; }
+  .pad-ch { position: absolute; left: 0; right: 0; height: 1.2px; background: #F5C2C4;
+    pointer-events: none; z-index: 1; }
+  .pad-knob { position: absolute; width: 26px; height: 26px; border-radius: 50%;
+    background: #ED1C24; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(237,28,36,.4),
+    0 0 0 1.4px #ED1C24; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; }
+  .derived { display: inline-block; font: 600 12px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
+    border: 1px solid #F5C2C4; border-radius: 99px; padding: 7px 12px; margin-bottom: 14px;
+    background: #FFF6F6; }
+  .gauges { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
+    padding: 6px 16px 12px; }
+  .g-row { padding-top: 11px; }
+  .g-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    margin-bottom: 5px; }
+  .g-head label { font: 600 10.5px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #9B9BA3; flex: 0 0 auto; }
+  .g-head span { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #0B0E12; text-align: right; }
+  .g-track { height: 7px; border-radius: 4px; background: #EFEFF2; overflow: hidden; }
+  .g-track i { display: block; height: 100%; border-radius: 4px; background: #ED1C24; opacity: .85;
+    transition: width .12s ease; }
+  .g-track i.ok { background: #2FB56A; }
+  .g-track i.warn { background: #E8AA2E; }
+  .g-track i.hot { background: #ED1C24; }
+  .g-head .st-ok { color: #1E9E56; }
+  .g-head .st-warn { color: #C98A0B; }
+  .g-head .st-hot { color: #ED1C24; }
+
   /* --- forecast chart --- */
   .fc-card { border: 1.4px solid #E4E4E8; border-radius: var(--qr); background: #fff;
     padding: 12px 10px 8px; margin-bottom: 16px; }
@@ -532,6 +577,16 @@
       <button data-hc="gut">Gut</button>
       <button data-hc="pregnancy">Pregnancy</button>
       <button data-hc="meds">Condition</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Goal screen</div>
+    <div class="s-note">Experiment: the XY dial replaces the 3-goal cards AND the pace/target
+      screens — drag calories vs taste-compromise, gauges show the big picture live.</div>
+    <div class="lvl-grid" id="goalUiGrid">
+      <button data-gui="cards" class="on">3 cards</button>
+      <button data-gui="dial">XY dial</button>
     </div>
   </div>
 
@@ -857,6 +912,56 @@
       { id: 't3', label: 'Third trimester', sub: 'Week 28 onward' },
       { id: 'pp', label: 'Postpartum', sub: 'Recovery & feeding' }] };
 
+  /* ---- XY dial: granular alternative to the 3-goal cards ---- */
+  function dialInfo() {
+    const d = state.answers.dial || { x: .35, y: .5 };
+    const y = d.y, x = d.x;
+    const kcal = Math.round((1300 + y * 1900) / 10) * 10;
+    let dir, dirTxt, pace = null, target = null;
+    if (y < 0.38) {
+      dir = 'lose';
+      pace = y < 0.13 ? 'ambitious' : y < 0.26 ? 'steady' : 'gentle';
+      dirTxt = { gentle: '−0.25 kg a week — the easy cut', steady: '−0.5 kg a week — the steady cut',
+        ambitious: '−0.75 kg a week — the hard cut' }[pace];
+    } else if (y > 0.62) {
+      dir = 'gain';
+      target = y > 0.87 ? 'bulk' : 'lean';
+      dirTxt = target === 'bulk' ? '+0.45 kg a week — bulking' : '+0.25 kg a week — lean gain';
+    } else {
+      dir = 'maintain';
+      dirTxt = 'Holding steady — quality over quantity';
+    }
+    const tasteTxt = x < 0.25 ? 'Comfort-first — food you’d order anyway'
+      : x < 0.5 ? 'Balanced — mostly delicious'
+      : x < 0.75 ? 'Performance-leaning — flavor sits back sometimes'
+      : 'All business — results over cravings';
+    const stick = Math.max(25, Math.min(98, Math.round(98 - Math.abs(y - 0.5) * 2 * 40 - x * 35)));
+    return { kcal, dir, dirTxt, pace, target, tasteTxt, stick, x, y };
+  }
+  function dialApply() {
+    const i = dialInfo();
+    const changed = state.answers.goal !== i.dir;
+    if (changed) { state.answers.goal = i.dir; state.answers.a = null; state.answers.b = []; }
+    if (i.dir === 'lose') state.answers.a = i.pace;
+    if (i.dir === 'gain') state.answers.b = i.target;
+    if (changed) {
+      steps = buildSteps(); buildJump();
+      document.querySelectorAll('#goalGrid button').forEach(b =>
+        b.classList.toggle('on', b.dataset.goal === i.dir));
+      if (stInput) stInput.value = GOALS[i.dir].state;
+    }
+    return i;
+  }
+  function dialGaugesHTML(i) {
+    const bar = (fill, cls) => '<div class="g-track"><i class="' + (cls || '') + '" style="width:' +
+      Math.round(fill * 100) + '%"></i></div>';
+    const stickCls = i.stick > 70 ? 'ok' : i.stick > 45 ? 'warn' : 'hot';
+    return '<div class="g-row"><div class="g-head"><label>Fuel</label><span>≈ ' + i.kcal + ' kcal/day</span></div>' + bar(i.y) + '</div>' +
+      '<div class="g-row"><div class="g-head"><label>The scale</label><span>' + i.dirTxt + '</span></div>' + bar(i.dir === 'lose' ? .5 - Math.abs(i.y - .5) : i.dir === 'gain' ? i.y : .5) + '</div>' +
+      '<div class="g-row"><div class="g-head"><label>Your food</label><span>' + i.tasteTxt + '</span></div>' + bar(i.x) + '</div>' +
+      '<div class="g-row"><div class="g-head"><label>Stick-with-it</label><span class="st-' + stickCls + '">' + i.stick + '%</span></div>' + bar(i.stick / 100, stickCls) + '</div>';
+  }
+
   const gutOn = () => (state.answers.health || []).includes('gut');
   const pregnantOn = () => (state.answers.health || []).includes('pregnancy');
   const medsOn = () => (state.answers.health || []).includes('meds');
@@ -1129,13 +1234,14 @@
     { n: 'Oats & quinoa (small serves)', s: 'Fibre that builds you up slowly' },
   ];
 
-  const freshAnswers = () => ({ goal: null, health: [], trimester: null,
+  const freshAnswers = () => ({ goal: null, dial: { x: .35, y: .5 }, health: [], trimester: null,
     sex: null, age: null, h: 170, w: 76,
     activity: null, a: null, b: [], excl: [], meals: null,
     gutSym: [], gutFreq: null, gutTime: null, gutTrig: [], gutStress: null,
     gutFlags: [], plan: null, consult: null });
   const state = {
     pat: 'cards', prog: 'bar', adv: 'auto', notes: false, radius: 16,
+    goalUI: 'cards',
     step: 0, started: false,
     answers: null,
   };
@@ -1146,10 +1252,13 @@
   function buildSteps() {
     const g = goalKey();
     const steps = [];
-    steps.push({ id: 'goal', short: 'Goal', kicker: 'Your direction', title: 'What brings you to DietStation?',
-      sub: 'Three directions — everything after this is tailored.', field: 'goal', q: true,
-      note: { t: 'Three, not four', x: 'The classic trio (lose / gain / maintain) but encapsulating — conditions like gut or pregnancy are context, screened next, not competing goals.' },
-      options: Object.entries(GOALS).map(([id, o]) => ({ id, label: o.label, sub: o.sub })) });
+    if (state.goalUI === 'dial')
+      steps.push({ id: 'goal', short: 'Dial', type: 'dial', q: true });
+    else
+      steps.push({ id: 'goal', short: 'Goal', kicker: 'Your direction', title: 'What brings you to DietStation?',
+        sub: 'Three directions — everything after this is tailored.', field: 'goal', q: true,
+        note: { t: 'Three, not four', x: 'The classic trio (lose / gain / maintain) but encapsulating — conditions like gut or pregnancy are context, screened next, not competing goals.' },
+        options: Object.entries(GOALS).map(([id, o]) => ({ id, label: o.label, sub: o.sub })) });
     steps.push(HEALTH_STEP);
     if (pregnantOn()) steps.push(TRIMESTER_STEP);
     if (!pregnantOn())
@@ -1178,8 +1287,11 @@
         { id: 'light', label: 'Lightly active', sub: 'Walks, errands, on your feet some' },
         { id: 'active', label: 'Active', sub: 'Regular exercise most weeks' },
         { id: 'hard', label: 'Training hard', sub: 'Intense sessions 4+ days' }] });
-    steps.push({ ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' },
-               { ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' });
+    /* the dial already set pace (lose) / target (gain) granularly — skip those screens */
+    const dialSkipA = state.goalUI === 'dial' && g === 'lose';
+    const dialSkipB = state.goalUI === 'dial' && g === 'gain';
+    if (!dialSkipA) steps.push({ ...BRANCH_A[g], field: 'a', q: true, id: 'branchA' });
+    if (!dialSkipB) steps.push({ ...BRANCH_B[g], field: 'b', q: true, id: 'branchB' });
     if (gutOn()) steps.push(...GUT_ASSESS);
     steps.push({ id: 'excl', short: 'Food rules', kicker: 'Food rules', title: 'Anything you don’t eat?',
       sub: 'Allergies, faith or preference — all treated the same.', field: 'excl', q: true, multi: true,
@@ -1457,6 +1569,23 @@
         noteHTML({ t: 'Ops stay simple', x: 'All three phases run on ONE low-FODMAP menu line + add-back sides — no per-condition kitchens.' }, 'right:6px;top:2px;') +
         '<div class="q-foot"><button class="q-cta" id="qNext">Pick my plan</button></div>';
     }
+    if (step.type === 'dial') {
+      const i = dialInfo();
+      return '<div class="q-kicker">Your direction</div>' +
+        '<div class="q-title">Dial your plan in</div>' +
+        '<div class="q-sub">Drag the dot. Up–down is calories; left–right is how much taste you’ll trade for results.</div>' +
+        '<div class="pad" id="pad">' +
+        '<span class="ax ax-t">More fuel</span><span class="ax ax-b">Fewer calories</span>' +
+        '<span class="ax ax-l">Full<br>flavor</span><span class="ax ax-r">All<br>results</span>' +
+        '<div class="pad-band"><span>steady zone</span></div>' +
+        '<div class="pad-cv" id="padCv"></div><div class="pad-ch" id="padCh"></div>' +
+        '<div class="pad-knob" id="padKnob"></div>' +
+        '</div>' +
+        '<div class="derived" id="dialDerived">→ ' + GOALS[i.dir].label + '</div>' +
+        '<div class="gauges" id="gauges">' + dialGaugesHTML(i) + '</div>' +
+        noteHTML({ t: 'Experiment', x: 'One control replaces the 3-goal choice AND the pace/target screens — the pad writes the exact same answers, just granularly. The gauges are the big picture, live.' }, 'right:6px;top:2px;') +
+        '<div class="q-foot"><button class="q-cta" id="qNext">This feels right</button></div>';
+    }
     if (step.type === 'forecast') {
       const f = forecast(), g = goalKey();
       const title = { lose: 'Your next 3 months, drawn', gain: 'Your build-up curve',
@@ -1597,6 +1726,43 @@
     if (wIn) wIn.addEventListener('input', () => {
       state.answers.w = +wIn.value;
       $('wVal').innerHTML = wIn.value + ' <small>kg</small>'; });
+    /* XY dial pad */
+    const pad = $('pad');
+    if (pad) {
+      const knob = $('padKnob'), cv = $('padCv'), ch = $('padCh');
+      const paint = () => {
+        const d = state.answers.dial;
+        knob.style.left = (d.x * 100) + '%';
+        knob.style.top = ((1 - d.y) * 100) + '%';
+        cv.style.left = (d.x * 100) + '%';
+        ch.style.top = ((1 - d.y) * 100) + '%';
+        const i = dialApply();
+        $('gauges').innerHTML = dialGaugesHTML(i);
+        $('dialDerived').textContent = '→ ' + GOALS[i.dir].label;
+      };
+      paint();
+      const move = ev => {
+        const r = pad.getBoundingClientRect();
+        const nx = (ev.clientX - r.left) / r.width;
+        const ny = 1 - (ev.clientY - r.top) / r.height;
+        if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+        state.answers.dial = {
+          x: Math.max(0, Math.min(1, nx)),
+          y: Math.max(0, Math.min(1, ny)) };
+        paint();
+      };
+      pad.addEventListener('pointerdown', ev => {
+        try { pad.setPointerCapture(ev.pointerId); } catch (_) {}
+        move(ev);
+        const mv = e => move(e);
+        const up = () => { pad.removeEventListener('pointermove', mv);
+          pad.removeEventListener('pointerup', up); pad.removeEventListener('pointercancel', up); };
+        pad.addEventListener('pointermove', mv);
+        pad.addEventListener('pointerup', up);
+        pad.addEventListener('pointercancel', up);
+      });
+    }
+
     /* plan picker: duration + meal count + coaching -> live price */
     const refreshPicker = () => {
       const p = ensurePlanPick(), pr = pricePlan();
@@ -1763,6 +1929,12 @@
     document.querySelectorAll('#hcGrid button').forEach(b =>
       b.classList.toggle('on', (state.answers.health || []).includes(b.dataset.hc)));
   }
+  wireGrid('goalUiGrid', 'gui', v => {
+    state.goalUI = v;
+    steps = buildSteps(); buildJump();
+    if (state.step >= steps.length) state.step = steps.length - 1;
+    if ($('quizLayer').classList.contains('show')) render();
+  });
   wireGrid('patGrid', 'pat', v => { state.pat = v; syncPill();
     if ($('quizLayer').classList.contains('show')) render(); });
   wireGrid('progGrid', 'prog', v => { state.prog = v; renderProgress(); });
@@ -1778,8 +1950,8 @@
   });
 
   $('sCopy').addEventListener('click', () => {
-    const v = { answerPattern: state.pat, progress: state.prog, advance: state.adv,
-      cornerRadius: state.radius, uxNotes: state.notes, answers: state.answers };
+    const v = { goalScreen: state.goalUI, answerPattern: state.pat, progress: state.prog,
+      advance: state.adv, cornerRadius: state.radius, uxNotes: state.notes, answers: state.answers };
     navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(v, null, 2));
     $('sCopy').textContent = 'Copied ✓';
     setTimeout(() => { $('sCopy').textContent = 'Copy values'; }, 1200);
