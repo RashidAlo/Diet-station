@@ -57,7 +57,66 @@
           "note": "X and CTA are the global Liquid Glass material — live recipe + RN mapping in the Glass Lab handoff (Design System tab). Type: Urbane Rounded Medium/DemiBold + Proxima Nova Regular (files in this folder).",
           "code": null
         }
-      ]
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "open",
+            "t": "Open — the red ball",
+            "kind": "screen",
+            "note": "Dot-field breathes on brand red"
+          },
+          {
+            "id": "seg",
+            "t": "Segmented control",
+            "kind": "decision",
+            "note": "Tap a health need"
+          },
+          {
+            "id": "states",
+            "t": "Shapeshift states",
+            "kind": "screen",
+            "note": "Weight · Muscle · Pregnancy · Gut, captioned"
+          },
+          {
+            "id": "cta",
+            "t": "Let's get started",
+            "kind": "end",
+            "note": "CTA → Plan Builder quiz"
+          },
+          {
+            "id": "close",
+            "t": "Close (X)",
+            "kind": "end",
+            "note": "Back to the app"
+          }
+        ],
+        "edges": [
+          [
+            "open",
+            "seg",
+            "tap"
+          ],
+          [
+            "open",
+            "states",
+            "auto-progress"
+          ],
+          [
+            "seg",
+            "states",
+            "sets Machine.state"
+          ],
+          [
+            "states",
+            "cta"
+          ],
+          [
+            "states",
+            "close"
+          ]
+        ]
+      }
     },
     {
       "id": "plan-quiz",
@@ -114,7 +173,216 @@
           "note": "The intake is data, the profile is a pure function of it. Red flags gate the flow (consult inserted for any tier) but never block the plan — advice softens, food stays safe.",
           "code": "const FAMILY = { onion:'fructans', wheat:'fructans', dairy:'lactose',\n  legumes:'gos', fruit:'fructose', sweetener:'polyols' };\n// symptom axes: bloat/pain/fatigue→ferment · reflux(+early timing)→reflux\n// constipation→slow · diarrhea→fast · slow+fast→mixed (IBS-like)\nconst flagged = flags.some(f => f !== 'none');\nconst needsConsult = flagged || tier === 'guided' || tier === 'clinical';\n// steps are rebuilt on every navigation — the consult screen exists only when needed"
         }
-      ]
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "intro",
+            "t": "Intro — Breathe",
+            "kind": "screen",
+            "note": "Live Rive blob · CTA enters the quiz"
+          },
+          {
+            "id": "direction",
+            "t": "Direction",
+            "kind": "decision",
+            "note": "Feel lighter · Build up · Stay & thrive"
+          },
+          {
+            "id": "health",
+            "t": "Health check",
+            "kind": "decision",
+            "note": "Gut · Pregnancy · Condition — stacks on any goal"
+          },
+          {
+            "id": "trimester",
+            "t": "Trimester",
+            "kind": "module",
+            "note": "Only if pregnant"
+          },
+          {
+            "id": "identity",
+            "t": "Identity",
+            "kind": "screen",
+            "note": "Skipped if pregnant"
+          },
+          {
+            "id": "age",
+            "t": "Age",
+            "kind": "screen"
+          },
+          {
+            "id": "body",
+            "t": "Body sliders",
+            "kind": "screen"
+          },
+          {
+            "id": "activity",
+            "t": "Activity",
+            "kind": "screen"
+          },
+          {
+            "id": "branchA",
+            "t": "Goal branch A",
+            "kind": "decision",
+            "note": "pace / training days / what should feel better"
+          },
+          {
+            "id": "branchB",
+            "t": "Goal branch B",
+            "kind": "decision",
+            "note": "cravings / target / obstacles"
+          },
+          {
+            "id": "gutdive",
+            "t": "Gut deep-dive ×6",
+            "kind": "module",
+            "note": "Symptoms → flares → timing → triggers → stress → red flags"
+          },
+          {
+            "id": "food",
+            "t": "Food rules",
+            "kind": "screen"
+          },
+          {
+            "id": "meals",
+            "t": "Meals a day",
+            "kind": "screen"
+          },
+          {
+            "id": "building",
+            "t": "Building…",
+            "kind": "screen",
+            "note": "3s of perceived intelligence"
+          },
+          {
+            "id": "gutresults",
+            "t": "Gut results ×3",
+            "kind": "module",
+            "note": "Profile → Foods → Journey"
+          },
+          {
+            "id": "forecast",
+            "t": "Forecast",
+            "kind": "screen",
+            "note": "12-week curve from the user's own numbers"
+          },
+          {
+            "id": "price",
+            "t": "Plan & price",
+            "kind": "decision",
+            "note": "Duration × meals/day + coaching"
+          },
+          {
+            "id": "consult",
+            "t": "Consult",
+            "kind": "module",
+            "note": "If red-flagged, condition or coaching"
+          },
+          {
+            "id": "plan",
+            "t": "Your plan",
+            "kind": "end",
+            "note": "kcal & macros computed from answers"
+          }
+        ],
+        "edges": [
+          [
+            "intro",
+            "direction"
+          ],
+          [
+            "direction",
+            "health"
+          ],
+          [
+            "health",
+            "trimester",
+            "pregnant"
+          ],
+          [
+            "health",
+            "identity",
+            "otherwise"
+          ],
+          [
+            "trimester",
+            "age",
+            "identity skipped"
+          ],
+          [
+            "identity",
+            "age"
+          ],
+          [
+            "age",
+            "body"
+          ],
+          [
+            "body",
+            "activity"
+          ],
+          [
+            "activity",
+            "branchA"
+          ],
+          [
+            "branchA",
+            "branchB"
+          ],
+          [
+            "branchB",
+            "gutdive",
+            "gut checked"
+          ],
+          [
+            "branchB",
+            "food"
+          ],
+          [
+            "gutdive",
+            "food"
+          ],
+          [
+            "food",
+            "meals"
+          ],
+          [
+            "meals",
+            "building"
+          ],
+          [
+            "building",
+            "gutresults",
+            "gut"
+          ],
+          [
+            "building",
+            "forecast"
+          ],
+          [
+            "gutresults",
+            "forecast"
+          ],
+          [
+            "forecast",
+            "price"
+          ],
+          [
+            "price",
+            "consult",
+            "flagged / coaching"
+          ],
+          [
+            "price",
+            "plan"
+          ],
+          [
+            "consult",
+            "plan"
+          ]
+        ]
+      }
     },
     {
       "id": "rewards",
@@ -183,7 +451,98 @@
           "note": "The close button is the global Liquid Glass material — implementation and the live recipe live in the Design System tab (Glass Lab handoff). Adaptive contrast: Bronze/Silver get a dark #0B0E12 icon, Gold/VIP/Red white. Fonts: DietStation uses Urbane Rounded + Proxima Nova (licensed, in this folder); the dot brand font ships from the Type Lab.",
           "code": null
         }
-      ]
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "sheet",
+            "t": "Rewards sheet",
+            "kind": "screen",
+            "note": "Tier-themed coupons — Bronze / Silver / Gold / VIP · Red"
+          },
+          {
+            "id": "grab",
+            "t": "Grab the stub",
+            "kind": "screen",
+            "note": "Pull right against elastic resistance"
+          },
+          {
+            "id": "pops",
+            "t": "Holes pop",
+            "kind": "screen",
+            "note": "Top-down, 30–100% of tear point, haptic ticks"
+          },
+          {
+            "id": "release",
+            "t": "Released early?",
+            "kind": "decision",
+            "note": "Below the tear point"
+          },
+          {
+            "id": "spring",
+            "t": "Spring back",
+            "kind": "module",
+            "note": "Overshoot wobble — holes re-arm"
+          },
+          {
+            "id": "tear",
+            "t": "Rip!",
+            "kind": "screen",
+            "note": "Tab flies off + white confetti"
+          },
+          {
+            "id": "redeemed",
+            "t": "Redeemed card",
+            "kind": "screen",
+            "note": "Heals full-width, promo code chip"
+          },
+          {
+            "id": "checkout",
+            "t": "Checkout",
+            "kind": "end",
+            "note": "White pill CTA"
+          }
+        ],
+        "edges": [
+          [
+            "sheet",
+            "grab",
+            "drag"
+          ],
+          [
+            "grab",
+            "pops"
+          ],
+          [
+            "pops",
+            "release",
+            "let go"
+          ],
+          [
+            "release",
+            "spring",
+            "yes"
+          ],
+          [
+            "release",
+            "tear",
+            "past tear point"
+          ],
+          [
+            "spring",
+            "grab",
+            "try again"
+          ],
+          [
+            "tear",
+            "redeemed"
+          ],
+          [
+            "redeemed",
+            "checkout"
+          ]
+        ]
+      }
     }
   ]
 }
