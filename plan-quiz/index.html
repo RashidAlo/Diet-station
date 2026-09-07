@@ -74,14 +74,13 @@
   body.desktop #stage { left: 316px; }
 
   .device { position: relative; transform-origin: center center; }
-  body.desktop .device { padding: 12px; border-radius: 58px; background: linear-gradient(160deg, #f8f8f9, #e2e2e6 48%, #f1f1f4);
-    box-shadow: 0 44px 110px -34px rgba(0,0,0,.26), 0 6px 20px rgba(0,0,0,.10),
-      inset 0 0 0 2px #ffffff, inset 0 0 0 7px #d4d4d9; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: transparent; border: 2.5px solid #111114;
+    box-shadow: none; }
   body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
-    width: 3px; height: 128px; border-radius: 2px; background: #cfcfd5;
-    box-shadow: 0 -70px 0 #cfcfd5; }
+    width: 3px; height: 128px; border-radius: 2px; background: #111114;
+    box-shadow: 0 -70px 0 #111114; }
   body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
-    width: 3px; height: 90px; border-radius: 2px; background: #cfcfd5; }
+    width: 3px; height: 90px; border-radius: 2px; background: #111114; }
   .island { display: none; position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
     pointer-events: none; }
