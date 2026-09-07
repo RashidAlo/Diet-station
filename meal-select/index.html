@@ -115,16 +115,13 @@
   .nav.docked .nav-surface { opacity: 1; height: calc(var(--top-pad) + 92px); }
   .cat-dock { position: absolute; left: 0; right: 0;
     top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; pointer-events: none;
-    opacity: 0; transform: translateY(-7px);
-    transition: opacity .22s ease, transform .22s cubic-bezier(.2,.8,.3,1); }
-  .nav.docked .cat-dock { opacity: 1; transform: none; }
+    overflow: hidden; pointer-events: none;
+    opacity: 0; transition: opacity .2s ease; }
+  .nav.docked .cat-dock { opacity: 1; }
+  .dock-row { height: 34px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 20px; }
   .cat-dock h3 { font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
-  .cat-dock.swap h3, .cat-dock.swap .of { animation: dockswap .24s ease; }
-  @keyframes dockswap { 0% { opacity: 0; transform: translateY(8px); }
-    100% { opacity: 1; transform: none; } }
   /* nav buttons: transparent frosted circles — content blurs through */
   .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
     border-radius: 50%; border: none; cursor: pointer; z-index: 31;
@@ -470,7 +467,10 @@
         <div class="scroll" id="scrollArea"></div>
         <div class="nav">
           <div class="nav-surface"></div>
-          <div class="cat-dock" id="catDock"><h3 id="dockTitle"></h3><span class="of" id="dockOf"></span></div>
+          <div class="cat-dock" id="catDock"><div id="dockTrack">
+            <div class="dock-row"><h3 id="dockTitle"></h3><span class="of" id="dockOf"></span></div>
+            <div class="dock-row"><h3 id="dockTitle2"></h3><span class="of" id="dockOf2"></span></div>
+          </div></div>
           <button class="navbtn gx" id="closeBtn" aria-label="Close">
             <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </button>
@@ -777,7 +777,7 @@ function renderOf(el, count, quota) {
   const was = el.dataset.done === '1';
   el.dataset.done = done ? '1' : '0';
   el.classList.toggle('done', done);
-  el.innerHTML = (done ? OF_CHECK + ' ' : '') + count + ' of ' + quota;
+  el.innerHTML = done ? OF_CHECK : count + ' of ' + quota;
   if (done && !was) {
     el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
   }
@@ -1189,7 +1189,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 29';
+const BUILD = 'build 2026-09-07 · 30';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1294,39 +1294,40 @@ function adaptNav() {
     el.classList.toggle('on-dark', v < .52);
   });
 }
-/* the active category docks INTO the nav bar (fixed chrome = zero jitter) */
+/* the active category docks INTO the nav bar; the handoff is scroll-linked:
+   the incoming section's header pushes the docked title out as it arrives */
 let dockedCatId = null;
 function updateCatDock() {
   const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
-  const navBottom = scrollArea.scrollTop + tp + 56;
-  let active = null;
-  scrollArea.querySelectorAll('section').forEach(sec => {
-    const head = sec.firstElementChild;
-    if (sec.offsetTop + head.offsetHeight <= navBottom &&
-        sec.offsetTop + sec.offsetHeight > navBottom) active = sec;
-  });
+  const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
+  const secs = Array.from(scrollArea.querySelectorAll('section'));
+  let ai = -1;
+  secs.forEach((sec, i) => { if (sec.offsetTop <= line) ai = i; });
   const nav = document.querySelector('.nav');
   nav.classList.toggle('scrolled', scrollArea.scrollTop > 8);
-  if (!active) {
+  if (ai < 0) {
     nav.classList.remove('docked');
     dockedCatId = null;
     return;
   }
-  const catId = active.querySelector('[data-of]').dataset.of;
   nav.classList.add('docked');
-  if (catId !== dockedCatId) {
-    dockedCatId = catId;
-    const cat = CATS.find(c => c.id === catId);
-    const dock = document.getElementById('catDock');
-    document.getElementById('dockTitle').textContent = cat.title;
-    syncDockCounter();
-    dock.classList.remove('swap'); void dock.offsetWidth; dock.classList.add('swap');
+  const A = secs[ai], B = secs[ai + 1];
+  const catA = CATS.find(c => c.id === A.querySelector('[data-of]').dataset.of);
+  dockedCatId = catA.id;
+  document.getElementById('dockTitle').textContent = catA.title;
+  renderOf(document.getElementById('dockOf'), catCount(catA.id), catA.quota);
+  let p = 0;
+  if (B) {
+    p = Math.max(0, Math.min(1, (line + 34 - B.offsetTop) / 34));
+    const catB = CATS.find(c => c.id === B.querySelector('[data-of]').dataset.of);
+    document.getElementById('dockTitle2').textContent = catB.title;
+    renderOf(document.getElementById('dockOf2'), catCount(catB.id), catB.quota);
   }
+  document.getElementById('dockTrack').style.transform =
+    p > 0 ? 'translateY(' + (-p * 34) + 'px)' : '';
 }
 function syncDockCounter() {
-  if (!dockedCatId) return;
-  const cat = CATS.find(c => c.id === dockedCatId);
-  if (cat) renderOf(document.getElementById('dockOf'), catCount(cat.id), cat.quota);
+  if (dockedCatId) updateCatDock();
 }
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
