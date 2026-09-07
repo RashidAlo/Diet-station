@@ -112,6 +112,27 @@
     -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 94%);
     mask-image: linear-gradient(to bottom, #000 42%, transparent 94%); }
   .nav > * { position: relative; z-index: 2; }
+  .nav .nav-surface { position: absolute; left: 0; right: 0; top: 0; z-index: 0;
+    height: calc(var(--top-pad) + 96px); pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,.95) 68%, rgba(255,255,255,0));
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+    mask-image: linear-gradient(to bottom, #000 78%, transparent);
+    opacity: 0; transition: opacity .25s ease; }
+  .nav.docked .nav-surface { opacity: 1; }
+  .cat-dock { position: absolute; left: 0; right: 0;
+    top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; pointer-events: none;
+    opacity: 0; transform: translateY(-7px);
+    transition: opacity .22s ease, transform .22s cubic-bezier(.2,.8,.3,1); }
+  .nav.docked .cat-dock { opacity: 1; transform: none; }
+  .cat-dock h3 { font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-dock.swap h3, .cat-dock.swap .of { animation: dockswap .24s ease; }
+  @keyframes dockswap { 0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: none; } }
   /* nav buttons: transparent frosted circles — content blurs through */
   .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
     border-radius: 50%; border: none; cursor: pointer; z-index: 31;
@@ -191,13 +212,8 @@
     padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
-    padding: 13px 20px 11px;
-    position: relative; z-index: 15; will-change: transform;
-    background: rgba(255,255,255,.88);
-    -webkit-backdrop-filter: blur(12px) saturate(150%);
-    backdrop-filter: blur(12px) saturate(150%);
-    box-shadow: 0 1px 0 rgba(0,0,0,.05); }
-  .grid { padding-bottom: 26px; }
+    padding: 16px 20px 12px; }
+  .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head.nudge .of { animation: ofpulse .9s ease .15s 2; }
@@ -456,6 +472,8 @@
       <div class="sheet" id="sheet">
         <div class="scroll" id="scrollArea"></div>
         <div class="nav">
+          <div class="nav-surface"></div>
+          <div class="cat-dock" id="catDock"><h3 id="dockTitle"></h3><span class="of" id="dockOf"></span></div>
           <button class="navbtn gx" id="closeBtn" aria-label="Close">
             <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </button>
@@ -593,7 +611,7 @@ function buildScreen() {
     scrollArea.appendChild(sec);
   });
   updateAll(true);
-  requestAnimationFrame(() => { if (typeof pinCategoryBars === 'function') pinCategoryBars(); });
+  requestAnimationFrame(() => { if (typeof updateCatDock === 'function') { updateCatDock(); } });
 }
 
 function makeCard(cat, d, i) {
@@ -771,6 +789,7 @@ function updateAll(instant) {
       if (el) el.classList.toggle('dim', full && !sel[cat.id + ':' + i]);
     });
   });
+  if (typeof syncDockCounter === 'function') syncDockCounter();
   /* macros + counting kcal */
   document.getElementById('mP').textContent = t.p;
   document.getElementById('mC').textContent = t.c;
@@ -1161,7 +1180,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 24';
+const BUILD = 'build 2026-09-07 · 25';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1250,7 +1269,13 @@ function lumAt(cx, cy) {
   } catch (e) { return .5; }
 }
 function adaptNav() {
+  const docked = document.querySelector('.nav').classList.contains('docked');
   ['.gx', '.dual', '.ttl'].forEach(sel => {
+    if (docked) {
+      const el = document.querySelector(sel);
+      if (el) el.classList.remove('on-dark');
+      return;
+    }
     const el = document.querySelector(sel);
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -1259,22 +1284,45 @@ function adaptNav() {
     el.classList.toggle('on-dark', v < .52);
   });
 }
-function pinCategoryBars() {
+/* the active category docks INTO the nav bar (fixed chrome = zero jitter) */
+let dockedCatId = null;
+function updateCatDock() {
   const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
-  const pinY = scrollArea.scrollTop + tp + 54;
+  const navBottom = scrollArea.scrollTop + tp + 56;
+  let active = null;
   scrollArea.querySelectorAll('section').forEach(sec => {
     const head = sec.firstElementChild;
-    const start = sec.offsetTop;
-    const maxShift = sec.offsetHeight - head.offsetHeight;
-    const shift = Math.max(0, Math.min(pinY - start, maxShift));
-    head.style.transform = shift > 0 ? 'translateY(' + shift + 'px)' : '';
+    if (sec.offsetTop + head.offsetHeight <= navBottom &&
+        sec.offsetTop + sec.offsetHeight > navBottom) active = sec;
   });
+  const nav = document.querySelector('.nav');
+  if (!active) {
+    nav.classList.remove('docked');
+    dockedCatId = null;
+    return;
+  }
+  const catId = active.querySelector('[data-of]').dataset.of;
+  nav.classList.add('docked');
+  if (catId !== dockedCatId) {
+    dockedCatId = catId;
+    const cat = CATS.find(c => c.id === catId);
+    const dock = document.getElementById('catDock');
+    document.getElementById('dockTitle').textContent = cat.title;
+    syncDockCounter();
+    dock.classList.remove('swap'); void dock.offsetWidth; dock.classList.add('swap');
+  }
+}
+function syncDockCounter() {
+  if (!dockedCatId) return;
+  const cat = CATS.find(c => c.id === dockedCatId);
+  if (cat) document.getElementById('dockOf').textContent =
+    catCount(cat.id) + ' of ' + cat.quota;
 }
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
   if (adaptPend) return;
   adaptPend = true;
-  requestAnimationFrame(() => { adaptPend = false; pinCategoryBars(); adaptNav(); });
+  requestAnimationFrame(() => { adaptPend = false; updateCatDock(); adaptNav(); });
 }, { passive: true });
 setInterval(adaptNav, 900);
 setTimeout(adaptNav, 500);
