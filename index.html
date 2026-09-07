@@ -648,6 +648,15 @@ function setNativeView(sys) {
 document.querySelectorAll('#tabbar button').forEach(b =>
   b.addEventListener('click', () => setNativeView(b.dataset.tab === 'sys')));
 if (NATIVE && location.hash === '#design-system') setNativeView(true);
+if (NATIVE) {
+  document.querySelectorAll('#pane-system .actions a').forEach(a => {
+    if (a.getAttribute('download') !== null) return;
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      location.href = a.getAttribute('href') + '?v=' + Date.now();
+    });
+  });
+}
 
 /* ================= settings primer (native launcher) ================= */
 const primerVeil = document.createElement('div'); primerVeil.className = 'primer-veil';

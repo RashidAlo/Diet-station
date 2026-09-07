@@ -107,10 +107,9 @@
   @media (max-width: 560px) { .editorcard iframe { height: 640px; } }
 </style>
 <style>
-  html.app .bar-inner { padding: 8px 14px; gap: 8px; }
-  html.app .bar-inner .back { display: none; }
-  .closex { display: none; }
-  html.app .closex { position: fixed; z-index: 60;
+  /* no top navigation on the labs — just the glass X, all platforms */
+  header.bar { display: none !important; }
+  .closex { position: fixed; z-index: 60;
     top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
     width: 42px; height: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -121,8 +120,7 @@
       inset 0 0 0 .8px rgba(255,255,255,.5),
       0 8px 24px -10px rgba(0,0,0,.3);
     text-decoration: none; }
-  html.app header.bar { background: transparent; border-bottom: none;
-    -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .closex { display: flex; }
   html.app .bar-inner img.mark { height: 20px; }
   html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
   html.app .bar-inner .back { white-space: nowrap; }
