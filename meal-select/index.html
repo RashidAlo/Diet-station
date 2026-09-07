@@ -85,6 +85,8 @@
   body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
     width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #ffffff; }
+  body:not(.desktop) .phone { width: 100vw; height: 100vh; height: 100dvh;
+    --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px)); }
   body.desktop .phone { border-radius: 46px; }
   .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
@@ -99,12 +101,13 @@
   .nav { position: absolute; left: 0; right: 0; top: 0; z-index: 30;
     height: calc(var(--top-pad) + 58px);
     display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
-  .nav::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  .nav::before { content: ''; position: absolute; left: 0; right: 0; top: 0;
+    height: calc(env(safe-area-inset-top, 0px) + 20px); pointer-events: none;
     z-index: 0;
-    -webkit-backdrop-filter: blur(12px) saturate(150%);
-    backdrop-filter: blur(12px) saturate(150%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
-    mask-image: linear-gradient(to bottom, #000 72%, transparent 97%); }
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 96%);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent 96%); }
   .nav > * { position: relative; z-index: 2; }
   /* nav buttons: transparent frosted circles — content blurs through */
   .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
@@ -118,6 +121,13 @@
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .navbtn:active { transform: scale(.92); }
   .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+  .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease; }
+  .navbtn.on-dark, .dual.on-dark { background: rgba(72,72,78,.30); color: #ffffff; }
+  .dual.on-dark .sep { background: rgba(255,255,255,.3); }
+  .dual.on-dark .dcheck svg .ck-base { stroke: rgba(255,255,255,.55); }
+  .ttl { transition: color .35s ease, text-shadow .35s ease;
+    text-shadow: 0 1px 3px rgba(255,255,255,.35); }
+  .ttl.on-dark { color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.5); }
   .gx { left: 24px; }
   /* Apple dual action capsule: confirm | divider | clear */
   .dual { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px); height: 44px;
@@ -270,7 +280,7 @@
   .card .macros .pair i { font: 300 6.45px/12px 'Urbane Rounded', sans-serif; font-style: normal; }
 
   /* ================= navigator (Figma: Meal Selection Navigator 2.0) ============ */
-  .navigator { position: absolute; left: 22px; width: 358px; height: 69px; z-index: 35;
+  .navigator { position: absolute; left: calc(50% - 179px); width: 358px; height: 69px; z-index: 35;
     bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
   .navigator .glassbase { position: absolute; inset: 0; border-radius: 296px; overflow: hidden;
@@ -339,6 +349,9 @@
 
   /* ---- mobile: lab controls live in a hidden sheet (triple-tap & hold) -- */
   body.lab-mobile .lab-chip { display: none !important; }
+  body.lab-mobile .lab-tabbar { display: none !important; }
+  body.lab-mobile:has(#labUserflow.on) .lab-tabbar,
+  body.lab-mobile:has(#labHandoff.on) .lab-tabbar { display: flex !important; }
   .menu-views { display: none; gap: 8px; margin-bottom: 22px; }
   body.labmenu-open:not(.desktop) .menu-views { display: flex; }
   .menu-views button { flex: 1; border: 1px solid rgba(255,255,255,.14); border-radius: 10px;
@@ -427,12 +440,12 @@
         <div class="scroll" id="scrollArea"></div>
         <div class="nav">
           <button class="navbtn gx" id="closeBtn" aria-label="Close">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0B0E12" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </button>
           <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span></div>
           <div class="dual">
             <button class="dclear" id="clearBtn" aria-label="Clear all">
-              <svg viewBox="0 0 18 18" fill="none"><g stroke="#0B0E12" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg>
+              <svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg>
             </button>
             <span class="sep"></span>
             <button class="dcheck" id="confirmBtn" aria-label="Confirm">
@@ -1002,15 +1015,12 @@ function fit() {
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
     document.body.classList.remove('desktop');
-    stageScale = innerWidth / 402;
-    const probe = document.getElementById('safeProbe');
-    const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
-    const probeH = document.getElementById('dvhProbe').offsetHeight;
-    const vh = Math.max(innerHeight, probeH || 0);
-    const Hd = vh / stageScale;
-    phone.style.height = Hd + 'px';
-    /* CSS resolves env() live — correct in Safari AND home-screen standalone */
-    phone.style.setProperty('--top-pad', 'max(34px, calc(env(safe-area-inset-top, 0px) + 6px))');
+    /* pure CSS viewport: 100dvh phone at scale 1 — nothing to measure */
+    stageScale = 1;
+    phone.style.height = '';
+    phone.style.removeProperty('--top-pad');
+    device.style.transform = 'none';
+    return;
   } else {
     document.body.classList.add('desktop');
     phone.style.height = '874px';
@@ -1154,6 +1164,55 @@ setTimeout(() => {
     clearTimeout(holdTimer); holdTimer = null;
   }, { passive: true });
 })();
+
+/* ---- HIG adaptive nav: sample the pixels under each glass control and
+   flip its content light/dark (photos scroll beneath) ---- */
+const lumCanvas = document.createElement('canvas');
+lumCanvas.width = lumCanvas.height = 12;
+const lumCtx = lumCanvas.getContext('2d', { willReadFrequently: true });
+function lumAt(cx, cy) {
+  const els = document.elementsFromPoint(cx, cy);
+  const card = els.find(el => el.classList && el.classList.contains('card'));
+  if (!card) return .97;                                   /* white sheet */
+  const img = card.querySelector('.photo img');
+  if (!img || !img.complete || !img.naturalWidth) return .4;
+  const r = img.getBoundingClientRect();
+  const fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const sc = Math.max(r.width / iw, r.height / ih);
+  const sw = r.width / sc, sh = r.height / sc;
+  try {
+    lumCtx.drawImage(img,
+      (iw - sw) / 2 + fx * sw - sw * .07, (ih - sh) / 2 + fy * sh - sh * .07,
+      sw * .14, sh * .14, 0, 0, 12, 12);
+    const d = lumCtx.getImageData(0, 0, 12, 12).data;
+    let l = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      l += (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255; n++;
+    }
+    let v = l / n;
+    if (fy > .55) v *= 1 - Math.min(.8, (fy - .55) * 1.8);  /* card scrim */
+    return v;
+  } catch (e) { return .5; }
+}
+function adaptNav() {
+  ['.gx', '.dual', '.ttl'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return;
+    const v = lumAt(r.left + r.width / 2, r.top + r.height / 2 + 4);
+    el.classList.toggle('on-dark', v < .52);
+  });
+}
+let adaptPend = false;
+scrollArea.addEventListener('scroll', () => {
+  if (adaptPend) return;
+  adaptPend = true;
+  requestAnimationFrame(() => { adaptPend = false; adaptNav(); });
+}, { passive: true });
+setInterval(adaptNav, 900);
+setTimeout(adaptNav, 500);
 
 buildQuotaRows();
 buildScreen();
