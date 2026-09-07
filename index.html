@@ -457,15 +457,22 @@ if (NATIVE) document.body.classList.add('native');
   /* the Rive splash itself */
   const boot = () => {
     try {
-      new rive.Rive({
+      const rv = new rive.Rive({
         src: 'splash/ds-splash.riv',
         canvas: el.querySelector('canvas'),
         artboard: 'Splash',
         autoplay: true,
         layout: new rive.Layout({ fit: rive.Fit.Contain }),
-        onLoad: () => { riveOk = true; },
+        onLoad: () => {
+          riveOk = true;
+          /* size the drawing surface to the element x devicePixelRatio —
+             without this Rive renders into a 300x150 buffer and the CSS
+             stretch smears everything */
+          rv.resizeDrawingSurfaceToCanvas();
+        },
         onLoadError: () => { /* Splash artboard not exported yet — skip */ dismiss(); },
       });
+      addEventListener('resize', () => { try { rv.resizeDrawingSurfaceToCanvas(); } catch (_) {} });
     } catch (_) { dismiss(); }
   };
   if (window.rive) boot();
