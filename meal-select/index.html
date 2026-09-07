@@ -19,6 +19,8 @@
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+  #dvhProbe { position: fixed; left: 0; top: 0; width: 1px; height: 100vh;
+    height: 100dvh; visibility: hidden; pointer-events: none; }
   html, body { height: 100%; overflow: hidden; background: #0f0f12; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
@@ -95,14 +97,15 @@
 
   /* ---- nav row: content passes under an Apple-style progressive blur ---- */
   .nav { position: absolute; left: 0; right: 0; top: 0; z-index: 30;
-    height: calc(var(--top-pad) + 62px);
+    height: calc(var(--top-pad) + 58px);
     display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
   .nav::before { content: ''; position: absolute; inset: 0; pointer-events: none;
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent);
-    mask-image: linear-gradient(to bottom, #000 58%, transparent); }
-  .nav > * { position: relative; z-index: 1; }
+    z-index: 0;
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
+    mask-image: linear-gradient(to bottom, #000 72%, transparent 97%); }
+  .nav > * { position: relative; z-index: 2; }
   /* nav buttons: transparent frosted circles — content blurs through */
   .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
     border-radius: 50%; border: none; cursor: pointer; z-index: 31;
@@ -335,6 +338,12 @@
     border-radius: 50%; pointer-events: none; z-index: 41; }
 
   /* ---- mobile: lab controls live in a hidden sheet (triple-tap & hold) -- */
+  body.lab-mobile .lab-chip { display: none !important; }
+  .menu-views { display: none; gap: 8px; margin-bottom: 22px; }
+  body.labmenu-open:not(.desktop) .menu-views { display: flex; }
+  .menu-views button { flex: 1; border: 1px solid rgba(255,255,255,.14); border-radius: 10px;
+    cursor: pointer; padding: 11px 0; background: rgba(255,255,255,.05);
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
   .lab-veil { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,.45);
     opacity: 0; pointer-events: none; transition: opacity .25s ease; }
   body.labmenu-open .lab-veil { opacity: 1; pointer-events: auto; }
@@ -358,6 +367,10 @@
 <aside id="side">
   <button id="sDone">Done</button>
   <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <div class="menu-views">
+    <button id="mvFlow">User flow</button>
+    <button id="mvHandoff">Dev handoff</button>
+  </div>
   <h2>Meal Selector — Build Your Week</h2>
   <p class="s-desc">Figma-faithful meal picker. Five categories, each with a quota from your
     subscription. Tap a thumbnail to claim it — the green border springs in, a check draws
@@ -464,6 +477,7 @@
 </div>
 
 <div id="safeProbe"></div>
+<div id="dvhProbe"></div>
 <div class="lab-veil" id="labVeil"></div>
 
 <script>
@@ -991,7 +1005,8 @@ function fit() {
     stageScale = innerWidth / 402;
     const probe = document.getElementById('safeProbe');
     const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
-    const vh = Math.max(innerHeight, window.visualViewport ? window.visualViewport.height : 0);
+    const probeH = document.getElementById('dvhProbe').offsetHeight;
+    const vh = Math.max(innerHeight, probeH || 0);
     const Hd = vh / stageScale;
     phone.style.height = Hd + 'px';
     /* CSS resolves env() live — correct in Safari AND home-screen standalone */
@@ -1009,6 +1024,8 @@ function fit() {
 addEventListener('resize', fit);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 addEventListener('orientationchange', () => setTimeout(fit, 250));
+/* standalone launches settle late — re-fit a few times after load */
+[300, 900, 2000].forEach(ms => setTimeout(fit, ms));
 
 
 /* =================================================================
@@ -1097,6 +1114,18 @@ function openLabMenu() {
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
 labVeil.addEventListener('click', closeLabMenu);
 document.getElementById('sDone').addEventListener('click', closeLabMenu);
+function openLabView(tab) {
+  closeLabMenu();
+  const b = document.querySelector('.lab-tabbar button[data-lab-tab="' + tab + '"]');
+  if (b) b.click();
+}
+document.getElementById('mvFlow').onclick = () => openLabView('userflow');
+document.getElementById('mvHandoff').onclick = () => openLabView('handoff');
+/* suppress the lab-shell tab bar's arrival hello — the menu owns entry */
+setTimeout(() => {
+  const bar = document.querySelector('.lab-tabbar');
+  if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
+}, 150);
 (function () {
   let taps = 0, lastTap = 0, holdTimer = null, sx = 0, sy = 0;
   phone.addEventListener('touchstart', e => {
