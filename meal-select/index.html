@@ -1338,7 +1338,12 @@ function ordinal(n) {
 function nextTapped() {
   vibrate(25);
   dock.onclick = null;
-  glideTo(0);
+  /* the finished day swipes off to the LEFT; the new day rides in from the
+     right already scrolled to the top — no scroll-up, a page turn */
+  glideCanceled = true; scrollIntent = null;
+  scrollArea.style.transition = 'transform .34s cubic-bezier(.55,0,.85,.6), opacity .3s ease';
+  scrollArea.style.transform = 'translateX(-106%)';
+  scrollArea.style.opacity = '.35';
   setTimeout(() => {
     dayIdx++;
     const lbl = document.getElementById('dayLabel');
@@ -1352,9 +1357,20 @@ function nextTapped() {
         lbl.style.transition = 'transform .32s cubic-bezier(.2,.8,.3,1.18), opacity .25s ease';
         lbl.style.transform = 'translateX(0)'; lbl.style.opacity = '1';
       }, 30);
-      resetAll();
     }, 260);
-  }, 430);
+    /* park the fresh grid off-screen right, reset at the top, spring in */
+    scrollArea.style.transition = 'none';
+    scrollArea.style.transform = 'translateX(106%)';
+    resetAll();
+    scrollArea.scrollTop = 0;
+    void scrollArea.offsetWidth;   /* commit the off-right park (rAF starves in hidden tabs) */
+    setTimeout(() => {
+      scrollArea.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1), opacity .3s ease';
+      scrollArea.style.transform = 'translateX(0)';
+      scrollArea.style.opacity = '1';
+      setTimeout(() => { scrollArea.style.transition = ''; scrollArea.style.transform = ''; }, 560);
+    }, 30);
+  }, 340);
 }
 
 /* ================= nav actions ================= */
@@ -1599,7 +1615,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 42';
+const BUILD = 'build 2026-09-07 · 43';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
