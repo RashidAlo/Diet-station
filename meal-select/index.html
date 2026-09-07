@@ -192,10 +192,13 @@
   /* the check draws itself (pathLength 1, bezier .5,0,.5,1) then un-draws */
   .qty .q-check { position: absolute; left: 50%; top: 9px; transform: translateX(-50%);
     width: 15.5px; height: 11.5px; pointer-events: none; }
-  .qty .q-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1;
-    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1); }
-  .qty .q-check.draw path { stroke-dashoffset: 0; }
-  .qty .q-check.undraw path { stroke-dashoffset: -1; }
+  /* round linecaps paint a dot even at zero dash length — keep the path
+     invisible until the draw actually starts */
+  .qty .q-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
+    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1), opacity .05s; }
+  .qty .q-check.draw path { stroke-dashoffset: 0; opacity: 1; }
+  .qty .q-check.undraw path { stroke-dashoffset: -1; opacity: 0;
+    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1), opacity .1s .35s; }
 
   .card .name { align-self: stretch; padding: 6px 0;
     font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
@@ -222,15 +225,29 @@
     mix-blend-mode: color-burn; }
   .navigator .glassbase .darken { position: absolute; inset: 0; background: #f7f7f7;
     mix-blend-mode: darken; }
-  /* the blurred orangey filler: full-width gradient clipped by an animated-width
-     window with a feathered leading edge (mask), colors never stretch */
+  /* the gauge filler: the red->yellow gradient spans the FILL itself (Figma —
+     yellow always rides the leading edge), with a feathered mask, a breathing
+     glow at the tip, and a shimmer sweep for the live-shader feel */
   .gauge-clip { position: absolute; left: 0; top: 1px; height: 68px; width: 24.73%;
     border-radius: 65px 0 0 65px; overflow: hidden; pointer-events: none;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent);
     transition: width .7s cubic-bezier(.3,.8,.3,1); }
-  .gauge-clip .gauge { position: absolute; left: 0; top: 0; width: 358px; height: 68px;
-    background: linear-gradient(90deg, #ee2023 0%, #f57813 74.5%, #fdd702 100%); }
+  .gauge-clip .gauge { position: absolute; inset: 0;
+    background: linear-gradient(90deg, #ee2023 0%, #f57813 62%, #fdd702 96%); }
+  .gauge-clip .gauge::before { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 32%, rgba(255,255,255,.28) 50%, transparent 68%);
+    background-size: 250% 100%; animation: gshimmer 2.8s linear infinite; }
+  @keyframes gshimmer { from { background-position: 210% 0; } to { background-position: -110% 0; } }
+  .gauge-clip .tip { position: absolute; right: -26px; top: 50%; width: 110px; height: 110px;
+    transform: translateY(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(253,215,2,.95) 0%, rgba(253,215,2,.35) 42%, transparent 70%);
+    filter: blur(6px); animation: gbreathe 1.9s ease-in-out infinite; }
+  @keyframes gbreathe {
+    0%, 100% { opacity: .65; transform: translateY(-50%) scale(.92); }
+    50% { opacity: 1; transform: translateY(-50%) scale(1.08); } }
+  .gauge-clip.full { -webkit-mask-image: none; mask-image: none; }
+  .gauge-clip.full .tip { display: none; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 15px; padding: 0 32px 0 24px; color: #f9f9f9; }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
@@ -249,7 +266,7 @@
   .navigator .mpair.f { width: 34px; }
 
   /* Saved / Next dock */
-  .dock { position: absolute; right: 8px; top: 8px; width: 107px; height: 53px;
+  .dock { position: absolute; right: 8px; top: 8px; width: 53px; height: 53px;
     border-radius: 47.6px; border: none; cursor: pointer; overflow: hidden;
     display: flex; align-items: center; justify-content: center; gap: 7px;
     color: #f9f9f9; font: 500 14px/1 'Urbane Rounded', sans-serif;
@@ -258,14 +275,18 @@
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.3);
     transition: opacity .27s cubic-bezier(.5,0,.5,1),
-      transform .7s cubic-bezier(.26,1.36,.42,1); }
+      transform .7s cubic-bezier(.26,1.36,.42,1),
+      width .45s cubic-bezier(.45,1.45,.8,1); }
   .dock.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+  .dock.wide { width: 107px; }
+  .dock .d-label { white-space: nowrap; opacity: 0; transition: opacity .25s ease .1s; }
+  .dock.wide .d-label { opacity: 1; }
   .dock:active { transform: scale(.94); }
   .dock svg { width: 16px; height: 16px; display: block; }
-  .dock .d-check { width: 15.5px; height: 11.5px; }
-  .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1;
-    transition: stroke-dashoffset .45s cubic-bezier(.5,0,.5,1) .15s; }
-  .dock.show .d-check path { stroke-dashoffset: 0; }
+  .dock .d-check { width: 19px; height: 14px; }
+  .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
+    transition: stroke-dashoffset .45s cubic-bezier(.5,0,.5,1) .15s, opacity .05s .15s; }
+  .dock.show .d-check path { stroke-dashoffset: 0; opacity: 1; }
   .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 40; }
 
   /* ---- mobile dev bar ---- */
@@ -356,7 +377,7 @@
         </div>
         <div class="navigator" id="navigator">
           <div class="glassbase"><div class="burn"></div><div class="darken"></div></div>
-          <div class="gauge-clip" id="gaugeClip"><div class="gauge"></div></div>
+          <div class="gauge-clip" id="gaugeClip"><div class="gauge"></div><div class="tip"></div></div>
           <div class="content">
             <div class="kcal">
               <span class="lbl">Kcal</span>
@@ -512,10 +533,12 @@ function cardTap(key) {
     sel[key] = 1;
     selectSeq(el);
     vibrate(8);
+  } else if (!el.classList.contains('expanded')) {
+    return expand(key);          /* collapsed badge: reopen the stepper first */
   } else if (MODS.tapMode === 'add') {
     return step(key, +1);
   } else {
-    expand(key);
+    armCollapse(key);
   }
   updateAll();
 }
@@ -601,14 +624,17 @@ function totals() {
   return { kcal, p, c, f, count };
 }
 
+const catFullState = {};
 function updateAll(instant) {
   const t = totals();
   const quotaTotal = CATS.reduce((s, c) => s + c.quota, 0);
-  /* category counters + dimming when a quota is full */
+  /* category counters + dimming when a quota is full + advance the scroll */
   CATS.forEach(cat => {
     const of = document.querySelector('[data-of="' + cat.id + '"]');
     if (of) of.textContent = catCount(cat.id) + ' of ' + cat.quota;
-    const full = catCount(cat.id) >= cat.quota;
+    const full = cat.quota > 0 && catCount(cat.id) >= cat.quota;
+    if (full && !catFullState[cat.id] && !instant) scrollToNextCat(cat.id);
+    catFullState[cat.id] = full;
     DISHES[cat.id].forEach((d, i) => {
       const el = cardEls[cat.id + ':' + i];
       if (el) el.classList.toggle('dim', full && !sel[cat.id + ':' + i]);
@@ -623,6 +649,7 @@ function updateAll(instant) {
   const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
   gaugeClip.style.width = (GAUGE_BASE + frac * (1 - GAUGE_BASE)) * 100 + '%';
   gaugeClip.style.borderRadius = frac >= 1 ? '65px' : '65px 0 0 65px';
+  gaugeClip.classList.toggle('full', frac >= 1);
   /* completion: Saved moment -> Next */
   const done = quotaTotal > 0 && t.count >= quotaTotal;
   if (done && !completed) { completed = true; celebrate(); }
@@ -644,25 +671,23 @@ function animateKcal(target, instant) {
 }
 
 function celebrate() {
-  /* the done text: Saved with a self-drawing check, confetti, then Next pops */
-  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Saved</span>';
+  /* done: an animated check circle draws itself with confetti, then the
+     circle widens into the Next button */
+  dock.classList.remove('wide');
+  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   dock.onclick = null;
   dock.classList.add('show');
   confetti();
   vibrate([14, 40, 22]);
   setTimeout(() => {
     if (!completed) return;
-    dock.classList.remove('show');
-    setTimeout(() => {
-      if (!completed) return;
-      dock.innerHTML = '<span>Next</span>' + ICON.arrow;
-      dock.onclick = nextTapped;
-      dock.classList.add('show');
-    }, 250);
-  }, 1600);
+    dock.innerHTML = '<span class="d-label" style="display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
+    dock.classList.add('wide');
+    dock.onclick = nextTapped;
+  }, 1500);
 }
 
-function hideDock() { dock.classList.remove('show'); dock.onclick = null; }
+function hideDock() { dock.classList.remove('show', 'wide'); dock.onclick = null; }
 
 function confetti() {
   const nav = document.getElementById('navigator');
@@ -684,6 +709,20 @@ function confetti() {
     ], { duration: 700 + Math.random() * 400, easing: 'cubic-bezier(.2,.6,.4,1)' })
       .onfinish = () => s.remove();
   }
+}
+
+/* a completed category glides the list to the next one */
+function scrollToNextCat(catId) {
+  const visible = CATS.filter(c => c.quota > 0);
+  const idx = visible.findIndex(c => c.id === catId);
+  const next = visible[idx + 1];
+  if (!next) return;
+  const of = document.querySelector('[data-of="' + next.id + '"]');
+  const head = of && of.closest('.cat-head');
+  if (!head) return;
+  setTimeout(() => {
+    scrollArea.scrollTo({ top: head.offsetTop - 78, behavior: 'smooth' });
+  }, 700);
 }
 
 function nextTapped() {
