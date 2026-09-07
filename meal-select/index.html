@@ -293,10 +293,13 @@
   .dock:active { transform: scale(.94); }
   .dock svg { width: 16px; height: 16px; display: block; }
   .dock .d-check { width: 19px; height: 14px; }
+  .dock .d-check { transition: opacity .18s ease; }
   .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
-    transition: stroke-dashoffset .45s cubic-bezier(.5,0,.5,1) .15s, opacity .05s .15s; }
+    transition: stroke-dashoffset .32s cubic-bezier(.3,.7,.3,1.2) .12s, opacity .05s .12s; }
   .dock.show .d-check path { stroke-dashoffset: 0; opacity: 1; }
   .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 40; }
+  .burst-ring { position: absolute; border: 2.5px solid rgba(255,255,255,.95);
+    border-radius: 50%; pointer-events: none; z-index: 41; }
 
   /* ---- mobile dev bar ---- */
   .devbar { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
@@ -378,7 +381,7 @@
           <button class="navx" id="closeBtn" aria-label="Close">
             <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0B0E12" stroke-width="1.8" stroke-linecap="round"/></svg>
           </button>
-          <div class="ttl">Mar 15th</div>
+          <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span></div>
           <button class="clear" id="clearBtn">Clear All</button>
           <button class="confirm" id="confirmBtn" aria-label="Confirm">
             <svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -691,27 +694,43 @@ function animateKcal(target, instant) {
 }
 
 function celebrate() {
-  /* done: an animated check circle draws itself with confetti, then the
-     circle widens into the Next button */
-  dock.classList.remove('wide');
-  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /* done: the dock springs in wide with a fast self-drawing check + "Done",
+     a burst ring + confetti, then crossfades into the Next button */
+  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="d-label">Done</span>';
   dock.onclick = null;
-  dock.classList.add('show');
+  dock.classList.add('show', 'wide');
+  burst();
   confetti();
   vibrate([14, 40, 22]);
   setTimeout(() => {
     if (!completed) return;
-    dock.innerHTML = '<span class="d-label" style="display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
-    dock.classList.add('wide');
-    dock.onclick = nextTapped;
-  }, 1500);
+    const old = dock.querySelectorAll('.d-check, .d-label');
+    old.forEach(el => { el.style.opacity = '0'; });
+    setTimeout(() => {
+      if (!completed) return;
+      dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
+      dock.onclick = nextTapped;
+    }, 190);
+  }, 1200);
+}
+
+function burst() {
+  const nav = document.getElementById('navigator');
+  const ring = document.createElement('div');
+  ring.className = 'burst-ring';
+  ring.style.cssText = 'left:' + (nav.offsetWidth - 62 - 27) + 'px;top:7px;width:54px;height:54px';
+  nav.appendChild(ring);
+  ring.animate([
+    { transform: 'scale(.45)', opacity: 1 },
+    { transform: 'scale(1.7)', opacity: 0 }
+  ], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
 }
 
 function hideDock() { dock.classList.remove('show', 'wide'); dock.onclick = null; }
 
 function confetti() {
   const nav = document.getElementById('navigator');
-  const rect = { x: nav.offsetLeft + 260, y: nav.offsetTop + 20 };
+  const rect = { x: nav.offsetWidth - 62, y: 14 };
   const colors = ['#fff', '#FDD702', '#FF8A3C', '#FF3848'];
   for (let i = 0; i < MODS.confetti; i++) {
     const s = document.createElement('div');
@@ -719,7 +738,7 @@ function confetti() {
     const sz = 3 + Math.random() * 4;
     s.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;background:' +
       colors[i % colors.length] + ';left:' + rect.x + 'px;top:' + rect.y + 'px';
-    document.getElementById('phone').appendChild(s);
+    nav.appendChild(s);
     const a = -Math.PI / 2 + (Math.random() - .5) * 2.2,
       v = 60 + Math.random() * 110;
     s.animate([
@@ -790,12 +809,32 @@ function scrollToNextCat(fromCatId) {
   setTimeout(pursueIntent, 700);
 }
 
+const DAY_START = 15;
+let dayIdx = 0;
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
 function nextTapped() {
   vibrate(25);
-  const sheet = document.getElementById('sheet');
-  sheet.classList.remove('back'); sheet.classList.add('away');
-  setTimeout(() => { resetAll(true); sheet.classList.add('back');
-    sheet.classList.remove('away'); }, 650);
+  dock.onclick = null;
+  glideTo(0);
+  setTimeout(() => {
+    dayIdx++;
+    const lbl = document.getElementById('dayLabel');
+    lbl.style.transition = 'transform .26s ease, opacity .22s ease';
+    lbl.style.transform = 'translateX(-28px)'; lbl.style.opacity = '0';
+    setTimeout(() => {
+      lbl.textContent = 'Mar ' + ordinal(DAY_START + dayIdx);
+      lbl.style.transition = 'none';
+      lbl.style.transform = 'translateX(28px)';
+      setTimeout(() => {
+        lbl.style.transition = 'transform .32s cubic-bezier(.2,.8,.3,1.18), opacity .25s ease';
+        lbl.style.transform = 'translateX(0)'; lbl.style.opacity = '1';
+      }, 30);
+      resetAll();
+    }, 260);
+  }, 430);
 }
 
 /* ================= nav actions ================= */
