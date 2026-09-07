@@ -213,6 +213,7 @@
   body.flowsheet #appRoot { transition: transform .55s cubic-bezier(.32,.72,0,1),
     border-radius .55s ease; transform: scale(.94) translateY(10px);
     border-radius: 24px; overflow: hidden; }
+  body.native { transition: background-color .5s ease; }
   body.flowsheet { background: #000; }
   .flow-veil { position: fixed; inset: 0; z-index: 240; background: #000;
     opacity: 0; pointer-events: none; transition: opacity .5s ease; }
@@ -570,8 +571,15 @@ function openFlowSheet(url) {
   flowFrame.className = 'flow-frame';
   flowFrame.src = url + '&embed=1';
   document.body.append(flowVeil, flowFrame);
-  /* setTimeout, not rAF — rAF starves in backgrounded tabs */
-  setTimeout(() => document.body.classList.add('flowsheet'), 20);
+  /* recede only once the sheet page is actually ready — no dark limbo */
+  let receded = false;
+  const recede = () => {
+    if (receded) return;
+    receded = true;
+    document.body.classList.add('flowsheet');
+  };
+  flowFrame.addEventListener('load', recede);
+  setTimeout(recede, 1600);   /* fallback if load never fires */
 }
 function closeFlowSheet() {
   if (!flowFrame) return;

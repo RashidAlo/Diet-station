@@ -108,6 +108,14 @@
   /* embedded in the app launcher: the hub behind provides the backdrop */
   html.embed, html.embed body, html.embed #stage, html.embed .device,
   html.embed .phone { background: transparent !important; }
+  html.embed .phone { --top-pad: 14px !important; }
+  html.embed.sheet-full .phone { --top-pad: var(--real-pad, 34px) !important; }
+  html.embed .nav, html.embed .nav .nav-surface { transition: height .3s ease,
+    padding .3s ease; }
+  html.embed .cat-dock { transition: top .3s ease; }
+  html.embed .navbtn, html.embed .dual { transition: top .3s ease,
+    background .35s ease, color .35s ease; }
+  html.embed .scroll { transition: padding-top .3s ease; }
   /* auto-selected fallback badge (Figma 17179-77256): green pill straddling
      the card's top edge — sparkle + "Auto Selected" */
   .card .autobadge { position: absolute; top: -9px; left: 50%;
@@ -210,7 +218,7 @@
     color: rgba(60,60,67,.85); padding: 0 18px 17px; }
   .alert .btns { display: flex; border-top: .5px solid rgba(60,60,67,.29); }
   .alert .btns button { flex: 1; height: 44px; border: none; background: none; cursor: pointer;
-    font: 400 17px/22px -apple-system, 'Urbane Rounded', sans-serif; color: #0a84ff; }
+    font: 400 17px/22px -apple-system, 'Urbane Rounded', sans-serif; color: #1d1d1f; }
   .alert .btns button:active { background: rgba(0,0,0,.06); }
   .alert .btns .destructive { color: #ed1c24; font-weight: 600;
     border-left: .5px solid rgba(60,60,67,.29); }
@@ -1464,6 +1472,7 @@ function turnDay(dir) {
   if (turning) return;
   if (dir < 0 && dayIdx === 0) return;
   turning = true;
+  const wasFull = scrollArea.scrollTop >= SHEET_GAP - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1489,7 +1498,8 @@ function turnDay(dir) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    scrollArea.scrollTop = 0;
+    scrollArea.scrollTop = wasFull ? SHEET_GAP : 0;
+    syncSheet();
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
     scrollArea.classList.add('stagger');
     setTimeout(() => {
@@ -1529,7 +1539,14 @@ scrollArea.addEventListener('touchmove', e => {
 
 /* ================= nav actions ================= */
 const EMBED = /[?&]embed=1/.test(location.search);
+let REAL_PAD = 34;
 if (EMBED) {
+  const pr = document.createElement('div');
+  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(34px, calc(env(safe-area-inset-top, 0px) + 6px))';
+  document.body.appendChild(pr);
+  REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
+  pr.remove();
+  document.getElementById('phone').style.setProperty('--real-pad', REAL_PAD + 'px');
   document.documentElement.classList.add('embed');
   document.body.classList.add('embed');
 }
@@ -1795,7 +1812,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 47';
+const BUILD = 'build 2026-09-07 · 48';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1942,11 +1959,11 @@ function syncDockCounter() {
 }
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
+  syncSheet();      /* scroll-linked sheet: synchronous, never behind the rAF gate */
   if (adaptPend) return;
   adaptPend = true;
   requestAnimationFrame(() => {
     adaptPend = false; updateCatDock(); adaptNav();
-    syncSheet();
   });
 }, { passive: true });
 setInterval(adaptNav, 900);
@@ -1958,19 +1975,23 @@ applyDay(0);
 
 /* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
 const sheetEl = document.getElementById('sheet');
+const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
-function sheetGap() {
-  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
-  return Math.max(22, tp - 12);
-}
+let SHEET_GAP = 22;
+function sheetGap() { return SHEET_GAP; }
 function syncSheet() {
   if (!sheetLive) return;
-  const y = Math.max(0, sheetGap() - scrollArea.scrollTop);
+  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
   sheetEl.style.transform = 'translateY(' + y + 'px)';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
+  /* the calorie bar stays pinned to the SCREEN bottom whatever the sheet does */
+  navigatorEl.style.bottom = 'calc(' + (10 + y) + 'px + env(safe-area-inset-bottom, 0px))';
+  if (EMBED) document.documentElement.classList.toggle('sheet-full', y <= 0.5);
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
+SHEET_GAP = EMBED ? REAL_PAD + 6
+  : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');
   document.body.classList.remove('sheet-enter');
