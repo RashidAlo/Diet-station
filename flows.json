@@ -28,7 +28,7 @@
         "Ingredient toggles": "Auto-apply, no modal — the switch itself morphs into the verdict for ~1s: ON → green \"Added\" + check circle, OFF → red \"Removed\" + trash icon, then the switch returns; off rows dim 35% + strikethrough; haptic 8ms",
         "Details macros footer": "Pinned white bar, border-top #EDEDED: Meal’s Macros / kcal 24px + Protein·Carbs·Fat 16px pairs",
         "Details image header": "Resizes 1:1 with the sheet — height = base − scrollTop (min 110), object-fit cover + object-position 50% 45% keeps the food centered every frame; pulling past the top grows it",
-        "Device frame": "Lab desktop shell: iPhone 17 Pro as a flat black wireframe — 2.5px #111114 outline, no fill or shadows, hardware buttons as thin #111114 ticks"
+        "Device frame": "Lab desktop shell: iPhone 17 Pro wireframe — 2.5px #111114 outline, screen ringed 1.5px #111114, side buttons bulge 4.5px outside the frame as solid black 5px bars"
       },
       "downloads": [
         {

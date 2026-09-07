@@ -74,18 +74,18 @@
   .device { position: relative; transform-origin: center center; }
   body.desktop .device { padding: 12px; border-radius: 58px; background: transparent; border: 2.5px solid #111114;
     box-shadow: none; }
-  body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
-    width: 3px; height: 128px; border-radius: 2px; background: #111114;
+  body.desktop .device::before { content: ''; position: absolute; left: -7px; top: 190px;
+    width: 5px; height: 128px; border-radius: 3px 0 0 3px; background: #111114;
     box-shadow: 0 -70px 0 #111114; }
-  body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
-    width: 3px; height: 90px; border-radius: 2px; background: #111114; }
+  body.desktop .device::after { content: ''; position: absolute; right: -7px; top: 240px;
+    width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
   .island { display: none; position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
     pointer-events: none; }
   body.desktop .island { display: block; }
 
   .phone { position: relative; width: 402px; background: #ED1C24; overflow: hidden; }
-  body.desktop .phone { border-radius: 46px; }
+  body.desktop .phone { border-radius: 46px; box-shadow: 0 0 0 1.5px #111114; }
 
   #overlay { position: absolute; }
   #rive { width: 100%; height: 100%; display: block; }
