@@ -175,17 +175,38 @@
   body.native .hero { display: none !important; }
   body.native { padding-top: 0; }
   body.native header.bar { padding-top: env(safe-area-inset-top, 0px); }
-  body.native .bar-inner { padding: 8px 16px; justify-content: space-between; }
+  body.native .bar-inner { padding: 8px 16px; gap: 7px; }
+  body.native .word { white-space: nowrap; }
   body.native .bar-inner img.mark { height: 20px; }
   body.native .word { font-size: 14px; }
   body.native #pane-prototypes { padding-top: 12px; }
-  .navdrop { display: none; }
-  body.native .navdrop { display: flex; align-items: center; gap: 6px;
-    border: none; background: #fff; border-radius: 999px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    padding: 8px 12px 8px 14px; font: 600 13px/1 'Urbane Rounded', sans-serif;
-    color: #1d1d1f; cursor: pointer; }
-  .navdrop svg { width: 12px; height: 12px; }
+  .navdrop { display: none !important; }
+  /* iOS-26 glass tab bar: Prototypes / Design System */
+  .tabbar { display: none; }
+  body.native .tabbar { position: fixed; left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 200;
+    display: flex; gap: 4px; padding: 5px; border-radius: 999px;
+    background: rgba(255,255,255,.55);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.65),
+      inset 0 0 0 .6px rgba(255,255,255,.45),
+      0 10px 34px -12px rgba(0,0,0,.28);
+    transition: transform .45s cubic-bezier(.32,.72,0,1), opacity .3s ease; }
+  body.native.flowopen .tabbar { transform: translateX(-50%) translateY(150%);
+    opacity: 0; pointer-events: none; }
+  .tabbar button { display: flex; flex-direction: column; align-items: center;
+    gap: 3px; border: none; background: transparent; border-radius: 999px;
+    padding: 8px 24px; cursor: pointer;
+    font: 600 11px/1 'Urbane Rounded', sans-serif; color: #6e6e73;
+    white-space: nowrap;
+    transition: color .2s ease, background .25s ease; }
+  .tabbar button.on { background: #ffffff; color: #ED1C24;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+  .tabbar svg { width: 20px; height: 20px; }
+  body.native #pane-prototypes, body.native.sysview #pane-system {
+    padding-bottom: 120px; }
   .p-sec { font: 700 11px/14px -apple-system, sans-serif; color: #8e8e93;
     letter-spacing: .08em; text-transform: uppercase; margin: 20px 0 4px; }
   .p-sec:first-child { margin-top: 4px; }
@@ -278,11 +299,19 @@
   <div class="bar-inner">
     <img class="mark" src="logo.png" alt="DietStation">
     <div class="word">DietStation <span>Design Lab</span></div>
-    <button class="navdrop" id="navDrop">Prototypes
-      <svg viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
   </div>
 </header>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <button data-tab="proto" class="on">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="6.5" y="3" width="11" height="18" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M10.5 18.5h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    Prototypes
+  </button>
+  <button data-tab="sys">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="4.2" stroke="currentColor" stroke-width="1.7"/><rect x="12.6" y="12.6" width="8" height="8" rx="2.2" stroke="currentColor" stroke-width="1.7"/></svg>
+    Design System
+  </button>
+</nav>
 
 <div class="hero wrap">
   <h1 id="heroTitle">Prototypes</h1>
@@ -589,9 +618,11 @@ function openFlowSheet(url) {
   flowFrame.className = 'flow-frame';
   flowFrame.src = url + '&embed=1';
   document.body.append(flowFrame);
+  document.body.classList.add('flowopen');
 }
 function closeFlowSheet() {
   if (!flowFrame) return;
+  document.body.classList.remove('flowopen');
   const fr = flowFrame;
   flowFrame = null;
   setTimeout(() => fr.remove(), 500);
@@ -601,23 +632,13 @@ addEventListener('message', e => {
 });
 
 /* ================= header dropdown: everything sheet ================= */
-let NAV_FLOWS = [];
 function setNativeView(sys) {
   document.body.classList.toggle('sysview', sys);
-  const drop = document.getElementById('navDrop');
-  drop.childNodes[0].textContent = (sys ? 'Design System' : 'Prototypes') + ' ';
+  document.querySelectorAll('#tabbar button').forEach(b =>
+    b.classList.toggle('on', (b.dataset.tab === 'sys') === sys));
 }
-function openNavSheet() {
-  primerEl.innerHTML = '<h3>Design Lab</h3>' +
-    '<button class="p-link" data-v="proto">Prototypes<small>Flows</small></button>' +
-    '<button class="p-link" data-v="sys">Design System<small>Materials &amp; type</small></button>';
-  primerEl.querySelectorAll('.p-link').forEach(b => b.onclick = () => {
-    closePrimer();
-    setNativeView(b.dataset.v === 'sys');
-  });
-  primerVeil.classList.add('show'); primerEl.classList.add('show');
-}
-document.getElementById('navDrop').addEventListener('click', openNavSheet);
+document.querySelectorAll('#tabbar button').forEach(b =>
+  b.addEventListener('click', () => setNativeView(b.dataset.tab === 'sys')));
 
 /* ================= settings primer (native launcher) ================= */
 const primerVeil = document.createElement('div'); primerVeil.className = 'primer-veil';

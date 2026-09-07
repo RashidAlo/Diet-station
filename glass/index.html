@@ -97,6 +97,19 @@
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
   .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
 </style>
+<style>
+  html.app .bar-inner { padding: 8px 14px; gap: 8px; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .bar-inner .back { white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
 </head>
 <body>
 
