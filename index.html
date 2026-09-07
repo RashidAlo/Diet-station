@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>DietStation Design Lab</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DS Lab">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#f5f5f7">
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
@@ -24,6 +30,7 @@
   html { scroll-behavior: smooth; }
   body {
     background: var(--ground); color: var(--ink);
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
     font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
     padding-bottom: 96px;
     -webkit-font-smoothing: antialiased;
@@ -32,6 +39,7 @@
 
   /* ---- frosted sticky header ---- */
   header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
     background: rgba(245,245,247,.72);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
