@@ -1024,18 +1024,15 @@ function fit() {
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
     document.body.classList.remove('desktop');
-    /* Figma-proportional: scale 402 design to device width. In standalone
-       the app IS the screen, so screen.* is ground truth — no async lies. */
-    const standalone = navigator.standalone === true;
-    const w = standalone ? Math.min(screen.width, screen.height) : innerWidth;
-    stageScale = w / 402;
+    /* Figma-proportional scaling from the LAYOUT viewport itself —
+       documentElement.client* is what CSS lays out against: synchronous,
+       chrome-free, and correct in standalone by definition. */
+    const de = document.documentElement;
+    const vw = de.clientWidth, vh = de.clientHeight;
+    stageScale = vw / 402;
     phone.style.setProperty('--s', stageScale);
+    phone.style.height = (vh / stageScale) + 'px';
     device.style.transform = 'scale(' + stageScale + ')';
-    if (standalone) {
-      phone.style.height = (Math.max(screen.width, screen.height) / stageScale) + 'px';
-    } else {
-      phone.style.height = '';   /* browser: CSS 100dvh/var(--s) tracks live */
-    }
     return;
   } else {
     document.body.classList.add('desktop');
@@ -1139,13 +1136,16 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 19';
+const BUILD = 'build 2026-09-07 · 20';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
+  const de = document.documentElement;
   document.getElementById('buildInfo').textContent = BUILD +
+    ' · doc ' + de.clientWidth + 'x' + de.clientHeight +
     ' · vp ' + innerWidth + 'x' + innerHeight +
     ' · dvh ' + probeH +
     ' · scr ' + screen.width + 'x' + screen.height +
+    ' · s ' + (+stageScale.toFixed(3)) +
     (navigator.standalone === true ? ' · standalone' : ' · browser');
 }
 document.getElementById('sFresh').onclick = () => {
