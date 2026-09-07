@@ -166,9 +166,27 @@
   body.native .count, body.native .handoff, body.native .thumb,
   body.native .rnkit, body.native .card .meta { display: none !important; }
   body.native #pane-prototypes { display: block !important; }
-  body.native .hero { text-align: left; padding: 22px 4px 6px; }
-  body.native .hero h1 { font-size: 30px; }
-  body.native .hero p { font-size: 14px; margin: 8px 0 0; max-width: none; }
+  body.native .hero { display: none !important; }
+  body.native { padding-top: 0; }
+  body.native header.bar { padding-top: env(safe-area-inset-top, 0px); }
+  body.native .bar-inner { padding: 8px 16px; justify-content: space-between; }
+  body.native .bar-inner img.mark { height: 20px; }
+  body.native .word { font-size: 14px; }
+  body.native #pane-prototypes { padding-top: 12px; }
+  .navdrop { display: none; }
+  body.native .navdrop { display: flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(0,0,0,.12); background: #fff; border-radius: 999px;
+    padding: 7px 12px 7px 14px; font: 600 13px/1 'Urbane Rounded', sans-serif;
+    color: #1d1d1f; cursor: pointer; }
+  .navdrop svg { width: 12px; height: 12px; }
+  .p-sec { font: 700 11px/14px -apple-system, sans-serif; color: #8e8e93;
+    letter-spacing: .08em; text-transform: uppercase; margin: 20px 0 4px; }
+  .p-sec:first-child { margin-top: 4px; }
+  .p-link { display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 14px 2px; border: none; background: none;
+    border-bottom: 1px solid #ececef; cursor: pointer;
+    font: 600 15px/20px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
+  .p-link small { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
   body.native .card { cursor: pointer; -webkit-tap-highlight-color: transparent;
     padding: 0; overflow: hidden;
     transition: transform .15s cubic-bezier(.3,.8,.3,1); }
@@ -264,6 +282,9 @@
   <div class="bar-inner">
     <img class="mark" src="logo.png" alt="DietStation">
     <div class="word">DietStation <span>Design Lab</span></div>
+    <button class="navdrop" id="navDrop">Prototypes
+      <svg viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 </header>
 
@@ -424,6 +445,7 @@ if (NATIVE) document.body.classList.add('native');
 })();
 
 fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
+  NAV_FLOWS = flows;
   document.getElementById('count').textContent =
     flows.length + (flows.length === 1 ? ' flow' : ' flows');
   const root = document.getElementById('flows');
@@ -593,6 +615,26 @@ function closeFlowSheet() {
 addEventListener('message', e => {
   if (e.data && e.data.t === 'ds-close') closeFlowSheet();
 });
+
+/* ================= header dropdown: everything sheet ================= */
+let NAV_FLOWS = [];
+function openNavSheet() {
+  const rows = f => '<button class="p-link" data-p="' + f.path + '" data-sheet="' + (f.sheet ? 1 : 0) + '">' +
+    f.title.split(' \u2014 ')[0] + '<small>' + (f.area || '') + '</small></button>';
+  primerEl.innerHTML = '<h3>Design Lab</h3>' +
+    '<div class="p-sec">Prototypes</div>' +
+    NAV_FLOWS.map(rows).join('') +
+    '<div class="p-sec">Design System</div>' +
+    '<button class="p-link" data-p="glass/">Liquid Glass<small>Material</small></button>' +
+    '<button class="p-link" data-p="type/">DietStation Dot<small>Typeface</small></button>';
+  primerEl.querySelectorAll('.p-link').forEach(b => b.onclick = () => {
+    closePrimer();
+    if (b.dataset.sheet === '1') openFlowSheet(b.dataset.p + '?v=' + Date.now());
+    else location.href = b.dataset.p;
+  });
+  primerVeil.classList.add('show'); primerEl.classList.add('show');
+}
+document.getElementById('navDrop').addEventListener('click', openNavSheet);
 
 /* ================= settings primer (native launcher) ================= */
 const primerVeil = document.createElement('div'); primerVeil.className = 'primer-veil';
