@@ -1,0 +1,107 @@
+<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Splash preview</title>
+<style>html,body{margin:0;height:100%;background:#666;display:flex;align-items:center;justify-content:center}
+canvas{background:#ED1C24;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.4)}</style>
+<canvas id="cv" width="520" height="640"></canvas>
+<script>
+const ALPHA = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[^_`abcdefghijklmnopqrstuvwxyz{|}~";
+const DATA = "Mi6$JeIFBO~O96$KdIu:;~Pf6$QmH8:;~FB7QLRHv:;~Go7QJEJ6:O~I?7QMBG*BO~Jl7QJeFi:;~L<7QM$FX`e~Mi7QP?I7`O~O97QIfGHRe~Pf7QPnJTRO~R67QOOHG:;~Sc7QSkH)BO~U37QR{IFB;~V`7QP?J'BO~CE8~JtI(B;~Dr8~N2FIB;~FB8~J6HgRO~Go8~L%F+`;~I?8~O`Hv`;~Jl8~J6IfRe~L<8~RLHg`O~Mi8~M3F:`O~O98~NPF:`O~Pf8~K&Hg`e~R68~NaFi`O~Sc8~MBH8RO~U38~L4G9`;~V`8~QmH8RO~X08~PNG*:O~Y[8~Q^HvBe~Au:NJtKS:;~CE:NJtFX`O~Dr:NKsH8`O~FB:NNPIu`O~Go:NJTKs`O~I?:NP0HG`;~Jl:NP0Fi`O~L<:NJtI7`e~Mi:NOOI(`O~O9:NNAJ'`O~Pf:NS<Gw`;~R6:NLrJE`;~Sc:NS<Gh`;~U3:NRlGh`O~V`:NLCFX`;~X0:NRLKD`O~Y[:NS<L4`O~[-:NTYKDB;~^X:NQ^KDB;~>x;{GHIf:O~@H;{IFL%B;~Au;{FiL4R;~CE;{GwKS`;~Dr;{O`IU`;~FB;{JtHv`O~Go;{G*JE`O~I?;{HGK5`;~Jl;{KsGH`;~L<;{K&J'`O~Mi;{L4HV`O~O9;{NaGH`O~Pf;{M3If`O~R6;{KsIf`O~Sc;{KsFx`;~U3;{O~I(`O~V`;{P?JT`e~X0;{Q|H8`;~Y[;{Q^I(`O~[-;{Q|K5`e~^X;{QMHg`;~`*;{PnI(BO~=K=KK5Kd:'~>x=KF:LRB;~@H=KNaF:`e~Au=KI(Jt`;~CE=KL%Jt`;~Dr=KKdHv`;~FB=KG*Iu`O~Go=KH8If`O~I?=KP_J6`;~Jl=KL%Fx`O~L<=KP?F:`O~Mi=KR=IU`O~O9=KKdHv`;~Pf=KR.JE`'~R6=KP}If`O~Sc=KR.LC`;~U3=KKsGw`;~V`=KO!HV`O~X0=KQ>JE`;~Y[=KU:J'`;~[-=KNAGh`O~^X=KNaH)`O~`*=KT,KDRO~aU=KSzJt:e~:N>xJEJ':;~;{>xKDJ'>;~=K>xFXN#B;~>x>xK&Ks`;~@H>xK5I(`O~Au>xH8M3`e~CE>xGWM$`O~Dr>xLCJ6`O~FB>xMqHG`;~Go>xO1F+`;~I?>xQ^Gw`;~Jl>xGHJE`O~L<>xKsI(`O~Mi>xQ/J6`;~O9>xM$Fx`O~Pf>xKdHv`O~R6>xK&Fx`;~Sc>xO1IF`O~U3>xSZLC`O~V`>xNpIU`O~X0>xP0HG`;~Y[>xQ>KD`O~[->xO@I(`;~^X>xP?J6`O~`*>xW)Lc`O~aU>xTyK5`O~c'>xR.KdBO~:N@HHvJe:;~;{@HMbGhB;~=K@HK&JT`e~>x@HKDJE`;~@H@HKSJ6`O~Au@HMBF:`O~CE@HI(HG`O~Dr@HFiLc`O~FB@HMBFX`O~Go@HP0H8`O~I?@HQ>G9lO~Jl@HJEHVlO~L<@HKDHvl;~Mi@HOoGHl;~O9@HNaGwlO~Pf@HP?HVl;~R6@HP?JTlO~Sc@HKdF:le~U3@HKsGH`;~V`@HN#H)`O~X0@HPnGh`O~Y[@HP?G9`;~[-@HR.H8`O~^X@HU:L4R;~`*@HW8Mq`O~aU@HVWM3`O~c'@HQmHGRO~dR@HRlL4:;~:NAuFIKs:O~;{AuJEL%R;~=KAuJTJ6`e~>xAuM$Gh`O~@HAuI7Na`O~AuAuN2J'`;~CEAuL4Iu`O~DrAuJeJE`;~FBAuIuKSle~GoAuGWIflO~I?AuO~F+lO~JlAuLfJ>l>~L<AuO`IUt;~MiAuNNJnt6~O9AuKsGhtO~PfAuPNIUt;~R6AuO@H)lO~ScAuMqIul;~U3AuS-JetO~V`AuTyM$lO~X0AuS-JE`e~Y[AuS-Je`O~[-AuRLKs`O~^XAuSKNP`;~`*AuU+N#`;~aUAuO~If`;~c'AuQ>HVRO~dRAuS<O@:;~8~CEHvO!:O~:NCEI(IuRO~;{CEK&Ks`O~=KCEM3If`;~>xCEIuMq`;~@HCELrG9`;~AuCEJEJE`;~CECEMQI7`O~DrCEJEJ'l;~FBCELCFile~GoCEHgL%t;~I?CELUK=tO~JlCEI(K5tO~L<CEIfJttO~MiCEL%JTtO~O9CERlJTtO~PfCENLL{tR~R6CEO1IftO~ScCENPIut'~U3CES-I(tO~V`CEP_HVl;~X0CEUXK5l;~Y[CEQ|Gw`O~[-CEUII(`;~^XCER{GH`O~`*CER.Hv`;~aUCEP?H8`;~c'CEQ/FX`O~dRCETYO``O~f$CEP0J':O~8~DrIuKdBO~:NDrFxN#`O~;{DrJTKs`O~=KDrJEHg`O~>xDrFiNP`e~@HDrKSGw`;~AuDrK5L%`O~CEDrGwMblO~DrDrL^Lzt1~FBDrJeHvtOFJH<<-OO!GoDrJ'I(tO~I?DrLzJwt:~JlDrN#Iut;~L<DrOOJ6tO~MiDrJtKSt;~O9DrNVJ6t7~PfDrLcHgtO~R6DrO~KIt_~ScDrPXKYtR~U3DrQ&KStT~V`DrS<LCt'~X0DrNaHGlO~Y[DrR[KDt;~[-DrR=Hv`;~^XDrVWKS`O~`*DrS<Np`;~aUDrT,HG`;~c'DrTJJe`;~dRDrQ|K5`O~f$DrT;JTBO~8~FBH)IuBO~:NFBI7Np`;~;{FBKDHV`O~=KFBGhM$`O~>xFBGhNa`;~@HFBKsIF`;~AuFBHVM3l;~CEFBLcGHlO~DrFBG9L4tOF;H{=,OO!FBFBJtHVtOFBGF>'OO!GoFBKgKOtBG}G[<&OO!I?FBM;LXtBG;HC<-OO!JlFBM3Kot>~L<FBO~IUt;~MiFBNxLztV~O9FBQ^JTt;~PfFBO7LOtH~R6FBRlLRtO~ScFBSkL4tOUgGB=7OO!U3FBSKLct;VSGI;6OO!V`FBR{NPlOV1H2<4OO!X0FBSKNPtOW9Gl=6OO!Y[FBT;NptO~[-FBS-MQlO~^XFBRLIf`;~`*FBQmJ'`O~aUFBS<M$`O~c'FBT,Hv`O~dRFBT;LC`e~f$FBRlO@R;~gOFBT,PnB;~7QGoI(Q>B;~8~GoJ6OoR;~:NGoJEJT`O~;{GoIFN2`;~=KGoIFOO`O~>xGoG9M3`O~@HGoG*Jt`O~AuGoF+M$lO~CEGoIfLCt;F;Il>,OO!DrGoJrKytZERGI:(OO!FBGoMQIUtOG2GJ;'OO!GoGoNAJ6teH_H*:&OO!I?GoL~Kgt3I&Hn>%OO!JlGoMBLXtl~L<GoMIL8tI~MiGoN2Kat@~O9GoNGLati~PfGoNcMOtP~R6GoR[M$tOTCH*=8OO!ScGoNmLptWUEH=:4OO!U3GoSkMBt;UCI!?3OO!V`GoQ8KYtHV+I>?3OO!X0GoRFLLtgVqHY=5OO!Y[GoV9N#t;WWHM=5OO![-GoV*Jel;~^XGoQ>Hg`O~`*GoW)L4`O~aUGoT;L%`;~c'GoTJMq`O~dRGoSzNP`O~f$GoV*MB`O~gOGoTJN2BO~7QI?FxMqBO~8~I?JEJe`e~:NI?FxR=`;~;{I?JEO1`O~=KI?KSI7`O~>xI?JEMB`O~@HI?HVKslO~AuI?LtMzlQ~CEI?L<LttKF;J^;+OO!DrI?LUM[tAE;H/:(OO!FBI?K&Iut;E;H|=)OO!GoI?I7Nat;I0I[:%OO!I?I?L`MZtgI*JK;$OO!JlI?MsMNt:G{Hn;.OO!L<I?MmM+tQ~MiI?N0M*tk~O9I?O5L@t4~PfI?OxL%tN~R6I?OLM~t9~ScI?O}LntgTzGT:7OO!U3I?OqM7t_VtIR<2OO!V`I?OuN.tXWSJ!<2OO!X0I?Q%L`t>WgJj>1OO!Y[I?Q7Lzt>~[-I?TJN#t;~^XI?S<O1lO~`*I?RLJt`O~aUI?U:L4`O~c'I?TJNp`O~dRI?RlG9`O~f$I?UiIF`O~gOI?SzJ6B;~7QJlJtJ'BO~8~JlGHMq`;~:NJlIUMQ`O~;{JlJ6N2`O~=KJlJ'MQ`;~>xJlHgJ'`;~@HJlHvL4l;~AuJlLUMSti~CEJlJ6L%tOE;KK<*OO!DrJlJHLntYE;Il=)OO!FBJlHVPntOFRL$<!OO!GoJlL`N?tSH.Kf=#OO!I?JlMNMwt<HjK4<$OO!JlJlMiMitMH/IZ;.OO!L<JlM~Mwt7~MiJlN,N(t@~O9JlNXM`tB~PfJlOSM_tg~R6JlN}N*teTrJf?;OO!ScJlQ,MQt;T8Ht?8OO!U3JlOyMDt5TXIW>9OO!V`JlQ/M<tbVjKz=0OO!X0JlTjN#t;WJKP<1OO!Y[JlQAN.toVeJ^;:OO![-JlR{IUtO~^XJlU:Mbl;~`*JlP}K&`O~aUJlUxO@`O~c'JlUXQ|`O~dRJlT;Q|`;~f$JlSZNp`;~gOJlSZH8R;~h~JlSZR.BO~7QL<I7PnBO~8~L<I7Lc`;~:NL<J'Mb`O~;{L<IuL4`O~=KL<JeJE`;~>xL<FiQ/`O~@HL<HvI7lO~AuL<J'L4t'~CEL<KVMGlC~DrL<JEOot;E;J[;*OO!FBL<KGMbt`EcL$:!OO!GoL<MQN/tfGBK{>#OO!I?L<N.MSt<H%JJ</OO!JlL<M[MNt8~L<L<M@MmtV~MiL<NHM{tk~O9L<NyMetI~PfL<NzMTt`~R6L<O(NltoT/Js><OO!ScL<O!MntkUPK4<;OO!U3L<QMMQt:U>I|?9OO!V`L<QdMstnU|L)>0OO!X0L<PtN6tCV*J3:9OO!Y[L<RXM?t8~[-L<TjQ|t;~^XL<UxO`tO~`*L<SkLr`O~aUL<UXN2`;~c'L<V*N#`O~dRL<SKLr`O~f$L<UiMb`;~gOL<UXLr`O~h~L<SkM$B;~7QMiJeQ/B'~8~MiHgMb`;~:NMiH)PN`;~;{MiH)N2`O~=KMiJtL%`;~>xMiHGP?`O~@HMiFIK5l;~AuMiHvLCtO~CEMiLZN)tU~DrMiJ6O`t;FsMs;EOO!FBMiKINJtAF[K->+OO!GoMiM6Nht7GKK!</OO!I?MiLuM`taG[Mw?EOO!JlMiM&NXtR~L<MiM<Mhth~MiMiN<NatT~O9MiN0N,ti~PfMiOiNjt>~R6MiNjNfth~ScMiO}MstkU2Kz<=OO!U3MiQVN^thTMKU:<OO!V`MiP*N2tkV>K7=:OO!X0MiRCN_tAUPMw>ROO!Y[MiSkN#t;~[-MiRCNgtg~^XMiUxLCt;~`*MiS-O@lO~aUMiSzL%`O~c'MiRlQ^`O~dRMiS<P?`O~f$MiU:JE`;~gOMiTyPn`e~h~MiSKMQ:;~7QO9EjNp:;~8~O9F:M3`;~:NO9HvSk`;~;{O9FiKS`O~=KO9J'KS`;~>xO9HvSK`;~@HO9JTQ^lO~AuO9L@NYtC~CEO9J:N/t=~DrO9IfO`tOFkN^;DOO!FBO9M*O=tBFvOK:DOO!GoO9L=OCtQG,P8<COO!I?O9L!OGt<GlNd?FOO!JlO9LhN;tK~L<O9MQNttP~MiO9NHNCl^~O9O9O3Nat^~PfO9OMNVt5~R6O9OLNNtf~ScO9O{NPtJU2OP>QOO!U3O9OwN4tJTxP<;QOO!V`O9QuO@tVUANd;QOO!X0O9RLPnt;V9Ms:ROO!Y[O9S-LRt;~[-O9UXNPte~^XO9UIP?t;~`*O9TJN2l;~aUO9UiRL`;~c'O9S<Q>`O~dRO9UiMb`;~f$O9RLPN`O~gOO9S-K5RO~h~O9S-MQBe~7QPfJ6KdB;~8~PfIUO@`;~:NPfIUS<`;~;{PfIUQ>`;~=KPfHGTY`;~>xPfGWM$`O~@HPfFxP0l;~AuPfJ'L%tO~CEPfI(O`t;~DrPfHvNPtO~FBPfLfNAtBGGQ!:COO!GoPfLuO;tMGlQg>BOO!I?PfLjO'tiGzOP;FOO!JlPfLjNgtPH4P<=GOO!L<PfMYOYt`~MiPfMwNnt2~O9PfN^OIt5~PfPfO9Nat[~R6PfO3O?l1~ScPfPZNgtKT0Qf<POO!U3PfPFN|t4TWQ%;POO!V`PfR[P0tOVAN^>SOO!X0PfS<NPtOV6OK;SOO!Y[PfQ?Nxtc~[-PfS/O@tl~^XPfTYMqtO~`*PfQMQ^`;~aUPfSzMq`;~c'PfRlO@`;~dRPfU+Iu`O~f$PfT;T,`O~gOPfTJJtRO~h~PfRlO`:;~6$R6HgNA:;~7QR6JEM$B;~8~R6IUN2`;~:NR6IuM3`O~;{R6FiO1`O~=KR6K5RL`O~>xR6JeSk`O~@HR6G*RLtO~AuR6I{P2tO~CER6I7Q/t;~DrR6JtTJt;~FBR6K_PBt`HTQ%=GOO!GoR6LFO1tWH8RH;BOO!I?R6LiOylAI@S^<AOO!JlR6MYNptDH}Qf;HOO!L<R6MGO5t[INRD;HOO!MiR6MbOXtR~O9R6N>OAti~PfR6OIP(ta~R6R6NjO5t`RHSK?NOO!ScR6P~Ogt`S'Rz>OOO!U3R6PTO4t>UeQ!;TOO!V`R6P!O9tZV#P8>TOO!X0R6TYLct;~Y[R6SzMqt;~[-R6UXO1t;~^XR6R[Q/l;~`*R6R[PN`O~aUR6SzQ>`;~c'R6T;Qm`;~dRR6W)LR`O~f$R6TJQ/`O~gOR6RlMb`;~h~R6TJTjBO~6$ScK&S-:O~7QScFxNpBO~8~ScFIQ>RO~:NScKSR{`O~;{ScIFO!`O~=KScJEM3`O~>xScJ'R.`O~@HScIfNAlO~AuScGwR.l;~CEScK;Oit9~DrScL4R{t;~FBScJEQ|t;~GoScKpO{tSHiS';AOO!I?ScMtNptMI{T0<@OO!JlScMhN|tEKET}>?OO!L<ScMWPXteJ(Rz=IOO!MiScMmN}tQJdSK:IOO!O9ScNYPktbMhTY?KOO!PfScOSPft=P3TL;MOO!R6ScNZNntYP|T5;MOO!ScScO_P<taS^RD>OOO!U3ScOxOot8U@Qg<UOO!V`ScR$Oot3TtRH;UOO!X0ScPzP<tI~Y[ScQ>Qmt'~[-ScSZO~te~^XScU:RLtO~`*ScTYKs`;~aUScT;NA`O~c'ScVHL%`O~dRScT,P_`O~f$ScV*OORO~gOScU+M3BO~h~ScTySK:e~6$U3GHS-:O~7QU3H8LrB;~8~U3GhO1`O~:NU3L%Q|`O~;{U3GWLr`e~=KU3HvQ/`;~>xU3I(P?`;~@HU3KsU:`;~AuU3JEO!l;~CEU3K&R{tO~DrU3KSRLtO~FBU3K9PztW~GoU3IuO1t;~I?U3M{P.tUJ_TY:@OO!JlU3NMP*tFL/U::?OO!L<U3MiP8tELyUN=>OO!MiU3N_PFtmMhUZ;>OO!O9U3O1PqtKNUUa==OO!PfU3OrPJtcOETY<LOO!R6U3OSP?t_QeSt<NOO!ScU3P,PEt6TCS'?VOO!U3U3P_PxtVSlS^<VOO!V`U3SzOot;~X0U3RlRLt;~Y[U3TYNAt;~[-U3V*Mble~^XU3R=S-lO~`*U3TJMQ`;~aUU3QmQM`;~c'U3SZMb`O~dRU3R[Q|`O~f$U3W)NP`;~gOU3V9Mq:O~6$V`K&T;:O~7QV`HGLR:;~8~V`IFNPR;~:NV`KsSz`O~;{V`H8TY`O~=KV`H8Lc`O~>xV`I7T;`O~@HV`GwSz`;~AuV`GwMQtO~CEV`JEN#lO~DrV`G*Oot;~FBV`IUQ/tO~GoV`L8P|t<~I?V`MqO{th~JlV`M!PQtlKGSt=JOO!L<V`OoRlt;L0T5>JOO!MiV`NaOut`LyTL;KOO!O9V`NyQ-tcNUT`;LOO!PfV`NRP2tCQgT}>XOO!R6V`OUP|tKRMTY>WOO!ScV`TJO~t;S1T0;WOO!U3V`PRQQtA~V`V`TYNpt;~X0V`PnV9tO~Y[V`U+P}tO~[-V`Q|R[t;~^XV`QMV*`O~`*V`TjP?`O~aUV`PnTY`O~c'V`T;R[`O~dRV`RlO!`;~f$V`UILC`;~gOV`T,R.B;~7QX0F:LR:O~8~X0J6U+B;~:NX0HvNA`;~;{X0I7NP`O~=KX0KsS-`;~>xX0IfTY`;~@HX0IUQ^`O~AuX0F:O!`O~CEX0FxO`lO~DrX0IuO1lO~FBX0H)RLtO~GoX0IUS-tO~I?X0MbSKtO~JlX0MBT,t;~L<X0I(R[t'~MiX0M3S<t;ODUZ;YOO!O9X0MBT;t;P3UN>YOO!PfX0NMP0t8P}U:?XOO!R6X0L%U:tO~ScX0MbS-t;~U3X0NpS-tO~V`X0VWP_t;~X0X0OoUXtO~Y[X0QmUxt;~[-X0V9O``;~^XX0T,Mq`O~`*X0R.Ui`O~aUX0VWNa`;~c'X0QmR[`;~dRX0VWKd`e~f$X0TYLRBO~8~Y[HvP?BO~:NY[FxO~R;~;{Y[LCT,`O~=KY[JETy`;~>xY[H)P?`O~@HY[HgNA`O~AuY[N#VH`O~CEY[HGPN`;~DrY[IuRll;~FBY[LRUxtO~GoY[O`TjtO~I?Y[H8Qmt;~JlY[KsR[t'~L<Y[RLTyt;~MiY[N^Q8t>~O9Y[O!R0tP~PfY[LCS<te~R6Y[KdUXt;~ScY[RLO~tO~U3Y[NaSkt;~V`Y[Q^T,tO~X0Y[PnS<le~Y[Y[R{R.`;~[-Y[PNTj`O~^XY[R{T,`O~`*Y[TJPn`O~aUY[R[Na`O~c'Y[TJNp`O~dRY[T,O~`O~f$Y[UXS<B;~:N[-FXN#:O~;{[-IUR.`e~=K[-J'NA`'~>x[-KdSZRO~@H[-K&S<`;~Au[-GhT,`;~CE[-JTQ^`O~Dr[-IuPN`;~FB[-K&UxlO~Go[-KSTyle~I?[-LpPtl?~Jl[-KdQ|lO~L<[-L4Tjt;~Mi[-JeUItO~O9[-RLSktO~Pf[-Q>QmtO~R6[-O1SztO~Sc[-R.R{tO~U3[-PnSKl;~V`[-NaVhlO~X0[-NpVw`O~Y[[-Q>Sk`;~[-[-Q/Sz`O~^X[-VWNa`O~`*[-QmR{`;~aU[-RlOo`O~c'[-P}Q|R;~dR[-TYR{Be~:N^XJEQm:;~;{^XHVN2:O~=K^XM$TJ`;~>x^XH)O1`;~@H^XF:O~`;~Au^XN2S<`;~CE^XF:O@`O~Dr^XLcTY`;~FB^XJ'SZ`;~Go^XHvRl`;~I?^XIfP}t;~Jl^XGHSZlO~L<^XP?W)l;~Mi^XIFTYtO~O9^XMbV*lO~Pf^XN2UItO~R6^XS-TYle~Sc^XRlRLl;~U3^XQmQM`;~V`^XMBU:`O~X0^XMqSZ`e~Y[^XR=P_`;~[-^XP0Tj`O~^X^XP_VW`O~`*^XT,O@`;~aU^XR=Q>`O~c'^XS-S-`O~dR^XSZQ>>O~;{`*IFNA>;~=K`*H8R{RO~>x`*MBSKRO~@H`*H8O``O~Au`*NPS-`'~CE`*GWOo`;~Dr`*O@Ui`O~FB`*I7S-`O~Go`*NAT,`O~I?`*LcSz`;~Jl`*HgTj`O~L<`*P}RL`;~Mi`*L%VH`O~O9`*O@Ty`O~Pf`*R[TY`O~R6`*KsTJ`;~Sc`*R.Q/`;~U3`*T;QM`;~V``*R{P_RO~X0`*RLR{`;~Y[`*P}Tj`O~[-`*O@VW`;~^X`*TJS<`O~`*`*P0Tj`;~aU`*R{P?RO~c'`*Q>VhBO~=KaUHvO@B;~>xaUJ'UI`;~@HaUK&Tj`O~AuaUN#UX`O~CEaULcTj`;~DraUKSR.`e~FBaUHvPn`;~GoaUK5Sk`;~I?aUP?R{`O~JlaUI(UI`O~L<aUK&Q>`O~MiaUOORl`O~O9aURlT;`;~PfaUKsUx`;~R6aUQ/VW`O~ScaUMQUX`;~U3aUMBT;`O~V`aUR{R=`;~X0aUSKTJ`;~Y[aUO1R[`;~[-aUP_Ty`;~^XaUNATjR;~`*aUV*Q^`;~aUaUSzNpBO~>xc'IfT;:O~@Hc'KSVHB;~Auc'K5T;`e~CEc'L%Tj`;~Drc'IuP?`O~FBc'JTTJ`O~Goc'I7U+`O~I?c'I(SK`O~Jlc'KDQ^`;~L<c'HgS-`;~Mic'LcS<`;~O9c'HVTY`O~Pfc'NpUI`;~R6c'QmSZ`O~Scc'P?S-`e~U3c'T;QM`;~V`c'MqU:`O~X0c'U:P_`O~Y[c'P?U:`O~[-c'TYQ/`;~^Xc'P?VhR;~`*c'T,Q/:;~@HdRF:Q>:e~AudRIFSz:O~CEdRLRR.`;~DrdRJeR.R;~FBdRNPVw`O~GodRK5T,`;~I?dRI7U:`O~JldRKdSZ`O~L<dRMbS-`;~MidRNpT;`O~O9dRQmR.`O~PfdRR.TY`O~R6dRR.Q|`'~ScdRN#Ux`e~U3dROOV*`O~V`dRRlR=`O~X0dRSzQmR;~Y[dRMBTYR;~[-dRT,TYBO~^XdRNAS-:O~CEf$F:Q|:;~Drf$G9QMBO~FBf$GHS-R;~Gof$OoRl`O~I?f$GhR{`;~Jlf$O!Ux`e~L<f$L%S<`;~Mif$P}SK`;~O9f$Q^R.`O~Pff$RLS-`;~R6f$O~Ui`;~Scf$R[R.`;~U3f$K&UI`O~V`f$P_S<Re~X0f$QMS<BO~Y[f$O!UIBO~FBgOKdSz:O~GogOL%SzBO~I?gOQ^SKB;~JlgONAT,BO~L<gOMqSz`O~MigOO`W8`;~O9gOJTSzR;~PfgOL4TjR;~R6gOMbRlR;~ScgOOOVHBO~U3gOSKQ>B;~V`gOMQUIBO~L<h~P_R=:O~Mih~LcT,:;~O9h~P_R[:O~Pfh~M$Tj:;~R6h~LCU+Be~";
+const STROKES = [[1,-52.97,-17.77,-52.97,-17.77,-52.97,-40.42,-52.97,-40.42,-52.97,-40.42,-47.47,-40.42,-47.47,-40.42,-40.87,-40.42,-35.44,-36.07,-35.44,-29.09,-35.44,-22.11,-40.87,-17.77,-47.47,-17.77],[0,52.22,-36.31,50.67,-38.94,47.96,-40.34,44.85,-40.34,40.66,-40.34,37.79,-38.32,37.79,-35.22,37.79,-31.96,41.28,-30.72,45.09,-29.64,49.04,-28.47,52.84,-27.00,52.84,-23.43,52.84,-20.02,49.74,-17.92,45.24,-17.92,41.91,-17.92,39.11,-19.16,37.56,-21.57],[0,-44.47,-1.29,-43.68,10.05,-38.61,20.67,-30.30,28.43,-21.98,36.18,-11.03,40.50,0.34,40.50,11.71,40.50,22.66,36.18,30.97,28.43,39.29,20.67,44.35,10.05,45.15,-1.29]];
+const C = {NDOTS:875,BREATH_T:3.2,INTRO:0.85,ABS_STAG:0.25,ABS_DUR:0.45,FLARE_FULL:1.42,STROKE_W:6.0,GLOW0:2.9,GLOW_T:0.55,KAPPA:0.5522847498};
+const ST0 = [1.5, 1.92, 2.28], ST1 = [2.02, 2.34, 2.88];
+const NDOTS = 875;
+const REV = {}; [...ALPHA].forEach((ch, i) => REV[ch.charCodeAt(0)] = i);
+const P0X=[],P0Y=[],BDX=[],BDY=[],S0=[],PH=[],WAVE=[],BUCKET=[],FLW=[],FLPH=[],SPARK=[],DEEP=[];
+function hash(i,s){const x=Math.sin(i*127.1+s*311.7)*43758.5453;return x-Math.floor(x);}
+(function(){let p=0;
+ const rd2=()=> (REV[DATA.charCodeAt(p++)]*91+REV[DATA.charCodeAt(p++)])/15-270;
+ const rd1=()=> REV[DATA.charCodeAt(p++)];
+ for(let i=1;i<=NDOTS;i++){
+  P0X[i]=rd2();P0Y[i]=rd2();BDX[i]=rd2();BDY[i]=rd2();S0[i]=rd1()/8;PH[i]=rd1()/5-9;
+  if(DATA.charCodeAt(p)===126){p++;}else{p+=9;}
+  const r0=Math.hypot(P0X[i],P0Y[i]);
+  WAVE[i]=Math.min(1,r0/150);BUCKET[i]=S0[i]>=8?3:S0[i]>=5?2:1;
+  FLW[i]=.9+hash(i,6)*1.1;FLPH[i]=hash(i,7)*6.2832;SPARK[i]=hash(i,9)<.12;DEEP[i]=1.13+.1*hash(i,10);
+ }})();
+const c01=v=>Math.max(0,Math.min(1,v)), sm=q=>q*q*(3-2*q);
+function breathAt(i,tau){let u=(tau-WAVE[i]*.33-PH[i]*.007)/C.BREATH_T;u-=Math.floor(u);
+ const n=u<.45?sm(u/.45):1-sm((u-.45)/.55);
+ return [-.05+.6*n, SPARK[i]?.86+.49*n:.94+(DEEP[i]-.94)*n];}
+function strokePath(ctx, run, fLen){
+ // run: [closed, sx,sy, cubic 6-tuples]; draw up to arc-length fLen (approx by flattening)
+ const pts=[[run[1],run[2]]];
+ for(let j=3;j+5<run.length+1 && j+5<=run.length-0+0;j+=6){}
+ return pts;}
+// flatten strokes once
+const FLAT = STROKES.map(run=>{
+ const pts=[[run[1],run[2]]];
+ for(let j=3;j+5<run.length;j+=6){
+  const p0=pts[pts.length-1];
+  for(let k=1;k<=14;k++){const t=k/14,mt=1-t;
+   pts.push([mt*mt*mt*p0[0]+3*mt*mt*t*run[j]+3*mt*t*t*run[j+2]+t*t*t*run[j+4],
+             mt*mt*mt*p0[1]+3*mt*mt*t*run[j+1]+3*mt*t*t*run[j+3]+t*t*t*run[j+5]]);}
+ }
+ if(run[0]>0.5) pts.push(pts[0]);
+ const cum=[0];for(let k=1;k<pts.length;k++)cum[k]=cum[k-1]+Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);
+ return {pts,cum,len:cum[cum.length-1]};});
+const cv=document.getElementById('cv'),g=cv.getContext('2d');
+const CX=260,CY=320;
+let t0=performance.now();
+cv.onclick=()=>{t0=performance.now();};
+function frame(now){
+ const t=(now-t0)/1000;
+ g.clearRect(0,0,520,640);
+ g.save();g.translate(CX,CY);
+ const btau=Math.min(t,C.INTRO)*(C.BREATH_T/C.INTRO);
+ // dots (pink)
+ for(let i=1;i<=NDOTS;i++){
+  const [f,sf]=breathAt(i,btau);
+  const flick=1+.05*Math.sin(t*FLW[i]+FLPH[i]);
+  let x=P0X[i]+BDX[i]*f, y=P0Y[i]+BDY[i]*f, s=S0[i]*sf*flick;
+  const q=c01((t-C.INTRO-hash(i,15)*C.ABS_STAG)/C.ABS_DUR);
+  if(q>0){const pull=q*q*(.4+.6*q);x*=1-pull;y*=1-pull;s*=1-sm(c01((q-.3)/.7));}
+  if(s>0.1){g.globalAlpha=[.72,.86,1][BUCKET[i]-1];g.fillStyle='#FF3848';
+   g.beginPath();g.arc(x,y,s/2,0,7);g.fill();}
+ }
+ // flare
+ const fa=sm(c01((t-C.INTRO-.25)/(C.FLARE_FULL-C.INTRO-.25)));
+ const drain=sm(c01((t-ST0[0])/(ST1[2]-ST0[0])));
+ const fr=9*fa*(1-drain);
+ if(fr>.15){g.globalAlpha=1;g.fillStyle='#FF3848';g.beginPath();g.arc(0,0,fr,0,7);g.fill();}
+ // strokes: back-out trim + swell + settle wobble + glow
+ const ga=Math.sin(Math.PI*c01((t-C.GLOW0)/C.GLOW_T))*.5;
+ for(let k=0;k<3;k++){
+  const q=c01((t-ST0[k])/(ST1[k]-ST0[k]));
+  const c1=1.9,qb=q-1;
+  let f=c01(1+(c1+1)*qb*qb*qb+c1*qb*qb);
+  let w=C.STROKE_W*(1+.3*Math.sin(Math.PI*Math.min(1,q)));
+  if(q>=1){const tau=t-ST1[k];w=C.STROKE_W*(1+.14*Math.exp(-5*tau)*Math.sin(16*tau));}
+  if(f<=0.012)continue;
+  const S=FLAT[k],L=S.len*f;
+  g.globalAlpha=1;g.strokeStyle='#fff';g.lineWidth=w;g.lineCap='round';g.lineJoin='round';
+  if(ga>0.01){g.save();g.shadowColor='rgba(255,255,255,'+ga+')';g.shadowBlur=16;}
+  g.beginPath();g.moveTo(S.pts[0][0],S.pts[0][1]);
+  let tip=S.pts[0];
+  for(let m=1;m<S.pts.length;m++){
+   if(S.cum[m]<=L){g.lineTo(S.pts[m][0],S.pts[m][1]);tip=S.pts[m];}
+   else{const r=(L-S.cum[m-1])/(S.cum[m]-S.cum[m-1]);
+    tip=[S.pts[m-1][0]+(S.pts[m][0]-S.pts[m-1][0])*r,S.pts[m-1][1]+(S.pts[m][1]-S.pts[m-1][1])*r];
+    g.lineTo(tip[0],tip[1]);break;}}
+  g.stroke();
+  if(ga>0.01)g.restore();
+  // nozzle
+  if(f<1&&q>0){g.fillStyle='#fff';
+   for(let j=0;j<=4;j++){const back=Math.max(0,L-5*j);
+    let bp=S.pts[0];
+    for(let m=1;m<S.pts.length;m++){if(S.cum[m]>=back){const r=(back-S.cum[m-1])/(S.cum[m]-S.cum[m-1]||1);
+     bp=[S.pts[m-1][0]+(S.pts[m][0]-S.pts[m-1][0])*r,S.pts[m-1][1]+(S.pts[m][1]-S.pts[m-1][1])*r];break;}}
+    const jx=(hash(j+1,31)-.5)*5*Math.sin(t*21+j*2.1)*(j/4);
+    const jy=(hash(j+1,32)-.5)*5*Math.cos(t*19+j*1.7)*(j/4);
+    g.beginPath();g.arc(bp[0]+jx,bp[1]+jy,(3.4-.5*j)*.5+ (j===0?1.2:0),0,7);g.fill();}}
+ }
+ g.restore();
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
