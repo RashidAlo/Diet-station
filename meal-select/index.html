@@ -97,7 +97,28 @@
 
   /* ================= full-page canvas ================= */
   .phone { --top-pad: 44px; }
-  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden; }
+  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden;
+    transition: top .55s cubic-bezier(.32,1,.35,1), border-radius .45s ease; }
+  body.sheet-detent .sheet { top: calc(var(--top-pad) - 12px);
+    border-radius: 44px 44px 0 0; }
+  body.sheet-enter .sheet { top: 103%; }
+  body.sheet-mode .phone { background: #0b0e12; }
+  /* auto-selected fallback badge (Figma 17179-77256): green pill straddling
+     the card's top edge — sparkle + "Auto Selected" */
+  .card .autobadge { position: absolute; top: -9px; left: 50%;
+    transform: translateX(-50%) scale(.6); height: 18px; display: flex;
+    align-items: center; gap: 5px; padding: 0 9px 0 7px; z-index: 6;
+    border-radius: 37px 37px 45px 45px; background: #26A659;
+    box-shadow: 0 1px 6px rgba(56,64,74,.18);
+    font: 700 11px/18px 'Proxima Nova', sans-serif; color: #f9f9f9;
+    white-space: nowrap; opacity: 0; pointer-events: none;
+    transition: opacity .3s ease, transform .35s cubic-bezier(.3,1.3,.4,1); }
+  .card.auto .autobadge { opacity: 1; transform: translateX(-50%) scale(1); }
+  .card .autobadge svg { width: 12px; height: 12px; }
+  /* day-turn arrival: a very soft stagger bounce across the grid */
+  .scroll.stagger .card { animation: cardArrive .55s cubic-bezier(.34,1.26,.44,1) both;
+    animation-delay: calc(var(--ci, 0) * 26ms); }
+  @keyframes cardArrive { from { transform: translateX(34px); opacity: 0; } }
 
   /* ---- nav row: content passes under an Apple-style progressive blur ---- */
   .nav { position: absolute; left: 0; right: 0; top: 0; z-index: 30;
@@ -792,6 +813,9 @@ const sel = {};          /* cardKey -> qty */
 const cardEls = {};      /* cardKey -> element */
 const collapseTimers = {};
 let completed = false;
+const autoSet = new Set();     /* fallback picks awaiting confirmation */
+const dayStates = {};          /* dayIdx -> saved selections */
+let userActed = false;         /* gates the celebration (auto picks don't) */
 
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
@@ -968,8 +992,10 @@ moScroll.addEventListener('touchend', () => {
 
 /* ================= build the screen ================= */
 const scrollArea = document.getElementById('scrollArea');
+let cardSeq = 0;
 function buildScreen() {
   scrollArea.innerHTML = '';
+  cardSeq = 0;
   CATS.forEach(cat => {
     if (cat.quota === 0 && !MODS.showEmpty) return;
     const sec = document.createElement('section');
@@ -1001,6 +1027,7 @@ function makeCard(cat, d, i) {
       '<span class="r-dec">.' + d.r.split('.')[1] + '</span>' + ICON.star + '</div>' +
       '<button class="kebab" aria-label="More">' + ICON.kebab + '</button>' +
     '</div>' +
+    '<div class="autobadge"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.3 3.3 1.2-3.3 1.2L8 10.5 6.8 7.2 3.5 6l3.3-1.2L8 1.5zM12.6 10l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7.7-1.7z" fill="#fff"/></svg>Auto Selected</div>' +
     '<div class="details">' +
       '<div class="qty">' +
         '<button class="q-btn q-minus" aria-label="Less">' + ICON.minus + '</button>' +
@@ -1017,6 +1044,7 @@ function makeCard(cat, d, i) {
       '</div>' +
     '</div>';
   cardEls[key] = el;
+  el.style.setProperty('--ci', String(cardSeq++));
   el.addEventListener('click', e => {
     if (e.target.closest('.q-minus')) return step(key, -1);
     if (e.target.closest('.q-plus')) return step(key, +1);
@@ -1034,11 +1062,38 @@ function catCount(catId) {
 }
 function quotaOf(catId) { return CATS.find(c => c.id === catId).quota; }
 
+function autoVictim(catId) {
+  for (const k of autoSet) if (k.startsWith(catId + ':')) return k;
+  return null;
+}
+function dropAuto(key) {
+  /* silently release a fallback pick to make room for the user's choice */
+  delete sel[key];
+  autoSet.delete(key);
+  const el = cardEls[key];
+  clearTimeout(collapseTimers[key]);
+  el.classList.remove('sel', 'expanded', 'counted', 'auto');
+  const check = el.querySelector('.q-check');
+  check.classList.remove('draw', 'undraw');
+  el.querySelector('.q-count').textContent = '1';
+}
+function confirmAuto(key) {
+  if (autoSet.has(key)) {
+    autoSet.delete(key);
+    cardEls[key].classList.remove('auto');
+  }
+}
+
 function cardTap(key) {
   const catId = key.split(':')[0];
   const el = cardEls[key];
+  userActed = true;
+  if (sel[key]) confirmAuto(key);
   if (!sel[key]) {
-    if (catCount(catId) >= quotaOf(catId)) return denied(catId);
+    if (catCount(catId) >= quotaOf(catId)) {
+      const v = autoVictim(catId);
+      if (v) dropAuto(v); else return denied(catId);
+    }
     sel[key] = 1;
     selectSeq(el);
     vibrate(8);
@@ -1069,8 +1124,13 @@ function selectSeq(el) {
 function step(key, d) {
   const el = cardEls[key];
   const catId = key.split(':')[0];
+  userActed = true;
+  confirmAuto(key);
   if (d > 0) {
-    if (catCount(catId) >= quotaOf(catId)) return denied(catId);
+    if (catCount(catId) >= quotaOf(catId)) {
+      const v = autoVictim(catId);
+      if (v && v !== key) dropAuto(v); else return denied(catId);
+    }
     sel[key] += 1;
     pulse(el); vibrate(8);
     if (!el.classList.contains('expanded')) expand(key);
@@ -1185,7 +1245,10 @@ function updateAll(instant) {
   gaugeFx.target = frac;
   /* completion: Saved moment -> Next */
   const done = quotaTotal > 0 && t.count >= quotaTotal;
-  if (done && !completed) { completed = true; celebrate(); }
+  if (done && !completed) {
+    completed = true;
+    if (userActed) celebrate(); else armNextDock();
+  }
   if (!done && completed) { completed = false; hideDock(); }
   if (confirmBtn) confirmBtn.classList.toggle('on', done);
 }
@@ -1230,6 +1293,12 @@ function celebrate() {
       }, 320);
     }
   }, 50);
+}
+
+function armNextDock() {
+  dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
+  dock.onclick = nextTapped;
+  dock.classList.add('show', 'wide');
 }
 
 function burst() {
@@ -1338,47 +1407,108 @@ function scrollToNextCat(fromCatId) {
 
 const DAY_START = 15;
 let dayIdx = 0;
+
+/* every day opens with deterministic fallback picks the user can just keep */
+function seedAutoDay(idx) {
+  const st = { sel: {}, auto: [] };
+  CATS.forEach((cat, c) => {
+    const n = DISHES[cat.id].length;
+    for (let k = 0; k < cat.quota; k++) {
+      const key = cat.id + ':' + ((idx * 2 + c + k * 3) % n);
+      if (!st.sel[key]) { st.sel[key] = 1; st.auto.push(key); }
+      else st.sel[key] += 1;
+    }
+  });
+  return st;
+}
+
+function saveDay() {
+  dayStates[dayIdx] = { sel: { ...sel }, auto: [...autoSet] };
+}
+
+function applyDay(idx) {
+  const st = dayStates[idx] || seedAutoDay(idx);
+  resetAll(true);
+  userActed = false;
+  Object.entries(st.sel).forEach(([key, q]) => {
+    sel[key] = q;
+    const el = cardEls[key];
+    if (!el) return;
+    el.classList.add('sel', 'counted');
+    el.querySelector('.q-count').textContent = q;
+  });
+  st.auto.forEach(key => {
+    autoSet.add(key);
+    if (cardEls[key]) cardEls[key].classList.add('auto');
+  });
+  updateAll(true);
+}
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
-function nextTapped() {
+let turning = false;
+function turnDay(dir) {
+  /* page turn either direction: current day exits, the target day rides in
+     from the opposite side, at the top, with a soft stagger bounce */
+  if (turning) return;
+  if (dir < 0 && dayIdx === 0) return;
+  turning = true;
   vibrate(25);
   dock.onclick = null;
-  /* the finished day swipes off to the LEFT; the new day rides in from the
-     right already scrolled to the top — no scroll-up, a page turn */
   glideCanceled = true; scrollIntent = null;
+  saveDay();
   scrollArea.style.transition = 'transform .34s cubic-bezier(.55,0,.85,.6), opacity .3s ease';
-  scrollArea.style.transform = 'translateX(-106%)';
+  scrollArea.style.transform = 'translateX(' + (-106 * dir) + '%)';
   scrollArea.style.opacity = '.35';
   setTimeout(() => {
-    dayIdx++;
+    dayIdx += dir;
     const lbl = document.getElementById('dayLabel');
     lbl.style.transition = 'transform .26s ease, opacity .22s ease';
-    lbl.style.transform = 'translateX(-28px)'; lbl.style.opacity = '0';
+    lbl.style.transform = 'translateX(' + (-28 * dir) + 'px)'; lbl.style.opacity = '0';
     setTimeout(() => {
       lbl.textContent = 'Mar ' + ordinal(DAY_START + dayIdx);
       lbl.style.transition = 'none';
-      lbl.style.transform = 'translateX(28px)';
+      lbl.style.transform = 'translateX(' + (28 * dir) + 'px)';
       setTimeout(() => {
         lbl.style.transition = 'transform .32s cubic-bezier(.2,.8,.3,1.18), opacity .25s ease';
         lbl.style.transform = 'translateX(0)'; lbl.style.opacity = '1';
       }, 30);
     }, 260);
-    /* park the fresh grid off-screen right, reset at the top, spring in */
+    /* park off the far side, apply the target day, spring in staggered */
     scrollArea.style.transition = 'none';
-    scrollArea.style.transform = 'translateX(106%)';
-    resetAll();
+    scrollArea.style.transform = 'translateX(' + (106 * dir) + '%)';
+    applyDay(dayIdx);
     scrollArea.scrollTop = 0;
-    void scrollArea.offsetWidth;   /* commit the off-right park (rAF starves in hidden tabs) */
+    void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
+    scrollArea.classList.add('stagger');
     setTimeout(() => {
       scrollArea.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1), opacity .3s ease';
       scrollArea.style.transform = 'translateX(0)';
       scrollArea.style.opacity = '1';
-      setTimeout(() => { scrollArea.style.transition = ''; scrollArea.style.transform = ''; }, 560);
+      setTimeout(() => {
+        scrollArea.style.transition = ''; scrollArea.style.transform = '';
+        scrollArea.classList.remove('stagger');
+        turning = false;
+      }, 760);
     }, 30);
   }, 340);
 }
+function nextTapped() { turnDay(1); }
+
+/* horizontal swipe switches days back and forth */
+let swX = null, swY = null, swDone = false;
+scrollArea.addEventListener('touchstart', e => {
+  swX = e.touches[0].clientX; swY = e.touches[0].clientY; swDone = false;
+}, { passive: true });
+scrollArea.addEventListener('touchmove', e => {
+  if (swX === null || swDone) return;
+  const dx = e.touches[0].clientX - swX, dy = e.touches[0].clientY - swY;
+  if (Math.abs(dx) > 64 && Math.abs(dx) > 1.7 * Math.abs(dy)) {
+    swDone = true;
+    turnDay(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
 
 /* ================= nav actions ================= */
 document.getElementById('closeBtn').onclick = () => { location.href = '../'; };
@@ -1398,9 +1528,10 @@ clearModal.addEventListener('click', e => {
 function resetAll(silent) {
   Object.keys(sel).forEach(k => delete sel[k]);
   Object.keys(collapseTimers).forEach(k => clearTimeout(collapseTimers[k]));
+  autoSet.clear();
   completed = false; hideDock();
   Object.values(cardEls).forEach(el => {
-    el.classList.remove('sel', 'expanded', 'counted', 'dim');
+    el.classList.remove('sel', 'expanded', 'counted', 'dim', 'auto');
     const check = el.querySelector('.q-check');
     check.classList.remove('draw', 'undraw');
     el.querySelector('.q-count').textContent = '1';
@@ -1633,7 +1764,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 44';
+const BUILD = 'build 2026-09-07 · 45';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1782,13 +1913,23 @@ let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
   if (adaptPend) return;
   adaptPend = true;
-  requestAnimationFrame(() => { adaptPend = false; updateCatDock(); adaptNav(); });
+  requestAnimationFrame(() => {
+    adaptPend = false; updateCatDock(); adaptNav();
+    /* sheet detent: scrolling claims the full screen, top rest returns it */
+    const st = scrollArea.scrollTop;
+    if (st > 30) document.body.classList.remove('sheet-detent');
+    else if (st <= 2 && !turning) document.body.classList.add('sheet-detent');
+  });
 }, { passive: true });
 setInterval(adaptNav, 900);
 setTimeout(adaptNav, 500);
 
 buildQuotaRows();
 buildScreen();
+applyDay(0);
+/* present the whole flow as an animated sheet */
+document.body.classList.add('sheet-mode', 'sheet-enter', 'sheet-detent');
+setTimeout(() => document.body.classList.remove('sheet-enter'), 80);
 fit();
 </script>
 <script src="../lab-shell.js" data-flow="meal-select" defer></script>

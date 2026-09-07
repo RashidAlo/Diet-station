@@ -31,7 +31,10 @@
         "Device frame": "Lab desktop shell: iPhone 17 Pro wireframe — 2.5px #111114 outline, screen ringed 1.5px #111114, side buttons bulge 4.5px outside the frame as solid black 5px bars",
         "Card rating badge": "Figma-matched: whole number 20px Urbane DemiBold, decimal 11px Proxima on the baseline, star 11px #FFC52E at 7px gap; cluster inset 14/10px",
         "Glass buttons": "House recipe everywhere: backdrop blur 12 saturate 160% + white/.34 (light) or rgba(72,72,78,.30) + white content (over photos); card kebab 28px, details X 44px",
-        "Next day transition": "Page turn, not scroll: the finished grid swipes off left (.34s ease-in, opacity .35) while the day label flips; the new day parks off-right, resets to the top, and springs in (.5s cubic-bezier(.2,.8,.3,1))"
+        "Next day transition": "Page turn, not scroll: the finished grid swipes off left (.34s ease-in, opacity .35) while the day label flips; the new day parks off-right, resets to the top, and springs in (.5s cubic-bezier(.2,.8,.3,1))",
+        "Sheet presentation": "The flow presents as an animated sheet: slides up to a detent (top gap over a #0b0e12 backdrop, 44px corners); scrolling past 30px expands it fullscreen, resting at the top returns the detent",
+        "Day navigation": "Horizontal swipe (>64px, 1.7:1 dominance) turns days both ways; Next = swipe forward. Each day keeps its own selections; the incoming grid staggers in with a soft bounce (26ms/card, cubic-bezier(.34,1.26,.44,1))",
+        "Auto-selected fallbacks": "Every day seeds deterministic fallback picks filling all quotas, badged \"✨ Auto Selected\" (green pill straddling the card top, Figma 17179-77256). Tapping another meal replaces a fallback silently — no quota error; touching the auto pick confirms it (badge drops). Auto-complete days arm Next quietly without the celebration"
       },
       "downloads": [
         {
