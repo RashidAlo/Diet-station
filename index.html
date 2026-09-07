@@ -429,8 +429,8 @@ if (NATIVE) document.body.classList.add('native');
   document.body.appendChild(el);
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
-  const MIN_MS = 5200;                 /* let the logo finish forming */
-  const MAX_MS = 8000;
+  const MIN_MS = 3300;                 /* the 3s choreography + a beat */
+  const MAX_MS = 6500;
   let riveOk = false, gone = false;
   function dismiss() {
     if (gone) return;
@@ -458,7 +458,7 @@ if (NATIVE) document.body.classList.add('native');
   const boot = () => {
     try {
       new rive.Rive({
-        src: 'breathe/dietstation.riv',
+        src: 'splash/ds-splash.riv',
         canvas: el.querySelector('canvas'),
         artboard: 'Splash',
         autoplay: true,
