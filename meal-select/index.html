@@ -461,7 +461,8 @@
   .mo-sheetbg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
     background: #fff; border-radius: 44px 44px 0 0; }
   .mo-headblock { position: absolute; left: 0; right: 0; z-index: 4;
-    background: #fff; border-radius: 44px 44px 0 0; padding: 24px 24px 0; }
+    background: #fff; border-radius: 44px 44px 0 0; padding: 18px 24px 0;
+    pointer-events: none; }
   .mo-action-row { position: absolute; left: 0; right: 0; z-index: 5;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 14px; height: 40px; }
@@ -492,10 +493,10 @@
   @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
 
   .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24;
-    margin-bottom: 14px; }
-  .mo-title { font: 600 22px/30px 'Urbane Rounded', sans-serif; color: #0b0e12;
-    margin-bottom: 16px; }
-  .mo-heat { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    margin-bottom: 8px; }
+  .mo-title { font: 600 22px/28px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    margin-bottom: 12px; }
+  .mo-heat { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
   .mo-heat .hc { flex: 1; display: flex; align-items: center; gap: 9px;
     border: 1px solid #EDEDED; border-radius: 14px; padding: 11px 14px;
     background: #fff; }
@@ -505,7 +506,7 @@
   .mo-heat .hc span { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
   .mo-heat .or { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #999; }
   .mo-ing-h { font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #0b0e12;
-    margin-bottom: 12px; }
+    margin-bottom: 6px; }
   .mo-row { display: flex; align-items: center; justify-content: space-between;
     min-height: 24px; padding: 10px 2px 10px 0; position: relative;
     border-bottom: 1px solid #F0F0F0; cursor: pointer; }
@@ -960,12 +961,19 @@ document.getElementById('moVeil').addEventListener('click', closeMealOv);
    pinned header; scrolling back grows the image again and pulling past
    the top drags the whole page closed — one big swoop each way */
 const moImgBox = document.querySelector('.mo-img');
-let moBaseImgH = 0, moHeadH = 120;
+let moBaseImgH = 0, moHeadH = 120, moLastSt = 0;
 function syncDetails() {
   if (!moBaseImgH) return;
   const st = moScroll.scrollTop;
+  /* a fast downward fling that lands on the top edge closes the page */
+  if (st <= 0 && moLastSt - st > 16 && mealOv.classList.contains('open')) {
+    moLastSt = st;
+    closeMealOv();
+    return;
+  }
+  moLastSt = st;
   const H = mealOv.offsetHeight;
-  const imgH = Math.max(H * 0.40, moBaseImgH - Math.max(0, st));
+  const imgH = Math.max(H * 0.34, moBaseImgH - Math.max(0, st));
   moImgBox.style.height = imgH + 'px';
   const bg = document.getElementById('moSheetBg');
   const head = document.getElementById('moHeadBlock');
@@ -977,7 +985,7 @@ function syncDetails() {
   const cut = Math.max(0, imgH + moHeadH + st - spacerH);
   document.getElementById('moIngList').style.clipPath =
     'inset(' + cut + 'px 0 0 0)';
-  mealOv.classList.toggle('compact', imgH < H * 0.42);
+  mealOv.classList.toggle('compact', imgH < H * 0.38);
 }
 moScroll.addEventListener('scroll', syncDetails, { passive: true });
 
@@ -1809,7 +1817,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 53';
+const BUILD = 'build 2026-09-07 · 54';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
