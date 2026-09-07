@@ -1536,7 +1536,7 @@ const EMBED = /[?&]embed=1/.test(location.search);
 let REAL_PAD = 34;
 if (EMBED) {
   const pr = document.createElement('div');
-  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(34px, calc(env(safe-area-inset-top, 0px) + 6px))';
+  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 6px))';
   document.body.appendChild(pr);
   REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
   pr.remove();
@@ -1806,7 +1806,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 50';
+const BUILD = 'build 2026-09-07 · 51';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1989,7 +1989,7 @@ function syncSheet() {
   }
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
-SHEET_GAP = EMBED ? REAL_PAD + 20
+SHEET_GAP = EMBED ? REAL_PAD + 28
   : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');
