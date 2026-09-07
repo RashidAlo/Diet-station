@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>DietStation — Meal Selector</title>
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+  html, body { height: 100%; overflow: hidden; background: #0f0f12; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
+    overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+  body.desktop { background: #0f0f12; }
+
+  /* ================= playground shell (desktop) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #16161a; border-right: 1px solid rgba(255,255,255,.07);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y; display: none; }
+  body.desktop #side { display: block; }
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ff5a5f; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #fff; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.55);
+    margin-bottom: 26px; }
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.38);
+    margin-bottom: 12px; }
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ff5a5f; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.35); }
+  .quota-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .quota-row .qname { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .quota-ctl { display: flex; align-items: center; gap: 10px; }
+  .quota-ctl button { width: 24px; height: 24px; border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px; background: rgba(255,255,255,.05); color: #fff; cursor: pointer;
+    font: 600 14px/1 'Urbane Rounded', sans-serif; }
+  .quota-ctl button:hover { background: rgba(255,255,255,.12); }
+  .quota-ctl output { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f;
+    min-width: 12px; text-align: center; }
+  .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg2 button { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 8px; background: rgba(255,255,255,.03);
+    font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.65); }
+  .seg2 button.on { background: rgba(255,255,255,.12); color: #fff;
+    border-color: rgba(255,255,255,.35); }
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
+  #sFill { background: #ff5a5f; color: #fff; }
+  #sFill:hover { filter: brightness(1.08); }
+  #sReset, #sCopy { background: rgba(255,255,255,.09); color: rgba(255,255,255,.85); }
+  #sReset:hover, #sCopy:hover { background: rgba(255,255,255,.15); }
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
+
+  /* ================= stage + device frame ================= */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body.desktop #stage { left: 316px; }
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.85), 0 6px 20px rgba(0,0,0,.4),
+      inset 0 0 0 2px #34343a, inset 0 0 0 7px #000; }
+  body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
+    width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
+    box-shadow: 0 -70px 0 #2c2c32; }
+  body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
+    width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
+  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #e5e5e7; }
+  body.desktop .phone { border-radius: 46px; }
+  .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+    width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
+    pointer-events: none; }
+  body.desktop .island { display: block; }
+
+  /* ================= sheet stack (Figma: modal over modal) ================= */
+  .peek1 { position: absolute; left: 46px; right: 46px; top: var(--peek1-top, 45px); height: 20px;
+    border-radius: 14px 14px 0 0; background: rgba(255,255,255,.55); }
+  .peek2 { position: absolute; left: 14px; right: 14px; top: var(--peek2-top, 58px); height: 24px;
+    border-radius: 18px 18px 0 0; background: rgba(255,255,255,.82); }
+  .sheet { position: absolute; left: 0; right: 0; top: var(--sheet-top, 74px); bottom: 0;
+    border-radius: 38px 38px 0 0; background: #fff; overflow: hidden;
+    transition: transform .5s cubic-bezier(.5,0,.7,.4); }
+  .sheet.away { transform: translateY(104%); }
+  .sheet.back { transition: transform .55s cubic-bezier(.2,.9,.3,1); }
+
+  /* ---- nav row ---- */
+  .nav { position: absolute; left: 0; right: 0; top: 0; height: 76px; z-index: 30;
+    display: flex; align-items: center; padding: 0 16px 0 24px; gap: 12px;
+    background: linear-gradient(to bottom, #fff 62%, rgba(255,255,255,0)); }
+  .navx { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+    background: #f4f4f5; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07); flex: none;
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .navx:active { transform: scale(.92); }
+  .navx svg { width: 16px; height: 16px; display: block; }
+  .nav .ttl { position: absolute; left: 50%; transform: translateX(-50%);
+    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
+    font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
+  .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+    background: #f6bfc3; display: flex; align-items: center; justify-content: center; flex: none;
+    transition: background .35s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
+  .confirm:active { transform: scale(.92); }
+  .confirm svg { width: 18px; height: 18px; display: block; }
+  .confirm.on { background: #ed1c24; box-shadow: 0 6px 16px -6px rgba(237,28,36,.55); }
+
+  /* ---- scroll area ---- */
+  .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
+    padding: 76px 0 132px; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .cat-head { display: flex; align-items: baseline; justify-content: space-between;
+    padding: 18px 20px 12px; }
+  .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .grid { display: grid; grid-template-columns: 183px 183px; gap: 16px 12px;
+    justify-content: center; }
+
+  /* ================= meal card (Figma 17179:76751) ================= */
+  .card { position: relative; width: 183px; height: 259px; border-radius: 24px;
+    cursor: pointer; transition: opacity .3s ease, filter .3s ease; }
+  .card .photo { position: absolute; inset: 0; border-radius: 24px; overflow: hidden;
+    background: #fff; }
+  .card .photo img { width: 100%; height: 100%; object-fit: cover; display: block;
+    pointer-events: none; }
+  .card .grad { position: absolute; left: 0; right: 0; bottom: 0; height: 114px;
+    border-radius: 0 0 24px 24px; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.41) 35.1%, rgba(0,0,0,.81)); }
+  /* selection border springs in — Figma track: 0 -> 3.5px, bezier(.633,2.581,.761,1.433) */
+  .card .sel-border { position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
+    border: 0 solid #26a659; z-index: 3;
+    transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
+  .card.sel .sel-border { border-width: 3.5px; }
+  .card.dim { opacity: .55; filter: saturate(.65); }
+  .card.deny { animation: deny .4s ease; }
+  @keyframes deny { 0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
+
+  .card .toprow { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 4;
+    display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }
+  .card .rating { display: flex; align-items: center; gap: 5px; height: 30px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); color: #f9f9f9; }
+  .card .rating .r-big { font: 600 16px/24px 'Urbane Rounded', sans-serif; }
+  .card .rating .r-dec { font: 600 10px/13px 'Proxima Nova', sans-serif; }
+  .card .rating svg { width: 16px; height: 16px; }
+  /* kebab pops in on select — Figma: opacity .27s + y -23 spring */
+  .card .kebab { width: 30px; height: 30px; border-radius: 50%; border: none;
+    background: rgba(175,175,175,.4); display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: translateY(-23px); pointer-events: none; }
+  .card.sel .kebab { opacity: 1; transform: translateY(0); pointer-events: auto;
+    transition: opacity .27s cubic-bezier(.5,0,.5,1),
+      transform .88s cubic-bezier(.26,1.36,.42,1); }
+  .card:not(.sel) .kebab { transition: opacity .2s ease, transform .2s ease; }
+  .card .kebab svg { width: 16px; height: 16px; }
+
+  .card .details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+    display: flex; flex-direction: column; align-items: flex-end; padding: 0 12px 12px;
+    pointer-events: none; }
+  /* QTY pill — pops (scale bezier .7,-.4,.4,1.4), expands 30<->75 (bezier .45,1.45,.8,1) */
+  .qty { position: relative; height: 30px; width: 30px; border-radius: 999px;
+    background: #26a659; overflow: hidden; flex: none; align-self: flex-end;
+    transform: scale(0); pointer-events: auto; cursor: pointer;
+    transition: transform .41s cubic-bezier(.7,-.4,.4,1.4),
+      width .41s cubic-bezier(.45,1.45,.8,1); }
+  .card.sel .qty { transform: scale(1); }
+  .card.expanded .qty { width: 75px; }
+  .qty .q-btn { position: absolute; top: 7px; width: 16px; height: 16px; border: none;
+    background: none; padding: 0; cursor: pointer; opacity: 0;
+    transition: opacity .3s cubic-bezier(.5,0,.5,1), transform .3s cubic-bezier(.5,0,.5,1); }
+  .qty .q-btn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+  .qty .q-minus { left: 10px; transform: translateX(-8px); }
+  .qty .q-plus { left: 49px; transform: translateX(-8px); }
+  .card.expanded .q-minus, .card.expanded .q-plus { opacity: 1; transform: translateX(0);
+    transition-delay: .08s; }
+  .qty .q-count { position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    font: 500 12px/15px 'Urbane Rounded', sans-serif; color: #f9f9f9; opacity: 0;
+    transition: opacity .3s cubic-bezier(.5,0,.5,1); }
+  .card.counted .q-count { opacity: 1; }
+  .qty.pulse { animation: qpulse .3s cubic-bezier(.3,.8,.3,1); }
+  @keyframes qpulse { 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  /* the check draws itself (pathLength 1, bezier .5,0,.5,1) then un-draws */
+  .qty .q-check { position: absolute; left: 50%; top: 9px; transform: translateX(-50%);
+    width: 15.5px; height: 11.5px; pointer-events: none; }
+  .qty .q-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1;
+    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1); }
+  .qty .q-check.draw path { stroke-dashoffset: 0; }
+  .qty .q-check.undraw path { stroke-dashoffset: -1; }
+
+  .card .name { align-self: stretch; padding: 6px 0;
+    font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
+  .card .macros { align-self: stretch; display: flex; align-items: center; gap: 8px;
+    color: #f9f9f9; }
+  .card .macros .kv { display: flex; align-items: flex-start; }
+  .card .macros .kv b { font: 600 12px/16px 'Urbane Rounded', sans-serif; font-weight: 600; }
+  .card .macros .kv i { font: 300 6.45px/13px 'Urbane Rounded', sans-serif; font-style: normal;
+    align-self: center; width: 14px; }
+  .card .macros .pair { display: flex; align-items: center; gap: 2px; }
+  .card .macros .pair b { font: 600 10px/12px 'Urbane Rounded', sans-serif; }
+  .card .macros .pair span { font: 500 10px/14px 'Urbane Rounded', sans-serif; }
+  .card .macros .pair i { font: 300 6.45px/12px 'Urbane Rounded', sans-serif; font-style: normal; }
+
+  /* ================= navigator (Figma: Meal Selection Navigator 2.0) ============ */
+  .navigator { position: absolute; left: 22px; width: 358px; height: 69px; z-index: 35;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+  .navigator .glassbase { position: absolute; inset: 0; border-radius: 296px; overflow: hidden;
+    -webkit-backdrop-filter: blur(10px) saturate(140%); backdrop-filter: blur(10px) saturate(140%); }
+  .navigator .glassbase::before { content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,.3); }
+  .navigator .glassbase .burn { position: absolute; inset: 0; background: #ddd;
+    mix-blend-mode: color-burn; }
+  .navigator .glassbase .darken { position: absolute; inset: 0; background: #f7f7f7;
+    mix-blend-mode: darken; }
+  /* the blurred orangey filler: full-width gradient clipped by an animated-width
+     window with a feathered leading edge (mask), colors never stretch */
+  .gauge-clip { position: absolute; left: 0; top: 1px; height: 68px; width: 24.73%;
+    border-radius: 65px 0 0 65px; overflow: hidden; pointer-events: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    transition: width .7s cubic-bezier(.3,.8,.3,1); }
+  .gauge-clip .gauge { position: absolute; left: 0; top: 0; width: 358px; height: 68px;
+    background: linear-gradient(90deg, #ee2023 0%, #f57813 74.5%, #fdd702 100%); }
+  .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
+    gap: 15px; padding: 0 32px 0 24px; color: #f9f9f9; }
+  .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
+    margin-bottom: -1px; }
+  .navigator .kcal .val { display: flex; align-items: flex-end; }
+  .navigator .kcal .big { font: 600 20px/26px 'Urbane Rounded', sans-serif; }
+  .navigator .kcal .cap { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46;
+    margin: 0 0 3px 1px; }
+  .navigator .mpairs { display: flex; gap: 4px; padding-bottom: 4px; }
+  .navigator .mpair { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.25)); }
+  .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
+    margin-bottom: -1px; }
+  .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif; }
+  .navigator .mpair .g { font: 400 10px/13px 'Proxima Nova', sans-serif; }
+  .navigator .mpair.p { width: 43px; } .navigator .mpair.c { width: 36px; }
+  .navigator .mpair.f { width: 34px; }
+
+  /* Saved / Next dock */
+  .dock { position: absolute; right: 8px; top: 8px; width: 107px; height: 53px;
+    border-radius: 47.6px; border: none; cursor: pointer; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    color: #f9f9f9; font: 500 14px/1 'Urbane Rounded', sans-serif;
+    opacity: 0; transform: scale(.6) translateY(10px); pointer-events: none;
+    background: rgba(229,229,229,.08);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.3);
+    transition: opacity .27s cubic-bezier(.5,0,.5,1),
+      transform .7s cubic-bezier(.26,1.36,.42,1); }
+  .dock.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+  .dock:active { transform: scale(.94); }
+  .dock svg { width: 16px; height: 16px; display: block; }
+  .dock .d-check { width: 15.5px; height: 11.5px; }
+  .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1;
+    transition: stroke-dashoffset .45s cubic-bezier(.5,0,.5,1) .15s; }
+  .dock.show .d-check path { stroke-dashoffset: 0; }
+  .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 40; }
+
+  /* ---- mobile dev bar ---- */
+  .devbar { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); z-index: 50;
+    display: flex; gap: 6px; align-items: center; padding: 6px;
+    border-radius: 999px; background: rgba(20,20,24,.72);
+    -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
+  body.desktop .devbar { display: none; }
+  body.lab-mobile .devbar { bottom: calc(106px + env(safe-area-inset-bottom)); }
+  body.lab-mobile .lab-chip { bottom: calc(106px + env(safe-area-inset-bottom, 0px)) !important; }
+  .devbar button { border: none; cursor: pointer; padding: 8px 14px; border-radius: 999px;
+    background: transparent; color: rgba(255,255,255,.65);
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; }
+  .devbar button:active { background: rgba(255,255,255,.16); color: #fff; }
+</style>
+</head>
+<body>
+
+<aside id="side">
+  <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <h2>Meal Selector — Build Your Week</h2>
+  <p class="s-desc">Figma-faithful meal picker. Five categories, each with a quota from your
+    subscription. Tap a thumbnail to claim it — the green border springs in, a check draws
+    itself, then the pill unfolds into a − 1 + stepper and later settles into a quiet count.
+    The bottom navigator fills with the brand gradient as your plate builds; complete it for
+    the Saved moment and the Next button.</p>
+
+  <div class="s-sec">
+    <div class="s-label">Category quotas</div>
+    <div class="s-note">Meals allowed per category — the "x of y" counters. Total is your
+      subscription size.</div>
+    <div id="quotaRows"></div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Selection feel</div>
+    <div class="mod">
+      <div class="mod-head"><label>Collapse after</label><output id="vIdle">2.0s</output></div>
+      <input type="range" id="mIdle" min="0.8" max="5" step="0.1" value="2">
+      <div class="mod-desc">Idle time before the stepper folds into a number-only badge.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Kcal target</label><output id="vTarget">1860</output></div>
+      <input type="range" id="mTarget" min="1200" max="2600" step="20" value="1860">
+      <div class="mod-desc">The /target in the navigator's calorie counter.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Confetti</label><output id="vConfetti">14</output></div>
+      <input type="range" id="mConfetti" min="0" max="30" step="1" value="14">
+      <div class="mod-desc">Celebration particles when the plate completes.</div>
+    </div>
+    <div class="s-note" style="margin-top:14px">Thumbnail tap behavior</div>
+    <div class="seg2" id="tapMode">
+      <button data-mode="add" class="on">Tap adds +1</button>
+      <button data-mode="select">Tap selects only</button>
+    </div>
+  </div>
+
+  <div class="s-actions">
+    <button id="sFill">Auto-fill</button>
+    <button id="sReset">Reset</button>
+    <button id="sCopy">Copy values</button>
+  </div>
+
+  <div class="s-foot">Figma: Diet Station 4.0 &middot; node 17179-75872. Motion curves lifted
+    from the Figma timeline (border spring, pill overshoot, check path-trim). Copy values puts
+    this recipe on the clipboard.</div>
+</aside>
+
+<div id="stage">
+  <div class="device" id="device">
+    <div class="phone" id="phone">
+      <div class="peek1"></div>
+      <div class="peek2"></div>
+      <div class="sheet" id="sheet">
+        <div class="scroll" id="scrollArea"></div>
+        <div class="nav">
+          <button class="navx" id="closeBtn" aria-label="Close">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0B0E12" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+          <div class="ttl">Mar 15th</div>
+          <button class="clear" id="clearBtn">Clear All</button>
+          <button class="confirm" id="confirmBtn" aria-label="Confirm">
+            <svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="navigator" id="navigator">
+          <div class="glassbase"><div class="burn"></div><div class="darken"></div></div>
+          <div class="gauge-clip" id="gaugeClip"><div class="gauge"></div></div>
+          <div class="content">
+            <div class="kcal">
+              <span class="lbl">Kcal</span>
+              <span class="val"><span class="big" id="kcalNow">0</span><span class="cap" id="kcalCap">/1860</span></span>
+            </div>
+            <div class="mpairs">
+              <div class="mpair p"><span class="lbl">Protein</span><span class="v" id="mP">0</span><span class="g">g</span></div>
+              <div class="mpair c"><span class="lbl">Carbs</span><span class="v" id="mC">0</span><span class="g">g</span></div>
+              <div class="mpair f"><span class="lbl">Fat</span><span class="v" id="mF">0</span><span class="g">g</span></div>
+            </div>
+          </div>
+          <button class="dock" id="dock"></button>
+        </div>
+      </div>
+      <div class="island"></div>
+    </div>
+  </div>
+</div>
+
+<div id="safeProbe"></div>
+<div class="devbar" id="devbar">
+  <button id="dvFill">Auto-fill</button>
+  <button id="dvReset">Reset</button>
+</div>
+
+<script>
+/* ================= data ================= */
+const DISHES = {
+  breakfast: [
+    { n: 'Shakshuka with Sourdough', kcal: 420, p: 21, c: 38, f: 19, r: '4.3', img: 'dish-3.jpg', bk: 1 },
+    { n: 'Overnight Oats with Berries', kcal: 380, p: 14, c: 52, f: 11, r: '4.3', img: 'dish-4.jpg', bk: 1 },
+    { n: 'Labneh Toast with Zaatar', kcal: 350, p: 12, c: 40, f: 15, r: '4.3', img: 'dish-2.jpg', bk: 1 },
+  ],
+  lunch: [
+    { n: 'Baked Chicken Fingers with Wedges', kcal: 480, p: 30, c: 22, f: 12, r: '4.3', img: 'dish-1.jpg' },
+    { n: 'Chicken Machbous with tomato sauce', kcal: 465, p: 32, c: 48, f: 14, r: '4.3', img: 'dish-2.jpg', bk: 1 },
+    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'dish-3.jpg', bk: 1 },
+    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'dish-4.jpg', bk: 1 },
+  ],
+  dinner: [
+    { n: 'Seared Salmon with Greens', kcal: 430, p: 34, c: 18, f: 24, r: '4.3', img: 'dish-4.jpg', bk: 1 },
+    { n: 'Beef Tenderloin with Mash', kcal: 465, p: 38, c: 30, f: 18, r: '4.3', img: 'dish-2.jpg', bk: 1 },
+    { n: 'Halloumi Quinoa Bowl', kcal: 410, p: 22, c: 43, f: 17, r: '4.3', img: 'dish-3.jpg', bk: 1 },
+  ],
+  snacks: [
+    { n: 'Protein Energy Bites', kcal: 160, p: 9, c: 14, f: 8, r: '4.3', img: 'dish-1.jpg' },
+    { n: 'Greek Yogurt with Honey', kcal: 140, p: 11, c: 16, f: 3, r: '4.3', img: 'dish-4.jpg', bk: 1 },
+    { n: 'Spiced Nuts Mix', kcal: 180, p: 6, c: 8, f: 14, r: '4.3', img: 'dish-2.jpg', bk: 1 },
+  ],
+  dessert: [
+    { n: 'Date & Cacao Brownie', kcal: 210, p: 6, c: 28, f: 9, r: '4.3', img: 'dish-3.jpg', bk: 1 },
+    { n: 'Chia Mango Pudding', kcal: 190, p: 7, c: 26, f: 7, r: '4.3', img: 'dish-1.jpg' },
+  ],
+};
+const CATS = [
+  { id: 'breakfast', title: 'Breakfast', quota: 1 },
+  { id: 'lunch', title: 'Lunch', quota: 2 },
+  { id: 'dinner', title: 'Dinner', quota: 1 },
+  { id: 'snacks', title: 'Snacks', quota: 1 },
+  { id: 'dessert', title: 'Dessert', quota: 0 },
+];
+const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
+const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
+
+const ICON = {
+  star: '<svg viewBox="0 0 16 16" fill="none"><path d="M8 11.68l2.767 1.673c.506.307 1.126-.146.993-.72l-.733-3.146 2.446-2.12c.447-.387.207-1.12-.38-1.167l-3.22-.273-1.26-2.973c-.227-.54-1-.54-1.227 0L6.127 5.92l-3.22.273c-.587.047-.827.78-.38 1.167L4.973 9.48l-.733 3.146c-.133.574.487 1.027.993.72L8 11.68z" fill="#FFC52E"/></svg>',
+  kebab: '<svg viewBox="0 0 16 16" fill="none"><path d="M8 5.33c.733 0 1.333-.6 1.333-1.33S8.733 2.67 8 2.67 6.667 3.27 6.667 4 7.267 5.33 8 5.33zm0 1.34C7.267 6.67 6.667 7.27 6.667 8S7.267 9.33 8 9.33 9.333 8.73 9.333 8 8.733 6.67 8 6.67zm0 4C7.267 10.67 6.667 11.27 6.667 12s.6 1.33 1.333 1.33S9.333 12.73 9.333 12 8.733 10.67 8 10.67z" fill="#F9F9F9"/></svg>',
+  minus: '<svg viewBox="0 0 16 16" fill="none"><path d="M12 8.67H4a.67.67 0 010-1.34h8a.67.67 0 010 1.34z" fill="#F9F9F9"/></svg>',
+  plus: '<svg viewBox="0 0 16 16" fill="none"><path d="M12 8.67H8.67V12a.67.67 0 01-1.34 0V8.67H4a.67.67 0 010-1.34h3.33V4a.67.67 0 011.34 0v3.33H12a.67.67 0 010 1.34z" fill="#F9F9F9"/></svg>',
+  check: '<svg class="q-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  arrow: '<svg viewBox="0 0 16 16" fill="none"><path d="M3.47 8.67h7.45l-3.25 3.25a.68.68 0 00.94.95l4.39-4.4a.66.66 0 000-.94L8.61 3.13a.66.66 0 10-.94.94l3.25 3.26H3.47a.67.67 0 000 1.34z" fill="#F9F9F9"/></svg>',
+};
+
+/* ================= state ================= */
+const sel = {};          /* cardKey -> qty */
+const cardEls = {};      /* cardKey -> element */
+const collapseTimers = {};
+let completed = false;
+
+function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
+
+/* ================= build the screen ================= */
+const scrollArea = document.getElementById('scrollArea');
+function buildScreen() {
+  scrollArea.innerHTML = '';
+  CATS.forEach(cat => {
+    if (cat.quota === 0 && !MODS.showEmpty) return;
+    const head = document.createElement('div');
+    head.className = 'cat-head';
+    head.innerHTML = '<h3>' + cat.title + '</h3><span class="of" data-of="' + cat.id + '"></span>';
+    scrollArea.appendChild(head);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    DISHES[cat.id].forEach((d, i) => grid.appendChild(makeCard(cat, d, i)));
+    scrollArea.appendChild(grid);
+  });
+  updateAll(true);
+}
+
+function makeCard(cat, d, i) {
+  const key = cat.id + ':' + i;
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.key = key; el.dataset.cat = cat.id;
+  el.innerHTML =
+    '<div class="photo"><img src="' + d.img + '" alt=""></div>' +
+    '<div class="grad"></div>' +
+    '<div class="sel-border"></div>' +
+    '<div class="toprow">' +
+      (d.bk ? '<div class="rating"></div>' :
+        '<div class="rating"><span class="r-big">' + d.r.split('.')[0] + '</span>' +
+        '<span class="r-dec">.' + d.r.split('.')[1] + '</span>' + ICON.star + '</div>') +
+      '<button class="kebab" aria-label="More">' + ICON.kebab + '</button>' +
+    '</div>' +
+    '<div class="details">' +
+      '<div class="qty">' +
+        '<button class="q-btn q-minus" aria-label="Less">' + ICON.minus + '</button>' +
+        '<span class="q-count">1</span>' +
+        '<button class="q-btn q-plus" aria-label="More">' + ICON.plus + '</button>' +
+        ICON.check +
+      '</div>' +
+      '<div class="name">' + d.n + '</div>' +
+      '<div class="macros">' +
+        '<div class="kv"><b>' + d.kcal + '</b><i>Kcal</i></div>' +
+        '<div class="pair"><b>P</b><span>' + d.p + '</span><i>g</i></div>' +
+        '<div class="pair"><b>C</b><span>' + d.c + '</span><i>g</i></div>' +
+        '<div class="pair"><b>F</b><span>' + d.f + '</span><i>g</i></div>' +
+      '</div>' +
+    '</div>';
+  cardEls[key] = el;
+  el.addEventListener('click', e => {
+    if (e.target.closest('.q-minus')) return step(key, -1);
+    if (e.target.closest('.q-plus')) return step(key, +1);
+    if (e.target.closest('.kebab')) return;
+    if (e.target.closest('.qty')) return expand(key);   /* collapsed pill tap re-opens */
+    cardTap(key);
+  });
+  return el;
+}
+
+/* ================= selection choreography (curves from the Figma timeline) ==== */
+function catCount(catId) {
+  return Object.keys(sel).reduce((s, k) =>
+    s + (k.startsWith(catId + ':') ? sel[k] : 0), 0);
+}
+function quotaOf(catId) { return CATS.find(c => c.id === catId).quota; }
+
+function cardTap(key) {
+  const catId = key.split(':')[0];
+  const el = cardEls[key];
+  if (!sel[key]) {
+    if (catCount(catId) >= quotaOf(catId)) return denied(el);
+    sel[key] = 1;
+    selectSeq(el);
+    vibrate(8);
+  } else if (MODS.tapMode === 'add') {
+    return step(key, +1);
+  } else {
+    expand(key);
+  }
+  updateAll();
+}
+
+function selectSeq(el) {
+  /* 1. border springs + pill pops with the check drawing (Figma 0-0.68s) */
+  el.classList.add('sel');
+  const check = el.querySelector('.q-check');
+  check.classList.remove('undraw');
+  setTimeout(() => check.classList.add('draw'), 200);
+  /* 2. check un-draws, pill unfolds into the stepper (Figma 1.41-1.82s) */
+  setTimeout(() => { check.classList.add('undraw'); }, 850);
+  setTimeout(() => {
+    el.classList.add('expanded', 'counted');
+    armCollapse(el.dataset.key);
+  }, 1050);
+}
+
+function step(key, d) {
+  const el = cardEls[key];
+  const catId = key.split(':')[0];
+  if (d > 0) {
+    if (catCount(catId) >= quotaOf(catId)) return denied(el);
+    sel[key] += 1;
+    pulse(el); vibrate(8);
+    if (!el.classList.contains('expanded')) expand(key);
+  } else {
+    sel[key] -= 1;
+    vibrate(8);
+    if (sel[key] <= 0) { delete sel[key]; return deselect(el); }
+    pulse(el);
+  }
+  el.querySelector('.q-count').textContent = sel[key];
+  armCollapse(key);
+  updateAll();
+}
+
+function expand(key) {
+  const el = cardEls[key];
+  el.classList.add('expanded', 'counted');
+  armCollapse(key);
+}
+
+function armCollapse(key) {
+  clearTimeout(collapseTimers[key]);
+  collapseTimers[key] = setTimeout(() => {
+    cardEls[key] && cardEls[key].classList.remove('expanded');
+  }, MODS.idle * 1000);
+}
+
+function deselect(el) {
+  const key = el.dataset.key;
+  clearTimeout(collapseTimers[key]);
+  el.classList.remove('sel', 'expanded', 'counted');
+  const check = el.querySelector('.q-check');
+  check.classList.remove('draw', 'undraw');
+  updateAll();
+}
+
+function denied(el) {
+  el.classList.remove('deny'); void el.offsetWidth; el.classList.add('deny');
+}
+
+function pulse(el) {
+  const q = el.querySelector('.qty');
+  q.classList.remove('pulse'); void q.offsetWidth; q.classList.add('pulse');
+}
+
+/* ================= totals + navigator ================= */
+const kcalNow = document.getElementById('kcalNow');
+const gaugeClip = document.getElementById('gaugeClip');
+const dock = document.getElementById('dock');
+const confirmBtn = document.getElementById('confirmBtn');
+let shownKcal = 0, kcalAnim = null;
+
+function totals() {
+  let kcal = 0, p = 0, c = 0, f = 0, count = 0;
+  Object.keys(sel).forEach(k => {
+    const [catId, i] = k.split(':');
+    const d = DISHES[catId][+i], q = sel[k];
+    kcal += d.kcal * q; p += d.p * q; c += d.c * q; f += d.f * q; count += q;
+  });
+  return { kcal, p, c, f, count };
+}
+
+function updateAll(instant) {
+  const t = totals();
+  const quotaTotal = CATS.reduce((s, c) => s + c.quota, 0);
+  /* category counters + dimming when a quota is full */
+  CATS.forEach(cat => {
+    const of = document.querySelector('[data-of="' + cat.id + '"]');
+    if (of) of.textContent = catCount(cat.id) + ' of ' + cat.quota;
+    const full = catCount(cat.id) >= cat.quota;
+    DISHES[cat.id].forEach((d, i) => {
+      const el = cardEls[cat.id + ':' + i];
+      if (el) el.classList.toggle('dim', full && !sel[cat.id + ':' + i]);
+    });
+  });
+  /* macros + counting kcal */
+  document.getElementById('mP').textContent = t.p;
+  document.getElementById('mC').textContent = t.c;
+  document.getElementById('mF').textContent = t.f;
+  animateKcal(t.kcal, instant);
+  /* gauge fill: Figma base 24.73% at zero -> 100% at full quota */
+  const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
+  gaugeClip.style.width = (GAUGE_BASE + frac * (1 - GAUGE_BASE)) * 100 + '%';
+  gaugeClip.style.borderRadius = frac >= 1 ? '65px' : '65px 0 0 65px';
+  /* completion: Saved moment -> Next */
+  const done = quotaTotal > 0 && t.count >= quotaTotal;
+  if (done && !completed) { completed = true; celebrate(); }
+  if (!done && completed) { completed = false; hideDock(); }
+  confirmBtn.classList.toggle('on', done);
+}
+
+function animateKcal(target, instant) {
+  cancelAnimationFrame(kcalAnim);
+  if (instant) { shownKcal = target; kcalNow.textContent = target; return; }
+  const from = shownKcal, t0 = performance.now(), dur = 600;
+  const tick = now => {
+    const x = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - x, 3);
+    shownKcal = Math.round(from + (target - from) * e);
+    kcalNow.textContent = shownKcal;
+    if (x < 1) kcalAnim = requestAnimationFrame(tick);
+  };
+  kcalAnim = requestAnimationFrame(tick);
+}
+
+function celebrate() {
+  /* the done text: Saved with a self-drawing check, confetti, then Next pops */
+  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Saved</span>';
+  dock.onclick = null;
+  dock.classList.add('show');
+  confetti();
+  vibrate([14, 40, 22]);
+  setTimeout(() => {
+    if (!completed) return;
+    dock.classList.remove('show');
+    setTimeout(() => {
+      if (!completed) return;
+      dock.innerHTML = '<span>Next</span>' + ICON.arrow;
+      dock.onclick = nextTapped;
+      dock.classList.add('show');
+    }, 250);
+  }, 1600);
+}
+
+function hideDock() { dock.classList.remove('show'); dock.onclick = null; }
+
+function confetti() {
+  const nav = document.getElementById('navigator');
+  const rect = { x: nav.offsetLeft + 260, y: nav.offsetTop + 20 };
+  const colors = ['#fff', '#FDD702', '#FF8A3C', '#FF3848'];
+  for (let i = 0; i < MODS.confetti; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const sz = 3 + Math.random() * 4;
+    s.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;background:' +
+      colors[i % colors.length] + ';left:' + rect.x + 'px;top:' + rect.y + 'px';
+    document.getElementById('phone').appendChild(s);
+    const a = -Math.PI / 2 + (Math.random() - .5) * 2.2,
+      v = 60 + Math.random() * 110;
+    s.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: 'translate(' + Math.cos(a) * v + 'px,' + (Math.sin(a) * v + 70) +
+        'px) scale(.4)', opacity: 0 }
+    ], { duration: 700 + Math.random() * 400, easing: 'cubic-bezier(.2,.6,.4,1)' })
+      .onfinish = () => s.remove();
+  }
+}
+
+function nextTapped() {
+  vibrate(25);
+  const sheet = document.getElementById('sheet');
+  sheet.classList.remove('back'); sheet.classList.add('away');
+  setTimeout(() => { resetAll(true); sheet.classList.add('back');
+    sheet.classList.remove('away'); }, 650);
+}
+
+/* ================= nav actions ================= */
+document.getElementById('closeBtn').onclick = () => { location.href = '../'; };
+document.getElementById('clearBtn').onclick = () => resetAll();
+confirmBtn.onclick = () => { if (completed) nextTapped(); };
+
+function resetAll(silent) {
+  Object.keys(sel).forEach(k => delete sel[k]);
+  Object.keys(collapseTimers).forEach(k => clearTimeout(collapseTimers[k]));
+  completed = false; hideDock();
+  Object.values(cardEls).forEach(el => {
+    el.classList.remove('sel', 'expanded', 'counted', 'dim');
+    const check = el.querySelector('.q-check');
+    check.classList.remove('draw', 'undraw');
+    el.querySelector('.q-count').textContent = '1';
+  });
+  updateAll(silent);
+}
+
+/* auto-fill: staggered picks so the whole choreography plays hands-free */
+function autoFill() {
+  resetAll(true);
+  let delay = 120;
+  CATS.forEach(cat => {
+    for (let n = 0; n < cat.quota; n++) {
+      const idx = n % DISHES[cat.id].length;
+      setTimeout(() => cardTap(cat.id + ':' + idx), delay);
+      delay += 480;
+    }
+  });
+}
+
+/* ================= sidebar wiring ================= */
+function buildQuotaRows() {
+  const root = document.getElementById('quotaRows');
+  root.innerHTML = '';
+  CATS.forEach(cat => {
+    const row = document.createElement('div');
+    row.className = 'quota-row';
+    row.innerHTML = '<span class="qname">' + cat.title + '</span>' +
+      '<span class="quota-ctl"><button data-d="-1">−</button><output>' + cat.quota +
+      '</output><button data-d="1">+</button></span>';
+    row.querySelectorAll('button').forEach(b => b.onclick = () => {
+      cat.quota = Math.max(0, Math.min(3, cat.quota + (+b.dataset.d)));
+      row.querySelector('output').textContent = cat.quota;
+      resetAll(true); buildScreen();
+    });
+    root.appendChild(row);
+  });
+}
+function bindMod(id, out, key, fmt) {
+  const inp = document.getElementById(id), o = document.getElementById(out);
+  inp.addEventListener('input', () => {
+    MODS[key] = +inp.value; o.textContent = fmt(inp.value);
+    if (key === 'target') {
+      document.getElementById('kcalCap').textContent = '/' + MODS.target;
+    }
+  });
+}
+bindMod('mIdle', 'vIdle', 'idle', v => (+v).toFixed(1) + 's');
+bindMod('mTarget', 'vTarget', 'target', v => v);
+bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
+document.getElementById('tapMode').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  MODS.tapMode = b.dataset.mode;
+  document.querySelectorAll('#tapMode button').forEach(x =>
+    x.classList.toggle('on', x === b));
+});
+document.getElementById('sFill').onclick = autoFill;
+document.getElementById('sReset').onclick = () => resetAll();
+document.getElementById('dvFill').onclick = autoFill;
+document.getElementById('dvReset').onclick = () => resetAll();
+document.getElementById('sCopy').onclick = () => {
+  const spec = 'meal-select playground: quotas ' +
+    CATS.map(c => c.title + ' ' + c.quota).join(', ') +
+    ' · collapse ' + MODS.idle + 's · target ' + MODS.target +
+    ' kcal · confetti ' + MODS.confetti + ' · tap mode ' + MODS.tapMode;
+  const b = document.getElementById('sCopy');
+  navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
+    b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
+  }).catch(() => {});
+};
+
+/* ================= stage scaling: desktop playground vs mobile fullscreen ==== */
+const phone = document.getElementById('phone');
+const device = document.getElementById('device');
+let stageScale = 1;
+function fit() {
+  const mobile = matchMedia('(max-width: 500px)').matches ||
+    (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  if (mobile) {
+    document.body.classList.remove('desktop');
+    stageScale = innerWidth / 402;
+    const probe = document.getElementById('safeProbe');
+    const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
+    const vh = (window.visualViewport ? window.visualViewport.height : innerHeight);
+    const Hd = vh / stageScale;
+    phone.style.height = Hd + 'px';
+    phone.style.setProperty('--sheet-top', Math.max(64, st / stageScale + 34) + 'px');
+    phone.style.setProperty('--peek1-top', Math.max(34, st / stageScale + 4) + 'px');
+    phone.style.setProperty('--peek2-top', Math.max(48, st / stageScale + 18) + 'px');
+  } else {
+    document.body.classList.add('desktop');
+    phone.style.height = '874px';
+    phone.style.removeProperty('--sheet-top');
+    phone.style.removeProperty('--peek1-top');
+    phone.style.removeProperty('--peek2-top');
+    const availW = innerWidth - 316;
+    const frameW = 402 + 24, frameH = 874 + 24;
+    stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
+  }
+  device.style.transform = 'scale(' + stageScale + ')';
+}
+addEventListener('resize', fit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 250));
+
+buildQuotaRows();
+buildScreen();
+fit();
+</script>
+<script src="../lab-shell.js" data-flow="meal-select" defer></script>
+</body>
+</html>

@@ -1,6 +1,184 @@
 {
   "flows": [
     {
+      "id": "meal-select",
+      "title": "Meal Selector — Build Your Week",
+      "status": "in-progress",
+      "updated": "2026-09-07",
+      "description": "Figma-faithful subscription meal picker. Five categories, each with a quota (the x-of-y counters). Tapping a thumbnail claims it: the green border springs in with a self-drawing check, the pill unfolds into a − 1 + stepper, then settles into a quiet number badge. The bottom navigator is a glass pill whose brand-gradient filler sweeps right as the plate builds, counting calories and macros; completing every quota triggers the Saved moment — check draw + confetti — before the Next button pops in.",
+      "path": "meal-select/",
+      "platform": "iOS",
+      "area": "Subscription",
+      "preview": "meal-select/preview.png",
+      "handoff": {
+        "Design source": "Figma · Diet Station 4.0 · Meal Selection (section 17179-75872; screen 17179-75874, card 17179-76751, navigator 17179-75920)",
+        "Layout": "402pt design width · sheet stack (two peeks + main sheet, top radius 38) · nav row 76pt (X circle 40, date title, Clear All, confirm circle) · card grid 2×183×259, side margin 12, gap 16/12 · navigator 358×69 floating at bottom 24",
+        "Card anatomy": "Photo full-bleed radius 24 · bottom gradient 114pt (transparent → black 41% at 35% → black 81%) · rating 4.3★ top-left (16/10pt + star, drop-shadow only, no chip) · kebab 30pt circle rgba(175,175,175,.4) pops in on select (fade .27s + y −23 spring) · name 14/20 DemiBold · macros row 12pt kcal + P/C/F pairs (10pt + 6.45pt units)",
+        "Selection choreography": "Curves lifted from the Figma timeline: green border 0→3.5pt inside, springy bezier(.633,2.581,.761,1.433) ~.54s · QTY pill scales 0→1 bezier(.7,−.4,.4,1.4) .41s at 30pt wide with the check DRAWING itself (pathLength trim .455s bezier(.5,0,.5,1)) · check un-draws, pill expands 30→75pt bezier(.45,1.45,.8,1) .41s as −/+/count fade-slide in · idle (default 2s) collapses back to the 30pt number-only badge · tap the badge to re-open; tapping the thumbnail adds +1 (proactive counting)",
+        "Quota logic": "Per-category quota drives the x-of-y counter; a full category dims its unselected cards (opacity .55, saturate .65) and denies with a shake. Deselect at qty 0 reverses the border/pill springs.",
+        "Navigator": "358×69 glass pill radius 296, shadow 0 8 40 rgba(0,0,0,.12). Base = white .3 + #ddd color-burn + #f7f7f7 darken + backdrop blur. Filler = full-width gradient (90deg #EE2023 → #F57813 74.5% → #FDD702) inside an animated-width clip with a 36pt feathered mask edge — fill 24.73% at zero → 100% at full quota, width .7s bezier(.3,.8,.3,1). Kcal 20pt DemiBold counts up (600ms cubic ease-out) over '/target' 10pt at 46%; Protein/Carbs/Fat pairs (9pt labels, 14pt values + Proxima g) with drop-shadow 0 1 1.5 rgba(0,0,0,.25).",
+        "Completion": "All quotas met → fill sweeps full, dock (107×53 glass, radius 47.6, plus-lighter + inset seat ring) pops with 'Saved' + self-drawing check + confetti burst + success haptic, holds 1.6s, then swaps to 'Next →' with the same y-spring as the kebab. Next (or the top confirm circle, pink #F6BFC3 → brand red when armed) dismisses the sheet and resets.",
+        "Haptics": "navigator.vibrate(8) per add/step, [14,40,22] on completion — remapped to real Taptic impacts/success in the TestFlight shell.",
+        "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder).",
+        "Playground": "Desktop (standard shell): per-category quota steppers, collapse-delay dial, kcal target, confetti amount, tap-mode toggle (tap adds +1 / selects only), Auto-fill demo, Reset, Copy values. Mobile: fullscreen + pill (Auto-fill, Reset).",
+        "Asset note": "Hero dish photo is the full-res Figma export. The other three are 1x crops from the frame render (frame children not exportable via MCP), treated with a bottom depth-of-field blur to clear their baked-in text; their baked 4.3★ badge is reused as the rating (cards on those photos skip the coded badge). Swap with full-res exports when available — media generation was attempted but the workspace is out of credits on the free plan."
+      },
+      "downloads": [
+        {
+          "label": "Prototype source (index.html)",
+          "href": "meal-select/index.html"
+        }
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "sheet",
+            "t": "Meal Selection sheet",
+            "kind": "screen",
+            "note": "5 categories · quota counters"
+          },
+          {
+            "id": "tap",
+            "t": "Tap a thumbnail",
+            "kind": "decision",
+            "note": "Quota left in category?"
+          },
+          {
+            "id": "deny",
+            "t": "Deny shake",
+            "kind": "module",
+            "note": "Category full — card dims"
+          },
+          {
+            "id": "select",
+            "t": "Select",
+            "kind": "screen",
+            "note": "Border springs in · check draws · stepper unfolds"
+          },
+          {
+            "id": "adjust",
+            "t": "Adjust quantity",
+            "kind": "screen",
+            "note": "− 1 + · thumbnail tap adds +1"
+          },
+          {
+            "id": "collapse",
+            "t": "Collapse to badge",
+            "kind": "module",
+            "note": "After 2s idle — number only"
+          },
+          {
+            "id": "progress",
+            "t": "Navigator fills",
+            "kind": "screen",
+            "note": "Gradient sweeps · kcal + macros count up"
+          },
+          {
+            "id": "complete",
+            "t": "All quotas met?",
+            "kind": "decision"
+          },
+          {
+            "id": "saved",
+            "t": "Saved moment",
+            "kind": "screen",
+            "note": "Check draws + confetti + haptic"
+          },
+          {
+            "id": "next",
+            "t": "Next",
+            "kind": "end",
+            "note": "Dock pops in · sheet dismisses"
+          }
+        ],
+        "edges": [
+          [
+            "sheet",
+            "tap"
+          ],
+          [
+            "tap",
+            "deny",
+            "quota full"
+          ],
+          [
+            "tap",
+            "select",
+            "free slot"
+          ],
+          [
+            "deny",
+            "sheet",
+            "pick elsewhere"
+          ],
+          [
+            "select",
+            "adjust"
+          ],
+          [
+            "adjust",
+            "collapse",
+            "idle"
+          ],
+          [
+            "collapse",
+            "adjust",
+            "tap badge"
+          ],
+          [
+            "adjust",
+            "progress"
+          ],
+          [
+            "progress",
+            "complete"
+          ],
+          [
+            "complete",
+            "sheet",
+            "not yet"
+          ],
+          [
+            "complete",
+            "saved",
+            "yes"
+          ],
+          [
+            "saved",
+            "next",
+            "after 1.6s"
+          ]
+        ]
+      },
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "Plain RN + Reanimated covers everything here; the check draw needs react-native-svg. MaskedView feathers the gauge's leading edge exactly like the prototype.",
+          "code": "npx expo install react-native-reanimated react-native-svg expo-haptics\nnpx expo install @react-native-masked-view/masked-view expo-linear-gradient"
+        },
+        {
+          "t": "Design tokens",
+          "note": "Figma-exact, from section 17179-75872. All sizes are pt on a 402pt design width — scale by width/402.",
+          "code": "export const CARD = { w: 183, h: 259, radius: 24, gradH: 114,\n  border: { w: 3.5, color: '#26A659' } };\nexport const QTY = { h: 30, collapsed: 30, expanded: 75, bg: '#26A659' };\nexport const NAVIGATOR = {\n  w: 358, h: 69, radius: 296, shadow: '0 8 40 rgba(0,0,0,0.12)',\n  gradient: ['#EE2023', '#F57813', '#FDD702'], gradientStops: [0, 0.745, 1],\n  fillBase: 0.2473,        // fill at zero selection\n  featherPx: 36,           // leading-edge fade\n};\nexport const EASE = {\n  borderIn: [0.633, 2.581, 0.761, 1.433],   // spring overshoot (clamp for CSS)\n  pillPop:  [0.7, -0.4, 0.4, 1.4],\n  pillGrow: [0.45, 1.45, 0.8, 1],\n  fade:     [0.5, 0, 0.5, 1],\n};\nexport const TIMING = { checkDraw: 455, expandAt: 1050, collapseAfter: 2000 };"
+        },
+        {
+          "t": "Card selection choreography (Reanimated)",
+          "note": "One shared-value timeline per card. The same curves the Figma motion data exports — border springs in, pill pops at 30pt with a drawing check, then unfolds to the stepper; idle folds it back to the count.",
+          "code": "const sel = useSharedValue(0);          // 0 -> 1 on select\nconst pillW = useSharedValue(QTY.collapsed);\n\nconst onSelect = () => {\n  sel.value = withTiming(1, { duration: 540,\n    easing: Easing.bezier(0.633, 1.9, 0.761, 1.433) });   // border + pop\n  checkProgress.value = withDelay(200, withTiming(1, { duration: 455 }));\n  checkProgress.value = withDelay(850, withTiming(2, { duration: 330 }));  // un-draw\n  pillW.value = withDelay(1050, withTiming(QTY.expanded,\n    { duration: 410, easing: Easing.bezier(0.45, 1.45, 0.8, 1) }));\n  collapseTimer = setTimeout(() =>\n    pillW.value = withTiming(QTY.collapsed, { duration: 410 }), 2000 + 1050);\n};\n// check draw: <AnimatedPath strokeDasharray=\"1 1\" pathLength={1}\n//   strokeDashoffset={interpolate(checkProgress.value, [0,1,2], [1,0,-1])} />\n// thumbnail Pressable: qty === 0 ? onSelect() : quotaLeft ? qty++ : denyShake()"
+        },
+        {
+          "t": "Navigator gauge (MaskedView + gradient)",
+          "note": "The blurred-edge filler is a full-width LinearGradient inside a width-animated clip whose mask fades the last 36pt — colors never stretch, the edge stays feathered. Kcal counts with a 600ms cubic ease-out.",
+          "code": "<Animated.View style={[styles.clip, clipStyle]}>   {/* width: base+frac*(1-base) */}\n  <MaskedView style={StyleSheet.absoluteFill}\n    maskElement={<LinearGradient colors={['#000', '#000', 'transparent']}\n      locations={[0, 1 - 36 / clipWidth, 1]}\n      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />}>\n    <LinearGradient colors={NAVIGATOR.gradient} locations={NAVIGATOR.gradientStops}\n      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}\n      style={{ width: NAVIGATOR.w, height: 68 }} />\n  </MaskedView>\n</Animated.View>\n// glass base: BlurView intensity ~40 + white .3 overlay; dock = BlurView pill\n// completion: fill -> 100%, Saved (check draw + confetti + \n// Haptics.notificationAsync(Success)), 1.6s later swap to Next with a y-spring"
+        },
+        {
+          "t": "Haptics",
+          "note": "Every add is a light tick; completion is the success thump. The web prototype's navigator.vibrate maps to these in the TestFlight shell already.",
+          "code": "import * as Haptics from 'expo-haptics';\nconst tick = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);   // +1 / −1\nconst done = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);"
+        }
+      ]
+    },
+    {
       "id": "breathe",
       "title": "Breathe — Onboarding Intro",
       "status": "in-progress",
