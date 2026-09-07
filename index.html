@@ -159,6 +159,19 @@
     font-family: 'DietStation Dot', monospace; font-size: 29px; font-weight: 500; color: var(--ink);
     line-height: 1.3; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
   .typepeek::-webkit-scrollbar { display: none; }
+
+  /* ---- native TestFlight shell: prototypes only, app-like list ---- */
+  body.native { padding-top: env(safe-area-inset-top, 0px); }
+  body.native .seg, body.native #pane-system, body.native footer,
+  body.native .count, body.native .actions, body.native .handoff,
+  body.native .rnkit { display: none !important; }
+  body.native #pane-prototypes { display: block !important; }
+  body.native .hero { padding: 26px 0 2px; }
+  body.native .hero h1 { font-size: 28px; }
+  body.native .hero p { font-size: 14px; }
+  body.native .card { cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  body.native .card:active { transform: scale(.98); }
 </style>
 </head>
 <body>
@@ -254,6 +267,10 @@ document.querySelectorAll('.seg-btn').forEach(b =>
   b.addEventListener('click', () => setTab(b.dataset.tab)));
 
 /* ================= prototypes list ================= */
+/* Native TestFlight shell: the whole hub becomes a prototype launcher */
+const NATIVE = /DietStationLab/.test(navigator.userAgent);
+if (NATIVE) document.body.classList.add('native');
+
 fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
   document.getElementById('count').textContent =
     flows.length + (flows.length === 1 ? ' flow' : ' flows');
@@ -295,6 +312,9 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const open = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', open);
     };
+    if (NATIVE) card.addEventListener('click', e => {
+      if (!e.target.closest('a, button')) location.href = f.path;
+    });
     if (f.rn && f.rn.length) {
       const kit = document.createElement('div');
       kit.className = 'rnkit';

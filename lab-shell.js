@@ -142,6 +142,27 @@
     font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }\
   ";
   var style = document.createElement('style');
+  css += '\
+/* ---- native TestFlight shell + shared triple-tap lab menu ---- */\
+html.ds-native #pill, html.ds-native .lab-chip { display: none !important; }\
+.labshell-veil { position: fixed; inset: 0; z-index: 128; background: rgba(0,0,0,.45);\
+  opacity: 0; pointer-events: none; transition: opacity .25s ease; }\
+body.labshell-menu .labshell-veil { opacity: 1; pointer-events: auto; }\
+body.labshell-menu:not(.desktop) #side { display: block !important; left: 0; right: 0;\
+  top: auto; bottom: 0; width: auto; max-height: 76vh; overflow-y: auto;\
+  border-radius: 24px 24px 0 0; z-index: 129; background: #fbfbfc;\
+  box-shadow: 0 -18px 60px rgba(0,0,0,.28);\
+  padding: 22px 22px calc(30px + env(safe-area-inset-bottom, 0px)); }\
+.labshell-links { display: none; gap: 10px; margin: 0 0 18px; }\
+body.labshell-menu:not(.desktop) .labshell-links { display: flex; }\
+.labshell-links button { flex: 1; padding: 13px; border: 1px solid rgba(0,0,0,.12);\
+  border-radius: 14px; background: #fff; color: #1d1d1f;\
+  font: 600 13px/1 -apple-system, sans-serif; }\
+.labshell-done { display: none; margin: 20px 0 0; width: 100%; padding: 14px; border: 0;\
+  border-radius: 999px; background: #1d1d1f; color: #fff;\
+  font: 600 15px/1 -apple-system, sans-serif; }\
+body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
+';
   style.textContent = css;
   document.head.appendChild(style);
 
@@ -595,6 +616,7 @@
       side.insertBefore(tabsEl, side.firstChild);
     }
     syncMobileClass();
+    setupLabMenu();
     fetch('../flows.json?v=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (data) {
@@ -612,6 +634,50 @@
         }
       })
       .catch(function () { /* offline / file:// — shell stays dormant */ });
+  }
+
+  /* Native TestFlight shell (DietStationLab UA token): chrome-free prototypes */
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('ds-native');
+
+  /* Standard mobile lab menu: triple-tap & hold anywhere. Flows with their own
+     implementation (meal-select) set window.dsOwnLabMenu before this runs. */
+  function setupLabMenu() {
+    if (window.dsOwnLabMenu) return;
+    var side = document.getElementById('side');
+    if (!side) return;
+    var veil = document.createElement('div');
+    veil.className = 'labshell-veil';
+    document.body.appendChild(veil);
+    var links = document.createElement('div');
+    links.className = 'labshell-links';
+    links.innerHTML = '<button data-t="userflow">User flow</button>' +
+      '<button data-t="handoff">Dev handoff</button>';
+    side.insertBefore(links, side.firstChild);
+    var done = document.createElement('button');
+    done.className = 'labshell-done';
+    done.textContent = 'Done';
+    side.appendChild(done);
+    function open() {
+      if (document.body.classList.contains('desktop')) return;
+      document.body.classList.add('labshell-menu');
+      try { navigator.vibrate && navigator.vibrate(12); } catch (_) {}
+    }
+    function close() { document.body.classList.remove('labshell-menu'); }
+    veil.addEventListener('click', close);
+    done.addEventListener('click', close);
+    links.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
+    });
+    var taps = 0, last = 0, hold = null;
+    addEventListener('touchstart', function () {
+      var now = performance.now();
+      taps = (now - last < 380) ? taps + 1 : 1;
+      last = now;
+      if (taps >= 3) hold = setTimeout(open, 420);
+    }, { passive: true });
+    addEventListener('touchend', function () { clearTimeout(hold); }, { passive: true });
+    addEventListener('touchmove', function () { clearTimeout(hold); }, { passive: true });
   }
 
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
