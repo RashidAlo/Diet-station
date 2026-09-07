@@ -143,9 +143,6 @@
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
-  .card.deny { animation: deny .4s ease; }
-  @keyframes deny { 0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
 
   .card .toprow { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 4;
     display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }
@@ -235,10 +232,6 @@
     transition: width .7s cubic-bezier(.3,.8,.3,1); }
   .gauge-clip .gauge { position: absolute; inset: 0;
     background: linear-gradient(90deg, #ee2023 0%, #f57813 62%, #fdd702 96%); }
-  .gauge-clip .gauge::before { content: ''; position: absolute; inset: 0;
-    background: linear-gradient(105deg, transparent 32%, rgba(255,255,255,.28) 50%, transparent 68%);
-    background-size: 250% 100%; animation: gshimmer 2.8s linear infinite; }
-  @keyframes gshimmer { from { background-position: 210% 0; } to { background-position: -110% 0; } }
   .gauge-clip .tip { position: absolute; right: -26px; top: 50%; width: 110px; height: 110px;
     transform: translateY(-50%); border-radius: 50%;
     background: radial-gradient(circle, rgba(253,215,2,.95) 0%, rgba(253,215,2,.35) 42%, transparent 70%);
@@ -248,6 +241,20 @@
     50% { opacity: 1; transform: translateY(-50%) scale(1.08); } }
   .gauge-clip.full { -webkit-mask-image: none; mask-image: none; }
   .gauge-clip.full .tip { display: none; }
+
+  /* over-quota warning: the pill shakes, the filler hides, a red message shows */
+  .gauge-clip { transition: width .7s cubic-bezier(.3,.8,.3,1), opacity .25s ease; }
+  .navigator.warn { animation: navshake .5s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes navshake { 10%, 50%, 90% { transform: translateX(-7px); }
+    30%, 70% { transform: translateX(6px); } 100% { transform: translateX(0); } }
+  .navigator.warn .gauge-clip { opacity: 0; }
+  .navigator .content { transition: opacity .2s ease; }
+  .navigator.warn .content { opacity: 0; }
+  .navigator .warnmsg { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; padding: 0 20px; text-align: center;
+    font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #ed1c24;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .navigator.warn .warnmsg { opacity: 1; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 15px; padding: 0 32px 0 24px; color: #f9f9f9; }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
@@ -389,6 +396,7 @@
               <div class="mpair f"><span class="lbl">Fat</span><span class="v" id="mF">0</span><span class="g">g</span></div>
             </div>
           </div>
+          <div class="warnmsg" id="warnMsg"></div>
           <button class="dock" id="dock"></button>
         </div>
       </div>
@@ -529,7 +537,7 @@ function cardTap(key) {
   const catId = key.split(':')[0];
   const el = cardEls[key];
   if (!sel[key]) {
-    if (catCount(catId) >= quotaOf(catId)) return denied(el);
+    if (catCount(catId) >= quotaOf(catId)) return denied(catId);
     sel[key] = 1;
     selectSeq(el);
     vibrate(8);
@@ -561,7 +569,7 @@ function step(key, d) {
   const el = cardEls[key];
   const catId = key.split(':')[0];
   if (d > 0) {
-    if (catCount(catId) >= quotaOf(catId)) return denied(el);
+    if (catCount(catId) >= quotaOf(catId)) return denied(catId);
     sel[key] += 1;
     pulse(el); vibrate(8);
     if (!el.classList.contains('expanded')) expand(key);
@@ -598,8 +606,18 @@ function deselect(el) {
   updateAll();
 }
 
-function denied(el) {
-  el.classList.remove('deny'); void el.offsetWidth; el.classList.add('deny');
+/* over-quota: the navigator carries the error — shake, hide the filler,
+   say which category to free up (the thumbnail itself stays calm) */
+let warnTimer = null;
+function denied(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  const nav = document.getElementById('navigator');
+  document.getElementById('warnMsg').textContent =
+    cat.title + ' is full — deselect a meal there to swap';
+  clearTimeout(warnTimer);
+  nav.classList.remove('warn'); void nav.offsetWidth; nav.classList.add('warn');
+  vibrate(35);
+  warnTimer = setTimeout(() => nav.classList.remove('warn'), 1900);
 }
 
 function pulse(el) {
@@ -633,7 +651,7 @@ function updateAll(instant) {
     const of = document.querySelector('[data-of="' + cat.id + '"]');
     if (of) of.textContent = catCount(cat.id) + ' of ' + cat.quota;
     const full = cat.quota > 0 && catCount(cat.id) >= cat.quota;
-    if (full && !catFullState[cat.id] && !instant) scrollToNextCat(cat.id);
+    if (full && !catFullState[cat.id] && !instant) scrollToNextCat();
     catFullState[cat.id] = full;
     DISHES[cat.id].forEach((d, i) => {
       const el = cardEls[cat.id + ':' + i];
@@ -711,17 +729,16 @@ function confetti() {
   }
 }
 
-/* a completed category glides the list to the next one */
-function scrollToNextCat(catId) {
-  const visible = CATS.filter(c => c.quota > 0);
-  const idx = visible.findIndex(c => c.id === catId);
-  const next = visible[idx + 1];
-  if (!next) return;
-  const of = document.querySelector('[data-of="' + next.id + '"]');
+/* a completed category glides the list to whichever category still needs
+   picks — top-down, so a skipped one pulls you back up */
+function scrollToNextCat() {
+  const open = CATS.find(c => c.quota > 0 && catCount(c.id) < c.quota);
+  if (!open) return;
+  const of = document.querySelector('[data-of="' + open.id + '"]');
   const head = of && of.closest('.cat-head');
   if (!head) return;
   setTimeout(() => {
-    scrollArea.scrollTo({ top: head.offsetTop - 78, behavior: 'smooth' });
+    scrollArea.scrollTo({ top: Math.max(0, head.offsetTop - 78), behavior: 'smooth' });
   }, 700);
 }
 
