@@ -243,15 +243,11 @@
     bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
   .navigator .glassbase { position: absolute; inset: 0; border-radius: 296px; overflow: hidden;
-    -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.32),
+    -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.4), inset 0 0 0 .6px rgba(255,255,255,.35),
       inset 0 -1px 1.5px rgba(0,0,0,.08); }
   .navigator .glassbase::before { content: ''; position: absolute; inset: 0;
-    background: rgba(255,255,255,.3); }
-  .navigator .glassbase .burn { position: absolute; inset: 0; background: #ddd;
-    mix-blend-mode: color-burn; }
-  .navigator .glassbase .darken { position: absolute; inset: 0; background: #f7f7f7;
-    mix-blend-mode: darken; }
+    background: rgba(255,255,255,.14); }
   /* the gauge: a transparent canvas ON the glass — spring fill, rippling
      leading edge, breathing tip glow. The glass itself is a plain
      backdrop-filter container blurring the live thumbnails beneath. */
@@ -266,6 +262,7 @@
   .navigator.warn .warnmsg { opacity: 1; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 15px; padding: 0 32px 0 24px; color: #f9f9f9; }
+  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
   .navigator .kcal .val { display: flex; align-items: flex-end; }
@@ -273,7 +270,7 @@
   .navigator .kcal .cap { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46;
     margin: 0 0 3px 1px; }
   .navigator .mpairs { display: flex; gap: 4px; padding-bottom: 4px; }
-  .navigator .mpair { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.25)); }
+  .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
   .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
   .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif; }
@@ -387,7 +384,7 @@
           <button class="clear" id="clearBtn" style="margin-right:52px">Clear All</button>
         </div>
         <div class="navigator" id="navigator">
-          <div class="glassbase"><div class="burn"></div><div class="darken"></div></div>
+          <div class="glassbase"></div>
           <canvas id="gaugeCanvas"></canvas>
           <div class="content">
             <div class="kcal">
