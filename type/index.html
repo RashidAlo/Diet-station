@@ -107,8 +107,8 @@
   @media (max-width: 560px) { .editorcard iframe { height: 640px; } }
 </style>
 <style>
-  /* no top navigation on the labs — just the glass X, all platforms */
-  header.bar { display: none !important; }
+  /* header keeps the brand; the back pill is gone — the X closes the page */
+  .bar-inner .back { display: none !important; }
   .closex { position: fixed; z-index: 60;
     top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
     width: 42px; height: 42px; border-radius: 50%;
