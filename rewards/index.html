@@ -158,7 +158,8 @@
   /* embedded in the app launcher: hub shows through, sheet springs up */
   html.embed, html.embed body, html.embed #stage, html.embed .device,
   html.embed .phone { background: transparent !important; }
-  html.embed .sheet { transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  html.embed .sheet { transition: transform .55s cubic-bezier(.32,.72,0,1);
+    height: auto; top: 76px; }
   html.embed.sheet-enter .sheet { transform: translateY(103%); }
 
   /* nav X: liquid-glass-js container (the configured glass) */
@@ -889,6 +890,9 @@ window.DS_EMBED = /[?&]embed=1/.test(location.search);
 if (window.DS_EMBED) {
   document.documentElement.classList.add('embed', 'sheet-enter');
   setTimeout(() => document.documentElement.classList.remove('sheet-enter'), 90);
+  /* the page behind the glass is transparent in embed — give the snapshot
+     the sheet's own ground so the X refracts red, not black */
+  window.DS_SNAPSHOT_BG = '#ED1C24';
 }
 setTheme('red');
 document.getElementById('sReset').addEventListener('click', () => requestAnimationFrame(buildCoupons));

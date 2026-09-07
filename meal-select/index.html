@@ -431,7 +431,7 @@
   .meal-ov.open { transform: none; pointer-events: auto; }
   .meal-ov.drag { transition: none; }
   .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 62%;
-    overflow: hidden; }
+    overflow: hidden; z-index: 1; }
   .mo-img img { width: 100%; height: 100%; object-fit: cover;
     object-position: 50% 45%; display: block; }
   .mo-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4;
@@ -449,17 +449,22 @@
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .mo-close:active { transform: scale(.92); }
   .mo-close svg { pointer-events: none; }
+  /* ONE scroller drives everything: collapse, list, and the drag-to-close
+     all chain inside a single gesture. Layers are JS-positioned off its
+     scrollTop; the row list is clipped at the header's bottom edge. */
   .mo-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
     touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: none;
-    padding-bottom: 0; z-index: 2; }
+    z-index: 3; }
   .mo-scroll::-webkit-scrollbar { display: none; }
-  .mo-spacer { height: 56%; pointer-events: none; }
-  .mo-action { position: relative; z-index: 3; height: 0; }
-  .mo-action-row { position: absolute; left: 0; right: 0; bottom: 10px;
+  .mo-spacer { pointer-events: none; }
+  #moIngList { padding: 0 24px 130px; }
+  .mo-sheetbg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    background: #fff; border-radius: 44px 44px 0 0; }
+  .mo-headblock { position: absolute; left: 0; right: 0; z-index: 4;
+    background: #fff; border-radius: 44px 44px 0 0; padding: 24px 24px 0; }
+  .mo-action-row { position: absolute; left: 0; right: 0; z-index: 5;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 14px; transition: opacity .25s ease, transform .3s ease; }
-  .meal-ov.tucked .mo-action-row { opacity: 0; transform: translateY(-8px);
-    pointer-events: none; }
+    padding: 0 14px; height: 40px; }
   .mo-stars { display: flex; gap: 4px; align-items: center;
     filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
     transition: opacity .25s ease; }
@@ -485,14 +490,7 @@
   .mo-select .msc svg { width: 9px; height: 7px; }
   .mo-select.deny { animation: deny .4s ease; }
   @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
-  .mo-sheet { position: relative; z-index: 2; background: #fff;
-    border-radius: 44px 44px 0 0; padding: 24px 24px 0; height: 60%;
-    box-sizing: border-box; display: flex; flex-direction: column; }
-  .mo-ing-wrap { flex: 1; min-height: 0; overflow: hidden; padding-bottom: 118px;
-    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-    scrollbar-width: none; }
-  .mo-ing-wrap::-webkit-scrollbar { display: none; }
-  .meal-ov.listmode .mo-ing-wrap { overflow-y: auto; }
+
   .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24;
     margin-bottom: 14px; }
   .mo-title { font: 600 22px/30px 'Urbane Rounded', sans-serif; color: #0b0e12;
@@ -720,25 +718,24 @@
               <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             </button>
           </div>
+          <div class="mo-sheetbg" id="moSheetBg"></div>
+          <div class="mo-headblock" id="moHeadBlock">
+            <div class="mo-cat" id="moCat"></div>
+            <div class="mo-title" id="moTitle"></div>
+            <div class="mo-heat" id="moHeat"></div>
+            <div class="mo-ing-h">Ingredients:</div>
+          </div>
+          <div class="mo-action-row" id="moActionRow">
+            <div class="mo-stars" id="moStars"></div>
+            <div class="mo-badge" id="moBadge"></div>
+            <button class="mo-select" id="moSelect">
+              <span class="msc"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.4L3.4 5.8 8 1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span id="moSelTxt">Select</span>
+            </button>
+          </div>
           <div class="mo-scroll" id="moScroll">
-            <div class="mo-spacer"></div>
-            <div class="mo-action">
-              <div class="mo-action-row">
-                <div class="mo-stars" id="moStars"></div>
-                <div class="mo-badge" id="moBadge"></div>
-                <button class="mo-select" id="moSelect">
-                  <span class="msc"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.4L3.4 5.8 8 1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                  <span id="moSelTxt">Select</span>
-                </button>
-              </div>
-            </div>
-            <div class="mo-sheet">
-              <div class="mo-cat" id="moCat"></div>
-              <div class="mo-title" id="moTitle"></div>
-              <div class="mo-heat" id="moHeat"></div>
-              <div class="mo-ing-h">Ingredients:</div>
-              <div class="mo-ing-wrap" id="moIngWrap"><div id="moIngList"></div></div>
-            </div>
+            <div class="mo-spacer" id="moSpacer"></div>
+            <div id="moIngList"></div>
           </div>
           <div class="mo-macros">
             <div class="mk"><small>Meal&rsquo;s Macros</small><b id="moKcal">0</b><i>Kcal</i></div>
@@ -871,15 +868,18 @@ function openMealOv(key) {
   buildIngRows(d);
   syncMoSelect();
   moScroll.scrollTop = 0;
-  document.getElementById('moIngWrap').scrollTop = 0;
-  mealOv.classList.remove('compact', 'tucked', 'listmode');
+  mealOv.classList.remove('compact');
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
-  requestAnimationFrame(() => {
-    moBaseImgH = moScroll.querySelector('.mo-spacer').offsetHeight + 84;
-    moImgBox.style.height = moBaseImgH + 'px';
-  });
+  setTimeout(() => {
+    const H = mealOv.offsetHeight;
+    moBaseImgH = H * 0.62;
+    moHeadH = document.getElementById('moHeadBlock').offsetHeight;
+    document.getElementById('moSpacer').style.height =
+      (moBaseImgH + moHeadH) + 'px';
+    syncDetails();
+  }, 40);
   vibrate(8);
 }
 
@@ -955,27 +955,31 @@ moSelect.addEventListener('click', () => {
 document.getElementById('moClose').addEventListener('click', closeMealOv);
 document.getElementById('moVeil').addEventListener('click', closeMealOv);
 
-/* dynamic scroll: the image header resizes 1:1 with the rising sheet — the
-   cover crop re-centers every frame so the food stays centered; pulling past
-   the top grows it (rubber zoom); stars fold into the compact rating badge */
+/* one continuous scroll: phase 1 collapses the image to its 40% floor,
+   then the same gesture keeps scrolling the ingredient list under the
+   pinned header; scrolling back grows the image again and pulling past
+   the top drags the whole page closed — one big swoop each way */
 const moImgBox = document.querySelector('.mo-img');
-let moBaseImgH = 0, moRaf = false;
-moScroll.addEventListener('scroll', () => {
-  if (moRaf) return;
-  moRaf = true;
-  requestAnimationFrame(() => {
-    moRaf = false;
-    if (!moBaseImgH) return;
-    const st = moScroll.scrollTop;
-    const H = mealOv.offsetHeight;
-    moImgBox.style.height = Math.max(H * 0.40, moBaseImgH - st) + 'px';
-    const rowTop = moScroll.querySelector('.mo-spacer').offsetHeight - st;
-    mealOv.classList.toggle('compact', rowTop < H * 0.42);
-    /* sheet parked at 40%: further scrolling moves only the ingredient list */
-    const max = moScroll.scrollHeight - moScroll.clientHeight;
-    mealOv.classList.toggle('listmode', st >= max - 2);
-  });
-}, { passive: true });
+let moBaseImgH = 0, moHeadH = 120;
+function syncDetails() {
+  if (!moBaseImgH) return;
+  const st = moScroll.scrollTop;
+  const H = mealOv.offsetHeight;
+  const imgH = Math.max(H * 0.40, moBaseImgH - Math.max(0, st));
+  moImgBox.style.height = imgH + 'px';
+  const bg = document.getElementById('moSheetBg');
+  const head = document.getElementById('moHeadBlock');
+  bg.style.top = imgH + 'px';
+  head.style.top = imgH + 'px';
+  document.getElementById('moActionRow').style.top = (imgH - 50) + 'px';
+  /* rows disappear under the header's bottom edge */
+  const spacerH = moBaseImgH + moHeadH;
+  const cut = Math.max(0, imgH + moHeadH + st - spacerH);
+  document.getElementById('moIngList').style.clipPath =
+    'inset(' + cut + 'px 0 0 0)';
+  mealOv.classList.toggle('compact', imgH < H * 0.42);
+}
+moScroll.addEventListener('scroll', syncDetails, { passive: true });
 
 /* sheet gesture: pull down from the top to dismiss, iOS style */
 let moDragY = null, moDragDy = 0;
@@ -1805,7 +1809,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 52';
+const BUILD = 'build 2026-09-07 · 53';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1998,7 +2002,7 @@ function syncSheet() {
   }
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
-SHEET_GAP = EMBED ? REAL_PAD + 28
+SHEET_GAP = EMBED ? REAL_PAD + 16
   : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');

@@ -196,7 +196,7 @@ class Container {
       scale: 1,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: null,
+      backgroundColor: window.DS_SNAPSHOT_BG || null,
       ignoreElements: function (element) {
         // Ignore all glass elements
         return (
