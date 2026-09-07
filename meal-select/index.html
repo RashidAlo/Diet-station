@@ -79,31 +79,33 @@
     box-shadow: 0 -70px 0 #2c2c32; }
   body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
     width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
-  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #e5e5e7; }
+  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #ffffff; }
   body.desktop .phone { border-radius: 46px; }
   .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
     pointer-events: none; }
   body.desktop .island { display: block; }
 
-  /* ================= sheet stack (Figma: modal over modal) ================= */
-  .peek1 { position: absolute; left: 46px; right: 46px; top: var(--peek1-top, 45px); height: 20px;
-    border-radius: 14px 14px 0 0; background: rgba(255,255,255,.55); }
-  .peek2 { position: absolute; left: 14px; right: 14px; top: var(--peek2-top, 58px); height: 24px;
-    border-radius: 18px 18px 0 0; background: rgba(255,255,255,.82); }
-  .sheet { position: absolute; left: 0; right: 0; top: var(--sheet-top, 74px); bottom: 0;
-    border-radius: 38px 38px 0 0; background: #fff; overflow: hidden;
-    transition: transform .5s cubic-bezier(.5,0,.7,.4); }
-  .sheet.away { transform: translateY(104%); }
-  .sheet.back { transition: transform .55s cubic-bezier(.2,.9,.3,1); }
+  /* ================= full-page canvas ================= */
+  .phone { --top-pad: 44px; }
+  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden; }
 
-  /* ---- nav row ---- */
-  .nav { position: absolute; left: 0; right: 0; top: 0; height: 76px; z-index: 30;
-    display: flex; align-items: center; padding: 0 16px 0 24px; gap: 12px;
-    background: linear-gradient(to bottom, #fff 62%, rgba(255,255,255,0)); }
+  /* ---- nav row: content passes under an Apple-style progressive blur ---- */
+  .nav { position: absolute; left: 0; right: 0; top: 0; z-index: 30;
+    height: calc(var(--top-pad) + 62px);
+    display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
+  .nav::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent);
+    mask-image: linear-gradient(to bottom, #000 58%, transparent); }
+  .nav::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,.86) 30%, rgba(255,255,255,0)); }
+  .nav > * { position: relative; z-index: 1; }
   /* nav buttons are liquid-glass containers (global recipe), with a CSS seat
      so they stay visible over flat backdrops; adaptive contrast flips content */
-  .glass-container.navbtn { position: absolute; top: 18px; width: 40px; height: 40px;
+  .glass-container.navbtn { position: absolute; top: calc(var(--top-pad) + 11px);
+    width: 40px; height: 40px;
     border-radius: 50%; overflow: hidden; cursor: pointer; z-index: 31;
     display: flex; align-items: center; justify-content: center;
     transition: transform .18s cubic-bezier(.3,.8,.3,1);
@@ -145,7 +147,7 @@
   /* ---- scroll area ---- */
   .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
     touch-action: pan-y; overscroll-behavior: contain;
-    padding: 76px 0 132px; scrollbar-width: none; }
+    padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 18px 20px 12px; }
@@ -400,8 +402,6 @@
 <div id="stage">
   <div class="device" id="device">
     <div class="phone" id="phone">
-      <div class="peek1"></div>
-      <div class="peek2"></div>
       <div class="sheet" id="sheet">
         <div class="scroll" id="scrollArea"></div>
         <div class="nav">
@@ -706,6 +706,7 @@ function updateAll(instant) {
     gaugeClip.classList.toggle('full', frac >= 1);
   }
   /* completion: Saved moment -> Next */
+  if (!instant) scheduleContentSnap();
   const done = quotaTotal > 0 && t.count >= quotaTotal;
   if (done && !completed) { completed = true; celebrate(); }
   if (!done && completed) { completed = false; hideDock(); }
@@ -964,15 +965,11 @@ function fit() {
     const vh = (window.visualViewport ? window.visualViewport.height : innerHeight);
     const Hd = vh / stageScale;
     phone.style.height = Hd + 'px';
-    phone.style.setProperty('--sheet-top', Math.max(64, st / stageScale + 34) + 'px');
-    phone.style.setProperty('--peek1-top', Math.max(34, st / stageScale + 4) + 'px');
-    phone.style.setProperty('--peek2-top', Math.max(48, st / stageScale + 18) + 'px');
+    phone.style.setProperty('--top-pad', Math.max(30, st / stageScale + 6) + 'px');
   } else {
     document.body.classList.add('desktop');
     phone.style.height = '874px';
-    phone.style.removeProperty('--sheet-top');
-    phone.style.removeProperty('--peek1-top');
-    phone.style.removeProperty('--peek2-top');
+    phone.style.setProperty('--top-pad', '44px');
     const availW = innerWidth - 316;
     const frameW = 402 + 24, frameH = 874 + 24;
     stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
@@ -1073,8 +1070,35 @@ function startGaugeFx(c) {
   gaugeFx.frac = gaugeFx.target;
   gaugeClip.style.display = 'none';          // the DOM gauge moves under the glass
   gaugeFx.running = true;
+  snapContent();                             // live backdrop: full scroll content
   requestAnimationFrame(gaugeTick);
   return true;
+}
+
+/* capture the scroll content ONCE as a tall image; the glass then reads the
+   slice under the navigator every frame, so refraction tracks live scrolling.
+   Re-captured (debounced) whenever selections change the cards. */
+let contentSnapTimer = null;
+function snapContent() {
+  if (!GLASS_OK || typeof html2canvas !== 'function') return;
+  const fullH = scrollArea.scrollHeight, fullW = scrollArea.clientWidth;
+  html2canvas(scrollArea, {
+    scale: 1, useCORS: true, backgroundColor: '#ffffff',
+    width: fullW, height: fullH, windowWidth: fullW, windowHeight: fullH,
+    ignoreElements: el => el.classList && (el.classList.contains('glass-container') ||
+      el.classList.contains('lab-tabs') || el.classList.contains('lab-tabbar')),
+    onclone: doc => {
+      const dv = doc.getElementById('device');
+      if (dv) dv.style.transform = 'none';    // capture at 1:1 CSS px, not stage scale
+      const sc = doc.getElementById('scrollArea');
+      if (sc) { sc.style.height = fullH + 'px'; sc.style.overflow = 'visible'; }
+    }
+  }).then(cv => { gaugeFx.content = cv; gaugeFx.contentW = fullW; gaugeFx.contentH = fullH; })
+    .catch(() => {});
+}
+function scheduleContentSnap() {
+  clearTimeout(contentSnapTimer);
+  contentSnapTimer = setTimeout(snapContent, 650);
 }
 
 function gaugeTick(now) {
@@ -1106,7 +1130,17 @@ function paintGauge() {
   }
   const g = fx.region.getContext('2d');
   g.clearRect(0, 0, w, h);
-  g.drawImage(fx.base, x, y, w, h, 0, 0, w, h);
+  if (fx.content) {
+    const sr = scrollArea.getBoundingClientRect();
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+    const kx = fx.content.width / (fx.contentW || 402);
+    const ky = fx.content.height / (fx.contentH || fx.content.height);
+    const srcX = (x - sr.left) / stageScale * kx;
+    const srcY = ((y - sr.top) / stageScale + scrollArea.scrollTop) * ky;
+    g.drawImage(fx.content, srcX, srcY, w / stageScale * kx, h / stageScale * ky, 0, 0, w, h);
+  } else {
+    g.drawImage(fx.base, x, y, w, h, 0, 0, w, h);
+  }
 
   const s = r.width / 358;
   const gx = Math.round(r.left) - x, gy = Math.round(r.top) - y + 1 * s;
