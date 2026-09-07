@@ -735,29 +735,48 @@ function confetti() {
    picks — the next one below first, wrapping back up to a skipped one at the
    end. Self-verifying: if the smooth scroll gets canceled (iOS momentum,
    background throttling) it retries, then snaps. */
-let glideRaf = null;
-function glideTo(top) {
-  const max = scrollArea.scrollHeight - scrollArea.clientHeight;
-  const target = Math.max(0, Math.min(top, max));
+let glideRaf = null, glideCanceled = false;
+function glideTo(target) {
   const from = scrollArea.scrollTop, dist = target - from;
   if (Math.abs(dist) < 2) return;
   const dur = Math.min(950, 380 + Math.abs(dist) * 0.3);
   const t0 = performance.now();
-  let canceled = false;
-  scrollArea.addEventListener('touchstart', () => { canceled = true; }, { once: true });
+  glideCanceled = false;
   cancelAnimationFrame(glideRaf);
   const tick = now => {
-    if (canceled) return;
+    if (glideCanceled) return;
     const x = Math.min(1, (now - t0) / dur);
     const e = 1 - Math.pow(1 - x, 3);
     scrollArea.scrollTop = from + dist * e;
     if (x < 1) glideRaf = requestAnimationFrame(tick);
   };
   glideRaf = requestAnimationFrame(tick);
-  setTimeout(() => {
-    if (!canceled && Math.abs(scrollArea.scrollTop - target) > 6) scrollArea.scrollTop = target;
-  }, dur + 350);
 }
+
+/* the tracker owns a scroll INTENT and pursues it: attempt the glide, verify,
+   and snap directly if the browser swallowed it — user touch always wins */
+let scrollIntent = null;
+scrollArea.addEventListener('touchstart', () => { scrollIntent = null; glideCanceled = true; }, { passive: true });
+scrollArea.addEventListener('wheel', () => { scrollIntent = null; glideCanceled = true; }, { passive: true });
+
+function pursueIntent() {
+  if (!scrollIntent) return;
+  const head = scrollIntent.head;
+  const target = Math.max(0, Math.min(head.offsetTop - 78,
+    scrollArea.scrollHeight - scrollArea.clientHeight));
+  if (Math.abs(scrollArea.scrollTop - target) < 8) {
+    head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
+    setTimeout(() => head.classList.remove('nudge'), 2400);
+    scrollIntent = null;
+    return;
+  }
+  scrollIntent.tries++;
+  if (scrollIntent.tries === 1) glideTo(target);
+  else scrollArea.scrollTop = target;
+  if (scrollIntent.tries < 5) setTimeout(pursueIntent, 550);
+  else scrollIntent = null;
+}
+
 function scrollToNextCat(fromCatId) {
   const visible = CATS.filter(c => c.quota > 0);
   const isOpen = c => catCount(c.id) < c.quota;
@@ -767,11 +786,8 @@ function scrollToNextCat(fromCatId) {
   const of = document.querySelector('[data-of="' + open.id + '"]');
   const head = of && of.closest('.cat-head');
   if (!head) return;
-  setTimeout(() => {
-    glideTo(head.offsetTop - 78);
-    head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
-    setTimeout(() => head.classList.remove('nudge'), 2400);
-  }, 700);
+  scrollIntent = { head: head, tries: 0 };
+  setTimeout(pursueIntent, 700);
 }
 
 function nextTapped() {
