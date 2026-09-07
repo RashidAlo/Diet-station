@@ -97,12 +97,17 @@
 
   /* ================= full-page canvas ================= */
   .phone { --top-pad: 44px; }
-  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden;
-    transition: top .55s cubic-bezier(.32,1,.35,1), border-radius .45s ease; }
-  body.sheet-detent .sheet { top: calc(var(--top-pad) - 12px);
+  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden; }
+  /* native sheet: the gap collapses 1:1 with the first pixels of scroll —
+     scroll-linked transform, no thresholds (HIG medium->large handoff) */
+  body.sheet-mode .sheet { will-change: transform;
     border-radius: 44px 44px 0 0; }
-  body.sheet-enter .sheet { top: 103%; }
+  body.sheet-enter .sheet { transform: translateY(103%); }
+  .sheet.springing { transition: transform .55s cubic-bezier(.32,.72,0,1); }
   body.sheet-mode .phone { background: #0b0e12; }
+  /* embedded in the app launcher: the hub behind provides the backdrop */
+  html.embed, html.embed body, html.embed #stage, html.embed .device,
+  html.embed .phone { background: transparent !important; }
   /* auto-selected fallback badge (Figma 17179-77256): green pill straddling
      the card's top edge — sparkle + "Auto Selected" */
   .card .autobadge { position: absolute; top: -9px; left: 50%;
@@ -1523,7 +1528,21 @@ scrollArea.addEventListener('touchmove', e => {
 }, { passive: true });
 
 /* ================= nav actions ================= */
-document.getElementById('closeBtn').onclick = () => { location.href = '../'; };
+const EMBED = /[?&]embed=1/.test(location.search);
+if (EMBED) {
+  document.documentElement.classList.add('embed');
+  document.body.classList.add('embed');
+}
+document.getElementById('closeBtn').onclick = () => {
+  if (EMBED) {
+    /* slide the sheet away, then let the launcher dismiss the overlay */
+    sheetEl.classList.add('springing');
+    sheetEl.style.transform = 'translateY(103%)';
+    setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 380);
+  } else {
+    location.href = '../';
+  }
+};
 confirmBtn.onclick = () => { if (completed) nextTapped(); };
 const clearModal = document.getElementById('clearModal');
 document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
@@ -1776,7 +1795,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 46';
+const BUILD = 'build 2026-09-07 · 47';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1927,10 +1946,7 @@ scrollArea.addEventListener('scroll', () => {
   adaptPend = true;
   requestAnimationFrame(() => {
     adaptPend = false; updateCatDock(); adaptNav();
-    /* sheet detent: scrolling claims the full screen, top rest returns it */
-    const st = scrollArea.scrollTop;
-    if (st > 30) document.body.classList.remove('sheet-detent');
-    else if (st <= 2 && !turning) document.body.classList.add('sheet-detent');
+    syncSheet();
   });
 }, { passive: true });
 setInterval(adaptNav, 900);
@@ -1939,9 +1955,32 @@ setTimeout(adaptNav, 500);
 buildQuotaRows();
 buildScreen();
 applyDay(0);
-/* present the whole flow as an animated sheet */
-document.body.classList.add('sheet-mode', 'sheet-enter', 'sheet-detent');
-setTimeout(() => document.body.classList.remove('sheet-enter'), 80);
+
+/* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
+const sheetEl = document.getElementById('sheet');
+let sheetLive = false;
+function sheetGap() {
+  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
+  return Math.max(22, tp - 12);
+}
+function syncSheet() {
+  if (!sheetLive) return;
+  const y = Math.max(0, sheetGap() - scrollArea.scrollTop);
+  sheetEl.style.transform = 'translateY(' + y + 'px)';
+  const r = Math.min(44, Math.max(0, y + 8));
+  sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
+}
+document.body.classList.add('sheet-mode', 'sheet-enter');
+setTimeout(() => {
+  sheetEl.classList.add('springing');
+  document.body.classList.remove('sheet-enter');
+  sheetEl.style.transform = 'translateY(' + sheetGap() + 'px)';
+  setTimeout(() => {
+    sheetEl.classList.remove('springing');
+    sheetLive = true;
+    syncSheet();
+  }, 600);
+}, 60);
 fit();
 </script>
 <script src="../lab-shell.js" data-flow="meal-select" defer></script>

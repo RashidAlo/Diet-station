@@ -208,6 +208,20 @@
     border: 1px solid rgba(0,0,0,.12); background: #fff; color: #1d1d1f;
     cursor: pointer; }
   .gearbtn svg { width: 20px; height: 20px; }
+  /* flow sheet: a prototype presenting as a native sheet OVER the launcher */
+  #appRoot { transform-origin: 50% 0; }
+  body.flowsheet #appRoot { transition: transform .55s cubic-bezier(.32,.72,0,1),
+    border-radius .55s ease; transform: scale(.94) translateY(10px);
+    border-radius: 24px; overflow: hidden; }
+  body.flowsheet { background: #000; }
+  .flow-veil { position: fixed; inset: 0; z-index: 240; background: #000;
+    opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+  body.flowsheet .flow-veil { opacity: .34; }
+  .flow-frame { position: fixed; inset: 0; z-index: 241; border: 0; width: 100%;
+    height: 100%; background: transparent; }
+  .flow-frame.bye { transition: transform .4s cubic-bezier(.5,0,.8,.6);
+    transform: translateY(103%); }
+
   /* settings primer sheet */
   .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
     opacity: 0; pointer-events: none; transition: opacity .28s ease; }
@@ -451,14 +465,15 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       /* flow pages are cached max-age=600 by Pages — in the app, always
          open them with a fresh query so deploys show up immediately */
       const fresh = () => f.path + '?v=' + Date.now();
+      const open = () => f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
       card.addEventListener('click', e => {
-        if (!e.target.closest('a, button')) location.href = fresh();
+        if (!e.target.closest('a, button')) open();
       });
       const primary = card.querySelector('.btn.primary');
       primary.textContent = 'Prototype';
       primary.addEventListener('click', e => {
         e.preventDefault();
-        location.href = fresh();
+        open();
       });
       btn.remove();                                   /* no Dev handoff in the app */
       /* animated hero: wireframe phone flipping through the flow's screens */
@@ -539,6 +554,35 @@ if (NATIVE) {
   document.getElementById('heroSub').textContent =
     'Tap a card to play the latest build — prototypes update live with every deploy.';
 }
+
+/* ================= flow sheet over the launcher ================= */
+if (NATIVE) {
+  const root = document.createElement('div');
+  root.id = 'appRoot';
+  while (document.body.firstChild) root.appendChild(document.body.firstChild);
+  document.body.appendChild(root);
+}
+let flowFrame = null, flowVeil = null;
+function openFlowSheet(url) {
+  flowVeil = document.createElement('div');
+  flowVeil.className = 'flow-veil';
+  flowFrame = document.createElement('iframe');
+  flowFrame.className = 'flow-frame';
+  flowFrame.src = url + '&embed=1';
+  document.body.append(flowVeil, flowFrame);
+  /* setTimeout, not rAF — rAF starves in backgrounded tabs */
+  setTimeout(() => document.body.classList.add('flowsheet'), 20);
+}
+function closeFlowSheet() {
+  if (!flowFrame) return;
+  document.body.classList.remove('flowsheet');
+  const fr = flowFrame, vl = flowVeil;
+  flowFrame = null; flowVeil = null;
+  setTimeout(() => { fr.remove(); vl.remove(); }, 550);
+}
+addEventListener('message', e => {
+  if (e.data && e.data.t === 'ds-close') closeFlowSheet();
+});
 
 /* ================= settings primer (native launcher) ================= */
 const primerVeil = document.createElement('div'); primerVeil.className = 'primer-veil';
