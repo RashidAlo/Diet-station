@@ -462,7 +462,7 @@ if (NATIVE) document.body.classList.add('native');
         canvas: el.querySelector('canvas'),
         artboard: 'Splash',
         autoplay: true,
-        layout: new rive.Layout({ fit: rive.Fit.Cover }),
+        layout: new rive.Layout({ fit: rive.Fit.Contain }),
         onLoad: () => { riveOk = true; },
         onLoadError: () => { /* Splash artboard not exported yet — skip */ dismiss(); },
       });
