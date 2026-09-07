@@ -233,6 +233,12 @@
   .primer .p-choice button.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
   .primer .p-actions { display: flex; gap: 10px; margin-top: 22px; }
   .primer .p-actions .btn { flex: 1; justify-content: center; text-align: center; }
+  /* splash loader (native app cold start): breathing dots form the DS logo */
+  #splash { position: fixed; inset: 0; z-index: 300; background: #ED1C24;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 1; transition: opacity .6s ease; }
+  #splash.bye { opacity: 0; pointer-events: none; }
+  #splash canvas { width: 100%; height: 100%; display: block; }
 </style>
 </head>
 <body>
@@ -331,6 +337,74 @@ document.querySelectorAll('.seg-btn').forEach(b =>
 /* Native TestFlight shell: the whole hub becomes a prototype launcher */
 const NATIVE = /DietStationLab/.test(navigator.userAgent) || /[?&]native=1/.test(location.search);
 if (NATIVE) document.body.classList.add('native');
+
+/* ---- splash loader: Rive "Splash" artboard (breathing dots -> DS logo)
+   plays while every design asset the prototypes need is warmed into the
+   HTTP cache; once per app session ---- */
+(function () {
+  if (!NATIVE) return;
+  let seen = false;
+  try { seen = !!sessionStorage.getItem('ds-splashed'); } catch (_) {}
+  if (seen && !/[?&]splash=1/.test(location.search)) return;
+  const el = document.createElement('div');
+  el.id = 'splash';
+  el.innerHTML = '<canvas></canvas>';
+  document.body.appendChild(el);
+  try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
+  const T0 = performance.now();
+  const MIN_MS = 5200;                 /* let the logo finish forming */
+  const MAX_MS = 8000;
+  let riveOk = false, gone = false;
+  function dismiss() {
+    if (gone) return;
+    gone = true;
+    el.classList.add('bye');
+    setTimeout(() => el.remove(), 700);
+  }
+  /* preload: fonts, shared libs, every flow page + its heavy assets */
+  const warm = ['flows.json', 'lab-shell.js', 'html2canvas.min.js',
+    'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
+  const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
+    for (const f of flows) {
+      warm.push(f.path + 'index.html');
+      for (const sh of (f.shots || [])) warm.push(sh);
+      if (f.preview) warm.push(f.preview);
+    }
+    warm.push(...['m-cheesepastry.jpg', 'm-oatmeal.jpg', 'm-olivesand.jpg', 'm-fingers.jpg',
+      'm-machbous.jpg', 'm-thaicurry.jpg', 'm-garfelo.jpg', 'm-pastasalad.jpg',
+      'm-yogurtchicken.jpg', 'm-shrimpdill.jpg', 'm-rocca.jpg', 'm-zoodles.jpg',
+      'm-chocpineapple.jpg', 'm-chocraspberry.jpg', 'm-chocpudding.jpg', 'm-donut.jpg']
+      .map(n => 'meal-select/' + n));
+    return Promise.allSettled(warm.map(u => fetch(u).then(r => r.blob())));
+  }).catch(() => null);
+  /* the Rive splash itself */
+  const boot = () => {
+    try {
+      new rive.Rive({
+        src: 'breathe/dietstation.riv',
+        canvas: el.querySelector('canvas'),
+        artboard: 'Splash',
+        autoplay: true,
+        layout: new rive.Layout({ fit: rive.Fit.Cover }),
+        onLoad: () => { riveOk = true; },
+        onLoadError: () => { /* Splash artboard not exported yet — skip */ dismiss(); },
+      });
+    } catch (_) { dismiss(); }
+  };
+  if (window.rive) boot();
+  else {
+    const sc = document.createElement('script');
+    sc.src = 'breathe/rive.js';
+    sc.onload = boot;
+    sc.onerror = dismiss;
+    document.head.appendChild(sc);
+  }
+  done.then(() => {
+    const wait = Math.max(0, MIN_MS - (performance.now() - T0));
+    setTimeout(() => { if (riveOk) dismiss(); }, wait);
+  });
+  setTimeout(dismiss, MAX_MS);         /* hard ceiling — never trap the user */
+})();
 
 fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
   document.getElementById('count').textContent =
