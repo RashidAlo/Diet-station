@@ -429,8 +429,8 @@ if (NATIVE) document.body.classList.add('native');
   document.body.appendChild(el);
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
-  const MIN_MS = 3300;                 /* the 3s choreography + a beat */
-  const MAX_MS = 6500;
+  const MIN_MS = 3800;                 /* the full choreography incl. glow */
+  const MAX_MS = 7000;
   let riveOk = false, gone = false;
   function dismiss() {
     if (gone) return;
