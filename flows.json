@@ -213,6 +213,57 @@
           "note": "Every add is a light tick; completion is the success thump. The web prototype's navigator.vibrate maps to these in the TestFlight shell already.",
           "code": "import * as Haptics from 'expo-haptics';\nconst tick = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);   // +1 / −1\nconst done = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);"
         }
+      ],
+      "shots": [
+        "meal-select/shots/1.jpg",
+        "meal-select/shots/2.jpg",
+        "meal-select/shots/3.jpg"
+      ],
+      "settings": [
+        {
+          "key": "idle",
+          "label": "Collapse after",
+          "type": "range",
+          "min": 0.8,
+          "max": 4,
+          "step": 0.1,
+          "default": 2,
+          "unit": "s",
+          "note": "Idle time before the stepper folds into a number badge"
+        },
+        {
+          "key": "target",
+          "label": "Calorie target",
+          "type": "range",
+          "min": 1200,
+          "max": 2600,
+          "step": 20,
+          "default": 1860,
+          "unit": " kcal",
+          "note": "Daily goal the gauge fills toward"
+        },
+        {
+          "key": "confetti",
+          "label": "Confetti",
+          "type": "range",
+          "min": 6,
+          "max": 26,
+          "step": 1,
+          "default": 14,
+          "unit": "",
+          "note": "Celebration burst size"
+        },
+        {
+          "key": "tapMode",
+          "label": "Tap on selected",
+          "type": "choice",
+          "options": [
+            "add",
+            "collapse"
+          ],
+          "default": "add",
+          "note": "Tapping a selected meal adds one more, or re-opens the stepper"
+        }
       ]
     },
     {
@@ -331,7 +382,10 @@
             "close"
           ]
         ]
-      }
+      },
+      "shots": [
+        "breathe/preview.png"
+      ]
     },
     {
       "id": "plan-quiz",
@@ -597,7 +651,10 @@
             "plan"
           ]
         ]
-      }
+      },
+      "shots": [
+        "plan-quiz/preview.png"
+      ]
     },
     {
       "id": "rewards",
@@ -757,7 +814,46 @@
             "checkout"
           ]
         ]
-      }
+      },
+      "shots": [
+        "rewards/shots/1.jpg",
+        "rewards/shots/2.jpg"
+      ],
+      "settings": [
+        {
+          "key": "tearAt",
+          "label": "Tear point",
+          "type": "range",
+          "min": 30,
+          "max": 90,
+          "step": 1,
+          "default": 62,
+          "unit": "%",
+          "note": "How far you pull before the tab rips"
+        },
+        {
+          "key": "stretch",
+          "label": "Stretch",
+          "type": "range",
+          "min": 40,
+          "max": 160,
+          "step": 1,
+          "default": 96,
+          "unit": "px",
+          "note": "Elastic travel of the coupon stub"
+        },
+        {
+          "key": "confetti",
+          "label": "Confetti",
+          "type": "range",
+          "min": 6,
+          "max": 26,
+          "step": 1,
+          "default": 14,
+          "unit": "",
+          "note": "Burst size on redeem"
+        }
+      ]
     }
   ]
 }

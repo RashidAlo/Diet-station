@@ -144,7 +144,9 @@
   var style = document.createElement('style');
   css += '\
 /* ---- native TestFlight shell + shared triple-tap lab menu ---- */\
-html.ds-native #pill, html.ds-native .lab-chip { display: none !important; }\
+html.ds-native #pill, html.ds-native .lab-chip, html.ds-native .lab-tabs,\
+html.ds-native .lab-tabbar, html.ds-native .lab-view,\
+html.ds-native .labshell-links { display: none !important; }\
 .labshell-veil { position: fixed; inset: 0; z-index: 128; background: rgba(0,0,0,.45);\
   opacity: 0; pointer-events: none; transition: opacity .25s ease; }\
 body.labshell-menu .labshell-veil { opacity: 1; pointer-events: auto; }\

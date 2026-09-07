@@ -160,31 +160,79 @@
     line-height: 1.3; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
   .typepeek::-webkit-scrollbar { display: none; }
 
-  /* ---- native TestFlight shell: prototypes only, app-like list ---- */
+  /* ---- native TestFlight shell: prototypes only, App Store promo cards ---- */
   body.native { padding-top: env(safe-area-inset-top, 0px); }
   body.native .seg, body.native #pane-system, body.native footer,
-  body.native .count, body.native .handoff,
-  body.native .rnkit { display: none !important; }
-  body.native .card { padding: 0; overflow: hidden; }
-  body.native .row { flex-direction: column-reverse; gap: 0; }
-  body.native .thumb { width: 100%; height: 230px; overflow: hidden;
-    border-radius: 0; position: relative; background: #eceded; }
-  body.native .thumb img { width: 100%; height: auto; aspect-ratio: auto;
-    object-fit: cover; object-position: center top; border-radius: 0;
-    box-shadow: none; }
-  body.native .row .body { padding: 18px 20px 0; }
-  body.native .card .desc { display: -webkit-box; -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
-  body.native .card .meta { display: none; }
-  body.native .actions { padding: 0 20px 20px; margin-top: 14px; }
-  body.native .actions .btn { flex: 1; text-align: center; justify-content: center; }
+  body.native .count, body.native .handoff, body.native .thumb,
+  body.native .rnkit, body.native .card .meta { display: none !important; }
   body.native #pane-prototypes { display: block !important; }
-  body.native .hero { padding: 26px 0 2px; }
-  body.native .hero h1 { font-size: 28px; }
-  body.native .hero p { font-size: 14px; }
+  body.native .hero { text-align: left; padding: 22px 4px 6px; }
+  body.native .hero h1 { font-size: 30px; }
+  body.native .hero p { font-size: 14px; margin: 8px 0 0; max-width: none; }
   body.native .card { cursor: pointer; -webkit-tap-highlight-color: transparent;
+    padding: 0; overflow: hidden;
     transition: transform .15s cubic-bezier(.3,.8,.3,1); }
   body.native .card:active { transform: scale(.98); }
+  body.native .row { flex-direction: column; gap: 0; align-items: stretch; }
+  body.native .row .body { padding: 18px 18px 0; }
+  body.native .card .desc { display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
+  body.native .actions { padding: 0 18px 18px; margin-top: 16px; flex-wrap: nowrap; }
+  body.native .actions .btn.primary { flex: 1; text-align: center; justify-content: center; }
+  /* animated hero: the wireframe phone flipping through real screens */
+  .appshots { display: none; }
+  body.native .appshots { display: flex; justify-content: center;
+    align-items: flex-start; height: 300px; overflow: hidden;
+    background: linear-gradient(180deg, #f5f5f7, #ececef); }
+  .wf-phone { position: relative; width: 168px; margin-top: 28px; flex: none;
+    aspect-ratio: 402 / 874; border: 2.5px solid #111114; border-radius: 28px;
+    padding: 5px; background: #fff; box-sizing: border-box; }
+  .wf-phone::before { content: ''; position: absolute; left: -4.5px; top: 64px;
+    width: 2.5px; height: 34px; border-radius: 2px 0 0 2px; background: #111114;
+    box-shadow: 0 -22px 0 #111114; }
+  .wf-phone::after { content: ''; position: absolute; right: -4.5px; top: 80px;
+    width: 2.5px; height: 26px; border-radius: 0 2px 2px 0; background: #111114; }
+  .wf-screen { position: absolute; inset: 5px; border-radius: 21px;
+    overflow: hidden; background: #f2f2f4;
+    box-shadow: 0 0 0 1px rgba(17,17,20,.9); }
+  .wf-screen img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center top; opacity: 0;
+    transition: opacity .45s ease; }
+  .wf-screen img.on { opacity: 1; }
+  .wf-island { position: absolute; left: 50%; top: 11px; transform: translateX(-50%);
+    width: 44px; height: 13px; border-radius: 8px; background: #09090b; z-index: 2; }
+  /* gear icon button */
+  .gearbtn { display: none; }
+  body.native .gearbtn { display: flex; flex: none; width: 47px; height: 47px;
+    align-items: center; justify-content: center; border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.12); background: #fff; color: #1d1d1f;
+    cursor: pointer; }
+  .gearbtn svg { width: 20px; height: 20px; }
+  /* settings primer sheet */
+  .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
+    opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+  .primer-veil.show { opacity: 1; pointer-events: auto; }
+  .primer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 201;
+    background: #fbfbfc; border-radius: 24px 24px 0 0; max-height: 78vh;
+    overflow-y: auto; padding: 24px 22px calc(30px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(105%); transition: transform .42s cubic-bezier(.25,.9,.3,1);
+    box-shadow: 0 -18px 60px rgba(0,0,0,.28); }
+  .primer.show { transform: none; }
+  .primer h3 { font: 600 20px/26px 'Urbane Rounded', sans-serif; margin: 0 0 2px; }
+  .primer .p-sub { color: var(--ink-soft); font-size: 13px; margin: 0 0 18px; }
+  .primer .p-row { margin-bottom: 18px; }
+  .primer .p-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .primer .p-top label { font: 600 14px/20px 'Urbane Rounded', sans-serif; }
+  .primer .p-top output { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #ED1C24; }
+  .primer input[type=range] { width: 100%; margin: 8px 0 4px; accent-color: #ED1C24; }
+  .primer .p-note { color: var(--ink-soft); font-size: 12px; }
+  .primer .p-choice { display: flex; gap: 8px; margin: 10px 0 4px; }
+  .primer .p-choice button { flex: 1; padding: 11px; border: 1px solid rgba(0,0,0,.12);
+    border-radius: 12px; background: #fff; font: 600 13px/1 -apple-system, sans-serif;
+    color: #1d1d1f; }
+  .primer .p-choice button.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+  .primer .p-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .primer .p-actions .btn { flex: 1; justify-content: center; text-align: center; }
 </style>
 </head>
 <body>
@@ -281,7 +329,7 @@ document.querySelectorAll('.seg-btn').forEach(b =>
 
 /* ================= prototypes list ================= */
 /* Native TestFlight shell: the whole hub becomes a prototype launcher */
-const NATIVE = /DietStationLab/.test(navigator.userAgent);
+const NATIVE = /DietStationLab/.test(navigator.userAgent) || /[?&]native=1/.test(location.search);
 if (NATIVE) document.body.classList.add('native');
 
 fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
@@ -330,8 +378,35 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         if (!e.target.closest('a, button')) location.href = f.path;
       });
       card.querySelector('.btn.primary').textContent = 'Prototype';
-      btn.textContent = 'Settings';
-      btn.onclick = () => { location.href = f.path + '#labmenu'; };
+      btn.remove();                                   /* no Dev handoff in the app */
+      /* animated hero: wireframe phone flipping through the flow's screens */
+      const shots = f.shots && f.shots.length ? f.shots : (f.preview ? [f.preview] : []);
+      if (shots.length) {
+        const hero = document.createElement('div');
+        hero.className = 'appshots';
+        hero.innerHTML = '<div class="wf-phone"><div class="wf-screen">' +
+          shots.map((u, i) => `<img src="${u}" class="${i === 0 ? 'on' : ''}" alt="">`).join('') +
+          '</div><div class="wf-island"></div></div>';
+        card.querySelector('.row').prepend(hero);
+        if (shots.length > 1) {
+          let si = 0;
+          const imgs = hero.querySelectorAll('img');
+          setInterval(() => {
+            imgs[si].classList.remove('on');
+            si = (si + 1) % imgs.length;
+            imgs[si].classList.add('on');
+          }, 2600);
+        }
+      }
+      /* gear = settings primer: tune the flow before launching it */
+      if (f.settings && f.settings.length) {
+        const gear = document.createElement('button');
+        gear.className = 'gearbtn';
+        gear.setAttribute('aria-label', 'Prototype settings');
+        gear.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" stroke="currentColor" stroke-width="1.7"/><path d="M19.3 12a7.3 7.3 0 0 0-.07-1l2.04-1.58-1.9-3.28-2.4.97a7.3 7.3 0 0 0-1.73-1L14.9 3.6h-3.8l-.34 2.5a7.3 7.3 0 0 0-1.73 1l-2.4-.96-1.9 3.27L6.77 11a7.3 7.3 0 0 0 0 2l-2.04 1.58 1.9 3.28 2.4-.97a7.3 7.3 0 0 0 1.73 1l.34 2.51h3.8l.34-2.5a7.3 7.3 0 0 0 1.73-1l2.4.96 1.9-3.27L19.23 13c.05-.33.07-.66.07-1z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+        gear.onclick = () => openPrimer(f);
+        card.querySelector('.actions').appendChild(gear);
+      }
     }
     if (f.rn && f.rn.length) {
       const kit = document.createElement('div');
@@ -377,6 +452,58 @@ function copyFeedback(btn, text, label) {
 
 /* initial tab from URL hash */
 setTab(location.hash === '#design-system' ? 'system' : 'prototypes');
+
+if (NATIVE) {
+  document.getElementById('heroSub').textContent =
+    'Tap a card to play the latest build — prototypes update live with every deploy.';
+}
+
+/* ================= settings primer (native launcher) ================= */
+const primerVeil = document.createElement('div'); primerVeil.className = 'primer-veil';
+const primerEl = document.createElement('div'); primerEl.className = 'primer';
+document.body.append(primerVeil, primerEl);
+function closePrimer() { primerVeil.classList.remove('show'); primerEl.classList.remove('show'); }
+primerVeil.addEventListener('click', closePrimer);
+
+function openPrimer(f) {
+  const KEY = 'ds-mods-' + f.id;
+  let store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) {}
+  const val = st => (st.key in store) ? store[st.key] : st.default;
+  primerEl.innerHTML = '<h3>' + f.title + '</h3>' +
+    '<p class="p-sub">Tune the prototype before you open it — changes apply on launch.</p>' +
+    f.settings.map(st => {
+      if (st.type === 'choice') {
+        return '<div class="p-row" data-key="' + st.key + '"><div class="p-top"><label>' + st.label + '</label></div>' +
+          '<div class="p-choice">' + st.options.map(o =>
+            '<button data-v="' + o + '" class="' + (val(st) === o ? 'on' : '') + '">' + o + '</button>').join('') + '</div>' +
+          '<div class="p-note">' + st.note + '</div></div>';
+      }
+      return '<div class="p-row" data-key="' + st.key + '"><div class="p-top"><label>' + st.label +
+        '</label><output>' + val(st) + (st.unit || '') + '</output></div>' +
+        '<input type="range" min="' + st.min + '" max="' + st.max + '" step="' + st.step + '" value="' + val(st) + '">' +
+        '<div class="p-note">' + st.note + '</div></div>';
+    }).join('') +
+    '<div class="p-actions"><button class="btn ghost" id="pReset">Reset</button>' +
+    '<button class="btn primary" id="pDone">Done</button></div>';
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (_) {} };
+  primerEl.querySelectorAll('.p-row').forEach(row => {
+    const st = f.settings.find(x => x.key === row.dataset.key);
+    const rng = row.querySelector('input[type=range]');
+    if (rng) rng.addEventListener('input', () => {
+      store[st.key] = +rng.value;
+      row.querySelector('output').textContent = rng.value + (st.unit || '');
+      save();
+    });
+    row.querySelectorAll('.p-choice button').forEach(b => b.onclick = () => {
+      store[st.key] = b.dataset.v; save();
+      row.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    });
+  });
+  primerEl.querySelector('#pReset').onclick = () => { localStorage.removeItem(KEY); closePrimer(); };
+  primerEl.querySelector('#pDone').onclick = closePrimer;
+  primerVeil.classList.add('show'); primerEl.classList.add('show');
+}
 </script>
 </body>
 </html>

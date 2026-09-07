@@ -527,6 +527,9 @@
     color: #999; }
   .mo-macros .mp div b { font: 500 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
 
+  /* TestFlight app: no lab views — settings only */
+  html.ds-native .menu-views { display: none !important; }
+
   /* ---- mobile: lab controls live in a hidden sheet (triple-tap & hold) -- */
   body.lab-mobile .lab-chip { display: none !important; }
   body.lab-mobile .lab-tabbar { display: none !important; }
@@ -771,6 +774,8 @@ const CATS = [
   { id: 'dessert', title: 'Dessert', quota: 0 },
 ];
 const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
+/* primer settings from the app launcher (hub Settings sheet) */
+try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}')); } catch (_) {}
 const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
 
 const ICON = {
@@ -1298,8 +1303,10 @@ scrollArea.addEventListener('wheel', () => { scrollIntent = null; glideCanceled 
 function pursueIntent() {
   if (!scrollIntent) return;
   const head = scrollIntent.head;
-  /* land with the first thumbnail row fully clear of the docked nav */
-  const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
+  /* land with the first thumbnail row fully clear of the docked nav.
+     NOTE: --top-pad is an env() expression on device — read the RESOLVED
+     scroll padding (top-pad + 66) instead of the raw custom property. */
+  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
   const target = Math.max(0, Math.min(
     head.offsetTop + head.offsetHeight - (tp + 92) - 12,
     scrollArea.scrollHeight - scrollArea.clientHeight));
@@ -1444,6 +1451,17 @@ function bindMod(id, out, key, fmt) {
 bindMod('mIdle', 'vIdle', 'idle', v => (+v).toFixed(1) + 's');
 bindMod('mTarget', 'vTarget', 'target', v => v);
 bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
+/* reflect primer values in the sidebar + gauge cap */
+(function () {
+  const set = (i, o, val, txt) => { const a = document.getElementById(i), b = document.getElementById(o);
+    if (a) a.value = val; if (b) b.textContent = txt; };
+  set('mIdle', 'vIdle', MODS.idle, (+MODS.idle).toFixed(1) + 's');
+  set('mTarget', 'vTarget', MODS.target, MODS.target);
+  set('mConfetti', 'vConfetti', MODS.confetti, MODS.confetti);
+  document.getElementById('kcalCap').textContent = '/' + MODS.target;
+  document.querySelectorAll('#tapMode button').forEach(x =>
+    x.classList.toggle('on', x.dataset.mode === MODS.tapMode));
+})();
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -1615,7 +1633,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 43';
+const BUILD = 'build 2026-09-07 · 44';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1729,7 +1747,7 @@ function adaptNav() {
    the incoming section's header pushes the docked title out as it arrives */
 let dockedCatId = null;
 function updateCatDock() {
-  const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
+  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
   const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
   const secs = Array.from(scrollArea.querySelectorAll('section'));
   let ai = -1;

@@ -417,6 +417,7 @@ const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-globa
 const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 0,
   tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
   blur: GG.blurRadius !== undefined ? GG.blurRadius : 5 };
+try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-rewards') || '{}')); } catch (_) {}
 window.glassControls = { ...GG, blurRadius: MODS.blur };
 
 /* ---------------- level data ---------------- */
@@ -881,6 +882,13 @@ function bindMod(id, out, key, fmt, after) {
     after && after();
   });
 }
+(function () {
+  const set = (i, o, val, txt) => { const a = document.getElementById(i), b = document.getElementById(o);
+    if (a) a.value = val; if (b) b.textContent = txt; };
+  set('mTear', 'vTear', MODS.tearAt, MODS.tearAt + 'px');
+  set('mStretch', 'vStretch', MODS.stretch, MODS.stretch + 'px');
+  set('mConfetti', 'vConfetti', MODS.confetti, MODS.confetti);
+})();
 bindMod('mTear', 'vTear', 'tearAt', v => v + 'px');
 bindMod('mStretch', 'vStretch', 'stretch', v => v + 'px');
 bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
