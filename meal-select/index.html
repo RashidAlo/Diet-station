@@ -117,13 +117,15 @@
 
   /* ---- scroll area ---- */
   .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
+    touch-action: pan-y; overscroll-behavior: contain;
     padding: 76px 0 132px; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 18px 20px 12px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-head.nudge .of { animation: ofpulse .9s ease .15s 2; }
+  @keyframes ofpulse { 50% { transform: scale(1.3); } }
   .grid { display: grid; grid-template-columns: 183px 183px; gap: 16px 12px;
     justify-content: center; }
 
@@ -651,7 +653,7 @@ function updateAll(instant) {
     const of = document.querySelector('[data-of="' + cat.id + '"]');
     if (of) of.textContent = catCount(cat.id) + ' of ' + cat.quota;
     const full = cat.quota > 0 && catCount(cat.id) >= cat.quota;
-    if (full && !catFullState[cat.id] && !instant) scrollToNextCat();
+    if (full && !catFullState[cat.id] && !instant) scrollToNextCat(cat.id);
     catFullState[cat.id] = full;
     DISHES[cat.id].forEach((d, i) => {
       const el = cardEls[cat.id + ':' + i];
@@ -730,15 +732,45 @@ function confetti() {
 }
 
 /* a completed category glides the list to whichever category still needs
-   picks — top-down, so a skipped one pulls you back up */
-function scrollToNextCat() {
-  const open = CATS.find(c => c.quota > 0 && catCount(c.id) < c.quota);
+   picks — the next one below first, wrapping back up to a skipped one at the
+   end. Self-verifying: if the smooth scroll gets canceled (iOS momentum,
+   background throttling) it retries, then snaps. */
+let glideRaf = null;
+function glideTo(top) {
+  const max = scrollArea.scrollHeight - scrollArea.clientHeight;
+  const target = Math.max(0, Math.min(top, max));
+  const from = scrollArea.scrollTop, dist = target - from;
+  if (Math.abs(dist) < 2) return;
+  const dur = Math.min(950, 380 + Math.abs(dist) * 0.3);
+  const t0 = performance.now();
+  let canceled = false;
+  scrollArea.addEventListener('touchstart', () => { canceled = true; }, { once: true });
+  cancelAnimationFrame(glideRaf);
+  const tick = now => {
+    if (canceled) return;
+    const x = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - x, 3);
+    scrollArea.scrollTop = from + dist * e;
+    if (x < 1) glideRaf = requestAnimationFrame(tick);
+  };
+  glideRaf = requestAnimationFrame(tick);
+  setTimeout(() => {
+    if (!canceled && Math.abs(scrollArea.scrollTop - target) > 6) scrollArea.scrollTop = target;
+  }, dur + 350);
+}
+function scrollToNextCat(fromCatId) {
+  const visible = CATS.filter(c => c.quota > 0);
+  const isOpen = c => catCount(c.id) < c.quota;
+  const idx = visible.findIndex(c => c.id === fromCatId);
+  const open = visible.slice(idx + 1).find(isOpen) || visible.find(isOpen);
   if (!open) return;
   const of = document.querySelector('[data-of="' + open.id + '"]');
   const head = of && of.closest('.cat-head');
   if (!head) return;
   setTimeout(() => {
-    scrollArea.scrollTo({ top: Math.max(0, head.offsetTop - 78), behavior: 'smooth' });
+    glideTo(head.offsetTop - 78);
+    head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
+    setTimeout(() => head.classList.remove('nudge'), 2400);
   }, 700);
 }
 
