@@ -124,7 +124,9 @@
   .dual button:active { transform: scale(.9); }
   .dual button svg { width: 18px; height: 18px; display: block; pointer-events: none; }
   .dual .sep { width: 1px; height: 22px; background: rgba(11,14,18,.16); flex: none; }
-  .dual .dcheck.on { background: #ed1c24; }
+  .dual .dcheck { cursor: default; }
+  .dual .dcheck svg path { stroke: #b9bcc2; transition: stroke .3s ease; }
+  .dual .dcheck.on { background: #ed1c24; cursor: pointer; }
   .dual .dcheck.on svg path { stroke: #fff; }
   /* iOS alert: clear confirmation */
   .modal-veil { position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,.28);
@@ -1027,9 +1029,9 @@ function roundRectPath(g, x, y, w, h, r) {
 function gaugeTick(now) {
   const fx = gaugeFx;
   /* critically damped glide — approaches the target, never bounces */
-  const step = (fx.target - fx.frac) * 0.045;
+  const step = (fx.target - fx.frac) * 0.085;
   fx.frac += step;
-  fx.speed = fx.speed * 0.9 + Math.abs(step) * 0.1;
+  fx.speed = fx.speed * 0.88 + Math.abs(step) * 0.12;
   fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
   fx.phase = now / 1000;
   if ((fx.tick++ & 1) === 0) paintGauge();
@@ -1068,6 +1070,19 @@ function paintGauge() {
     g.fillStyle = f;
     g.fillRect(fillW - soft, gy, soft + 1, gh);
     g.globalCompositeOperation = 'source-over';
+    /* motion flare: the edge runs hot while flowing, cools at rest */
+    const heat = Math.min(1, fx.speed * 900);
+    if (heat > .04) {
+      const hw = soft * .9;
+      const hg = g.createLinearGradient(fillW - hw, 0, fillW, 0);
+      hg.addColorStop(0, 'rgba(255,240,150,0)');
+      hg.addColorStop(.75, 'rgba(255,236,140,' + (.55 * heat) + ')');
+      hg.addColorStop(1, 'rgba(255,250,200,0)');
+      g.globalCompositeOperation = 'lighter';
+      g.fillStyle = hg;
+      g.fillRect(fillW - hw, gy, hw + 1, gh);
+      g.globalCompositeOperation = 'source-over';
+    }
   }
   g.restore();
 }
