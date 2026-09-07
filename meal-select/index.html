@@ -191,11 +191,13 @@
     padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
-    padding: 18px 20px 12px;
-    position: sticky; top: calc(var(--top-pad) + 50px); z-index: 15;
-    background: rgba(255,255,255,.86);
+    padding: 13px 20px 11px;
+    position: relative; z-index: 15; will-change: transform;
+    background: rgba(255,255,255,.88);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
-    backdrop-filter: blur(12px) saturate(150%); }
+    backdrop-filter: blur(12px) saturate(150%);
+    box-shadow: 0 1px 0 rgba(0,0,0,.05); }
+  .grid { padding-bottom: 26px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head.nudge .of { animation: ofpulse .9s ease .15s 2; }
@@ -591,6 +593,7 @@ function buildScreen() {
     scrollArea.appendChild(sec);
   });
   updateAll(true);
+  requestAnimationFrame(() => { if (typeof pinCategoryBars === 'function') pinCategoryBars(); });
 }
 
 function makeCard(cat, d, i) {
@@ -1158,7 +1161,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 22';
+const BUILD = 'build 2026-09-07 · 24';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1256,11 +1259,22 @@ function adaptNav() {
     el.classList.toggle('on-dark', v < .52);
   });
 }
+function pinCategoryBars() {
+  const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
+  const pinY = scrollArea.scrollTop + tp + 54;
+  scrollArea.querySelectorAll('section').forEach(sec => {
+    const head = sec.firstElementChild;
+    const start = sec.offsetTop;
+    const maxShift = sec.offsetHeight - head.offsetHeight;
+    const shift = Math.max(0, Math.min(pinY - start, maxShift));
+    head.style.transform = shift > 0 ? 'translateY(' + shift + 'px)' : '';
+  });
+}
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
   if (adaptPend) return;
   adaptPend = true;
-  requestAnimationFrame(() => { adaptPend = false; adaptNav(); });
+  requestAnimationFrame(() => { adaptPend = false; pinCategoryBars(); adaptNav(); });
 }, { passive: true });
 setInterval(adaptNav, 900);
 setTimeout(adaptNav, 500);
