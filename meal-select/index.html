@@ -233,6 +233,7 @@
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 16px 20px 12px; }
+  .scroll section:first-child .cat-head { padding-top: 30px; }
   .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
@@ -429,6 +430,7 @@
     transform: translateY(103%); pointer-events: none;
     transition: transform .52s cubic-bezier(.3,1,.32,1); }
   .meal-ov.open { transform: none; pointer-events: auto; }
+  html.embed .meal-ov { top: calc(env(safe-area-inset-top, 34px) + 4px); }
   .meal-ov.drag { transition: none; }
   .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 62%;
     overflow: hidden; z-index: 1; }
@@ -970,7 +972,7 @@ function syncDetails() {
   if (!moBaseImgH) return;
   const st = moScroll.scrollTop;
   /* a fast downward fling that lands on the top edge closes the page */
-  if (st <= 0 && moLastSt - st > 16 && mealOv.classList.contains('open')) {
+  if (st <= 0 && moLastSt - st > 34 && mealOv.classList.contains('open')) {
     moLastSt = st;
     closeMealOv();
     return;
@@ -1006,13 +1008,13 @@ moScroll.addEventListener('touchmove', e => {
     e.preventDefault();
     moDragDy = dy;
     mealOv.classList.add('drag');
-    mealOv.style.transform = 'translateY(' + (dy * 0.55).toFixed(1) + 'px)';
+    mealOv.style.transform = 'translateY(' + (dy * 0.42).toFixed(1) + 'px)';
   }
 }, { passive: false });
 moScroll.addEventListener('touchend', () => {
   if (moDragY === null) return;
   mealOv.classList.remove('drag');
-  if (moDragDy > 130) closeMealOv();
+  if (moDragDy > 195) closeMealOv();
   else mealOv.style.transform = '';
   moDragY = null; moDragDy = 0;
 });
@@ -1821,7 +1823,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 55';
+const BUILD = 'build 2026-09-07 · 56';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
