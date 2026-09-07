@@ -314,6 +314,19 @@
   #gaugeCanvas { position: absolute; inset: 0; width: 100%; height: 100%;
     border-radius: 296px; pointer-events: none; }
   .navigator .content { transition: opacity .2s ease; }
+  .navigator.celebrating .content { opacity: 0; }
+  .done-center { position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    color: #fff; opacity: 0; transform: scale(.92);
+    transition: opacity .25s ease, transform .5s cubic-bezier(.26,1.36,.42,1); }
+  .navigator.celebrating .done-center { opacity: 1; transform: scale(1); }
+  .done-center span { font: 600 17px/22px 'Urbane Rounded', sans-serif;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+  .done-center svg { width: 18px; height: 14px; display: block;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+  .done-center svg path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
+    transition: stroke-dashoffset .38s cubic-bezier(.3,.7,.3,1.15) .12s, opacity .05s .12s; }
+  .navigator.celebrating .done-center svg path { stroke-dashoffset: 0; opacity: 1; }
   .navigator.warn .content { opacity: 0; }
   .navigator .warnmsg { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; padding: 0 20px; text-align: center;
@@ -512,6 +525,7 @@
               <div class="mpair f"><span class="lbl">Fat</span><span class="v" id="mF">0</span><span class="g">g</span></div>
             </div>
           </div>
+          <div class="done-center"><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Done</span></div>
           <div class="warnmsg" id="warnMsg"></div>
           <button class="dock" id="dock"></button>
         </div>
@@ -829,31 +843,27 @@ function animateKcal(target, instant) {
 }
 
 function celebrate() {
-  /* done: the dock springs in wide with a fast self-drawing check + "Done",
-     a burst ring + confetti, then crossfades into the Next button */
-  dock.innerHTML = '<svg class="d-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="d-label">Done</span>';
-  dock.onclick = null;
-  dock.classList.add('show', 'wide');
+  /* minimal centered done: counter quiets, "Done" + drawing check appear
+     mid-pill with the burst, then the counter returns with Next */
+  const nav = document.getElementById('navigator');
+  nav.classList.add('celebrating');
   burst();
   confetti();
   vibrate([14, 40, 22]);
   setTimeout(() => {
     if (!completed) return;
-    const old = dock.querySelectorAll('.d-check, .d-label');
-    old.forEach(el => { el.style.opacity = '0'; });
-    setTimeout(() => {
-      if (!completed) return;
-      dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
-      dock.onclick = nextTapped;
-    }, 190);
-  }, 1200);
+    nav.classList.remove('celebrating');
+    dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
+    dock.onclick = nextTapped;
+    dock.classList.add('show', 'wide');
+  }, 1500);
 }
 
 function burst() {
   const nav = document.getElementById('navigator');
   const ring = document.createElement('div');
   ring.className = 'burst-ring';
-  ring.style.cssText = 'left:' + (nav.offsetWidth - 62 - 27) + 'px;top:7px;width:54px;height:54px';
+  ring.style.cssText = 'left:' + (nav.offsetWidth / 2 - 27) + 'px;top:7px;width:54px;height:54px';
   nav.appendChild(ring);
   ring.animate([
     { transform: 'scale(.45)', opacity: 1 },
@@ -861,11 +871,15 @@ function burst() {
   ], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
 }
 
-function hideDock() { dock.classList.remove('show', 'wide'); dock.onclick = null; }
+function hideDock() {
+  dock.classList.remove('show', 'wide');
+  dock.onclick = null;
+  document.getElementById('navigator').classList.remove('celebrating');
+}
 
 function confetti() {
   const nav = document.getElementById('navigator');
-  const rect = { x: nav.offsetWidth - 62, y: 14 };
+  const rect = { x: nav.offsetWidth / 2, y: 14 };
   const colors = ['#fff', '#FDD702', '#FF8A3C', '#FF3848'];
   for (let i = 0; i < MODS.confetti; i++) {
     const s = document.createElement('div');
@@ -1189,7 +1203,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 31';
+const BUILD = 'build 2026-09-07 · 32';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
