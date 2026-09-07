@@ -417,7 +417,7 @@
   .mo-close svg { pointer-events: none; }
   .mo-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
     touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: none;
-    padding-bottom: 132px; z-index: 2; }
+    padding-bottom: 0; z-index: 2; }
   .mo-scroll::-webkit-scrollbar { display: none; }
   .mo-spacer { height: 56%; pointer-events: none; }
   .mo-action { position: relative; z-index: 3; height: 0; }
@@ -452,7 +452,13 @@
   .mo-select.deny { animation: deny .4s ease; }
   @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
   .mo-sheet { position: relative; z-index: 2; background: #fff;
-    border-radius: 44px 44px 0 0; padding: 24px 24px 20px; min-height: 68%; }
+    border-radius: 44px 44px 0 0; padding: 24px 24px 0; height: 60%;
+    box-sizing: border-box; display: flex; flex-direction: column; }
+  .mo-ing-wrap { flex: 1; min-height: 0; overflow: hidden; padding-bottom: 118px;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    scrollbar-width: none; }
+  .mo-ing-wrap::-webkit-scrollbar { display: none; }
+  .meal-ov.listmode .mo-ing-wrap { overflow-y: auto; }
   .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24;
     margin-bottom: 14px; }
   .mo-title { font: 600 22px/30px 'Urbane Rounded', sans-serif; color: #0b0e12;
@@ -694,7 +700,7 @@
               <div class="mo-title" id="moTitle"></div>
               <div class="mo-heat" id="moHeat"></div>
               <div class="mo-ing-h">Ingredients:</div>
-              <div id="moIngList"></div>
+              <div class="mo-ing-wrap" id="moIngWrap"><div id="moIngList"></div></div>
             </div>
           </div>
           <div class="mo-macros">
@@ -822,7 +828,8 @@ function openMealOv(key) {
   buildIngRows(d);
   syncMoSelect();
   moScroll.scrollTop = 0;
-  mealOv.classList.remove('compact', 'tucked');
+  document.getElementById('moIngWrap').scrollTop = 0;
+  mealOv.classList.remove('compact', 'tucked', 'listmode');
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
@@ -917,11 +924,13 @@ moScroll.addEventListener('scroll', () => {
     moRaf = false;
     if (!moBaseImgH) return;
     const st = moScroll.scrollTop;
-    moImgBox.style.height = Math.max(110, moBaseImgH - st) + 'px';
+    const H = mealOv.offsetHeight;
+    moImgBox.style.height = Math.max(H * 0.40, moBaseImgH - st) + 'px';
     const rowTop = moScroll.querySelector('.mo-spacer').offsetHeight - st;
-    mealOv.classList.toggle('compact', rowTop < mealOv.offsetHeight * 0.42);
-    /* the rating/select row tucks away before it can collide with the top bar */
-    mealOv.classList.toggle('tucked', rowTop < 158);
+    mealOv.classList.toggle('compact', rowTop < H * 0.42);
+    /* sheet parked at 40%: further scrolling moves only the ingredient list */
+    const max = moScroll.scrollHeight - moScroll.clientHeight;
+    mealOv.classList.toggle('listmode', st >= max - 2);
   });
 }, { passive: true });
 
@@ -1584,7 +1593,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 40';
+const BUILD = 'build 2026-09-07 · 41';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

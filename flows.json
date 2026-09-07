@@ -27,7 +27,7 @@
         "Details action row": "Rides above the sheet edge: 5-star row (gold #FFC52E) folds into the dark rating badge past 42% of screen, then the whole row tucks away (fade + rise) before it reaches the top bar; Select pill wired to quota logic, deny = shake",
         "Ingredient toggles": "Auto-apply, no modal — the switch itself morphs into the verdict for ~1s: ON → green \"Added\" + check circle, OFF → red \"Removed\" + trash icon, then the switch returns; off rows dim 35% + strikethrough; haptic 8ms",
         "Details macros footer": "Pinned white bar, border-top #EDEDED: Meal’s Macros / kcal 24px + Protein·Carbs·Fat 16px pairs",
-        "Details image header": "Resizes 1:1 with the sheet — height = base − scrollTop (min 110), object-fit cover + object-position 50% 45% keeps the food centered every frame; pulling past the top grows it",
+        "Details image header": "Resizes 1:1 with the sheet down to a 40%-of-screen floor — the sheet parks there and further scrolling moves only the ingredient list (inner scroller unlocks at the stop, relocks at the top); cover crop keeps the food centered; pulling past the top grows the image",
         "Device frame": "Lab desktop shell: iPhone 17 Pro wireframe — 2.5px #111114 outline, screen ringed 1.5px #111114, side buttons bulge 4.5px outside the frame as solid black 5px bars",
         "Card rating badge": "Figma-matched: whole number 20px Urbane DemiBold, decimal 11px Proxima on the baseline, star 11px #FFC52E at 7px gap; cluster inset 14/10px",
         "Glass buttons": "House recipe everywhere: backdrop blur 12 saturate 160% + white/.34 (light) or rgba(72,72,78,.30) + white content (over photos); card kebab 28px, details X 44px"
