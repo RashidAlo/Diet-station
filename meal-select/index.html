@@ -379,6 +379,124 @@
   .burst-ring { position: absolute; border: 2.5px solid rgba(255,255,255,.95);
     border-radius: 50%; pointer-events: none; z-index: 41; }
 
+  /* ================= meal details overlay (Figma 14934-94030) ============ */
+  .meal-ov { position: absolute; inset: 0; z-index: 45; background: #fff;
+    opacity: 0; transform: translateY(26px); pointer-events: none;
+    transition: opacity .28s ease, transform .34s cubic-bezier(.2,.8,.3,1); }
+  .meal-ov.open { opacity: 1; transform: none; pointer-events: auto; }
+  .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 66%;
+    overflow: hidden; }
+  .mo-img img { width: 100%; height: 100%; object-fit: cover; display: block;
+    will-change: transform; }
+  .mo-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4;
+    height: calc(var(--top-pad) + 64px); display: flex; align-items: center;
+    justify-content: space-between; padding: var(--top-pad) 16px 0 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,.38), rgba(0,0,0,0));
+    pointer-events: none; }
+  .mo-chef { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #F2B90D;
+    text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .mo-close { width: 36px; height: 36px; border-radius: 50%; border: none;
+    cursor: pointer; background: #fff; display: flex; align-items: center;
+    justify-content: center; pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .mo-close:active { transform: scale(.9); }
+  .mo-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+    touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: none;
+    padding-bottom: 132px; z-index: 2; }
+  .mo-scroll::-webkit-scrollbar { display: none; }
+  .mo-spacer { height: 56%; pointer-events: none; }
+  .mo-action { position: relative; z-index: 3; height: 0; }
+  .mo-action-row { position: absolute; left: 0; right: 0; bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; }
+  .mo-stars { display: flex; gap: 4px; align-items: center;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
+    transition: opacity .25s ease; }
+  .mo-stars svg { width: 22px; height: 22px; }
+  .mo-badge { position: absolute; left: 14px; bottom: 0; display: none;
+    align-items: center; gap: 5px; height: 34px; padding: 0 12px;
+    border-radius: 999px; background: rgba(20,16,10,.45);
+    font: 600 14px/1 'Urbane Rounded', sans-serif; color: #f9f9f9;
+    opacity: 0; transition: opacity .25s ease; display: flex; }
+  .mo-badge svg { width: 15px; height: 15px; }
+  .meal-ov.compact .mo-stars { opacity: 0; }
+  .meal-ov.compact .mo-badge { opacity: 1; }
+  .mo-select { border: none; cursor: pointer; height: 40px; padding: 0 22px;
+    border-radius: 999px; background: #fff; display: flex; align-items: center;
+    gap: 6px; font: 500 14px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
+    box-shadow: 0 4px 14px rgba(0,0,0,.16);
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .mo-select:active { transform: scale(.94); }
+  .mo-select.sel { color: #0b0e12; }
+  .mo-select .msc { width: 16px; height: 16px; border-radius: 50%;
+    background: #26A659; display: none; align-items: center; justify-content: center; }
+  .mo-select.sel .msc { display: flex; }
+  .mo-select .msc svg { width: 9px; height: 7px; }
+  .mo-select.deny { animation: deny .4s ease; }
+  @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
+  .mo-sheet { position: relative; z-index: 2; background: #fff;
+    border-radius: 38px 38px 0 0; padding: 24px 24px 20px; min-height: 68%; }
+  .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24;
+    margin-bottom: 14px; }
+  .mo-title { font: 600 22px/30px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    margin-bottom: 16px; }
+  .mo-heat { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .mo-heat .hc { flex: 1; display: flex; align-items: center; gap: 9px;
+    border: 1px solid #EDEDED; border-radius: 14px; padding: 11px 14px;
+    background: #fff; }
+  .mo-heat .hc .he { font-size: 17px; }
+  .mo-heat .hc b { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    color: #0b0e12; }
+  .mo-heat .hc span { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
+  .mo-heat .or { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #999; }
+  .mo-ing-h { font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    margin-bottom: 12px; }
+  .mo-row { display: flex; align-items: center; justify-content: space-between;
+    min-height: 24px; padding: 10px 2px 10px 0; position: relative;
+    border-bottom: 1px solid #F0F0F0; cursor: pointer; }
+  .mo-row:last-child { border-bottom: none; }
+  .mo-row .lab { font: 400 15px/22px 'Proxima Nova', sans-serif; color: #252B33;
+    transition: opacity .25s ease; position: relative; }
+  .mo-row .lab::after { content: ''; position: absolute; left: 0; right: 0;
+    top: calc(50% + 1px); height: 1.5px; background: #252B33; border-radius: 1px;
+    transform: scaleX(0); transform-origin: left center;
+    transition: transform .3s cubic-bezier(.3,.8,.3,1); }
+  .mo-row.off .lab { opacity: .35; }
+  .mo-row.off .lab::after { transform: scaleX(1); }
+  .mo-saved { position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; gap: 4px;
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #26A659;
+    opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+  .mo-saved .sc { width: 13px; height: 13px; border-radius: 50%; background: #26A659;
+    display: flex; align-items: center; justify-content: center; }
+  .mo-saved .sc svg { width: 7px; height: 6px; }
+  .mo-row.saving .mo-saved { opacity: 1; }
+  /* Figma small switch: 30x18, p3, knob 12 */
+  .mo-sw { width: 30px; height: 18px; border-radius: 50px; flex: none;
+    border: 1px solid #26A659; background: #26A659; padding: 2px;
+    display: flex; justify-content: flex-end; align-items: center;
+    transition: background .25s ease, border-color .25s ease; }
+  .mo-row.off .mo-sw { background: #f5f5f5; border-color: #e5e5e5;
+    justify-content: flex-start; }
+  .mo-sw .knob { width: 12px; height: 12px; border-radius: 50%; background: #f5f5f5;
+    box-shadow: 0 0 3px 2px rgba(0,0,0,.08);
+    transition: transform .25s cubic-bezier(.3,.8,.3,1.2); }
+  .mo-row.off .mo-sw .knob { background: #fff; }
+  .mo-macros { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: #fff; border-top: 1px solid #EDEDED;
+    padding: 14px 32px calc(20px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; justify-content: space-between; }
+  .mo-macros .mk small { display: block; font: 500 10.5px/14px 'Urbane Rounded', sans-serif;
+    color: #999; }
+  .mo-macros .mk b { font: 500 24px/26px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .mo-macros .mk i { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e;
+    font-style: normal; margin-left: 3px; }
+  .mo-macros .mp { display: flex; gap: 14px; }
+  .mo-macros .mp div small { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif;
+    color: #999; }
+  .mo-macros .mp div b { font: 500 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+
   /* ---- mobile: lab controls live in a hidden sheet (triple-tap & hold) -- */
   body.lab-mobile .lab-chip { display: none !important; }
   body.lab-mobile .lab-tabbar { display: none !important; }
@@ -529,6 +647,43 @@
           <div class="warnmsg" id="warnMsg"></div>
           <button class="dock" id="dock"></button>
         </div>
+        <div class="meal-ov" id="mealOv">
+          <div class="mo-img"><img id="moImg" src="" alt=""></div>
+          <div class="mo-top">
+            <span class="mo-chef">Chef&rsquo;s Choice &#x1F468;&#x200D;&#x1F373;</span>
+            <button class="mo-close" id="moClose" aria-label="Close">
+              <svg viewBox="0 0 16 16" fill="none" width="15" height="15"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="mo-scroll" id="moScroll">
+            <div class="mo-spacer"></div>
+            <div class="mo-action">
+              <div class="mo-action-row">
+                <div class="mo-stars" id="moStars"></div>
+                <div class="mo-badge" id="moBadge"></div>
+                <button class="mo-select" id="moSelect">
+                  <span class="msc"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.4L3.4 5.8 8 1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span id="moSelTxt">Select</span>
+                </button>
+              </div>
+            </div>
+            <div class="mo-sheet">
+              <div class="mo-cat" id="moCat"></div>
+              <div class="mo-title" id="moTitle"></div>
+              <div class="mo-heat" id="moHeat"></div>
+              <div class="mo-ing-h">Ingredients:</div>
+              <div id="moIngList"></div>
+            </div>
+          </div>
+          <div class="mo-macros">
+            <div class="mk"><small>Meal&rsquo;s Macros</small><b id="moKcal">0</b><i>Kcal</i></div>
+            <div class="mp">
+              <div><small>Protein</small><b id="moP">0g</b></div>
+              <div><small>Carbs</small><b id="moC">0g</b></div>
+              <div><small>Fat</small><b id="moF">0g</b></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="island"></div>
     </div>
@@ -543,38 +698,38 @@
 /* ================= data ================= */
 const DISHES = {
   breakfast: [
-    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg' },
-    { n: 'Oatmeal with Chocolate Chips', kcal: 410, p: 12, c: 58, f: 14, r: '4.3', img: 'm-oatmeal.jpg' },
-    { n: 'Keto Olive Cheese Sandwich', kcal: 360, p: 18, c: 10, f: 27, r: '4.3', img: 'm-olivesand.jpg' },
-    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg' },
+    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg', ing: ['🧀 Cheese', '🌾 Almond flour', '🧈 Butter', '🥚 Egg', '🧂 Salt'] },
+    { n: 'Oatmeal with Chocolate Chips', kcal: 410, p: 12, c: 58, f: 14, r: '4.3', img: 'm-oatmeal.jpg', ing: ['🌾 Oats', '🍫 Chocolate chips', '🥛 Milk', '🍯 Honey', '🧂 Salt'] },
+    { n: 'Keto Olive Cheese Sandwich', kcal: 360, p: 18, c: 10, f: 27, r: '4.3', img: 'm-olivesand.jpg', ing: ['🫒 Olives', '🧀 Cheese', '🍞 Keto bread', '🥬 Lettuce', '🍅 Sundried tomato'] },
+    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg', ing: ['🍫 Cacao', '🥛 Milk', '🌰 Chia seeds', '🍯 Honey'] },
   ],
   lunch: [
-    { n: 'Baked Chicken Fingers with Wedges', kcal: 480, p: 30, c: 22, f: 12, r: '4.3', img: 'm-fingers.jpg' },
-    { n: 'Chicken Machbous with tomato sauce', kcal: 465, p: 32, c: 48, f: 14, r: '4.3', img: 'm-machbous.jpg' },
-    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg' },
-    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg' },
-    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg' },
-    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg' },
+    { n: 'Baked Chicken Fingers with Wedges', kcal: 480, p: 30, c: 22, f: 12, r: '4.3', img: 'm-fingers.jpg', ing: ['🍗 Chicken breast', '🌾 Panko crumbs', '🥔 Potato wedges', '🌶️ Spicy mayo', '🧂 Salt'] },
+    { n: 'Chicken Machbous with tomato sauce', kcal: 465, p: 32, c: 48, f: 14, r: '4.3', img: 'm-machbous.jpg', ing: ['🍗 Chicken', '🍚 Rice', '🍅 Tomato sauce', '🌶️ Spicy', '🧅 Onion', '🧄 Garlic'] },
+    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg', ing: ['🍗 Chicken', '🥔 Cube potato', '🥥 Coconut milk', '🍛 Curry paste', '🌶️ Spicy', '🍚 Rice'] },
+    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg', ing: ['🍗 Grilled chicken', '🍝 Garfelo pasta', '🍅 Tomato sauce', '🧀 Parmesan', '🌿 Basil'] },
+    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg', ing: ['🍗 Chicken', '🍝 Pasta', '🥬 Rocca', '🫒 Olives', '🍋 Lemon dressing'] },
+    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg', ing: ['🍗 Chicken', '🥛 Yogurt sauce', '🥒 Cucumber', '🧄 Garlic', '🌿 Dill'] },
   ],
   dinner: [
-    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg' },
-    { n: 'Shrimp Salad with Dill', kcal: 380, p: 31, c: 14, f: 19, r: '4.3', img: 'm-shrimpdill.jpg' },
-    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg' },
-    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg' },
-    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg' },
+    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg', ing: ['🍗 Chicken', '🥛 Yogurt sauce', '🥒 Cucumber', '🧄 Garlic', '🌿 Dill'] },
+    { n: 'Shrimp Salad with Dill', kcal: 380, p: 31, c: 14, f: 19, r: '4.3', img: 'm-shrimpdill.jpg', ing: ['🦐 Shrimp', '🥬 Lettuce', '🌿 Dill', '🫒 Olives', '🍋 Lemon'] },
+    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg', ing: ['🍗 Chicken', '🍝 Pasta', '🥬 Rocca', '🫒 Olives', '🍋 Lemon dressing'] },
+    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg', ing: ['🍗 Chicken', '🥔 Cube potato', '🥥 Coconut milk', '🍛 Curry paste', '🌶️ Spicy', '🍚 Rice'] },
+    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg', ing: ['🍗 Grilled chicken', '🍝 Garfelo pasta', '🍅 Tomato sauce', '🧀 Parmesan', '🌿 Basil'] },
   ],
   snacks: [
-    { n: 'Strawberry Rocca Salad with Feta', kcal: 210, p: 7, c: 16, f: 13, r: '4.3', img: 'm-rocca.jpg' },
-    { n: 'Keto Zoodles Salad', kcal: 180, p: 6, c: 9, f: 14, r: '4.3', img: 'm-zoodles.jpg' },
-    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg' },
-    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg' },
-    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg' },
+    { n: 'Strawberry Rocca Salad with Feta', kcal: 210, p: 7, c: 16, f: 13, r: '4.3', img: 'm-rocca.jpg', ing: ['🥬 Rocca', '🍓 Strawberry', '🧀 Feta', '🌰 Walnuts', '🍯 Honey vinaigrette'] },
+    { n: 'Keto Zoodles Salad', kcal: 180, p: 6, c: 9, f: 14, r: '4.3', img: 'm-zoodles.jpg', ing: ['🥒 Zucchini noodles', '🍅 Cherry tomato', '🫒 Olive oil', '🧄 Garlic', '🌶️ Chili flakes'] },
+    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg', ing: ['🍍 Pineapple', '🍫 Dark chocolate', '🥥 Coconut flakes'] },
+    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg', ing: ['🍩 Keto dough', '🍫 Dark chocolate glaze', '🌰 Almond flour', '🥚 Egg'] },
+    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg', ing: ['🧀 Cheese', '🌾 Almond flour', '🧈 Butter', '🥚 Egg', '🧂 Salt'] },
   ],
   dessert: [
-    { n: 'Chocolate Raspberry', kcal: 230, p: 5, c: 26, f: 12, r: '4.3', img: 'm-chocraspberry.jpg' },
-    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg' },
-    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg' },
-    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg' },
+    { n: 'Chocolate Raspberry', kcal: 230, p: 5, c: 26, f: 12, r: '4.3', img: 'm-chocraspberry.jpg', ing: ['🍫 Dark chocolate', '🍓 Raspberry', '🥛 Cream'] },
+    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg', ing: ['🍫 Cacao', '🥛 Milk', '🌰 Chia seeds', '🍯 Honey'] },
+    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg', ing: ['🍩 Keto dough', '🍫 Dark chocolate glaze', '🌰 Almond flour', '🥚 Egg'] },
+    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg', ing: ['🍍 Pineapple', '🍫 Dark chocolate', '🥥 Coconut flakes'] },
   ],
 };
 const CATS = [
@@ -603,6 +758,130 @@ const collapseTimers = {};
 let completed = false;
 
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
+
+/* ================= meal details overlay (Figma 14934-94030) ================= */
+const mealOv = document.getElementById('mealOv');
+const moScroll = document.getElementById('moScroll');
+const moImg = document.getElementById('moImg');
+const moSelect = document.getElementById('moSelect');
+let moKey = null;
+
+function moStarSVG(fill) {
+  return '<svg viewBox="0 0 16 16" fill="none"><path d="M8 11.68l2.767 1.673c.506.307 1.126-.146.993-.72l-.733-3.146 2.446-2.12c.447-.387.207-1.12-.38-1.167l-3.22-.273-1.26-2.973c-.227-.54-1-.54-1.227 0L6.127 5.92l-3.22.273c-.587.047-.827.78-.38 1.167L4.973 9.48l-.733 3.146c-.133.574.487 1.027.993.72L8 11.68z" fill="' + fill + '"/></svg>';
+}
+
+function moDish(key) {
+  const parts = key.split(':');
+  return { cat: CATS.find(c => c.id === parts[0]), d: DISHES[parts[0]][+parts[1]] };
+}
+
+function openMealOv(key) {
+  moKey = key;
+  const { cat, d } = moDish(key);
+  moImg.src = d.img;
+  document.getElementById('moCat').textContent = cat.title;
+  document.getElementById('moTitle').textContent = d.n;
+  document.getElementById('moKcal').textContent = d.kcal;
+  document.getElementById('moP').textContent = d.p + 'g';
+  document.getElementById('moC').textContent = d.c + 'g';
+  document.getElementById('moF').textContent = d.f + 'g';
+  /* stars: rounded rating out of 5 + the compact scrolled badge */
+  const full = Math.round(parseFloat(d.r));
+  document.getElementById('moStars').innerHTML =
+    Array.from({ length: 5 }, (_, i) => moStarSVG(i < full ? '#FFC52E' : 'rgba(255,255,255,.55)')).join('');
+  document.getElementById('moBadge').innerHTML = d.r + ' ' + moStarSVG('#FFC52E');
+  /* heat chips: hot mains get both, cold plates just the cold one */
+  const hot = ['breakfast', 'lunch', 'dinner'].includes(cat.id) && !/salad|pudding|pineapple/i.test(d.n);
+  document.getElementById('moHeat').innerHTML = hot
+    ? '<div class="hc"><span class="he">&#x1F525;</span><div><b>Microwave it</b><span style="color:#ED1C24">2-3 minutes</span></div></div>' +
+      '<span class="or">or</span>' +
+      '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Enjoy it</b><span style="color:#3B82D0">cold!</span></div></div>'
+    : '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Served chilled</b><span style="color:#3B82D0">enjoy it cold!</span></div></div>';
+  buildIngRows(d);
+  syncMoSelect();
+  moScroll.scrollTop = 0;
+  moImg.style.transform = 'none';
+  mealOv.classList.remove('compact');
+  mealOv.classList.add('open');
+  vibrate(8);
+}
+
+function buildIngRows(d) {
+  if (!d.off) d.off = new Set();
+  const list = document.getElementById('moIngList');
+  list.innerHTML = '';
+  d.ing.forEach((label, i) => {
+    const row = document.createElement('div');
+    row.className = 'mo-row' + (d.off.has(i) ? ' off' : '');
+    row.innerHTML =
+      '<span class="lab">' + label + '</span>' +
+      '<span class="mo-saved"><span class="sc"><svg viewBox="0 0 7 6" fill="none"><path d="M1 2.9L2.8 4.7 6 1.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Saved</span>' +
+      '<span class="mo-sw"><span class="knob"></span></span>';
+    row.addEventListener('click', () => {
+      /* auto-apply: the switch flips, the row strikes through, "Saved" confirms.
+         No modal — Rashid skipped Figma's confirm frame on purpose. */
+      if (d.off.has(i)) d.off.delete(i); else d.off.add(i);
+      row.classList.toggle('off', d.off.has(i));
+      vibrate(8);
+      clearTimeout(row._savedT);
+      row.classList.remove('saving');
+      void row.offsetWidth;
+      row.classList.add('saving');
+      row._savedT = setTimeout(() => row.classList.remove('saving'), 1400);
+    });
+    list.appendChild(row);
+  });
+}
+
+function syncMoSelect() {
+  const on = !!sel[moKey];
+  moSelect.classList.toggle('sel', on);
+  document.getElementById('moSelTxt').textContent = on ? 'Selected' : 'Select';
+}
+
+moSelect.addEventListener('click', () => {
+  const catId = moKey.split(':')[0];
+  const el = cardEls[moKey];
+  if (sel[moKey]) {
+    delete sel[moKey];
+    deselect(el);
+    vibrate(8);
+  } else {
+    if (catCount(catId) >= quotaOf(catId)) {
+      moSelect.classList.remove('deny'); void moSelect.offsetWidth;
+      moSelect.classList.add('deny');
+      vibrate([12, 40, 12]);
+      return;
+    }
+    sel[moKey] = 1;
+    selectSeq(el);
+    vibrate(8);
+    updateAll();
+  }
+  syncMoSelect();
+});
+
+document.getElementById('moClose').addEventListener('click', () => {
+  mealOv.classList.remove('open');
+  vibrate(8);
+});
+
+/* dynamic scroll: parallax image, rubber-band zoom, stars -> compact badge */
+let moRaf = false;
+moScroll.addEventListener('scroll', () => {
+  if (moRaf) return;
+  moRaf = true;
+  requestAnimationFrame(() => {
+    moRaf = false;
+    const st = moScroll.scrollTop;
+    moImg.style.transform = st >= 0
+      ? 'translateY(' + (st * 0.38).toFixed(1) + 'px)'
+      : 'scale(' + (1 - st / 900).toFixed(3) + ')';
+    /* stars fold into the compact 4.3-star badge once the sheet rides high */
+    const rowTop = moScroll.querySelector('.mo-spacer').offsetHeight - st;
+    mealOv.classList.toggle('compact', rowTop < mealOv.offsetHeight * 0.42);
+  });
+}, { passive: true });
 
 /* ================= build the screen ================= */
 const scrollArea = document.getElementById('scrollArea');
@@ -658,7 +937,7 @@ function makeCard(cat, d, i) {
   el.addEventListener('click', e => {
     if (e.target.closest('.q-minus')) return step(key, -1);
     if (e.target.closest('.q-plus')) return step(key, +1);
-    if (e.target.closest('.kebab')) return;
+    if (e.target.closest('.kebab')) return openMealOv(key);
     if (e.target.closest('.qty')) return expand(key);   /* collapsed pill tap re-opens */
     cardTap(key);
   });
@@ -1239,7 +1518,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 35';
+const BUILD = 'build 2026-09-07 · 36';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
