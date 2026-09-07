@@ -1055,16 +1055,9 @@ function paintGauge() {
   g.beginPath();
   roundRectPath(g, 0, gy, 358, gh, rad);
   g.clip();
-  /* liquid leading edge — livelier while the fill is moving */
-  const amp = Math.min(5, 1.4 + Math.abs(fx.vel) * 340);
-  const edgeX = fillW;
+  /* one soft bar: gradient fill with a wide blurred leading edge */
   g.beginPath();
-  g.moveTo(0, gy);
-  for (let yy = 0; yy <= gh; yy += 2.5) {
-    g.lineTo(edgeX + Math.sin((yy / gh) * 4.6 + fx.phase * 2.6) * amp, gy + yy);
-  }
-  g.lineTo(0, gy + gh);
-  g.closePath();
+  g.rect(0, gy, fillW, gh);
   const grad = g.createLinearGradient(0, 0, fillW, 0);
   grad.addColorStop(0, 'rgba(238,32,35,.94)');
   grad.addColorStop(.62, 'rgba(245,120,19,.94)');
@@ -1073,20 +1066,13 @@ function paintGauge() {
   g.fill();
   if (fx.frac < .985) {
     g.globalCompositeOperation = 'destination-out';
-    const f = g.createLinearGradient(edgeX - 30, 0, edgeX + amp + 2, 0);
+    const f = g.createLinearGradient(fillW - 46, 0, fillW, 0);
     f.addColorStop(0, 'rgba(0,0,0,0)');
-    f.addColorStop(1, 'rgba(0,0,0,.9)');
+    f.addColorStop(.55, 'rgba(0,0,0,.45)');
+    f.addColorStop(1, 'rgba(0,0,0,1)');
     g.fillStyle = f;
-    g.fillRect(edgeX - 30, gy, 32 + amp, gh);
+    g.fillRect(fillW - 46, gy, 47, gh);
     g.globalCompositeOperation = 'source-over';
-    const br = 26 + Math.sin(fx.phase * 3.3) * 5;
-    const glow = g.createRadialGradient(edgeX, gy + gh / 2, 0, edgeX, gy + gh / 2, br);
-    glow.addColorStop(0, 'rgba(253,215,2,.85)');
-    glow.addColorStop(.5, 'rgba(253,160,20,.30)');
-    glow.addColorStop(1, 'rgba(253,215,2,0)');
-    g.globalCompositeOperation = 'lighter';
-    g.fillStyle = glow;
-    g.fillRect(edgeX - br, gy, br * 2, gh);
   }
   g.restore();
 }
