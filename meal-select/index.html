@@ -120,7 +120,7 @@
     opacity: 0; transform: translateY(-7px);
     transition: opacity .22s ease, transform .22s cubic-bezier(.2,.8,.3,1); }
   .nav.docked .cat-dock { opacity: 1; transform: none; }
-  .cat-dock h3 { font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-dock h3 { font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-dock.swap h3, .cat-dock.swap .of { animation: dockswap .24s ease; }
   @keyframes dockswap { 0% { opacity: 0; transform: translateY(8px); }
@@ -206,12 +206,10 @@
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 16px 20px 12px; }
   .grid { padding-bottom: 14px; }
-  .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .of { transition: color .25s ease; }
-  .of.done { color: #1F8A4C; background: rgba(38,166,89,.14);
-    padding: 3px 10px 3px 8px; border-radius: 999px;
-    display: inline-flex; align-items: center; gap: 5px; }
+  .of.done { color: #26A659; display: inline-flex; align-items: center; gap: 5px; }
   .of.done svg { width: 11px; height: 11px; display: block; flex: none; }
   .of.pop { animation: ofdone .4s cubic-bezier(.3,1.5,.4,1); }
   @keyframes ofdone { 40% { transform: scale(1.22); } }
@@ -772,7 +770,7 @@ function totals() {
   return { kcal, p, c, f, count };
 }
 
-const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#1F8A4C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#26A659" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function renderOf(el, count, quota) {
   if (!el) return;
   const done = quota > 0 && count >= quota;
@@ -1191,7 +1189,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 28';
+const BUILD = 'build 2026-09-07 · 29';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
