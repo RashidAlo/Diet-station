@@ -163,8 +163,21 @@
   /* ---- native TestFlight shell: prototypes only, app-like list ---- */
   body.native { padding-top: env(safe-area-inset-top, 0px); }
   body.native .seg, body.native #pane-system, body.native footer,
-  body.native .count, body.native .actions, body.native .handoff,
+  body.native .count, body.native .handoff,
   body.native .rnkit { display: none !important; }
+  body.native .card { padding: 0; overflow: hidden; }
+  body.native .row { flex-direction: column-reverse; gap: 0; }
+  body.native .thumb { width: 100%; height: 230px; overflow: hidden;
+    border-radius: 0; position: relative; background: #eceded; }
+  body.native .thumb img { width: 100%; height: auto; aspect-ratio: auto;
+    object-fit: cover; object-position: center top; border-radius: 0;
+    box-shadow: none; }
+  body.native .row .body { padding: 18px 20px 0; }
+  body.native .card .desc { display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
+  body.native .card .meta { display: none; }
+  body.native .actions { padding: 0 20px 20px; margin-top: 14px; }
+  body.native .actions .btn { flex: 1; text-align: center; justify-content: center; }
   body.native #pane-prototypes { display: block !important; }
   body.native .hero { padding: 26px 0 2px; }
   body.native .hero h1 { font-size: 28px; }
@@ -312,9 +325,14 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const open = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', open);
     };
-    if (NATIVE) card.addEventListener('click', e => {
-      if (!e.target.closest('a, button')) location.href = f.path;
-    });
+    if (NATIVE) {
+      card.addEventListener('click', e => {
+        if (!e.target.closest('a, button')) location.href = f.path;
+      });
+      card.querySelector('.btn.primary').textContent = 'Prototype';
+      btn.textContent = 'Settings';
+      btn.onclick = () => { location.href = f.path + '#labmenu'; };
+    }
     if (f.rn && f.rn.length) {
       const kit = document.createElement('div');
       kit.className = 'rnkit';

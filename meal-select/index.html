@@ -339,23 +339,25 @@
     opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   .navigator.warn .warnmsg { opacity: 1; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
-    gap: 10px; padding: 0 32px 0 22px; color: #f9f9f9; }
-  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); width: 84px; flex: none; }
+    gap: 8px; padding: 0 28px 0 22px; color: #f9f9f9; }
+  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); width: 78px; flex: none;
+    white-space: nowrap; }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
   .navigator .kcal .val { display: flex; align-items: flex-end; }
-  .navigator .kcal .big { font: 600 20px/26px 'Urbane Rounded', sans-serif; }
+  .navigator .kcal .big { font: 600 19px/25px 'Urbane Rounded', sans-serif; }
   .navigator .kcal .cap { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46;
     margin: 0 0 3px 1px; }
   .navigator .mpairs { display: flex; gap: 3px; padding-bottom: 4px; }
-  .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+    white-space: nowrap; }
   .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
   .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif;
     display: inline-block; min-width: 21px; }
   .navigator .mpair .g { font: 400 10px/13px 'Proxima Nova', sans-serif; }
-  .navigator .mpair.p { width: 40px; } .navigator .mpair.c { width: 34px; }
-  .navigator .mpair.f { width: 32px; }
+  .navigator .mpair.p { min-width: 38px; } .navigator .mpair.c { min-width: 32px; }
+  .navigator .mpair.f { min-width: 28px; }
 
   /* Saved / Next dock */
   .dock { position: absolute; right: 8px; top: 8px; width: 53px; height: 53px;
@@ -370,7 +372,7 @@
       transform .7s cubic-bezier(.26,1.36,.42,1),
       width .45s cubic-bezier(.45,1.45,.8,1); }
   .dock.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
-  .dock.wide { width: 107px; }
+  .dock.wide { width: 92px; }
   .dock .d-label { white-space: nowrap; opacity: 0; transition: opacity .25s ease .1s; }
   .dock.wide .d-label { opacity: 1; }
   .dock:active { transform: scale(.94); }
@@ -1296,7 +1298,10 @@ scrollArea.addEventListener('wheel', () => { scrollIntent = null; glideCanceled 
 function pursueIntent() {
   if (!scrollIntent) return;
   const head = scrollIntent.head;
-  const target = Math.max(0, Math.min(head.offsetTop - 78,
+  /* land with the first thumbnail row fully clear of the docked nav */
+  const tp = parseFloat(getComputedStyle(phone).getPropertyValue('--top-pad')) || 34;
+  const target = Math.max(0, Math.min(
+    head.offsetTop + head.offsetHeight - (tp + 92) - 12,
     scrollArea.scrollHeight - scrollArea.clientHeight));
   if (Math.abs(scrollArea.scrollTop - target) < 8) {
     head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
@@ -1594,7 +1599,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 41';
+const BUILD = 'build 2026-09-07 · 42';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1610,6 +1615,11 @@ document.getElementById('sFresh').onclick = () => {
   location.href = location.pathname + '?fresh=' + Date.now();
 };
 labVeil.addEventListener('click', closeLabMenu);
+/* hub Settings button deep link */
+if (location.hash === '#labmenu' && !document.body.classList.contains('desktop')) {
+  history.replaceState(null, '', location.pathname);
+  setTimeout(openLabMenu, 400);
+}
 document.getElementById('sDone').addEventListener('click', closeLabMenu);
 function openLabView(tab) {
   closeLabMenu();

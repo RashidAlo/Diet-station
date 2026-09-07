@@ -678,6 +678,11 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     }, { passive: true });
     addEventListener('touchend', function () { clearTimeout(hold); }, { passive: true });
     addEventListener('touchmove', function () { clearTimeout(hold); }, { passive: true });
+    /* hub Settings button lands here with #labmenu: open the sheet on arrival */
+    if (location.hash === '#labmenu') {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(open, 350);
+    }
   }
 
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
