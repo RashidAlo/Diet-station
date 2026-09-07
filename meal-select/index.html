@@ -74,6 +74,8 @@
 
   /* ================= stage + device frame ================= */
   #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body:not(.desktop) #stage { align-items: flex-start; justify-content: flex-start; }
+  body:not(.desktop) .device { transform-origin: top left; }
   body.desktop #stage { left: 316px; }
   .device { position: relative; transform-origin: center center; }
   body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
@@ -103,12 +105,12 @@
     height: calc(var(--top-pad) + 58px);
     display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
   .nav::before { content: ''; position: absolute; left: 0; right: 0; top: 0;
-    height: calc(env(safe-area-inset-top, 0px) + 20px); pointer-events: none;
+    height: calc(env(safe-area-inset-top, 0px) + 8px); pointer-events: none;
     z-index: 0;
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     backdrop-filter: blur(14px) saturate(150%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 96%);
-    mask-image: linear-gradient(to bottom, #000 55%, transparent 96%); }
+    -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 94%);
+    mask-image: linear-gradient(to bottom, #000 42%, transparent 94%); }
   .nav > * { position: relative; z-index: 2; }
   /* nav buttons: transparent frosted circles — content blurs through */
   .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
@@ -1028,7 +1030,13 @@ function fit() {
        documentElement.client* is what CSS lays out against: synchronous,
        chrome-free, and correct in standalone by definition. */
     const de = document.documentElement;
-    const vw = de.clientWidth, vh = de.clientHeight;
+    const vw = de.clientWidth;
+    const cands = [de.clientHeight, innerHeight,
+      document.getElementById('dvhProbe').offsetHeight,
+      window.visualViewport ? window.visualViewport.height : 0,
+      navigator.standalone === true ? screen.height : 0
+    ].filter(v => v > 500 && v < 1500);
+    const vh = Math.max.apply(null, cands);
     stageScale = vw / 402;
     phone.style.setProperty('--s', stageScale);
     phone.style.height = (vh / stageScale) + 'px';
@@ -1136,7 +1144,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 20';
+const BUILD = 'build 2026-09-07 · 21';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
