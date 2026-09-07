@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>DietStation — Meal Selector</title>
-<script>class Button {}</script>
-<script src="html2canvas.min.js"></script>
-<script src="liquid-glass-container.js"></script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -102,34 +99,56 @@
   .nav::after { content: ''; position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(to bottom, rgba(255,255,255,.86) 30%, rgba(255,255,255,0)); }
   .nav > * { position: relative; z-index: 1; }
-  /* nav buttons are liquid-glass containers (global recipe), with a CSS seat
-     so they stay visible over flat backdrops; adaptive contrast flips content */
-  .glass-container.navbtn { position: absolute; top: calc(var(--top-pad) + 11px);
-    width: 40px; height: 40px;
-    border-radius: 50%; overflow: hidden; cursor: pointer; z-index: 31;
+  /* nav buttons: transparent frosted circles — content blurs through */
+  .navbtn { position: absolute; top: calc(var(--top-pad) + 11px); width: 40px; height: 40px;
+    border-radius: 50%; border: none; cursor: pointer; z-index: 31;
     display: flex; align-items: center; justify-content: center;
-    transition: transform .18s cubic-bezier(.3,.8,.3,1);
-    box-shadow:
-      inset 0 1px 1px rgba(255,255,255,.30),
-      inset 0 0 0 .6px rgba(255,255,255,.38),
-      inset 0 -1px 1.5px rgba(0,0,0,.10),
-      0 10px 26px -12px rgba(0,0,0,.35),
-      0 1px 2px rgba(0,0,0,.10); }
-  .glass-container.navbtn:active { transform: scale(.92); }
-  .glass-container.navbtn canvas { box-shadow: none !important; }
-  .glass-container.navbtn svg { width: 16px; height: 16px; display: block;
-    position: relative; pointer-events: none; }
-  .glass-container.gx { left: 24px; }
-  .glass-container.gconfirm { right: 16px; }
-  .glass-container.gconfirm svg { width: 18px; height: 18px; }
-  .glass-container.gconfirm::after { content: ''; position: absolute; inset: 0;
-    border-radius: 50%; background: #ed1c24; opacity: 0; pointer-events: none;
-    transition: opacity .35s ease; }
-  .glass-container.gconfirm.on::after { opacity: .92; }
-  .glass-container.gconfirm.on { box-shadow: inset 0 1px 1px rgba(255,255,255,.30),
-    0 6px 16px -6px rgba(237,28,36,.55); }
-  .glass-container.gconfirm.on svg { filter: none !important; z-index: 1; }
-  .glass-dark-content svg { filter: brightness(0) opacity(.88); }
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22);
+    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+  .navbtn:active { transform: scale(.92); }
+  .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+  .gx { left: 24px; }
+  /* Apple dual action capsule: confirm | divider | clear */
+  .dual { position: absolute; right: 16px; top: calc(var(--top-pad) + 11px); height: 40px;
+    display: flex; align-items: center; border-radius: 20px; overflow: hidden; z-index: 31;
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22); }
+  .dual button { width: 46px; height: 40px; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .3s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
+  .dual button:active { transform: scale(.9); }
+  .dual button svg { width: 17px; height: 17px; display: block; pointer-events: none; }
+  .dual .sep { width: 1px; height: 22px; background: rgba(11,14,18,.16); flex: none; }
+  .dual .dcheck.on { background: #ed1c24; }
+  .dual .dcheck.on svg path { stroke: #fff; }
+  /* iOS alert: clear confirmation */
+  .modal-veil { position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,.28);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+  .modal-veil.show { opacity: 1; pointer-events: auto; }
+  .alert { width: 270px; border-radius: 14px; overflow: hidden; text-align: center;
+    background: rgba(250,250,250,.85);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    transform: scale(1.1); transition: transform .25s cubic-bezier(.2,.9,.3,1.15); }
+  .modal-veil.show .alert { transform: scale(1); }
+  .alert h4 { font: 600 17px/22px -apple-system, 'Urbane Rounded', sans-serif;
+    color: #0b0e12; padding: 19px 16px 3px; }
+  .alert p { font: 400 13px/18px -apple-system, 'Proxima Nova', sans-serif;
+    color: rgba(60,60,67,.85); padding: 0 18px 17px; }
+  .alert .btns { display: flex; border-top: .5px solid rgba(60,60,67,.29); }
+  .alert .btns button { flex: 1; height: 44px; border: none; background: none; cursor: pointer;
+    font: 400 17px/22px -apple-system, 'Urbane Rounded', sans-serif; color: #0a84ff; }
+  .alert .btns button:active { background: rgba(0,0,0,.06); }
+  .alert .btns .destructive { color: #ed1c24; font-weight: 600;
+    border-left: .5px solid rgba(60,60,67,.29); }
   .nav .ttl { position: absolute; left: 50%; transform: translateX(-50%);
     font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
@@ -380,8 +399,29 @@
       <div class="sheet" id="sheet">
         <div class="scroll" id="scrollArea"></div>
         <div class="nav">
+          <button class="navbtn gx" id="closeBtn" aria-label="Close">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0B0E12" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
           <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span></div>
-          <button class="clear" id="clearBtn" style="margin-right:52px">Clear All</button>
+          <div class="dual">
+            <button class="dcheck" id="confirmBtn" aria-label="Confirm">
+              <svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#0B0E12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="sep"></span>
+            <button class="dclear" id="clearBtn" aria-label="Clear all">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M2.5 4.2h11M6.4 4.2V2.9c0-.5.4-.9.9-.9h1.4c.5 0 .9.4.9.9v1.3M4.1 4.2l.65 8.9c.04.55.5.9 1 .9h4.5c.5 0 .96-.35 1-.9l.65-8.9M6.5 7v3.6M9.5 7v3.6" stroke="#0B0E12" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-veil" id="clearModal">
+          <div class="alert">
+            <h4>Clear selection?</h4>
+            <p>This removes every meal you’ve picked for this day.</p>
+            <div class="btns">
+              <button id="clearCancel">Cancel</button>
+              <button class="destructive" id="clearConfirm">Clear</button>
+            </div>
+          </div>
         </div>
         <div class="navigator" id="navigator">
           <div class="glassbase"></div>
@@ -448,11 +488,7 @@ const CATS = [
   { id: 'snacks', title: 'Snacks', quota: 1 },
   { id: 'dessert', title: 'Dessert', quota: 0 },
 ];
-const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
-const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add',
-  tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
-  blur: GG.blurRadius !== undefined ? GG.blurRadius : 5 };
-window.glassControls = { ...GG, blurRadius: MODS.blur };
+const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
 const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
 
 const ICON = {
@@ -637,7 +673,7 @@ function pulse(el) {
 /* ================= totals + navigator ================= */
 const kcalNow = document.getElementById('kcalNow');
 const dock = document.getElementById('dock');
-let confirmBtn = null;
+const confirmBtn = document.getElementById('confirmBtn');
 let shownKcal = 0, kcalAnim = null;
 
 function totals() {
@@ -839,7 +875,19 @@ function nextTapped() {
 }
 
 /* ================= nav actions ================= */
-document.getElementById('clearBtn').onclick = () => resetAll();
+document.getElementById('closeBtn').onclick = () => { location.href = '../'; };
+confirmBtn.onclick = () => { if (completed) nextTapped(); };
+const clearModal = document.getElementById('clearModal');
+document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
+document.getElementById('clearCancel').onclick = () => clearModal.classList.remove('show');
+document.getElementById('clearConfirm').onclick = () => {
+  clearModal.classList.remove('show');
+  vibrate(15);
+  resetAll();
+};
+clearModal.addEventListener('click', e => {
+  if (e.target === clearModal) clearModal.classList.remove('show');
+});
 
 function resetAll(silent) {
   Object.keys(sel).forEach(k => delete sel[k]);
@@ -943,69 +991,11 @@ function fit() {
     stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
   }
   device.style.transform = 'scale(' + stageScale + ')';
-  if (typeof liveGlass !== 'undefined') liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
 }
 addEventListener('resize', fit);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 addEventListener('orientationchange', () => setTimeout(fit, 250));
 
-/* ---------------- liquid glass plumbing (liquid-glass-js, rewards recipe) -- */
-const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
-let liveGlass = [];
-
-function makeGlass(cls, radius) {
-  if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
-  const c = new Container({ borderRadius: radius, tintOpacity: MODS.tint });
-  c.element.classList.add(...cls.split(' '));
-  c.baseRadius = radius;
-  c.contextScale = stageScale;
-  c.resizeGlass = () => {
-    const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
-    const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
-    c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
-    c.contextScale = stageScale;
-    c.canvas.width = w; c.canvas.height = h;
-    c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
-    if (c.gl_refs.gl) {
-      const gl = c.gl_refs.gl;
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
-      gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
-      if (c.gl_refs.contextScaleLoc) gl.uniform1f(c.gl_refs.contextScaleLoc, stageScale);
-      c.render && c.render();
-    }
-  };
-  requestAnimationFrame(() => requestAnimationFrame(c.resizeGlass));
-  liveGlass.push(c);
-  return c;
-}
-
-/* readability: sample the page snapshot behind each glass element and flip
-   its content dark when the backdrop is light */
-function adaptGlassContrast() {
-  if (!GLASS_OK || !Container.pageSnapshot) return;
-  let sctx;
-  try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
-  const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
-  liveGlass.forEach(c => {
-    if (!c.canvas) return;
-    const r = c.canvas.getBoundingClientRect();
-    const x = Math.max(8, Math.round(r.left + r.width / 2));
-    const y = Math.max(8, Math.round(r.top + r.height / 2));
-    try {
-      const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
-      let l = 0, n = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        if (d[i + 3] < 10) continue;
-        l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
-      }
-      c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
-    } catch (_) {}
-  });
-}
-
-const SVG_X = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>';
-const SVG_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 /* =================================================================
    The living gauge: a small transparent canvas on the glass container.
@@ -1077,37 +1067,9 @@ function paintGauge() {
   g.restore();
 }
 
-function buildGlassUI() {
-  const navRow = document.querySelector('.nav');
-
-  const gx = makeGlass('navbtn gx', 20);
-  gx.element.insertAdjacentHTML('beforeend', SVG_X);
-  gx.element.onclick = () => { location.href = '../'; };
-  navRow.appendChild(gx.element);
-
-  confirmBtn = makeGlass('navbtn gconfirm', 20).element;
-  confirmBtn.insertAdjacentHTML('beforeend', SVG_CHECK);
-  confirmBtn.onclick = () => { if (completed) nextTapped(); };
-  navRow.appendChild(confirmBtn);
-
-  setTimeout(adaptGlassContrast, 700);
-  setTimeout(adaptGlassContrast, 1800);
-}
-
 buildQuotaRows();
 buildScreen();
 fit();
-/* global recipe: published glass.json (all devices) under this device's draft */
-const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
-  .then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
-  let draft = {}; try { draft = JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) {}
-  const g = { ...pub, ...draft };
-  if (g.tintOpacity !== undefined) MODS.tint = g.tintOpacity;
-  if (g.blurRadius !== undefined) MODS.blur = g.blurRadius;
-  window.glassControls = { ...g, blurRadius: MODS.blur };
-  setTimeout(buildGlassUI, 60);
-});
 </script>
 <script src="../lab-shell.js" data-flow="meal-select" defer></script>
 </body>
