@@ -448,10 +448,18 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       btn.setAttribute('aria-expanded', open);
     };
     if (NATIVE) {
+      /* flow pages are cached max-age=600 by Pages — in the app, always
+         open them with a fresh query so deploys show up immediately */
+      const fresh = () => f.path + '?v=' + Date.now();
       card.addEventListener('click', e => {
-        if (!e.target.closest('a, button')) location.href = f.path;
+        if (!e.target.closest('a, button')) location.href = fresh();
       });
-      card.querySelector('.btn.primary').textContent = 'Prototype';
+      const primary = card.querySelector('.btn.primary');
+      primary.textContent = 'Prototype';
+      primary.addEventListener('click', e => {
+        e.preventDefault();
+        location.href = fresh();
+      });
       btn.remove();                                   /* no Dev handoff in the app */
       /* animated hero: wireframe phone flipping through the flow's screens */
       const shots = f.shots && f.shots.length ? f.shots : (f.preview ? [f.preview] : []);
