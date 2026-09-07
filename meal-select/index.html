@@ -188,6 +188,7 @@
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
+  .card.bk .grad { display: none; }
 
   .card .toprow { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 4;
     display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }
@@ -279,7 +280,7 @@
   .navigator.warn .warnmsg { opacity: 1; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 15px; padding: 0 32px 0 24px; color: #f9f9f9; }
-  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); width: 94px; flex: none; }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
   .navigator .kcal .val { display: flex; align-items: flex-end; }
@@ -290,7 +291,8 @@
   .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
   .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
-  .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif; }
+  .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif;
+    display: inline-block; min-width: 21px; }
   .navigator .mpair .g { font: 400 10px/13px 'Proxima Nova', sans-serif; }
   .navigator .mpair.p { width: 43px; } .navigator .mpair.c { width: 36px; }
   .navigator .mpair.f { width: 34px; }
@@ -527,7 +529,7 @@ function buildScreen() {
 function makeCard(cat, d, i) {
   const key = cat.id + ':' + i;
   const el = document.createElement('div');
-  el.className = 'card';
+  el.className = 'card' + (d.bk ? ' bk' : '');
   el.dataset.key = key; el.dataset.cat = cat.id;
   el.innerHTML =
     '<div class="photo"><img src="' + d.img + '" alt=""></div>' +
@@ -718,9 +720,10 @@ function updateAll(instant) {
 function animateKcal(target, instant) {
   cancelAnimationFrame(kcalAnim);
   if (instant) { shownKcal = target; kcalNow.textContent = target; return; }
-  const from = shownKcal, t0 = performance.now(), dur = 600;
+  const from = shownKcal, t0 = performance.now(), dur = 950;
   const tick = now => {
-    const x = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - x, 3);
+    const x = Math.min(1, (now - t0) / dur),
+      e = x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
     shownKcal = Math.round(from + (target - from) * e);
     kcalNow.textContent = shownKcal;
     if (x < 1) kcalAnim = requestAnimationFrame(tick);
@@ -1023,7 +1026,7 @@ function roundRectPath(g, x, y, w, h, r) {
 
 function gaugeTick(now) {
   const fx = gaugeFx;
-  fx.vel = fx.vel * 0.80 + (fx.target - fx.frac) * 0.085;
+  fx.vel = fx.vel * 0.85 + (fx.target - fx.frac) * 0.055;
   fx.frac += fx.vel;
   fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
   fx.phase = now / 1000;
