@@ -21,56 +21,56 @@
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
   #dvhProbe { position: fixed; left: 0; top: 0; width: 1px; height: 100vh;
     height: 100dvh; visibility: hidden; pointer-events: none; }
-  html, body { height: 100%; overflow: hidden; background: #0f0f12; }
+  html, body { height: 100%; overflow: hidden; background: #ffffff; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
-  body.desktop { background: #0f0f12; }
+  body.desktop { background: #f5f5f7; }
 
   /* ================= playground shell (desktop) ================= */
   #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
-    background: #16161a; border-right: 1px solid rgba(255,255,255,.07);
+    background: #fbfbfc; border-right: 1px solid rgba(0,0,0,.08);
     padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y; display: none; }
   body.desktop #side { display: block; }
   .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
-    text-transform: uppercase; color: #ff5a5f; margin-bottom: 10px; }
-  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #fff; margin-bottom: 8px; }
-  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.55);
+    text-transform: uppercase; color: #ED1C24; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #1d1d1f; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: #6e6e73;
     margin-bottom: 26px; }
   .s-sec { margin-bottom: 26px; }
   .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
-    text-transform: uppercase; color: rgba(255,255,255,.8); margin-bottom: 4px; }
-  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.38);
+    text-transform: uppercase; color: #1d1d1f; margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: #8e8e93;
     margin-bottom: 12px; }
   .mod { margin-bottom: 14px; }
   .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
-  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
-  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f; }
-  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ff5a5f; height: 18px; }
-  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.35); }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ED1C24; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
   .quota-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .quota-row .qname { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .quota-row .qname { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
   .quota-ctl { display: flex; align-items: center; gap: 10px; }
-  .quota-ctl button { width: 24px; height: 24px; border: 1px solid rgba(255,255,255,.15);
-    border-radius: 8px; background: rgba(255,255,255,.05); color: #fff; cursor: pointer;
+  .quota-ctl button { width: 24px; height: 24px; border: 1px solid rgba(0,0,0,.12);
+    border-radius: 8px; background: #fff; color: #1d1d1f; cursor: pointer;
     font: 600 14px/1 'Urbane Rounded', sans-serif; }
-  .quota-ctl button:hover { background: rgba(255,255,255,.12); }
-  .quota-ctl output { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ff5a5f;
+  .quota-ctl button:hover { background: #f0f0f2; }
+  .quota-ctl output { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ED1C24;
     min-width: 12px; text-align: center; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .seg2 button { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; cursor: pointer;
-    padding: 10px 8px; background: rgba(255,255,255,.03);
-    font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.65); }
-  .seg2 button.on { background: rgba(255,255,255,.12); color: #fff;
-    border-color: rgba(255,255,255,.35); }
+  .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 8px; background: #fff;
+    font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: #6e6e73; }
+  .seg2 button.on { background: #1d1d1f; color: #fff;
+    border-color: #1d1d1f; }
   .s-actions { display: flex; gap: 8px; margin-top: 4px; }
   .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
     padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
-  #sFill { background: #ff5a5f; color: #fff; }
+  #sFill { background: #ED1C24; color: #fff; }
   #sFill:hover { filter: brightness(1.08); }
-  #sReset, #sCopy { background: rgba(255,255,255,.09); color: rgba(255,255,255,.85); }
-  #sReset:hover, #sCopy:hover { background: rgba(255,255,255,.15); }
-  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07);
-    font: 400 11px/16px 'Proxima Nova', sans-serif; color: rgba(255,255,255,.3); }
+  #sReset, #sCopy { background: #ececef; color: #1d1d1f; }
+  #sReset:hover, #sCopy:hover { background: #e2e2e6; }
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
 
   /* ================= stage + device frame ================= */
   #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
@@ -79,7 +79,7 @@
   body.desktop #stage { left: 316px; }
   .device { position: relative; transform-origin: center center; }
   body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
-    box-shadow: 0 44px 110px -34px rgba(0,0,0,.85), 0 6px 20px rgba(0,0,0,.4),
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.18),
       inset 0 0 0 2px #34343a, inset 0 0 0 7px #000; }
   body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
     width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
@@ -386,9 +386,9 @@
   body.lab-mobile:has(#labHandoff.on) .lab-tabbar { display: flex !important; }
   .menu-views { display: none; gap: 8px; margin-bottom: 22px; }
   body.labmenu-open:not(.desktop) .menu-views { display: flex; }
-  .menu-views button { flex: 1; border: 1px solid rgba(255,255,255,.14); border-radius: 10px;
-    cursor: pointer; padding: 11px 0; background: rgba(255,255,255,.05);
-    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85); }
+  .menu-views button { flex: 1; border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
+    cursor: pointer; padding: 11px 0; background: #fff;
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
   .lab-veil { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,.45);
     opacity: 0; pointer-events: none; transition: opacity .25s ease; }
   body.labmenu-open .lab-veil { opacity: 1; pointer-events: auto; }
@@ -396,13 +396,13 @@
     left: 0; right: 0; width: auto; top: auto; bottom: 0; max-height: 76%;
     border-right: none; border-radius: 24px 24px 0 0; z-index: 130;
     padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -18px 50px -20px rgba(0,0,0,.6);
+    box-shadow: 0 -18px 50px -20px rgba(0,0,0,.28);
     animation: sheetup .32s cubic-bezier(.2,.9,.3,1); }
   @keyframes sheetup { from { transform: translateY(60px); opacity: .4; }
     to { transform: translateY(0); opacity: 1; } }
   #sDone { display: none; position: sticky; top: -28px; margin: -8px -4px 14px auto;
     border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer;
-    background: rgba(255,255,255,.12); color: #fff; z-index: 2;
+    background: #ececef; color: #1d1d1f; z-index: 2;
     font: 600 12px/16px 'Urbane Rounded', sans-serif; }
   body.labmenu-open:not(.desktop) #sDone { display: block; }
 </style>
@@ -464,7 +464,7 @@
     <div class="s-label">Build</div>
     <div class="s-note" id="buildInfo">&mdash;</div>
     <div class="s-actions">
-      <button id="sFresh" style="background:rgba(255,255,255,.09);color:rgba(255,255,255,.85)">Reload fresh (clear cache)</button>
+      <button id="sFresh" style="background:#ececef;color:#1d1d1f">Reload fresh (clear cache)</button>
     </div>
   </div>
 
@@ -1239,7 +1239,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 34';
+const BUILD = 'build 2026-09-07 · 35';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
