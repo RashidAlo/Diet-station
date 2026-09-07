@@ -213,13 +213,13 @@
   #appRoot { transition: transform .55s cubic-bezier(.32,.72,0,1),
     border-radius .55s ease, opacity .55s ease; }
   body.flowsheet #appRoot { transform: scale(.92)
-    translateY(calc(env(safe-area-inset-top, 20px) + 8px));
-    border-radius: 18px; overflow: hidden; opacity: .75; }
+    translateY(calc(env(safe-area-inset-top, 24px) + 10px));
+    border-radius: 18px; overflow: hidden; opacity: .85; }
   body.native { transition: background-color .5s ease; }
   body.flowsheet { background: #000; }
   .flow-veil { position: fixed; inset: 0; z-index: 240; background: #000;
     opacity: 0; pointer-events: none; transition: opacity .5s ease; }
-  body.flowsheet .flow-veil { opacity: .34; }
+  body.flowsheet .flow-veil { opacity: .26; }
   .flow-frame { position: fixed; inset: 0; z-index: 241; border: 0; width: 100%;
     height: 100%; background: transparent; }
   .flow-frame.bye { transition: transform .4s cubic-bezier(.5,0,.8,.6);

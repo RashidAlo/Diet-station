@@ -109,8 +109,6 @@
   html.embed, html.embed body, html.embed #stage, html.embed .device,
   html.embed .phone { background: transparent !important; }
   html.embed .phone { --top-pad: 14px; }
-  /* content clearance never animates — only the nav chrome follows the gap */
-  html.embed .scroll { padding-top: calc(var(--real-pad, 34px) + 66px) !important; }
   /* auto-selected fallback badge (Figma 17179-77256): green pill straddling
      the card's top edge — sparkle + "Auto Selected" */
   .card .autobadge { position: absolute; top: -9px; left: 50%;
@@ -1808,7 +1806,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 49';
+const BUILD = 'build 2026-09-07 · 50';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1991,7 +1989,7 @@ function syncSheet() {
   }
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
-SHEET_GAP = EMBED ? REAL_PAD + 6
+SHEET_GAP = EMBED ? REAL_PAD + 20
   : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');
