@@ -1004,7 +1004,7 @@ addEventListener('orientationchange', () => setTimeout(fit, 250));
    tip glow. The glass base is a plain backdrop-filter — the browser
    blurs the live thumbnails beneath, no duplicated content anywhere.
    ================================================================= */
-const gaugeFx = { frac: 0, vel: 0, target: 0, alpha: 1, alphaTarget: 1,
+const gaugeFx = { frac: 0, speed: 0, target: 0, alpha: 1, alphaTarget: 1,
   phase: 0, tick: 0 };
 const gaugeCanvas = document.getElementById('gaugeCanvas');
 const gctx = gaugeCanvas.getContext('2d');
@@ -1026,8 +1026,10 @@ function roundRectPath(g, x, y, w, h, r) {
 
 function gaugeTick(now) {
   const fx = gaugeFx;
-  fx.vel = fx.vel * 0.85 + (fx.target - fx.frac) * 0.055;
-  fx.frac += fx.vel;
+  /* critically damped glide — approaches the target, never bounces */
+  const step = (fx.target - fx.frac) * 0.045;
+  fx.frac += step;
+  fx.speed = fx.speed * 0.9 + Math.abs(step) * 0.1;
   fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
   fx.phase = now / 1000;
   if ((fx.tick++ & 1) === 0) paintGauge();
@@ -1039,7 +1041,7 @@ function paintGauge() {
   g.clearRect(0, 0, 358, 69);
   if (fx.alpha < .02) return;
   const gy = 0.5, gh = 68, rad = 34;
-  const fillW = (GAUGE_BASE + Math.max(0, Math.min(1.04, fx.frac)) * (1 - GAUGE_BASE)) * 358;
+  const fillW = (GAUGE_BASE + Math.max(0, Math.min(1, fx.frac)) * (1 - GAUGE_BASE)) * 358;
   if (fillW < 8) return;
   g.save();
   g.globalAlpha = Math.max(0, Math.min(1, fx.alpha));
@@ -1056,13 +1058,15 @@ function paintGauge() {
   g.fillStyle = grad;
   g.fill();
   if (fx.frac < .985) {
+    /* the edge diffuses while the fill flows and condenses as it settles */
+    const soft = 46 + Math.min(74, fx.speed * 16000);
     g.globalCompositeOperation = 'destination-out';
-    const f = g.createLinearGradient(fillW - 46, 0, fillW, 0);
+    const f = g.createLinearGradient(fillW - soft, 0, fillW, 0);
     f.addColorStop(0, 'rgba(0,0,0,0)');
     f.addColorStop(.55, 'rgba(0,0,0,.45)');
     f.addColorStop(1, 'rgba(0,0,0,1)');
     g.fillStyle = f;
-    g.fillRect(fillW - 46, gy, 47, gh);
+    g.fillRect(fillW - soft, gy, soft + 1, gh);
     g.globalCompositeOperation = 'source-over';
   }
   g.restore();
