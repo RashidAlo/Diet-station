@@ -224,8 +224,14 @@
     font: 600 15px/20px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
   .p-link small { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
   body.native .card { cursor: pointer; -webkit-tap-highlight-color: transparent;
-    padding: 0; overflow: hidden;
+    padding: 0; overflow: hidden; border-radius: 38px;
     transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  body.native .actions .btn.primary { order: 2; height: 54px;
+    font-size: 15px; display: flex; align-items: center; justify-content: center;
+    gap: 9px; border-radius: 999px; }
+  body.native .actions .btn.primary svg { width: 15px; height: 15px; }
+  body.native .gearbtn { order: 1; width: 54px; height: 54px; }
+  body.native .gearbtn svg { width: 23px; height: 23px; }
   body.native .card:active { transform: scale(.98); }
   body.native .row { flex-direction: column; gap: 0; align-items: stretch; }
   body.native .row .body { padding: 18px 18px 0; }
@@ -528,7 +534,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         if (!e.target.closest('a, button')) open();
       });
       const primary = card.querySelector('.btn.primary');
-      primary.textContent = 'Prototype';
+      primary.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype';
       primary.addEventListener('click', e => {
         e.preventDefault();
         open();
@@ -558,7 +564,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         const gear = document.createElement('button');
         gear.className = 'gearbtn';
         gear.setAttribute('aria-label', 'Prototype settings');
-        gear.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" stroke="currentColor" stroke-width="1.7"/><path d="M19.3 12a7.3 7.3 0 0 0-.07-1l2.04-1.58-1.9-3.28-2.4.97a7.3 7.3 0 0 0-1.73-1L14.9 3.6h-3.8l-.34 2.5a7.3 7.3 0 0 0-1.73 1l-2.4-.96-1.9 3.27L6.77 11a7.3 7.3 0 0 0 0 2l-2.04 1.58 1.9 3.28 2.4-.97a7.3 7.3 0 0 0 1.73 1l.34 2.51h3.8l.34-2.5a7.3 7.3 0 0 0 1.73-1l2.4.96 1.9-3.27L19.23 13c.05-.33.07-.66.07-1z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+        gear.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>';
         gear.onclick = () => openPrimer(f);
         card.querySelector('.actions').appendChild(gear);
       }
