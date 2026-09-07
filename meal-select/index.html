@@ -247,7 +247,7 @@
     box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.32),
       inset 0 -1px 1.5px rgba(0,0,0,.08); }
   .navigator .glassbase::before { content: ''; position: absolute; inset: 0;
-    background: rgba(255,255,255,.3); }
+    background: rgba(255,255,255,.16); }
   .navigator .glassbase .burn { position: absolute; inset: 0; background: #ddd;
     mix-blend-mode: color-burn; }
   .navigator .glassbase .darken { position: absolute; inset: 0; background: #f7f7f7;
@@ -255,8 +255,9 @@
   /* the gauge: a transparent canvas ON the glass — spring fill, rippling
      leading edge, breathing tip glow. The glass itself is a plain
      backdrop-filter container blurring the live thumbnails beneath. */
-  #gaugeCanvas { position: absolute; inset: 0; width: 100%; height: 100%;
+  #gaugeCanvas, #gaugeEcho { position: absolute; inset: 0; width: 100%; height: 100%;
     border-radius: 296px; pointer-events: none; }
+  #gaugeEcho { opacity: .5; }
   .navigator .content { transition: opacity .2s ease; }
   .navigator.warn .content { opacity: 0; }
   .navigator .warnmsg { position: absolute; inset: 0; display: flex; align-items: center;
@@ -387,8 +388,9 @@
           <button class="clear" id="clearBtn" style="margin-right:52px">Clear All</button>
         </div>
         <div class="navigator" id="navigator">
-          <div class="glassbase"><div class="burn"></div><div class="darken"></div></div>
           <canvas id="gaugeCanvas"></canvas>
+          <div class="glassbase"><div class="burn"></div><div class="darken"></div></div>
+          <canvas id="gaugeEcho"></canvas>
           <div class="content">
             <div class="kcal">
               <span class="lbl">Kcal</span>
@@ -1020,10 +1022,13 @@ const gaugeFx = { frac: 0, vel: 0, target: 0, alpha: 1, alphaTarget: 1,
   phase: 0, tick: 0 };
 const gaugeCanvas = document.getElementById('gaugeCanvas');
 const gctx = gaugeCanvas.getContext('2d');
+const gaugeEcho = document.getElementById('gaugeEcho');
+const gectx = gaugeEcho.getContext('2d');
 (function initGauge() {
   const d = Math.min(2, window.devicePixelRatio || 1);
   gaugeCanvas.width = 358 * d; gaugeCanvas.height = 69 * d;
   gctx.scale(d, d);
+  gaugeEcho.width = gaugeCanvas.width; gaugeEcho.height = gaugeCanvas.height;
   requestAnimationFrame(gaugeTick);
 })();
 
@@ -1049,6 +1054,7 @@ function gaugeTick(now) {
 function paintGauge() {
   const fx = gaugeFx, g = gctx;
   g.clearRect(0, 0, 358, 69);
+  gectx.clearRect(0, 0, gaugeEcho.width, gaugeEcho.height);
   if (fx.alpha < .02) return;
   const gy = 0.5, gh = 68, rad = 34;
   const fillW = (GAUGE_BASE + Math.max(0, Math.min(1.04, fx.frac)) * (1 - GAUGE_BASE)) * 358;
@@ -1069,9 +1075,9 @@ function paintGauge() {
   g.lineTo(0, gy + gh);
   g.closePath();
   const grad = g.createLinearGradient(0, 0, fillW, 0);
-  grad.addColorStop(0, 'rgba(238,32,35,.94)');
-  grad.addColorStop(.62, 'rgba(245,120,19,.94)');
-  grad.addColorStop(.96, 'rgba(253,215,2,.94)');
+  grad.addColorStop(0, '#e5121b');
+  grad.addColorStop(.62, '#f57008');
+  grad.addColorStop(.96, '#fdd702');
   g.fillStyle = grad;
   g.fill();
   if (fx.frac < .985) {
@@ -1082,16 +1088,18 @@ function paintGauge() {
     g.fillStyle = f;
     g.fillRect(edgeX - 30, gy, 32 + amp, gh);
     g.globalCompositeOperation = 'source-over';
-    const br = 26 + Math.sin(fx.phase * 3.3) * 5;
+    const br = 32 + Math.sin(fx.phase * 3.3) * 6;
     const glow = g.createRadialGradient(edgeX, gy + gh / 2, 0, edgeX, gy + gh / 2, br);
-    glow.addColorStop(0, 'rgba(253,215,2,.85)');
-    glow.addColorStop(.5, 'rgba(253,160,20,.30)');
+    glow.addColorStop(0, 'rgba(253,215,2,1)');
+    glow.addColorStop(.5, 'rgba(253,160,20,.42)');
     glow.addColorStop(1, 'rgba(253,215,2,0)');
     g.globalCompositeOperation = 'lighter';
     g.fillStyle = glow;
     g.fillRect(edgeX - br, gy, br * 2, gh);
   }
   g.restore();
+  gectx.clearRect(0, 0, gaugeEcho.width, gaugeEcho.height);
+  gectx.drawImage(gaugeCanvas, 0, 0);
 }
 
 function buildGlassUI() {
