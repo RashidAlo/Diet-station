@@ -218,6 +218,13 @@
   .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .of { transition: color .25s ease; }
+  .of.done { color: #1F8A4C; background: rgba(38,166,89,.14);
+    padding: 3px 10px 3px 8px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px; }
+  .of.done svg { width: 11px; height: 11px; display: block; flex: none; }
+  .of.pop { animation: ofdone .4s cubic-bezier(.3,1.5,.4,1); }
+  @keyframes ofdone { 40% { transform: scale(1.22); } }
   .cat-head.nudge .of { animation: ofpulse .9s ease .15s 2; }
   @keyframes ofpulse { 50% { transform: scale(1.3); } }
   .grid { display: grid; grid-template-columns: 183px 183px; gap: 16px 12px;
@@ -775,14 +782,26 @@ function totals() {
   return { kcal, p, c, f, count };
 }
 
+const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#1F8A4C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function renderOf(el, count, quota) {
+  if (!el) return;
+  const done = quota > 0 && count >= quota;
+  const was = el.dataset.done === '1';
+  el.dataset.done = done ? '1' : '0';
+  el.classList.toggle('done', done);
+  el.innerHTML = (done ? OF_CHECK + ' ' : '') + count + ' of ' + quota;
+  if (done && !was) {
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  }
+}
 const catFullState = {};
 function updateAll(instant) {
   const t = totals();
   const quotaTotal = CATS.reduce((s, c) => s + c.quota, 0);
   /* category counters + dimming when a quota is full + advance the scroll */
   CATS.forEach(cat => {
-    const of = document.querySelector('[data-of="' + cat.id + '"]');
-    if (of) of.textContent = catCount(cat.id) + ' of ' + cat.quota;
+    renderOf(document.querySelector('[data-of="' + cat.id + '"]'),
+      catCount(cat.id), cat.quota);
     const full = cat.quota > 0 && catCount(cat.id) >= cat.quota;
     if (full && !catFullState[cat.id] && !instant) scrollToNextCat(cat.id);
     catFullState[cat.id] = full;
@@ -1182,7 +1201,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 26';
+const BUILD = 'build 2026-09-07 · 27';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1319,8 +1338,7 @@ function updateCatDock() {
 function syncDockCounter() {
   if (!dockedCatId) return;
   const cat = CATS.find(c => c.id === dockedCatId);
-  if (cat) document.getElementById('dockOf').textContent =
-    catCount(cat.id) + ' of ' + cat.quota;
+  if (cat) renderOf(document.getElementById('dockOf'), catCount(cat.id), cat.quota);
 }
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
