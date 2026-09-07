@@ -646,8 +646,12 @@ function denied(catId) {
     cat.title + ' is full — deselect a meal there to swap';
   clearTimeout(warnTimer);
   nav.classList.remove('warn'); void nav.offsetWidth; nav.classList.add('warn');
+  gaugeFx.alphaTarget = 0;
   vibrate(35);
-  warnTimer = setTimeout(() => nav.classList.remove('warn'), 1900);
+  warnTimer = setTimeout(() => {
+    nav.classList.remove('warn');
+    gaugeFx.alphaTarget = 1;
+  }, 1900);
 }
 
 function pulse(el) {
@@ -695,9 +699,12 @@ function updateAll(instant) {
   animateKcal(t.kcal, instant);
   /* gauge fill: Figma base 24.73% at zero -> 100% at full quota */
   const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
-  gaugeClip.style.width = (GAUGE_BASE + frac * (1 - GAUGE_BASE)) * 100 + '%';
-  gaugeClip.style.borderRadius = frac >= 1 ? '65px' : '65px 0 0 65px';
-  gaugeClip.classList.toggle('full', frac >= 1);
+  gaugeFx.target = frac;
+  if (!gaugeFx.running) {
+    gaugeClip.style.width = (GAUGE_BASE + frac * (1 - GAUGE_BASE)) * 100 + '%';
+    gaugeClip.style.borderRadius = frac >= 1 ? '65px' : '65px 0 0 65px';
+    gaugeClip.classList.toggle('full', frac >= 1);
+  }
   /* completion: Saved moment -> Next */
   const done = quotaTotal > 0 && t.count >= quotaTotal;
   if (done && !completed) { completed = true; celebrate(); }
@@ -1035,6 +1042,131 @@ function adaptGlassContrast() {
 const SVG_X = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>';
 const SVG_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+/* =================================================================
+   REAL glass over a LIVING gauge: the orange filler is painted into
+   the page-snapshot texture the shader refracts, so the glass bends,
+   blurs and rims it like a true material. A spring drives the fill,
+   the leading edge ripples while it moves, and the tip glow breathes.
+   ================================================================= */
+const gaugeFx = { c: null, running: false, frac: 0, vel: 0, target: 0,
+  alpha: 1, alphaTarget: 1, phase: 0, base: null, region: null, layer: null,
+  pad: 46, tick: 0 };
+
+function roundRectPath(g, x, y, w, h, r) {
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function startGaugeFx(c) {
+  if (!GLASS_OK || !Container.pageSnapshot || !c.gl_refs || !c.gl_refs.texture) return false;
+  gaugeFx.c = c;
+  gaugeFx.base = document.createElement('canvas');
+  gaugeFx.base.width = Container.pageSnapshot.width;
+  gaugeFx.base.height = Container.pageSnapshot.height;
+  gaugeFx.base.getContext('2d').drawImage(Container.pageSnapshot, 0, 0);
+  gaugeFx.region = document.createElement('canvas');
+  gaugeFx.layer = document.createElement('canvas');
+  gaugeFx.frac = gaugeFx.target;
+  gaugeClip.style.display = 'none';          // the DOM gauge moves under the glass
+  gaugeFx.running = true;
+  requestAnimationFrame(gaugeTick);
+  return true;
+}
+
+function gaugeTick(now) {
+  if (!gaugeFx.running) return;
+  const fx = gaugeFx;
+  /* under-damped spring: the fill overshoots a touch, then settles */
+  fx.vel = fx.vel * 0.80 + (fx.target - fx.frac) * 0.085;
+  fx.frac += fx.vel;
+  fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
+  fx.phase = now / 1000;
+  if ((fx.tick++ & 1) === 0) paintGauge();   // ~30fps is plenty for glass
+  requestAnimationFrame(gaugeTick);
+}
+
+function paintGauge() {
+  const fx = gaugeFx, c = fx.c, gl = c.gl_refs.gl;
+  if (!gl) return;
+  const nav = document.getElementById('navigator');
+  const r = nav.getBoundingClientRect();
+  const pad = Math.round(fx.pad * stageScale);
+  let x = Math.round(r.left) - pad, y = Math.round(r.top) - pad;
+  let w = Math.round(r.width) + pad * 2, h = Math.round(r.height) + pad * 2;
+  x = Math.max(0, x); y = Math.max(0, y);
+  w = Math.min(w, fx.base.width - x); h = Math.min(h, fx.base.height - y);
+  if (w < 4 || h < 4) return;
+  if (fx.region.width !== w || fx.region.height !== h) {
+    fx.region.width = w; fx.region.height = h;
+    fx.layer.width = w; fx.layer.height = h;
+  }
+  const g = fx.region.getContext('2d');
+  g.clearRect(0, 0, w, h);
+  g.drawImage(fx.base, x, y, w, h, 0, 0, w, h);
+
+  const s = r.width / 358;
+  const gx = Math.round(r.left) - x, gy = Math.round(r.top) - y + 1 * s;
+  const gw = 358 * s, gh = 68 * s, rad = 34 * s;
+  const fillW = (GAUGE_BASE + Math.max(0, Math.min(1.04, fx.frac)) * (1 - GAUGE_BASE)) * gw;
+
+  if (fx.alpha > .02 && fillW > 8) {
+    const L = fx.layer.getContext('2d');
+    L.clearRect(0, 0, w, h);
+    L.save();
+    L.beginPath();
+    roundRectPath(L, gx, gy, gw, gh, rad);
+    L.clip();
+    /* liquid leading edge: a slow ripple, livelier while the fill moves */
+    const amp = Math.min(5, 1.4 + Math.abs(fx.vel) * 340) * s;
+    const edgeX = gx + fillW;
+    L.beginPath();
+    L.moveTo(gx, gy);
+    for (let yy = 0; yy <= gh; yy += 2.5) {
+      L.lineTo(edgeX + Math.sin((yy / gh) * 4.6 + fx.phase * 2.6) * amp, gy + yy);
+    }
+    L.lineTo(gx, gy + gh);
+    L.closePath();
+    const grad = L.createLinearGradient(gx, 0, gx + fillW, 0);
+    grad.addColorStop(0, '#ee2023');
+    grad.addColorStop(.62, '#f57813');
+    grad.addColorStop(.96, '#fdd702');
+    L.fillStyle = grad;
+    L.fill();
+    /* feathered edge while filling; solid at full */
+    if (fx.frac < .985) {
+      L.globalCompositeOperation = 'destination-out';
+      const f = L.createLinearGradient(edgeX - 30 * s, 0, edgeX + amp + 2, 0);
+      f.addColorStop(0, 'rgba(0,0,0,0)');
+      f.addColorStop(1, 'rgba(0,0,0,.9)');
+      L.fillStyle = f;
+      L.fillRect(edgeX - 30 * s, gy, 32 * s + amp, gh);
+      L.globalCompositeOperation = 'source-over';
+      /* breathing glow riding the tip */
+      const br = (26 + Math.sin(fx.phase * 3.3) * 5) * s;
+      const glow = L.createRadialGradient(edgeX, gy + gh / 2, 0, edgeX, gy + gh / 2, br);
+      glow.addColorStop(0, 'rgba(253,215,2,.85)');
+      glow.addColorStop(.5, 'rgba(253,160,20,.30)');
+      glow.addColorStop(1, 'rgba(253,215,2,0)');
+      L.globalCompositeOperation = 'lighter';
+      L.fillStyle = glow;
+      L.fillRect(edgeX - br, gy, br * 2, gh);
+      L.globalCompositeOperation = 'source-over';
+    }
+    L.restore();
+    g.globalAlpha = Math.max(0, Math.min(1, fx.alpha));
+    g.drawImage(fx.layer, 0, 0);
+    g.globalAlpha = 1;
+  }
+
+  gl.bindTexture(gl.TEXTURE_2D, c.gl_refs.texture);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, gl.RGBA, gl.UNSIGNED_BYTE, fx.region);
+  c.render && c.render();
+}
+
 function buildGlassUI() {
   const navRow = document.querySelector('.nav');
   const navigator = document.getElementById('navigator');
@@ -1043,6 +1175,10 @@ function buildGlassUI() {
   if (GLASS_OK) navigator.querySelector('.glassbase').style.display = 'none';
   const gnav = makeGlass('gnav', 34.5);
   navigator.insertBefore(gnav.element, navigator.firstChild);
+  (function arm(tries) {
+    if (startGaugeFx(gnav) || tries > 30) return;
+    setTimeout(() => arm(tries + 1), 250);
+  })(0);
 
   const gx = makeGlass('navbtn gx', 20);
   gx.element.insertAdjacentHTML('beforeend', SVG_X);
