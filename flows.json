@@ -21,7 +21,8 @@
         "Haptics": "navigator.vibrate(8) per add/step, [14,40,22] on completion — remapped to real Taptic impacts/success in the TestFlight shell.",
         "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder).",
         "Playground": "Desktop (standard shell): per-category quota steppers, collapse-delay dial, kcal target, confetti amount, tap-mode toggle (tap adds +1 / selects only), Auto-fill demo, Reset, Copy values. Mobile: fullscreen + pill (Auto-fill, Reset).",
-        "Asset note": "Hero dish photo is the full-res Figma export. The other three are 2x crops from the frame render (frame children not exportable via MCP) whose baked-in text zone is patched by mirror-extending clean photo area under the dark title gradient; their baked 4.3★ badge doubles as the rating. Swap with full-res exports when available."
+        "Asset note": "Hero dish photo is the full-res Figma export. The other three are 2x crops from the frame render (frame children not exportable via MCP) whose baked-in text zone is patched by mirror-extending clean photo area under the dark title gradient; their baked 4.3★ badge doubles as the rating. Swap with full-res exports when available.",
+        "Nav glass": "X, confirm-check and the navigator pill are liquid-glass-js Containers on the global glass.json recipe (X/check circles r20, navigator r34.5; tintOpacity .14, blur 5 defaults). Adaptive contrast samples the page snapshot and flips content dark over the white sheet. The confirm circle gains a brand-red overlay + white check when the plate completes. CSS glassbase color-burn stack remains as the no-WebGL fallback. Native SwiftUI equivalent = .glassEffect()."
       },
       "downloads": [
         {
