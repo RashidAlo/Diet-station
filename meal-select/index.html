@@ -1125,7 +1125,7 @@ addEventListener('orientationchange', () => setTimeout(fit, 250));
    blurs the live thumbnails beneath, no duplicated content anywhere.
    ================================================================= */
 const gaugeFx = { frac: 0, speed: 0, target: 0, alpha: 1, alphaTarget: 1,
-  phase: 0, tick: 0 };
+  phase: 0, tick: 0, capFlash: 0, capped: false };
 const gaugeCanvas = document.getElementById('gaugeCanvas');
 const gctx = gaugeCanvas.getContext('2d');
 (function initGauge() {
@@ -1152,7 +1152,16 @@ function gaugeTick(now) {
   fx.speed = fx.speed * 0.88 + Math.abs(step) * 0.12;
   fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
   fx.phase = now / 1000;
-  if ((fx.tick++ & 1) === 0) paintGauge();
+  if (fx.target >= 1 && fx.frac > .99 && !fx.capped) {
+    fx.capped = true;
+    fx.capFlash = now;               /* one soft sheen when the bar caps */
+  }
+  if (fx.target < 1) fx.capped = false;
+  const moving = Math.abs(fx.target - fx.frac) > .0015 || fx.speed > .0004 ||
+    (now - fx.capFlash) < 500;
+  if (moving) paintGauge();
+  else if ((fx.tick & 3) === 0) paintGauge();
+  fx.tick++;
   requestAnimationFrame(gaugeTick);
 }
 
@@ -1181,15 +1190,31 @@ function paintGauge() {
   grad.addColorStop(1, 'rgba(253,222,60,.94)');
   g.fillStyle = grad;
   g.fill();
-  if (fx.frac < .985) {
-    const soft = 46 + Math.min(74, fx.speed * 16000);
+  /* the feather compresses continuously toward the cap — no snap */
+  const featherScale = Math.max(0, Math.min(1, (1 - fx.frac) / 0.12));
+  if (featherScale > .02) {
+    const soft = (46 + Math.min(74, fx.speed * 16000)) * featherScale + 2;
     g.globalCompositeOperation = 'destination-out';
     const f = g.createLinearGradient(fillW - soft, 0, fillW, 0);
     f.addColorStop(0, 'rgba(0,0,0,0)');
-    f.addColorStop(.55, 'rgba(0,0,0,.45)');
-    f.addColorStop(1, 'rgba(0,0,0,1)');
+    f.addColorStop(.55, 'rgba(0,0,0,' + (.45 * featherScale) + ')');
+    f.addColorStop(1, 'rgba(0,0,0,' + featherScale + ')');
     g.fillStyle = f;
     g.fillRect(fillW - soft, gy, soft + 1, gh);
+    g.globalCompositeOperation = 'source-over';
+  }
+  /* cap sheen: one gentle light sweep when the bar completes */
+  const ft = performance.now() - fx.capFlash;
+  if (fx.capFlash && ft < 450) {
+    const a = Math.sin((ft / 450) * Math.PI) * .32;
+    const sx = (ft / 450) * (fillW + 120) - 60;
+    const sheen = g.createLinearGradient(sx - 70, 0, sx + 70, 0);
+    sheen.addColorStop(0, 'rgba(255,255,255,0)');
+    sheen.addColorStop(.5, 'rgba(255,255,255,' + a + ')');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    g.globalCompositeOperation = 'lighter';
+    g.fillStyle = sheen;
+    g.fillRect(0, gy, fillW, gh);
     g.globalCompositeOperation = 'source-over';
   }
   g.restore();
@@ -1203,7 +1228,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 32';
+const BUILD = 'build 2026-09-07 · 33';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
