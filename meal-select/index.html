@@ -873,6 +873,10 @@ function openMealOv(key) {
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
+  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
+    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
+    syncSheet();
+  }
   setTimeout(() => {
     const H = mealOv.offsetHeight;
     moBaseImgH = H * 0.62;
@@ -974,7 +978,7 @@ function syncDetails() {
   moLastSt = st;
   const H = mealOv.offsetHeight;
   const imgH = Math.max(H * 0.34, moBaseImgH - Math.max(0, st));
-  moImgBox.style.height = imgH + 'px';
+  moImgBox.style.height = (imgH + 46) + 'px';   /* peeks through the corner notches */
   const bg = document.getElementById('moSheetBg');
   const head = document.getElementById('moHeadBlock');
   bg.style.top = imgH + 'px';
@@ -1817,7 +1821,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 54';
+const BUILD = 'build 2026-09-07 · 55';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
