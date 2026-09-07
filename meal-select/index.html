@@ -85,7 +85,8 @@
   body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
     width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #ffffff; }
-  body:not(.desktop) .phone { width: 100vw; height: 100vh; height: 100dvh;
+  body:not(.desktop) .phone { width: 402px;
+    height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1));
     --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px)); }
   body.desktop .phone { border-radius: 46px; }
   .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
@@ -426,6 +427,14 @@
     <button id="sFill">Auto-fill</button>
     <button id="sReset">Reset</button>
     <button id="sCopy">Copy values</button>
+  </div>
+
+  <div class="s-sec" style="margin-top:22px">
+    <div class="s-label">Build</div>
+    <div class="s-note" id="buildInfo">&mdash;</div>
+    <div class="s-actions">
+      <button id="sFresh" style="background:rgba(255,255,255,.09);color:rgba(255,255,255,.85)">Reload fresh (clear cache)</button>
+    </div>
   </div>
 
   <div class="s-foot">Figma: Diet Station 4.0 &middot; node 17179-75872. Motion curves lifted
@@ -1015,11 +1024,18 @@ function fit() {
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
     document.body.classList.remove('desktop');
-    /* pure CSS viewport: 100dvh phone at scale 1 — nothing to measure */
-    stageScale = 1;
-    phone.style.height = '';
-    phone.style.removeProperty('--top-pad');
-    device.style.transform = 'none';
+    /* Figma-proportional: scale 402 design to device width. In standalone
+       the app IS the screen, so screen.* is ground truth — no async lies. */
+    const standalone = navigator.standalone === true;
+    const w = standalone ? Math.min(screen.width, screen.height) : innerWidth;
+    stageScale = w / 402;
+    phone.style.setProperty('--s', stageScale);
+    device.style.transform = 'scale(' + stageScale + ')';
+    if (standalone) {
+      phone.style.height = (Math.max(screen.width, screen.height) / stageScale) + 'px';
+    } else {
+      phone.style.height = '';   /* browser: CSS 100dvh/var(--s) tracks live */
+    }
     return;
   } else {
     document.body.classList.add('desktop');
@@ -1119,9 +1135,22 @@ function paintGauge() {
 const labVeil = document.getElementById('labVeil');
 function openLabMenu() {
   document.body.classList.add('labmenu-open');
+  refreshBuildInfo();
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
+const BUILD = 'build 2026-09-07 · 19';
+function refreshBuildInfo() {
+  const probeH = document.getElementById('dvhProbe').offsetHeight;
+  document.getElementById('buildInfo').textContent = BUILD +
+    ' · vp ' + innerWidth + 'x' + innerHeight +
+    ' · dvh ' + probeH +
+    ' · scr ' + screen.width + 'x' + screen.height +
+    (navigator.standalone === true ? ' · standalone' : ' · browser');
+}
+document.getElementById('sFresh').onclick = () => {
+  location.href = location.pathname + '?fresh=' + Date.now();
+};
 labVeil.addEventListener('click', closeLabMenu);
 document.getElementById('sDone').addEventListener('click', closeLabMenu);
 function openLabView(tab) {
