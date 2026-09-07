@@ -82,16 +82,16 @@
   body.desktop #stage { left: 316px; }
 
   .device { position: relative; transform-origin: center center; }
-  body.desktop .device { padding: 12px; border-radius: 58px; background: #101013;
-    box-shadow: 0 44px 110px -34px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.18),
-      inset 0 0 0 2px #34343a, inset 0 0 0 7px #000;
+  body.desktop .device { padding: 12px; border-radius: 58px; background: linear-gradient(160deg, #f8f8f9, #e2e2e6 48%, #f1f1f4);
+    box-shadow: 0 44px 110px -34px rgba(0,0,0,.26), 0 6px 20px rgba(0,0,0,.10),
+      inset 0 0 0 2px #ffffff, inset 0 0 0 7px #d4d4d9;
   }
   /* hardware buttons */
   body.desktop .device::before { content: ''; position: absolute; left: -2.5px; top: 190px;
-    width: 3px; height: 128px; border-radius: 2px; background: #2c2c32;
-    box-shadow: 0 -70px 0 #2c2c32; }
+    width: 3px; height: 128px; border-radius: 2px; background: #cfcfd5;
+    box-shadow: 0 -70px 0 #cfcfd5; }
   body.desktop .device::after { content: ''; position: absolute; right: -2.5px; top: 240px;
-    width: 3px; height: 90px; border-radius: 2px; background: #2c2c32; }
+    width: 3px; height: 90px; border-radius: 2px; background: #cfcfd5; }
 
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
     background: var(--backdrop, #a6a6a6); }
