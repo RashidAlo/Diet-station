@@ -273,7 +273,7 @@
     },
     {
       "id": "breathe",
-      "title": "Breathe — Onboarding Intro",
+      "title": "Guide Me Intro",
       "status": "in-progress",
       "updated": "2026-09-03",
       "description": "Interactive breathing dot-field that opens the AI questionnaire. The red ball morphs through four health-need states — Weight, Muscle, Pregnancy, Gut — auto-progressing and tappable via the segmented control.",
@@ -390,7 +390,8 @@
       },
       "shots": [
         "breathe/preview.png"
-      ]
+      ],
+      "hidden": false
     },
     {
       "id": "plan-quiz",
