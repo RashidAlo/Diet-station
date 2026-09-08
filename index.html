@@ -318,6 +318,9 @@
   /* CMS-style in-card editor */
   .editor { display: none; }
   .card.editing .editor { display: block; }
+  /* native cards are edge-to-edge (padding 0) — give the editor the same
+     gutters the card body uses so fields aren't cropped at the sides */
+  body.native .editor { padding: 22px 24px 24px; }
   .editor label { display: block; font: 600 11px/14px 'Urbane Rounded', sans-serif;
     text-transform: uppercase; letter-spacing: .08em; color: #6e6e73;
     margin: 16px 0 7px; }
