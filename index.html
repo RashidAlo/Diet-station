@@ -98,6 +98,8 @@
   .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 60ch; }
   .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 10px; }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .actions .btn { height: 47px; display: inline-flex; align-items: center;
+    box-sizing: border-box; padding-top: 0; padding-bottom: 0; }
   .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
     border-radius: 999px; padding: 12px 20px; border: none; }
   .btn.primary { background: var(--red); color: #fff; }
@@ -217,6 +219,16 @@
   body.native .editbtn { display: none; }
   body.native #pane-prototypes, body.native.sysview #pane-system {
     padding-bottom: 120px; }
+  /* Admin tab is a real page in the app */
+  #pane-admin { display: none; }
+  body.native.adminview #pane-prototypes { display: none !important; }
+  body.native.adminview #pane-system { display: none !important; }
+  body.native.adminview #pane-admin { display: block; padding-top: 12px;
+    padding-bottom: 120px; }
+  body.native #pane-admin .card { padding: 22px 20px; cursor: default;
+    border-radius: 24px; }
+  body.native #pane-admin .actions { padding: 0; margin-top: 16px; }
+  #pane-admin .p-link:last-of-type { border-bottom: none; }
   .p-sec { font: 700 11px/14px -apple-system, sans-serif; color: #8e8e93;
     letter-spacing: .08em; text-transform: uppercase; margin: 20px 0 4px; }
   .p-sec:first-child { margin-top: 4px; }
@@ -265,7 +277,7 @@
     width: 44px; height: 13px; border-radius: 8px; background: #09090b; z-index: 2; }
   /* gear icon button */
   .gearbtn { display: none; }
-  body.native .gearbtn { display: flex; flex: none; width: 47px; height: 47px;
+  body.native .gearbtn { display: flex; flex: none; width: 54px; height: 54px;
     align-items: center; justify-content: center; border-radius: 999px;
     border: 1px solid rgba(0,0,0,.12); background: #fff; color: #1d1d1f;
     cursor: pointer; }
@@ -294,11 +306,6 @@
   body.native .cardedit svg { width: 21px; height: 21px; }
   .card.editing .row, .card.editing .actions,
   .card.editing .handoff { display: none; }
-  .hiddentag { display: none; }
-  body.admin .card.is-hidden .hiddentag { display: inline-flex;
-    font: 700 10px/1 -apple-system, sans-serif; letter-spacing: .06em;
-    text-transform: uppercase; color: #fff; background: #1d1d1f;
-    border-radius: 999px; padding: 5px 9px; }
   /* CMS-style in-card editor */
   .editor { display: none; }
   .card.editing .editor { display: block; }
@@ -335,13 +342,20 @@
     transition: transform .22s cubic-bezier(.3,.9,.4,1); }
   .switch input:checked + .track { background: #34C759; }
   .switch input:checked + .track::after { transform: translateX(20px); }
-  .switch.sm { width: 44px; height: 26px; }
-  .switch.sm .track::after { width: 22px; height: 22px; }
-  .switch.sm input:checked + .track::after { transform: translateX(18px); }
-  /* quick publish/unpublish switch on the card itself */
+  /* labeled Live/Off switch: quick publish control in the action bar */
+  .switch.lbl { width: 78px; }
+  .switch.lbl .track::before { content: 'Off'; position: absolute; right: 12px;
+    top: 50%; transform: translateY(-50%); letter-spacing: .03em;
+    font: 700 11px/1 -apple-system, sans-serif; color: #8e8e93; }
+  .switch.lbl input:checked + .track::before { content: 'Live'; left: 12px;
+    right: auto; color: #fff; }
+  .switch.lbl input:checked + .track::after { transform: translateX(47px); }
   .livesw { display: none; }
-  body.admin .livesw { display: inline-flex; align-items: center; gap: 8px; }
-  .card.editing .livesw { display: none; }
+  body.admin .livesw { display: inline-flex; align-items: center; gap: 8px;
+    margin-left: auto; }
+  body.native.admin .actions { flex-wrap: wrap; }
+  body.native .livesw { margin-left: 0; order: 3; flex-basis: 100%;
+    justify-content: flex-end; margin-top: 2px; }
   .livesw .livemsg { font: 600 11px/1.2 -apple-system, sans-serif;
     color: #6e6e73; white-space: nowrap; }
   .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
@@ -355,9 +369,7 @@
   .loginbox .err { color: #ED1C24; font: 600 12px/16px -apple-system, sans-serif;
     margin-top: 10px; min-height: 16px; }
   .editbtn svg { width: 16px; height: 16px; }
-  .card.is-hidden { opacity: .55; outline: 2px dashed rgba(237,28,36,.5);
-    outline-offset: 4px; }
-  .card.is-hidden.editing { opacity: 1; }
+
 
   /* settings primer sheet */
   .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
@@ -433,6 +445,11 @@
 </div>
 
 <div class="wrap">
+
+  <section class="tabpane" id="pane-admin">
+    <div class="count">Admin</div>
+    <div id="adminPane"></div>
+  </section>
 
   <section class="tabpane on" id="pane-prototypes">
     <div class="count" id="count"></div>
@@ -857,18 +874,12 @@ function wireEditMode() {
       status: f.status || 'in-progress', platform: f.platform || '',
       area: f.area || '', hidden: card.classList.contains('is-hidden') };
 
-    const tag = document.createElement('span');
-    tag.className = 'hiddentag';
-    tag.textContent = 'Offline';
-    card.querySelector('.top').appendChild(tag);
-
-    /* quick Live/Offline switch, always on the card in admin view */
+    /* quick Live/Off switch lives in the action bar */
     const lw = document.createElement('span');
     lw.className = 'livesw';
     lw.innerHTML = '<span class="livemsg"></span>' +
-      '<span class="switch sm"><input type="checkbox" aria-label="Live on the lab">' +
+      '<span class="switch lbl"><input type="checkbox" aria-label="Live on the lab">' +
       '<span class="track"></span></span>';
-    card.querySelector('.top').appendChild(lw);
     const lwIn = lw.querySelector('input');
     const lwMsg = lw.querySelector('.livemsg');
     lwIn.checked = !cur.hidden;
@@ -900,6 +911,7 @@ function wireEditMode() {
     eb.setAttribute('aria-label', 'Edit card');
     eb.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M11.1 2.2l2.7 2.7-8.2 8.2-3.2.5.5-3.2 8.2-8.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
     card.querySelector('.actions').appendChild(eb);
+    card.querySelector('.actions').appendChild(lw);
 
     const platforms = ['iOS', 'Android', 'Web', 'macOS', 'watchOS'];
     if (cur.platform && platforms.indexOf(cur.platform) < 0) platforms.unshift(cur.platform);
@@ -1003,9 +1015,50 @@ if (ADMIN) {
   loginBtn.setAttribute('aria-label', 'Sign out');
 }
 loginBtn.addEventListener('click', adminAccess);
-const adminTab = document.getElementById('adminTab');
-adminTab.addEventListener('click', adminAccess);
-if (ADMIN) adminTab.classList.add('signed');
+if (ADMIN) document.getElementById('adminTab').classList.add('signed');
+
+/* the Admin tab's own page: account + settings */
+function renderAdminPane() {
+  const box = document.getElementById('adminPane');
+  if (!box) return;
+  const shell = (navigator.userAgent.match(/DietStationLab\/(\d+)/) || [])[1];
+  if (ADMIN) {
+    box.innerHTML = '<section class="card">' +
+      '<div class="top"><h2>Account</h2><span class="pill ready">Signed in</span></div>' +
+      '<p class="desc">Signed in as Rashid. Every card now shows its edit pencil and Live switch.</p>' +
+      '<div class="actions"><button class="btn ghost" id="paOut">Sign out</button></div>' +
+      '</section>' +
+      '<section class="card"><div class="top"><h2>Settings</h2></div>' +
+      '<button class="p-link" id="paRefresh">Refresh content<small>Reload the lab from the server</small></button>' +
+      '<button class="p-link" id="paSplash">Replay splash<small>Watch the intro again</small></button>' +
+      (shell ? '<div class="p-link" style="cursor:default">App shell<small>DietStationLab build ' + shell + '</small></div>' : '') +
+      '</section>';
+    box.querySelector('#paOut').onclick = () => {
+      try {
+        localStorage.removeItem('ds-admin');
+        sessionStorage.removeItem('ds-pub-token');
+        sessionStorage.setItem('ds-return-admin', '1');
+      } catch (_) {}
+      location.href = location.pathname;
+    };
+    box.querySelector('#paRefresh').onclick = () => location.reload();
+    box.querySelector('#paSplash').onclick = () => {
+      try { sessionStorage.removeItem('ds-splashed'); } catch (_) {}
+      location.href = location.pathname + '?splash=1';
+    };
+  } else {
+    box.innerHTML = '<section class="card">' +
+      '<div class="top"><h2>Admin</h2></div>' +
+      '<p class="desc">Sign in to edit card content, change status and platform, and publish or unpublish flows \u2014 right from the app.</p>' +
+      '<div class="actions"><button class="btn primary" id="paIn">Sign in</button></div>' +
+      '</section>';
+    box.querySelector('#paIn').onclick = () => {
+      try { sessionStorage.setItem('ds-return-admin', '1'); } catch (_) {}
+      openLogin();
+    };
+  }
+}
+renderAdminPane();
 
 function copyFeedback(btn, text, label) {
   (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
@@ -1050,15 +1103,21 @@ addEventListener('message', e => {
 });
 
 /* ================= header dropdown: everything sheet ================= */
-const VIEW_TABS = '#tabbar button[data-tab="proto"], #tabbar button[data-tab="sys"]';
-function setNativeView(sys) {
-  document.body.classList.toggle('sysview', sys);
-  document.querySelectorAll(VIEW_TABS).forEach(b =>
-    b.classList.toggle('on', (b.dataset.tab === 'sys') === sys));
+function setNativeView(view) {
+  document.body.classList.toggle('sysview', view === 'sys');
+  document.body.classList.toggle('adminview', view === 'admin');
+  document.querySelectorAll('#tabbar button').forEach(b =>
+    b.classList.toggle('on', b.dataset.tab === view));
 }
-document.querySelectorAll(VIEW_TABS).forEach(b =>
-  b.addEventListener('click', () => setNativeView(b.dataset.tab === 'sys')));
-if (NATIVE && location.hash === '#design-system') setNativeView(true);
+document.querySelectorAll('#tabbar button').forEach(b =>
+  b.addEventListener('click', () => setNativeView(b.dataset.tab)));
+if (NATIVE && location.hash === '#design-system') setNativeView('sys');
+try {
+  if (NATIVE && sessionStorage.getItem('ds-return-admin')) {
+    sessionStorage.removeItem('ds-return-admin');
+    setNativeView('admin');
+  }
+} catch (_) {}
 if (NATIVE) {
   document.querySelectorAll('#pane-system .actions a').forEach(a => {
     if (a.getAttribute('download') !== null) return;
