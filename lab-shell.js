@@ -704,23 +704,35 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
      listener only fired on "dead" spots), and the hold tolerates up to
      16px of finger jitter instead of dying on the first touchmove. */
   function tripleTapHold(openFn) {
-    var taps = 0, last = 0, hold = null, x0 = 0, y0 = 0;
+    /* Timing reads e.timeStamp (hardware event time), NOT performance.now()
+       at processing time: on flows with heavy main-thread work (liquid-glass
+       html2canvas snapshots, Rive canvases) handlers run late, and wall-clock
+       deltas made real triple-taps look too slow to ever count. */
+    var TAP_MS = 550, HOLD_MS = 380, SLOP = 16;
+    var taps = 0, last = 0, hold = null, holdAt = 0, x0 = 0, y0 = 0;
     function cancel() { if (hold) { clearTimeout(hold); hold = null; } }
+    function fire() { cancel(); taps = 0; holdAt = 0; openFn(); }
     addEventListener('touchstart', function (e) {
       if (e.touches.length > 1) { taps = 0; cancel(); return; }
-      var t = e.touches[0], now = performance.now();
-      taps = (now - last < 450) ? taps + 1 : 1;
+      var t = e.touches[0], now = e.timeStamp || performance.now();
+      taps = (now - last < TAP_MS) ? taps + 1 : 1;
       last = now;
       x0 = t.clientX; y0 = t.clientY;
       cancel();
-      if (taps >= 3) hold = setTimeout(function () { taps = 0; openFn(); }, 380);
+      if (taps >= 3) { holdAt = now; hold = setTimeout(fire, HOLD_MS); }
     }, { passive: true, capture: true });
     addEventListener('touchmove', function (e) {
       if (!hold) return;
       var t = e.touches[0];
-      if (Math.abs(t.clientX - x0) > 16 || Math.abs(t.clientY - y0) > 16) cancel();
+      if (Math.abs(t.clientX - x0) > SLOP || Math.abs(t.clientY - y0) > SLOP) cancel();
     }, { passive: true, capture: true });
-    addEventListener('touchend', cancel, { passive: true, capture: true });
+    addEventListener('touchend', function (e) {
+      /* jank can delay the hold timer past the queued touchend — honor a
+         hold that was physically long enough by its event timestamps */
+      if (hold && holdAt &&
+          (e.timeStamp || performance.now()) - holdAt >= HOLD_MS) { fire(); return; }
+      cancel();
+    }, { passive: true, capture: true });
     addEventListener('touchcancel', cancel, { passive: true, capture: true });
   }
   function setupLabMenu() {
