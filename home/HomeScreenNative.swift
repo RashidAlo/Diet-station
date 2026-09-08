@@ -5,8 +5,9 @@
 //  Authored by the Prototype Flows session (2026-09-08) against
 //  Figma 16828-83399 + Design System plan themes (4786-18146) and
 //  days-left shapes (4798-19569). The web twin lives at
-//  https://rashidalo.github.io/Diet-station/home/ — web is the design
-//  source of truth; keep constants in sync with home/index.html.
+//  https://rashidalo.github.io/Diet-station/home/ — THIS native view is
+//  the design standard (Rashid, 2026-09-08); the web twin replicates
+//  settled native rounds, with fallbacks only for iOS-only materials.
 //
 //  Integration (Shell session):
 //  1. Add this file to the DietStationLab target.

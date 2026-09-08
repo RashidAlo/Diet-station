@@ -99,8 +99,7 @@
     -webkit-overflow-scrolling: touch; }
   .scroller::-webkit-scrollbar { display: none; }
   /* --- the red zone is a flex column: hide a widget and the rest fill in --- */
-  .redzone { min-height: calc(100% - 328px);
-    display: flex; flex-direction: column; gap: 12px;
+  .redzone { display: flex; flex-direction: column; gap: 12px;
     padding: calc(var(--top-pad) + 10px) 20px 20px; }
 
   .toprow { flex: none; height: 68px; display: flex; align-items: center;
@@ -132,17 +131,16 @@
   .p-sub { font: 400 12px/16px 'Urbane Rounded', sans-serif; font-weight: 300;
     color: #f9f9f9; white-space: nowrap; }
   .pillbtn { height: 36px; padding: 0 17px; border-radius: 48px; border: none;
-    cursor: pointer; background: rgba(255,255,255,.16); position: relative; overflow: hidden;
+    cursor: pointer; background: rgba(255,255,255,.2); position: relative; overflow: hidden;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     font: 500 12px/36px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .pillbtn::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
-    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter; pointer-events: none; }
   .pillbtn:active { transform: scale(.94); }
   .pillbtn.urgent { background: #f9f9f9; color: #0b0e12; font-weight: 600; }
   .pillbtn.urgent::after { display: none; }
 
   /* widget grid */
-  .widgets { flex: 1; min-height: 0; display: flex; gap: 20px; }
+  .widgets { flex: none; height: 288px; display: flex; gap: 20px; }
   /* the plan widget is the SAME glass, with its theme gradient layered on top
      of the shared base (below the milk + rim), so all widgets finish alike */
   .planw { flex: none; width: 191px; border-radius: 30px;
@@ -158,11 +156,10 @@
   .planw.theme-kids .pw-title .a { font-weight: 600; opacity: 1;
     text-shadow: 0 1.4px 5.6px rgba(0,0,0,.1); }
   .pw-change { width: 100%; height: 41px; border-radius: 48px; border: none; cursor: pointer;
-    background: rgba(255,255,255,.16); position: relative; overflow: hidden;
+    background: rgba(255,255,255,.2); position: relative; overflow: hidden;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     font: 500 14px/41px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .pw-change::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
-    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter; pointer-events: none; }
   .pw-change:active { transform: scale(.95); }
   /* !important: the inlined Figma svg roots carry style="display: block" */
   .planw .deco { position: absolute; z-index: 2; display: none !important;
@@ -176,17 +173,16 @@
   /* ONE glass recipe for every widget — identical layers via pseudo-elements
      so nothing can drift: red tint base + backdrop blur, plus-lighter milk,
      soft inner rim. The widget inherits the red beneath it. */
-  .gwrap { position: relative; border-radius: 20px; overflow: hidden;
-    background: rgba(237,28,36,.30);
+  /* replica of the NATIVE glass (.clear.tint(red .15)) — the CSS fallback
+     approximates Apple's material: light red tint, blur, soft rim, no milk */
+  .gwrap { position: relative; border-radius: 26px; overflow: hidden;
+    background: rgba(237,28,36,.15);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
     backdrop-filter: blur(12px) saturate(150%); }
-  .gwrap::before { content: ''; position: absolute; inset: 0; border-radius: inherit;
-    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter;
-    pointer-events: none; z-index: 2; }
   .gwrap::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
     pointer-events: none; z-index: 2;
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.22),
-      inset 0 0 0 1px rgba(255,255,255,.10); }
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.25),
+      inset 0 0 0 1px rgba(255,255,255,.12); }
   .gwrap .z { position: relative; z-index: 3; }
 
   /* days-left widget — one widget, many shapes (Figma 4798-19569) */
@@ -195,7 +191,8 @@
   .daysw.off { display: none; }
   .dw-main { display: flex; align-items: center; gap: 8px; flex: 1; min-height: 0; }
   .dw-ring { position: relative; flex: none; width: 50px; height: 50px; }
-  .dw-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dw-ring svg { display: block; width: 100%; height: 100%;
+    transform: rotate(-90deg) scaleX(-1); }   /* native: depletes clockwise */
   .dw-ring .num { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; font: 600 20px/1 'Urbane Rounded', sans-serif; color: #fff; }
   .dw-texts { flex: 1; min-width: 0; }
@@ -218,12 +215,14 @@
     display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .discw.off { display: none; }
   .di-texts { flex: 1; min-width: 0; }
-  .di-kd { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
+  .di-kd { font: 600 14px/18px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
   .di-cap { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #f9f9f9; opacity: .8; }
   .discw img.ic { width: 26px; height: 30px; flex: none; }
 
-  .consw { flex: 1; min-height: 0; border-radius: 20px; padding: 12px 16px;
-    display: flex; align-items: center; cursor: pointer; }
+  .consw { flex: none; height: 60px; border-radius: 26px; padding: 12px 16px;
+    display: flex; align-items: center; cursor: pointer;
+    transition: height .4s cubic-bezier(.3,.9,.3,1.05); }
+  .rightcol.sparse .consw { height: 110px; }   /* native: +50 when discounts hide */
   .consw.off { display: none; }
   .consw .row { display: flex; align-items: center; gap: 12px; }
   .calico { position: relative; flex: none; width: 28px; height: 28px; }
@@ -246,20 +245,20 @@
     padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
   .sh-head { height: 51px; margin: 0 0 20px;
     display: flex; align-items: center; padding: 0 24px; gap: 14px; }
-  .sh-tile { width: 48px; height: 48px; border-radius: 16px; background: #fff;
+  .sh-tile { width: 44px; height: 44px; border-radius: 14px; background: #fff;
     display: flex; align-items: center; justify-content: center; flex: none;
     filter: drop-shadow(0 0 6.65px rgba(56,64,74,.08)); }
-  .sh-tile img { width: 23px; height: 23px; display: block; }
+  .sh-tile svg, .sh-tile img { width: 20px; height: 20px; display: block; }
   .sh-today { flex: 1; min-width: 0; }
-  .sh-today b { display: block; font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .sh-today span { display: block; font: 400 12px/14px 'Proxima Nova', sans-serif;
+  .sh-today b { display: block; font: 600 15px/18px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .sh-today span { display: block; font: 400 11px/13px 'Proxima Nova', sans-serif;
     color: #5e5e5e; margin-top: 1px; }
-  .sh-kcal { height: 48px; border-radius: 16px; background: #fff; flex: none;
+  .sh-kcal { height: 44px; border-radius: 14px; background: #fff; flex: none;
     border: none; cursor: pointer;
-    display: flex; gap: 3px; padding: 0 16px; align-items: center;
+    display: flex; gap: 3px; padding: 0 12px; align-items: center;
     filter: drop-shadow(0 0 6.65px rgba(56,64,74,.08)); }
-  .sh-kcal b { font: 600 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .sh-kcal i { font: 300 10px/16px 'Urbane Rounded', sans-serif; color: #999;
+  .sh-kcal b { font: 600 15px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .sh-kcal i { font: 300 9px/14px 'Urbane Rounded', sans-serif; color: #999;
     font-style: normal; }
   /* the macro calculator hides folded inside the pill; tapping expands it
      leftward (Figma: Info Pairs behind a clipped 1px column) */
@@ -324,6 +323,13 @@
      over this flow — the web bar steps aside so the native material owns it */
   html.ds-native .tabbar { display: none !important; }
   html.ds-native .sheetc { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+
+  /* ---- flow summon overlay (native replica: discounts -> coupons) ---- */
+  .ov-veil { position: absolute; inset: 0; background: rgba(0,0,0,.42); opacity: 0;
+    pointer-events: none; transition: opacity .32s ease; z-index: 80; }
+  .ov-veil.show { opacity: 1; pointer-events: auto; }
+  .ov-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+    background: transparent; z-index: 81; }
 
   /* ---- mobile lab sheet (triple-tap & hold) ---- */
   body.lab-mobile .lab-chip { display: none !important; }
@@ -516,7 +522,7 @@
             </div>
           </div>
 
-          <div class="promo gwrap" id="gPromo" style="border-radius:23px">
+          <div class="promo gwrap" id="gPromo" style="border-radius:26px">
                         <div class="p-texts z">
               <div class="p-title"><span class="kd">KD</span>109 Discount Expiring</div>
               <div class="p-sub">Rewnew before you lose the benefit</div>
@@ -525,7 +531,7 @@
           </div>
 
           <div class="widgets">
-            <div class="planw gwrap" id="planW" style="border-radius:30px">
+            <div class="planw gwrap" id="planW" style="border-radius:26px">
               <div class="grad" id="planGrad"></div>
               <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24.0932" height="23.0765" viewBox="0 0 24.0932 23.0765" fill="none" xmlns="http://www.w3.org/2000/svg" class="deco d1">
 <path id="Vector" d="M12.7168 2.98845L17.8892 0.177813C18.9654 -0.400375 20.2344 0.51509 20.0095 1.71965L18.9333 7.50153C18.8369 7.98335 18.9975 8.48123 19.367 8.81851L23.6398 12.8658C24.5233 13.701 24.0414 15.1946 22.8366 15.3552L17.0057 16.1101C16.5238 16.1743 16.0901 16.4795 15.8813 16.9292L13.3593 22.2453C12.8292 23.3535 11.2711 23.3535 10.741 22.2453L8.2191 16.9292C8.01028 16.4795 7.59264 16.1743 7.09468 16.1101L1.26373 15.3552C0.0589927 15.1946 -0.438967 13.701 0.460573 12.8658L4.73339 8.81851C5.08678 8.48123 5.24741 7.98335 5.16709 7.50153L4.09086 1.71965C3.86597 0.51509 5.13497 -0.400375 6.2112 0.177813L11.3675 2.98845C11.8012 3.22936 12.3152 3.22936 12.7489 2.98845" fill="#FFB800"/>
@@ -546,7 +552,7 @@
               </div>
             </div>
             <div class="rightcol" id="rightcol">
-              <div class="daysw gwrap" id="gDays" style="border-radius:27px">
+              <div class="daysw gwrap" id="gDays" style="border-radius:26px">
                                                 <div class="dw-main z">
                   <div class="dw-ring">
                     <svg viewBox="0 0 50 50">
@@ -563,7 +569,7 @@
                 </div>
                 <div class="dw-renew z"><button class="pillbtn" id="dwRenew">Renew</button></div>
               </div>
-              <div class="discw gwrap" id="gDisc" style="border-radius:20px">
+              <div class="discw gwrap" id="gDisc" style="border-radius:26px">
                                                 <div class="di-texts z">
                   <div class="di-kd">KD 32</div>
                   <div class="di-cap">Discounts</div>
@@ -603,7 +609,7 @@
 </clipPath></defs>
 </svg>
               </div>
-              <div class="consw gwrap" id="gConsult" style="border-radius:20px">
+              <div class="consw gwrap" id="gConsult" style="border-radius:26px">
                                                 <div class="row z">
                   <div class="calico">
                     <span class="plate"></span>
@@ -690,6 +696,7 @@
 </svg>
           </div>
         </div>
+        <div class="ov-veil" id="ovVeil"></div>
         <div class="tabbar">
           
             <button class="tb-tab on" aria-label="Home"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30.936" height="24" viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
@@ -718,7 +725,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 6';
+const BUILD = 'home 2026-09-08 · 7';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -768,6 +775,9 @@ function applyState() {
   document.getElementById('gPromo').classList.toggle('off', !MODS.promo);
   document.getElementById('gDisc').classList.toggle('off', !MODS.disc);
   document.getElementById('gConsult').classList.toggle('off', !MODS.consult);
+  /* native rule: consultation grows +50 when discounts is away */
+  document.getElementById('rightcol').classList.toggle('sparse',
+    !MODS.disc && MODS.consult);
   syncSegs();
   requestShape();
 }
@@ -1054,10 +1064,69 @@ document.getElementById('kcalPill').addEventListener('click', function () {
   vibrate(8);
 });
 
+/* ================= discounts -> coupons (replica of the native summon) ==== */
+const ovVeil = document.getElementById('ovVeil');
+let ovFrame = null;
+function openFlow(path) {
+  if (ovFrame) return;
+  vibrate(8);
+  ovVeil.classList.add('show');
+  ovFrame = document.createElement('iframe');
+  ovFrame.className = 'ov-frame';
+  ovFrame.src = '../' + path + '/?embed=1&v=' + Date.now();
+  document.getElementById('phone').appendChild(ovFrame);
+}
+function closeFlow() {
+  if (!ovFrame) return;
+  ovVeil.classList.remove('show');
+  const fr = ovFrame; ovFrame = null;
+  setTimeout(() => fr.remove(), 420);
+}
+addEventListener('message', e => { if (e.data && e.data.t === 'ds-close') closeFlow(); });
+document.getElementById('gDisc').addEventListener('click', () => openFlow('rewards'));
+document.getElementById('gDisc').style.cursor = 'pointer';
+
 /* ================= boot ================= */
 fit();
 applyState();
 document.getElementById('todayDate').textContent = dayDateStr(0);
+
+/* entrance choreography — replica of the native intro: widgets arrive
+   staggered, then the dial depletes clockwise while the number counts
+   30 down to the real days-left with tiny haptic ticks */
+(function intro() {
+  const els = [document.querySelector('.toprow'), document.getElementById('gPromo'),
+    document.querySelector('.widgets'), document.querySelector('.sheetc')];
+  els.forEach((el, i) => {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'scale(.96)';
+    el.style.transition = 'opacity .55s cubic-bezier(.2,.8,.3,1) ' + (i * 70) +
+      'ms, transform .55s cubic-bezier(.2,.8,.3,1) ' + (i * 70) + 'ms';
+  });
+  setTimeout(() => els.forEach(el => {
+    if (el) { el.style.opacity = '1'; el.style.transform = 'scale(1)'; }
+  }), 60);
+  setTimeout(() => {
+    const arc = document.getElementById('dwArc');
+    const num = document.getElementById('dwNum');
+    if (!arc || !num) return;
+    arc.style.transition = 'none';
+    arc.setAttribute('stroke-dashoffset', '0');
+    num.textContent = '30';
+    void arc.getBoundingClientRect();
+    arc.style.transition = 'stroke-dashoffset .9s cubic-bezier(.33,0,.2,1)';
+    arc.setAttribute('stroke-dashoffset',
+      (144.5 * (1 - Math.min(1, MODS.days / 30))).toFixed(1));
+    let n = 30;
+    const iv = setInterval(() => {
+      n--;
+      num.textContent = n;
+      vibrate(4);
+      if (n <= MODS.days) clearInterval(iv);
+    }, 75);
+  }, 620);
+})();
 </script>
 <script src="../lab-shell.js?v=20260908d" data-flow="home" defer></script>
 </body>
