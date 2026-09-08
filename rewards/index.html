@@ -1018,19 +1018,30 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
 })();
 </script>
 <script>
-/* Native glass chrome handshake (2026-09-08, TestFlight shell iOS 26+):
-   in the app, this page reports its chrome geometry; the shell renders REAL
-   Liquid Glass twins on top, then calls DSNativeChrome(ids) so the web
-   versions step aside, and DSChromeTap(id) to route native taps back into
-   the page's own handlers. Outside the app nothing changes. */
+/* Native glass chrome handshake v2 (2026-09-08): native-first from load.
+   In the shell we PRE-HIDE the web chrome immediately (a 1.6s fallback
+   restores it on shells that never render twins, e.g. iOS < 26), report
+   geometry as soon as the DOM settles, and re-report late for elements
+   that build async. The shell renders REAL Liquid Glass twins, confirms
+   via DSNativeChrome(ids), and routes taps back via DSChromeTap(id). */
 (function () {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
-  var FLOW = 'rewards';
+  var FLOW = 'rewards', SURFACE = 'dark';
   var ELS = { close: '.closebtn' };
+  var TAPS = {};
+  var nativeConfirmed = false;
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
+
+  function prehide() {
+    Object.keys(ELS).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (el) el.classList.add('ds-native-hidden');
+    });
+  }
   function report() {
+    prehide();   /* idempotent — catches async-built elements too */
     var els = [];
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
@@ -1041,23 +1052,34 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
     });
     try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'dark',
-        els: els });
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, els: els });
     } catch (_) {}
   }
   window.DSNativeChrome = function (ids) {
+    nativeConfirmed = true;
     (ids || []).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
   };
   window.DSChromeTap = function (id) {
-    var el = document.querySelector(ELS[id]);
+    var sel = TAPS[id] || ELS[id];
+    var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
+  /* iOS<26 shells never render twins — restore the web chrome */
+  setTimeout(function () {
+    if (nativeConfirmed) return;
+    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
+      el.classList.remove('ds-native-hidden');
+    });
+    window.DSNativeChrome = function () {};
+  }, 1600);
   addEventListener('resize', function () { setTimeout(report, 350); });
-  setTimeout(report, 900);
-  setTimeout(report, 2200);   /* glass containers build late on slow loads */
+  function boot() { setTimeout(report, 200); setTimeout(report, 1200); setTimeout(report, 2600); }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
 <script src="../lab-shell.js?v=20260908d" data-flow="rewards" defer></script>
