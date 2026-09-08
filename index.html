@@ -796,7 +796,9 @@ function openLogin() {
     setTimeout(() => el.remove(), 700);
   }
   /* preload: fonts, shared libs, every flow page + its heavy assets */
-  const warm = ['flows.json', 'lab-shell.js', 'html2canvas.min.js',
+  /* keep the lab-shell stamp in sync with the flow pages' script tags —
+     a bare URL would warm a cache key the flows never request */
+  const warm = ['flows.json', 'lab-shell.js?v=20260908b', 'html2canvas.min.js',
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {
