@@ -1813,11 +1813,12 @@ function drawNeonRing(o, now) {
   if (ease < 1) { g.setLineDash([RING_PER]); g.lineDashOffset = RING_PER * (1 - ease); }
   g.lineCap = 'round';
   g.strokeStyle = grad;
-  /* outer halo: lighter, floats just outside the card edge */
+  /* outer halo: lighter, hugging the main stroke so the pair reads as one
+     neon glow rather than two separate lines */
   g.beginPath();
-  roundRectPath(g, DOTS_M - 3.25, DOTS_M - 3.25, CARD_W + 6.5, CARD_H + 6.5, CARD_R + 3.25);
-  g.globalAlpha = (0.38 + 0.27 * breathe) * ease;
-  g.lineWidth = 2.25;
+  roundRectPath(g, DOTS_M - 1.4, DOTS_M - 1.4, CARD_W + 2.8, CARD_H + 2.8, CARD_R + 1.4);
+  g.globalAlpha = (0.42 + 0.28 * breathe) * ease;
+  g.lineWidth = 2.5;
   g.stroke();
   /* main selected stroke on the card edge */
   g.beginPath();
@@ -2002,7 +2003,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 65';
+const BUILD = 'build 2026-09-08 · 66';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
