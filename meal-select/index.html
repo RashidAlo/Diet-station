@@ -370,7 +370,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 13';
+const BUILD = 'calendar 2026-09-08 · 14';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -886,6 +886,9 @@ if (/[?&]qaopen=1/.test(location.search)) {
     });
   }
   function report() {
+    /* the meal-selection overlay owns the whole screen — boot's late
+       reports must not resurrect the pause twin / tab bar on top of it */
+    if (overlayUp) { clearChrome(); return; }
     prehide();   /* idempotent — catches async-built elements too */
     /* overlay pages live in (possibly offset / sliding) iframes — convert
        to SCREEN coords by walking same-origin frame ancestors */
@@ -940,12 +943,15 @@ if (/[?&]qaopen=1/.test(location.search)) {
   /* the meal-selection overlay owns the whole screen: clear our native
      chrome while it is up (it was overlapping the selector's calorie
      navigator) and restore it when the overlay closes */
+  var overlayUp = false;
   function clearChrome() {
-    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'calendar', surface: 'dark', els: [] }); } catch (_) {}
+    /* bar: null asks replace-semantics shells to drop the tab bar too */
+    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: SURFACE, mode: MODE, els: [], bar: null }); } catch (_) {}
   }
   var _open = window.openDay, _close = window.closeOverlay;
-  window.openDay = function () { clearChrome(); return _open.apply(this, arguments); };
+  window.openDay = function () { overlayUp = true; clearChrome(); return _open.apply(this, arguments); };
   window.closeOverlay = function () {
+    overlayUp = false;
     var r = _close.apply(this, arguments);
     setTimeout(report, 600);
     return r;
