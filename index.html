@@ -37,6 +37,13 @@
   }
   .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
 
+  /* native chrome mode: the TestFlight shell (iOS 26+) draws Apple's own
+     Liquid Glass top bar + tab bar natively and hides the web versions;
+     the CSS/JS glass below stays as the fallback everywhere else */
+  html.ds-nativebars header.bar { display: none !important; }
+  html.ds-nativebars .tabbar { display: none !important; }
+  html.ds-nativebars body { padding-top: calc(env(safe-area-inset-top, 0px) + 54px); }
+
   /* ---- frosted sticky header ---- */
   header.bar { position: sticky; top: 0; z-index: 40;
     padding-top: env(safe-area-inset-top, 0px);
@@ -623,6 +630,7 @@ function openLogin() {
   el.id = 'splash';
   el.innerHTML = '<canvas></canvas>';
   document.body.appendChild(el);
+  try { window.webkit.messageHandlers.ds.postMessage({ t: 'chrome', show: false }); } catch (_) {}
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
   const MIN_MS = 2500;                 /* snap burst -> vacuum -> draw -> pop */
@@ -632,6 +640,7 @@ function openLogin() {
     if (gone) return;
     gone = true;
     el.classList.add('bye');
+    try { window.webkit.messageHandlers.ds.postMessage({ t: 'chrome', show: true }); } catch (_) {}
     setTimeout(() => el.remove(), 700);
   }
   /* preload: fonts, shared libs, every flow page + its heavy assets */
@@ -1098,16 +1107,21 @@ if (NATIVE) {
   document.body.appendChild(root);
 }
 let flowFrame = null, flowVeil = null;
+function dsPost(m) {
+  try { window.webkit.messageHandlers.ds.postMessage(m); } catch (_) {}
+}
 function openFlowSheet(url) {
   flowFrame = document.createElement('iframe');
   flowFrame.className = 'flow-frame';
   flowFrame.src = url + '&embed=1';
   document.body.append(flowFrame);
   document.body.classList.add('flowopen');
+  dsPost({ t: 'chrome', show: false });
 }
 function closeFlowSheet() {
   if (!flowFrame) return;
   document.body.classList.remove('flowopen');
+  dsPost({ t: 'chrome', show: true });
   const fr = flowFrame;
   flowFrame = null;
   setTimeout(() => fr.remove(), 500);
@@ -1125,6 +1139,7 @@ function setNativeView(view) {
 }
 document.querySelectorAll('#tabbar button').forEach(b =>
   b.addEventListener('click', () => setNativeView(b.dataset.tab)));
+window.DSSetView = setNativeView;
 if (NATIVE && location.hash === '#design-system') setNativeView('sys');
 try {
   if (NATIVE && sessionStorage.getItem('ds-return-admin')) {
