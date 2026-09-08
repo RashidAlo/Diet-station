@@ -1528,7 +1528,11 @@ addEventListener('message', e => {
   if (!d) return;
   const src = flowStack.find(en => en.frame.contentWindow === e.source);
   if (d.t === 'ds-close') {
-    popFlow(src);
+    /* only frames the hub presents may close — a GRANDCHILD frame (e.g.
+       the selector nested in the calendar) can reach us via window.top,
+       and popping the top frame for an unmatched source would close the
+       whole stack on a message meant for its own parent */
+    if (src) popFlow(src);
   } else if (d.t === 'ds-nav') {
     const f = (NAV_FLOWS || []).find(x => x.id === d.to);
     if (!f || flowHiddenNow(f)) { showUnbuilt(d.to, f); return; }
