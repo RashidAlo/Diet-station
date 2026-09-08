@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 77';
+const BUILD = 'build 2026-09-08 · 78';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2303,7 +2303,7 @@ fit();
     if (!nav || !ph) return;
     if (nav.parentElement !== ph) ph.appendChild(nav);
     var pr = document.createElement('div');
-    pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 6px))';
+    pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 1px))';
     document.body.appendChild(pr);
     var realPad = parseFloat(getComputedStyle(pr).paddingTop) || 28;
     pr.remove();
