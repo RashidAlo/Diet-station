@@ -610,7 +610,7 @@ function openLogin() {
   document.body.appendChild(el);
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
-  const MIN_MS = 2800;                 /* one continuous burst->draw->pop */
+  const MIN_MS = 2500;                 /* snap burst -> vacuum -> draw -> pop */
   const MAX_MS = 7000;
   let riveOk = false, gone = false;
   function dismiss() {
