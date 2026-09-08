@@ -366,7 +366,20 @@
     box-shadow: inset 0 1px 1px rgba(255,255,255,.4), inset 0 0 0 .6px rgba(255,255,255,.35),
       inset 0 -1px 1.5px rgba(0,0,0,.08); }
   .navigator .glassbase::before { content: ''; position: absolute; inset: 0;
-    background: rgba(255,255,255,.14); }
+    background: rgba(255,255,255,.14); transition: background .35s ease; }
+  /* neon theme: the Done celebration turns the whole bar bright neon —
+     glass flashes to --selc, the gradient gauge fades under it, and the
+     Done check/text flip dark for contrast on the bright fill */
+  #gaugeCanvas { transition: opacity .35s ease; }
+  body.selc-neon .navigator { transition: box-shadow .35s ease; }
+  body.selc-neon .navigator.celebrating { box-shadow: 0 8px 40px rgba(0,0,0,.12),
+    0 0 28px var(--selc-glow); }
+  body.selc-neon .navigator.celebrating .glassbase::before { background: var(--selc); }
+  body.selc-neon .navigator.celebrating #gaugeCanvas { opacity: 0; }
+  body.selc-neon .navigator.celebrating .done-center { color: #0B0E12; }
+  body.selc-neon .navigator.celebrating .done-center span,
+  body.selc-neon .navigator.celebrating .done-center svg { filter: none; }
+  body.selc-neon .navigator.celebrating .done-center svg path { stroke: #0B0E12; }
   /* the gauge: a transparent canvas ON the glass — spring fill, rippling
      leading edge, breathing tip glow. The glass itself is a plain
      backdrop-filter container blurring the live thumbnails beneath. */
@@ -1989,7 +2002,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 64';
+const BUILD = 'build 2026-09-08 · 65';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

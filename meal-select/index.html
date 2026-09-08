@@ -350,7 +350,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 6';
+const BUILD = 'calendar 2026-09-08 · 7';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -526,8 +526,10 @@ function openDay(mon, day, auto) {
   ovVeil.classList.add('show');
   ovFrame = document.createElement('iframe');
   ovFrame.className = 'ov-frame';
+  /* v= keeps the overlay out of the WKWebView cache — Rashid kept getting
+     stale builds because this iframe src was the one unbusted URL */
   ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day +
-    '&auto=' + (auto ? 1 : 0);
+    '&auto=' + (auto ? 1 : 0) + '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
 }
 function closeOverlay() {
