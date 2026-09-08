@@ -350,14 +350,20 @@
   .switch.lbl input:checked + .track::before { content: 'Live'; left: 12px;
     right: auto; color: #fff; }
   .switch.lbl input:checked + .track::after { transform: translateX(47px); }
-  .livesw { display: none; }
-  body.admin .livesw { display: inline-flex; align-items: center; gap: 8px;
-    margin-left: auto; }
-  body.native.admin .actions { flex-wrap: wrap; }
-  body.native .livesw { margin-left: 0; order: 3; flex-basis: 100%;
-    justify-content: flex-end; margin-top: 2px; }
+  .livesw { display: inline-flex; align-items: center; gap: 8px; }
   .livesw .livemsg { font: 600 11px/1.2 -apple-system, sans-serif;
     color: #6e6e73; white-space: nowrap; }
+  /* admin strip: publish control on its own footer row of the card */
+  .adminbar { display: none; }
+  body.admin .adminbar { display: flex; align-items: center; gap: 10px;
+    margin: 20px -26px -22px; padding: 12px 26px;
+    border-top: 0.5px solid var(--line); background: #fbfbfc;
+    border-radius: 0 0 18px 18px; }
+  .adminbar .ab-label { font: 600 11px/14px 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .08em; color: #6e6e73; }
+  .adminbar .livesw { margin-left: auto; }
+  body.native .adminbar { margin: 0; padding: 12px 18px; border-radius: 0; }
+  .card.editing .adminbar { display: none; }
   .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
   .editfoot .draftdot { flex: 1; font: 600 12px/1.35 -apple-system, sans-serif;
     color: #6e6e73; }
@@ -726,7 +732,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const fresh = () => f.path + '?v=' + Date.now();
       const open = () => f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
       card.addEventListener('click', e => {
-        if (!e.target.closest('a, button, .editor, .livesw')) open();
+        if (!e.target.closest('a, button, .editor, .adminbar')) open();
       });
       const primary = card.querySelector('.btn.primary');
       primary.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype';
@@ -911,7 +917,11 @@ function wireEditMode() {
     eb.setAttribute('aria-label', 'Edit card');
     eb.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M11.1 2.2l2.7 2.7-8.2 8.2-3.2.5.5-3.2 8.2-8.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
     card.querySelector('.actions').appendChild(eb);
-    card.querySelector('.actions').appendChild(lw);
+    const bar = document.createElement('div');
+    bar.className = 'adminbar';
+    bar.innerHTML = '<span class="ab-label">Publish</span>';
+    bar.appendChild(lw);
+    card.appendChild(bar);
 
     const platforms = ['iOS', 'Android', 'Web', 'macOS', 'watchOS'];
     if (cur.platform && platforms.indexOf(cur.platform) < 0) platforms.unshift(cur.platform);
