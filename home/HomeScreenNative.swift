@@ -24,6 +24,7 @@
 //
 
 import SwiftUI
+import WebKit
 
 // MARK: - Palette / constants (mirror home/index.html)
 
@@ -108,6 +109,8 @@ private enum DS {
     var macrosOpen = false
     var stripDay = 0                // 0 today / 1 tomorrow
     var labOpen = false
+    var couponsOpen = false         // rewards web flow over this screen
+    var calendarOpen = false        // meal-select web flow over this screen
 
     struct DayInfo { let word: String; let kcal: Int; let c: Int; let p: Int; let f: Int }
     let days: [DayInfo] = [.init(word: "Today", kcal: 1200, c: 55, p: 87, f: 23),
@@ -150,9 +153,23 @@ struct HomeScreenNative: View {
                 arrival(mealSheet, 4)
             }
             .ignoresSafeArea(edges: .bottom)
+            arrival(tabBar, 5)
+                .padding(.bottom, 16)
         }
         .onLongPressGesture(minimumDuration: 0.6) { state.labOpen = true }
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
+        /* web flows summoned over the native screen, transparent — they run
+           their own sheet choreography and post ds-close when done */
+        .fullScreenCover(isPresented: $state.couponsOpen) {
+            FlowOverlay(path: "rewards") { state.couponsOpen = false }
+                .ignoresSafeArea()
+                .presentationBackground(Color.black.opacity(0.42))
+        }
+        .fullScreenCover(isPresented: $state.calendarOpen) {
+            FlowOverlay(path: "meal-select") { state.calendarOpen = false }
+                .ignoresSafeArea()
+                .presentationBackground(Color.black.opacity(0.42))
+        }
         .animation(.spring(duration: 0.45), value: state.showPromo)
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
         .animation(.spring(duration: 0.45), value: state.showConsult)
@@ -215,6 +232,49 @@ struct HomeScreenNative: View {
         .frame(height: 68)
     }
 
+    // MARK: DS tab bar — Figma structure on Apple's real Liquid Glass capsule
+    // (home selected / calendar / account; regular glass, NOT .interactive —
+    // the interactive layer eats tab taps, per the shell's build-7 lesson)
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            tabItem(selected: true) {
+                // TODO(Shell): swap for your traced DS wordmark Shape from
+                // HomeGlassTabBar (same target — reuse the struct directly)
+                Image(systemName: "face.smiling").font(.system(size: 22))
+                    .foregroundStyle(Color(white: 0.18))
+            } action: { }
+            tabItem {
+                // TODO(Shell): your traced brand-red calendar_month Shape
+                Image(systemName: "calendar").font(.system(size: 22))
+                    .foregroundStyle(DS.red.opacity(0.85))
+            } action: { state.calendarOpen = true }
+            tabItem {
+                // TODO(Shell): your traced person Shape
+                Image(systemName: "person.fill").font(.system(size: 22))
+                    .foregroundStyle(Color(white: 0.12).opacity(0.85))
+            } action: { }
+        }
+        .padding(4)
+        .frame(width: 314, height: 58)
+        .glassEffect(.regular, in: .capsule)
+    }
+
+    private func tabItem<C: View>(selected: Bool = false,
+                                  @ViewBuilder _ content: () -> C,
+                                  action: @escaping () -> Void) -> some View {
+        content()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                if selected {
+                    Capsule().fill(.white.opacity(0.85))
+                        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
+                }
+            }
+            .contentShape(Capsule())
+            .onTapGesture(perform: action)
+    }
+
     private func dock<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         content()
             .foregroundStyle(.white)
@@ -275,7 +335,9 @@ struct HomeScreenNative: View {
                 }
                 .frame(width: 151)
             }
-            .frame(height: state.showPromo ? 288 : 372)
+            /* fixed height: removing the promo banner shifts everything UP —
+               it must never elongate the widgets (Rashid) */
+            .frame(height: 288)
         }
     }
 
@@ -332,7 +394,7 @@ struct HomeScreenNative: View {
     private var discountsWidget: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("KD 32").font(DS.urbane(12, .semibold)).foregroundStyle(DS.onColor)
+                Text("KD 32").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
                 Text("Discounts").font(DS.proxima(12)).foregroundStyle(DS.onColor.opacity(0.8))
             }
             // scale, never wrap — the bag glyph leaves ~67pt for the text column
@@ -342,9 +404,12 @@ struct HomeScreenNative: View {
             DSBagIcon().frame(width: 34, height: 31.8)
         }
         .padding(.horizontal, 19)
-        .frame(height: 72)   // twin of consult — days-left stays dominant
+        .frame(maxWidth: .infinity)
+        .frame(height: 60)   // twin of consult — slimmer so days-left breathes
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("disc", in: glassNS)
+        .contentShape(RoundedRectangle(cornerRadius: 26))
+        .onTapGesture { state.couponsOpen = true }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
@@ -357,7 +422,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)   // fill the 151pt column exactly — no bleed
-        .frame(height: 72)   // twin of discounts — days-left stays dominant
+        .frame(height: 60)   // twin of discounts — slimmer so days-left breathes
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -459,9 +524,10 @@ struct HomeScreenNative: View {
                     }
                 }
                 .padding(.horizontal, 12).frame(height: 44)
+                .clipped()   // clips the macro slide only — BEFORE the background,
+                             // so the shadow is never cropped (same finish as the tile)
                 .background(.white, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
-                .clipped()
             }
             .fixedSize()
         }
@@ -611,8 +677,58 @@ private struct DaysContent: View {
                 }
             }
         }
-        .padding(EdgeInsets(top: shape == .tall ? 16 : 12, leading: 16, bottom: 12, trailing: 14))
+        .padding(EdgeInsets(top: shape == .tall ? 18 : 16, leading: 16, bottom: 14, trailing: 14))
         .animation(.spring(duration: 0.35), value: state.daysLeft)
+    }
+}
+
+// MARK: - Web flow overlay (rewards / meal-select summoned over the native screen)
+
+/// Presents a lab web flow in embed mode on a transparent webview: the page
+/// runs its own sheet choreography, and its `parent.postMessage({t:'ds-close'})`
+/// — which at top level lands back on the page's own window — is relayed to
+/// native by an injected listener so the cover can dismiss.
+@available(iOS 26.0, *)
+struct FlowOverlay: UIViewRepresentable {
+    let path: String
+    let onClose: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onClose: onClose) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let cfg = WKWebViewConfiguration()
+        let relay = """
+        window.addEventListener('message', function (e) {
+          if (e.data && e.data.t === 'ds-close') {
+            try { webkit.messageHandlers.dsflow.postMessage('close'); } catch (_) {}
+          }
+        });
+        """
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: relay, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        cfg.userContentController.add(context.coordinator, name: "dsflow")
+        cfg.allowsInlineMediaPlayback = true
+        let wv = WKWebView(frame: .zero, configuration: cfg)
+        wv.isOpaque = false
+        wv.backgroundColor = .clear
+        wv.scrollView.backgroundColor = .clear
+        wv.scrollView.contentInsetAdjustmentBehavior = .never
+        let stamp = Int(Date().timeIntervalSince1970)
+        if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
+            wv.load(URLRequest(url: url))
+        }
+        return wv
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    final class Coordinator: NSObject, WKScriptMessageHandler {
+        let onClose: () -> Void
+        init(onClose: @escaping () -> Void) { self.onClose = onClose }
+        func userContentController(_ c: WKUserContentController,
+                                   didReceive message: WKScriptMessage) {
+            if message.name == "dsflow" { onClose() }
+        }
     }
 }
 
