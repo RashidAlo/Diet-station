@@ -282,21 +282,61 @@
   .editbtn { display: flex; }
   body.native .editbtn { margin-left: 0; }
   body.admin .editbtn { background: #ED1C24; color: #fff; }
+  /* edit icon lives in the card's action bar, admin only */
   .cardedit { display: none; }
-  body.admin .cardedit { display: inline-flex; align-items: center; gap: 6px;
-    border: 1px solid rgba(0,0,0,.14); background: #fff; border-radius: 999px;
-    padding: 7px 14px; cursor: pointer; margin-left: auto;
-    font: 600 12px/1 'Urbane Rounded', sans-serif; color: #1d1d1f; }
-  .card.editing .cardedit { display: none; }
+  body.admin .cardedit { display: flex; flex: none; width: 47px; height: 47px;
+    align-items: center; justify-content: center; border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.12); background: #fff; color: #1d1d1f;
+    cursor: pointer; }
+  .cardedit svg { width: 18px; height: 18px; }
+  body.native .cardedit { order: 1; width: 54px; height: 54px; }
+  body.native .cardedit svg { width: 21px; height: 21px; }
+  .card.editing .row, .card.editing .actions,
+  .card.editing .handoff { display: none; }
   .hiddentag { display: none; }
   body.admin .card.is-hidden .hiddentag { display: inline-flex;
     font: 700 10px/1 -apple-system, sans-serif; letter-spacing: .06em;
-    color: #fff; background: #1d1d1f; border-radius: 999px; padding: 5px 9px; }
-  .editactions { display: flex; gap: 8px; margin-left: auto; }
-  .editactions button { border: none; border-radius: 999px; padding: 9px 16px;
-    cursor: pointer; font: 600 12px/1 'Urbane Rounded', sans-serif; }
-  .editactions .savebtn { background: #ED1C24; color: #fff; }
-  .editactions .cancelbtn { background: #ececef; color: #1d1d1f; }
+    text-transform: uppercase; color: #fff; background: #1d1d1f;
+    border-radius: 999px; padding: 5px 9px; }
+  /* CMS-style in-card editor */
+  .editor { display: none; }
+  .card.editing .editor { display: block; }
+  .editor label { display: block; font: 600 11px/14px 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .08em; color: #6e6e73;
+    margin: 16px 0 7px; }
+  .editor label:first-child { margin-top: 2px; }
+  .editor input[type="text"], .editor textarea, .editor select {
+    width: 100%; box-sizing: border-box; padding: 12px 13px;
+    border: 1px solid rgba(0,0,0,.14); border-radius: 12px; background: #fff;
+    font: 500 14.5px/20px -apple-system, sans-serif; color: #1d1d1f; }
+  .editor input:focus, .editor textarea:focus, .editor select:focus {
+    outline: none; border-color: #ED1C24; }
+  .editor textarea { resize: vertical; min-height: 104px; }
+  .editor select { height: 46px; }
+  .editor .fieldrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .editor .fieldrow label { margin-top: 16px; }
+  @media (max-width: 540px) { .editor .fieldrow { grid-template-columns: 1fr; } }
+  .switchrow { display: flex; align-items: center; gap: 12px; margin-top: 18px;
+    padding: 14px 15px; border: 1px solid rgba(0,0,0,.1); border-radius: 14px;
+    background: #fbfbfc; }
+  .switchrow .swtext { flex: 1; min-width: 0; }
+  .switchrow .swtitle { font: 600 14px/1.3 'Urbane Rounded', sans-serif; }
+  .switchrow .swsub { font: 400 12.5px/1.45 -apple-system, sans-serif;
+    color: #6e6e73; margin-top: 2px; }
+  .switch { position: relative; flex: none; width: 51px; height: 31px; }
+  .switch input { position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; margin: 0; cursor: pointer; z-index: 2; }
+  .switch .track { position: absolute; inset: 0; border-radius: 999px;
+    background: #e9e9ec; transition: background .2s ease; }
+  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px;
+    width: 27px; height: 27px; border-radius: 50%; background: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16);
+    transition: transform .22s cubic-bezier(.3,.9,.4,1); }
+  .switch input:checked + .track { background: #34C759; }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+  .editfoot .draftdot { flex: 1; font: 600 12px/1.35 -apple-system, sans-serif;
+    color: #6e6e73; }
   .loginbox label { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif;
     color: #6e6e73; margin: 14px 0 6px; }
   .loginbox input { width: 100%; box-sizing: border-box; padding: 13px 14px;
@@ -305,21 +345,9 @@
   .loginbox .err { color: #ED1C24; font: 600 12px/16px -apple-system, sans-serif;
     margin-top: 10px; min-height: 16px; }
   .editbtn svg { width: 16px; height: 16px; }
-  .card .adminrow { display: none; align-items: center; gap: 10px;
-    padding: 10px 0 0; flex-wrap: wrap; }
-  .card.editing .adminrow { display: flex; }
-  .adminrow .eyebtn { border: 1px solid rgba(0,0,0,.14); background: #fff;
-    border-radius: 999px; padding: 7px 14px; cursor: pointer;
-    font: 600 12px/1 'Urbane Rounded', sans-serif; color: #1d1d1f;
-    display: flex; align-items: center; gap: 6px; }
-  .adminrow .eyebtn.off { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
-  .adminrow .draftdot { font: 600 11px/1 -apple-system, sans-serif; color: #ED1C24; }
-  .card.is-hidden { opacity: .5; outline: 2px dashed rgba(237,28,36,.5);
+  .card.is-hidden { opacity: .55; outline: 2px dashed rgba(237,28,36,.5);
     outline-offset: 4px; }
-  .card.editing h2[contenteditable="true"],
-  .card.editing .desc[contenteditable="true"] {
-    outline: 1.5px dashed rgba(237,28,36,.35); outline-offset: 3px;
-    border-radius: 6px; cursor: text; }
+  .card.is-hidden.editing { opacity: 1; }
 
   /* settings primer sheet */
   .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
@@ -619,6 +647,9 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     const o = (OVR[f.id] && Date.now() - (OVR[f.id].ts || 0) < 900000) ? OVR[f.id] : {};
     f.title = o.title !== undefined ? o.title : f.title;
     f.description = o.description !== undefined ? o.description : f.description;
+    f.status = o.status !== undefined ? o.status : f.status;
+    f.platform = o.platform !== undefined ? o.platform : f.platform;
+    f.area = o.area !== undefined ? o.area : f.area;
     const isHidden = o.hidden !== undefined ? o.hidden : !!f.hidden;
     if (isHidden && !ADMIN) continue;
     const card = document.createElement('section');
@@ -664,7 +695,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const fresh = () => f.path + '?v=' + Date.now();
       const open = () => f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
       card.addEventListener('click', e => {
-        if (!e.target.closest('a, button')) open();
+        if (!e.target.closest('a, button, .editor')) open();
       });
       const primary = card.querySelector('.btn.primary');
       primary.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype';
@@ -771,6 +802,11 @@ async function publishCard(id, patch, dot) {
       if (!f) throw new Error('flow not found');
       if (patch.title !== undefined) f.title = patch.title;
       if (patch.description !== undefined) f.description = patch.description;
+      if (patch.status !== undefined) f.status = patch.status;
+      if (patch.platform !== undefined) f.platform = patch.platform;
+      if (patch.area !== undefined) f.area = patch.area;
+      if (!f.platform) delete f.platform;
+      if (!f.area) delete f.area;
       f.hidden = !!patch.hidden;
       const bytes = new TextEncoder().encode(JSON.stringify(json, null, 2));
       let bin = '';
@@ -801,62 +837,101 @@ function wireEditMode() {
   document.querySelectorAll('#flows .card').forEach(card => {
     const id = card.dataset.flow;
     if (!id) return;
-    const h2 = card.querySelector('h2');
-    const desc = card.querySelector('.desc');
+    const f = (NAV_FLOWS || []).find(x => x.id === id) || {};
+    /* the card's current published values (post-override) — repainted on save */
+    const cur = { title: f.title || '', description: f.description || '',
+      status: f.status || 'in-progress', platform: f.platform || '',
+      area: f.area || '', hidden: card.classList.contains('is-hidden') };
+
     const tag = document.createElement('span');
     tag.className = 'hiddentag';
-    tag.textContent = 'Hidden';
+    tag.textContent = 'Offline';
+    card.querySelector('.top').appendChild(tag);
+
     const eb = document.createElement('button');
     eb.className = 'cardedit';
-    eb.textContent = 'Edit';
-    card.querySelector('.top').append(tag, eb);
-    const row = document.createElement('div');
-    row.className = 'adminrow';
-    row.innerHTML = '<button class="eyebtn"></button>' +
-      '<span class="draftdot"></span>' +
-      '<div class="editactions"><button class="cancelbtn">Cancel</button>' +
-      '<button class="savebtn">Save</button></div>';
-    card.querySelector('.body').appendChild(row);
-    const eye = row.querySelector('.eyebtn');
-    const dot = row.querySelector('.draftdot');
-    let snap = null, hidDraft = false;
-    const syncEye = () => {
-      eye.classList.toggle('off', hidDraft);
-      eye.textContent = hidDraft ? 'Hidden from viewers' : 'Visible to viewers';
-    };
-    const stop = () => {
-      card.classList.remove('editing');
-      h2.removeAttribute('contenteditable');
-      if (desc) desc.removeAttribute('contenteditable');
-    };
-    eb.onclick = () => {
-      snap = { title: h2.textContent, desc: desc ? desc.textContent : '',
-        hidden: card.classList.contains('is-hidden') };
-      hidDraft = snap.hidden;
-      syncEye();
+    eb.setAttribute('aria-label', 'Edit card');
+    eb.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M11.1 2.2l2.7 2.7-8.2 8.2-3.2.5.5-3.2 8.2-8.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+    card.querySelector('.actions').appendChild(eb);
+
+    const platforms = ['iOS', 'Android', 'Web', 'macOS', 'watchOS'];
+    if (cur.platform && platforms.indexOf(cur.platform) < 0) platforms.unshift(cur.platform);
+    const ed = document.createElement('div');
+    ed.className = 'editor';
+    ed.innerHTML = '<label>Title</label><input type="text" class="f-title">' +
+      '<label>Description</label><textarea class="f-desc"></textarea>' +
+      '<div class="fieldrow">' +
+      '<div><label>Status</label><select class="f-status">' +
+      '<option value="in-progress">In progress</option>' +
+      '<option value="ready">Ready for dev</option></select></div>' +
+      '<div><label>Platform</label><select class="f-platform">' +
+      '<option value="">None</option>' +
+      platforms.map(p => '<option>' + p + '</option>').join('') + '</select></div>' +
+      '<div><label>Area</label><input type="text" class="f-area" placeholder="e.g. Onboarding"></div>' +
+      '</div>' +
+      '<div class="switchrow"><div class="swtext">' +
+      '<div class="swtitle">Live on the lab</div>' +
+      '<div class="swsub">Off takes this card offline \u2014 only admins can see it.</div></div>' +
+      '<span class="switch"><input type="checkbox" class="f-live"><span class="track"></span></span></div>' +
+      '<div class="editfoot"><span class="draftdot"></span>' +
+      '<button class="btn ghost cancelbtn">Cancel</button>' +
+      '<button class="btn primary savebtn">Save</button></div>';
+    card.appendChild(ed);
+
+    const $ = sel => ed.querySelector(sel);
+    const dot = $('.draftdot');
+    eb.onclick = e => {
+      e.stopPropagation();
+      $('.f-title').value = cur.title;
+      $('.f-desc').value = cur.description;
+      $('.f-status').value = cur.status;
+      $('.f-platform').value = cur.platform;
+      $('.f-area').value = cur.area;
+      $('.f-live').checked = !cur.hidden;
       dot.textContent = '';
       card.classList.add('editing');
-      h2.setAttribute('contenteditable', 'true');
-      if (desc) desc.setAttribute('contenteditable', 'true');
     };
-    eye.onclick = () => { hidDraft = !hidDraft; syncEye(); };
-    row.querySelector('.cancelbtn').onclick = () => {
-      h2.textContent = snap.title;
-      if (desc) desc.textContent = snap.desc;
-      card.classList.toggle('is-hidden', snap.hidden);
-      stop();
+    $('.cancelbtn').onclick = () => card.classList.remove('editing');
+
+    const repaint = () => {
+      card.querySelector('h2').textContent = cur.title;
+      const desc = card.querySelector('.desc');
+      if (desc) desc.textContent = cur.description;
+      const pill = card.querySelector('.pill');
+      if (pill) {
+        pill.className = 'pill ' + cur.status;
+        pill.textContent = cur.status === 'ready' ? 'Ready' : 'In progress';
+      }
+      const top = card.querySelector('.top');
+      top.querySelectorAll('.tag').forEach(t => t.remove());
+      [cur.platform, cur.area].filter(Boolean).forEach(t => {
+        const sp = document.createElement('span');
+        sp.className = 'tag';
+        sp.textContent = t;
+        top.insertBefore(sp, pill);
+      });
+      card.classList.toggle('is-hidden', cur.hidden);
     };
-    row.querySelector('.savebtn').onclick = async () => {
-      const patch = { title: h2.textContent.trim(), hidden: hidDraft };
-      if (desc) patch.description = desc.textContent.trim();
+
+    $('.savebtn').onclick = async () => {
+      const patch = {
+        title: $('.f-title').value.trim(),
+        description: $('.f-desc').value.trim(),
+        status: $('.f-status').value,
+        platform: $('.f-platform').value,
+        area: $('.f-area').value.trim(),
+        hidden: !$('.f-live').checked };
+      dot.style.color = '';
       dot.textContent = 'Saving\u2026';
       const ok = await publishCard(id, patch, dot);
       if (ok) {
-        card.classList.toggle('is-hidden', hidDraft);
-        stop();
+        Object.assign(cur, patch);
+        repaint();
+        dot.style.color = '#1F8A4C';
         dot.textContent = 'Live \u2713';
-        setTimeout(() => { dot.textContent = ''; }, 2600);
+        setTimeout(() => { card.classList.remove('editing'); }, 900);
       } else if (pubTok) {
+        dot.style.color = '#ED1C24';
         dot.textContent = 'Save failed (' + pubErr + ') \u2014 try again';
       }
     };
