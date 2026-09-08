@@ -558,18 +558,19 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
       '<h1>' + esc(f.title) + '</h1>' + metaPills(f) +
       '<p class="lab-desc">' + esc(f.description || '') + '</p>';
 
-    if (f.rn && f.rn.length) {
+    /* dev kits: SwiftUI spec first (native-first, handoff template v2),
+       the RN kit stays as the fallback for every other platform */
+    function renderKit(title, noteTxt, secs) {
       var head = document.createElement('div');
       head.className = 'lab-kithead';
-      head.innerHTML = '<div class="lab-h3">React Native kit</div>' +
+      head.innerHTML = '<div class="lab-h3">' + title + '</div>' +
         '<button class="kitcopy">Copy full kit</button>';
       col.appendChild(head);
       var kitNote = document.createElement('p');
       kitNote.className = 'lab-note';
-      kitNote.textContent = 'Everything a React Native dev needs to recreate this flow — ' +
-        'stack, Figma-exact tokens, and the interaction math, ready to paste into your own workflow.';
+      kitNote.textContent = noteTxt;
       col.appendChild(kitNote);
-      f.rn.forEach(function (s) {
+      secs.forEach(function (s) {
         var sec = document.createElement('div');
         sec.className = 'lab-sec';
         sec.innerHTML = '<h4>' + esc(s.t) + '</h4><p class="n">' + esc(s.note) + '</p>';
@@ -587,12 +588,18 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
         col.appendChild(sec);
       });
       head.querySelector('.kitcopy').onclick = function (e) {
-        var md = '# ' + f.title + ' — React Native kit\n\n' + f.rn.map(function (s) {
+        var md = '# ' + f.title + ' — ' + title + '\n\n' + secs.map(function (s) {
           return '## ' + s.t + '\n\n' + s.note + (s.code ? '\n\n```\n' + s.code + '\n```' : '');
         }).join('\n\n');
         copyFeedback(e.target, md, 'Copy full kit');
       };
     }
+    if (f.swift && f.swift.length)
+      renderKit('SwiftUI spec', 'The native iOS build sheet — stack, ' +
+        '.glassEffect materials, motion springs and DS tokens, ready to paste.', f.swift);
+    if (f.rn && f.rn.length)
+      renderKit('React fallback kit', 'For every non-iOS platform — stack, ' +
+        'Figma-exact tokens, and the interaction math, ready to paste into your own workflow.', f.rn);
 
     if ((f.entries && f.entries.length) || (f.exits && f.exits.length)) {
       var h3i = document.createElement('div');
@@ -829,8 +836,20 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
   /* Three-finger tap: the fast lane on device (triple-tap & hold stays as
      the fallback everywhere). Fires once per contact group. */
   function threeFingerTap(openFn) {
+    /* Both sources run in parallel behind one latch: pointer tracking
+       (window+capture) AND the Shell-audited document-level touchstart
+       count — on-device WKWebView has already proven one delivery path
+       can silently die while another works. Passive everywhere, so 1-2
+       finger scrolling is never affected; a 600ms latch means whichever
+       source lands first wins and the other can't double-open. */
     var opts = { passive: true, capture: true };
-    var fired = false;
+    var fired = false, lastFire = 0;
+    function tryFire() {
+      var now = performance.now();
+      if (fired || now - lastFire < 600) return;
+      fired = true; lastFire = now;
+      openFn();
+    }
     if (window.PointerEvent) {
       var active = {};
       var count = function () {
@@ -840,7 +859,7 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       addEventListener('pointerdown', function (e) {
         if (e.pointerType === 'mouse') return;
         active[e.pointerId] = 1;
-        if (count() === 3 && !fired) { fired = true; openFn(); }
+        if (count() === 3) tryFire();
       }, opts);
       var lift = function (e) {
         delete active[e.pointerId];
@@ -848,14 +867,15 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       };
       addEventListener('pointerup', lift, opts);
       addEventListener('pointercancel', lift, opts);
-    } else {
-      addEventListener('touchstart', function (e) {
-        if (e.touches.length === 3 && !fired) { fired = true; openFn(); }
-      }, opts);
-      addEventListener('touchend', function (e) {
-        if (e.touches.length === 0) fired = false;
-      }, opts);
     }
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches && e.touches.length === 3) tryFire();
+    }, { passive: true });
+    var touchLift = function (e) {
+      if (e.touches && e.touches.length === 0) fired = false;
+    };
+    document.addEventListener('touchend', touchLift, { passive: true });
+    document.addEventListener('touchcancel', touchLift, { passive: true });
   }
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {

@@ -269,7 +269,18 @@
         }
       ],
       "sheet": true,
-      "hidden": false
+      "hidden": false,
+      "entries": [
+        {
+          "id": "default",
+          "params": {
+            "day": "<n>",
+            "mon": "<label>",
+            "auto": "0|1"
+          },
+          "note": "Optional overrides, already supported as query params on the internal selector"
+        }
+      ]
     },
     {
       "id": "breathe",
@@ -391,7 +402,13 @@
       "shots": [
         "breathe/preview.png"
       ],
-      "hidden": false
+      "hidden": false,
+      "entries": [
+        {
+          "id": "default",
+          "note": "Boots fresh — no context"
+        }
+      ]
     },
     {
       "id": "plan-quiz",
@@ -661,7 +678,13 @@
       "shots": [
         "plan-quiz/preview.png"
       ],
-      "hidden": true
+      "hidden": true,
+      "entries": [
+        {
+          "id": "default",
+          "note": "Boots fresh — no context"
+        }
+      ]
     },
     {
       "id": "rewards",
@@ -863,7 +886,13 @@
         }
       ],
       "sheet": true,
-      "hidden": false
+      "hidden": false,
+      "entries": [
+        {
+          "id": "default",
+          "note": "Usually presented as a sheet; context {src} identifies the opener"
+        }
+      ]
     },
     {
       "id": "home",
@@ -880,16 +909,22 @@
       "native": "nativehome",
       "exits": [
         {
-          "intent": "open-rewards",
-          "to": "rewards",
-          "present": "sheet",
-          "note": "Rewards dock widget"
-        },
-        {
           "intent": "open-meal-calendar",
           "to": "meal-select",
           "present": "tab",
-          "note": "In-flow tab bar -> meal calendar"
+          "note": "In-flow tab bar calendar button"
+        },
+        {
+          "intent": "open-rewards",
+          "to": "rewards",
+          "present": "sheet",
+          "note": "Discounts widget — context {src:'discounts-widget'}"
+        }
+      ],
+      "entries": [
+        {
+          "id": "default",
+          "note": "Boots the widget board fresh — no context"
         }
       ]
     }
