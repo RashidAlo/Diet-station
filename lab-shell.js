@@ -145,8 +145,18 @@
   css += '\
 /* ---- native TestFlight shell + shared triple-tap lab menu ---- */\
 html.ds-native #pill, html.ds-native .lab-chip, html.ds-native .lab-tabs,\
-html.ds-native .lab-tabbar, html.ds-native .lab-view,\
-html.ds-native .labshell-links { display: none !important; }\
+html.ds-native .lab-tabbar { display: none !important; }\
+/* in-app the lab views open from the lab menu; the floating back chip is\
+   the way out since the tab bar is hidden there */\
+.lab-back { display: none; position: fixed; top: calc(14px + env(safe-area-inset-top, 0px));\
+  right: 14px; z-index: 80; width: 40px; height: 40px; border: 0.5px solid rgba(0,0,0,.1);\
+  border-radius: 50%; align-items: center; justify-content: center;\
+  background: rgba(255,255,255,.55); color: #1d1d1f; cursor: pointer;\
+  -webkit-backdrop-filter: blur(14px) saturate(170%);\
+  backdrop-filter: blur(14px) saturate(170%);\
+  box-shadow: inset 0 0 0 0.5px rgba(255,255,255,.6), 0 4px 12px -6px rgba(0,0,0,.25); }\
+.lab-back svg { width: 15px; height: 15px; }\
+html.ds-native .lab-back.show { display: flex; }\
 .labshell-veil { position: fixed; inset: 0; z-index: 128; background: rgba(0,0,0,.45);\
   opacity: 0; pointer-events: none; transition: opacity .25s ease; }\
 body.labshell-menu .labshell-veil { opacity: 1; pointer-events: auto; }\
@@ -216,6 +226,12 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
   handView.className = 'lab-view';
   handView.id = 'labHandoff';
 
+  var backEl = document.createElement('button');
+  backEl.className = 'lab-back';
+  backEl.setAttribute('aria-label', 'Back to prototype');
+  backEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+  backEl.addEventListener('click', function () { setTab('proto'); });
+
   /* ---------------- tab state ---------------- */
   var current = 'proto';
   var collapseTimer = null;
@@ -254,6 +270,7 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     });
     flowView.classList.toggle('on', name === 'userflow');
     handView.classList.toggle('on', name === 'handoff');
+    backEl.classList.toggle('show', name !== 'proto');
     if (!fromHash) {
       var h = name === 'userflow' ? '#userflow' : name === 'handoff' ? '#handoff' : ' ';
       try { history.replaceState(null, '', h === ' ' ? location.pathname + location.search : h); } catch (_) {}
@@ -577,6 +594,34 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
       };
     }
 
+    if ((f.entries && f.entries.length) || (f.exits && f.exits.length)) {
+      var h3i = document.createElement('div');
+      h3i.className = 'lab-h3'; h3i.textContent = 'Integration points';
+      col.appendChild(h3i);
+      var noteI = document.createElement('p');
+      noteI.className = 'lab-note';
+      noteI.textContent = 'Cross-flow contract: deep links this flow accepts ' +
+        '(entries) and ds-nav intents it emits (exits), routed by the hub.';
+      col.appendChild(noteI);
+      var dli = document.createElement('dl');
+      dli.className = 'lab-kv';
+      (f.entries || []).forEach(function (en) {
+        var dt = document.createElement('dt'); dt.textContent = 'entry · ' + en.id;
+        var dd = document.createElement('dd');
+        dd.textContent = (en.note || '') + (en.params
+          ? ' · params: ' + Object.keys(en.params).join(', ') : '');
+        dli.append(dt, dd);
+      });
+      (f.exits || []).forEach(function (ex) {
+        var dt = document.createElement('dt'); dt.textContent = 'exit · ' + ex.intent;
+        var dd = document.createElement('dd');
+        dd.textContent = '→ ' + ex.to + ' (' + ex.present + ')' +
+          (ex.note ? ' — ' + ex.note : '');
+        dli.append(dt, dd);
+      });
+      col.appendChild(dli);
+    }
+
     if (f.handoff && Object.keys(f.handoff).length) {
       var h3 = document.createElement('div');
       h3.className = 'lab-h3'; h3.textContent = 'Spec sheet';
@@ -619,7 +664,7 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
 
   /* ---------------- boot ---------------- */
   function boot() {
-    document.body.append(tabsEl, barEl, chipEl, flowView, handView);
+    document.body.append(tabsEl, barEl, chipEl, flowView, handView, backEl);
     var side = document.getElementById('side');
     if (side) {
       tabsEl.classList.add('in-side');
@@ -781,14 +826,48 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       on('touchcancel', function () { cancel(); });
     }
   }
+  /* Three-finger tap: the fast lane on device (triple-tap & hold stays as
+     the fallback everywhere). Fires once per contact group. */
+  function threeFingerTap(openFn) {
+    var opts = { passive: true, capture: true };
+    var fired = false;
+    if (window.PointerEvent) {
+      var active = {};
+      var count = function () {
+        var n = 0; for (var k in active) n++;
+        return n;
+      };
+      addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse') return;
+        active[e.pointerId] = 1;
+        if (count() === 3 && !fired) { fired = true; openFn(); }
+      }, opts);
+      var lift = function (e) {
+        delete active[e.pointerId];
+        if (count() === 0) fired = false;
+      };
+      addEventListener('pointerup', lift, opts);
+      addEventListener('pointercancel', lift, opts);
+    } else {
+      addEventListener('touchstart', function (e) {
+        if (e.touches.length === 3 && !fired) { fired = true; openFn(); }
+      }, opts);
+      addEventListener('touchend', function (e) {
+        if (e.touches.length === 0) fired = false;
+      }, opts);
+    }
+  }
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
       /* flows with their own sheet still get the reliable window-level
-         gesture, routed to their opener when they expose one */
-      if (typeof window.openLabMenu === 'function')
-        tripleTapHold(function () {
+         gestures, routed to their opener when they expose one */
+      if (typeof window.openLabMenu === 'function') {
+        var routed = function () {
           if (!document.body.classList.contains('desktop')) window.openLabMenu();
-        });
+        };
+        tripleTapHold(routed);
+        threeFingerTap(routed);
+      }
       return;
     }
     var side = document.getElementById('side');
@@ -843,6 +922,7 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
     });
     tripleTapHold(open);
+    threeFingerTap(open);
     /* hub Settings button lands here with #labmenu: open the sheet on arrival */
     if (location.hash === '#labmenu') {
       history.replaceState(null, '', location.pathname);

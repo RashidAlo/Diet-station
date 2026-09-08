@@ -367,6 +367,39 @@
     height: 100%; background: transparent; }
   .flow-frame.bye { transition: transform .4s cubic-bezier(.5,0,.8,.6);
     transform: translateY(103%); }
+  /* intent-router 'push' presentation: slide in from the right */
+  .flow-frame.push { transform: translateX(103%);
+    transition: transform .38s cubic-bezier(.25,.9,.3,1); }
+  .flow-frame.push.in { transform: translateX(0); }
+  .flow-frame.bye-push { transition: transform .32s cubic-bezier(.5,0,.8,.6);
+    transform: translateX(103%) !important; }
+  /* ds-nav to an unbuilt/offline flow: branded dead-end card */
+  .unbuilt-veil { position: fixed; inset: 0; z-index: 259;
+    background: rgba(11,14,18,.45); opacity: 0; transition: opacity .28s ease; }
+  .unbuilt-veil.show { opacity: 1; }
+  .unbuilt { position: fixed; left: 50%; top: 50%; z-index: 260;
+    width: min(340px, calc(100vw - 48px)); box-sizing: border-box;
+    transform: translate(-50%, -50%) scale(.92); opacity: 0;
+    transition: transform .3s cubic-bezier(.25,.9,.3,1.2), opacity .25s ease;
+    background: #fbfbfc; border-radius: 26px; padding: 34px 26px 30px;
+    text-align: center; box-shadow: 0 24px 70px -18px rgba(0,0,0,.4); }
+  .unbuilt.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .unbuilt .u-kicker { font: 600 11px/1 'Urbane Rounded', sans-serif;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--red);
+    margin-bottom: 12px; }
+  .unbuilt h3 { font: 600 20px/1.25 'Urbane Rounded', sans-serif;
+    color: #1d1d1f; margin: 0 0 10px; }
+  .unbuilt p { font: 400 14px/1.55 -apple-system, sans-serif;
+    color: #6e6e73; margin: 0; }
+  .unbuilt .u-x { position: absolute; top: 12px; right: 12px; width: 38px;
+    height: 38px; border: 0.5px solid rgba(0,0,0,.1); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.55);
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: blur(14px) saturate(170%); color: #1d1d1f;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 0.5px rgba(255,255,255,.6), 0 4px 12px -6px rgba(0,0,0,.25); }
+  .unbuilt .u-x svg { width: 15px; height: 15px; }
 
   /* ---- admin edit mode ---- */
   .editbtn { display: none; margin-left: auto; border: none; cursor: pointer;
@@ -906,7 +939,7 @@ function openLogin() {
   /* preload: fonts, shared libs, every flow page + its heavy assets */
   /* keep the lab-shell stamp in sync with the flow pages' script tags —
      a bare URL would warm a cache key the flows never request */
-  const warm = ['flows.json', 'lab-shell.js?v=20260908d', 'html2canvas.min.js',
+  const warm = ['flows.json', 'lab-shell.js?v=20260908e', 'html2canvas.min.js',
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {
@@ -997,6 +1030,18 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       `<dt>${k}</dt><dd>${v}</dd>`).join('');
     const dl = (f.downloads || []).map(d =>
       `<a href="${d.href}" download>${d.label}</a>`).join('');
+    /* integration points: manifest `entries` (deep links accepted) and
+       `exits` (ds-nav intents emitted) — the cross-flow contract */
+    const ix = [
+      ...(f.entries || []).map(en =>
+        `<dt>entry · ${en.id}</dt><dd>${en.note || ''}${en.params
+          ? ` · params: ${Object.keys(en.params).join(', ')}` : ''}</dd>`),
+      ...(f.exits || []).map(ex =>
+        `<dt>exit · ${ex.intent}</dt><dd>&rarr; ${ex.to} (${ex.present})${ex.note
+          ? ` — ${ex.note}` : ''}</dd>`)
+    ].join('');
+    const ixBlock = ix
+      ? `<h3>Integration points</h3><dl class="kv">${ix}</dl>` : '';
     const tags = [f.platform, f.area].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join('');
     card.innerHTML = `
       <div class="row">
@@ -1018,6 +1063,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       <div class="handoff">
         <h3>Handoff</h3>
         <dl class="kv">${kv}</dl>
+        ${ixBlock}
         <div class="dl">${dl}</div>
       </div>`;
     const btn = card.querySelector('button');
@@ -1036,7 +1082,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
          exist (browser, standalone PWA, ?native=1 preview) */
       const inShell = /DietStationLab/.test(navigator.userAgent);
       const open = () => (f.native && inShell) ? dsPost({ t: f.native })
-        : f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
+        : f.sheet ? openFlowSheet(fresh(), f.id) : (location.href = fresh());
       card.addEventListener('click', e => {
         if (!e.target.closest('a, button, .editor, .livebtn')) open();
       });
@@ -1395,29 +1441,106 @@ if (NATIVE) {
   while (document.body.firstChild) root.appendChild(document.body.firstChild);
   document.body.appendChild(root);
 }
-let flowFrame = null, flowVeil = null;
+/* ============ intent router: flows never navigate each other ============
+   A flow the hub presents posts {t:'ds-nav', to:'<flow-id>', context?,
+   present:'tab'|'sheet'|'push'} and the hub resolves the id via flows.json
+   and presents the target. 'tab' swaps the current frame in place (app
+   tab-bar feel), 'sheet' slides up over the stack, 'push' slides in from
+   the right. ds-close pops the posting frame (and anything above it).
+   State policy (Rashid): every transition loads the target FRESH. */
+let flowStack = [];
 function dsPost(m) {
   try { window.webkit.messageHandlers.ds.postMessage(m); } catch (_) {}
 }
-function openFlowSheet(url) {
-  flowFrame = document.createElement('iframe');
-  flowFrame.className = 'flow-frame';
-  flowFrame.src = url + '&embed=1';
-  document.body.append(flowFrame);
+function flowUrl(f, context, from) {
+  let u = f.path + '?v=' + Date.now() + '&embed=1';
+  if (from) u += '&from=' + encodeURIComponent(from);
+  if (context) {
+    try { u += '&ctx=' + encodeURIComponent(JSON.stringify(context)); } catch (_) {}
+  }
+  return u;
+}
+function presentFlow(f, present, context, from) {
+  const url = flowUrl(f, context, from);
+  if (present === 'tab' && flowStack.length) {
+    const top = flowStack[flowStack.length - 1];
+    top.frame.src = url;                    /* instant swap, no animation */
+    top.id = f.id;
+    return;
+  }
+  const fr = document.createElement('iframe');
+  fr.className = 'flow-frame' + (present === 'push' ? ' push' : '');
+  fr.src = url;
+  document.body.append(fr);
+  if (present === 'push')
+    setTimeout(() => fr.classList.add('in'), 20);   /* rAF starves in hidden tabs */
+  flowStack.push({ frame: fr, present: present === 'push' ? 'push' : 'sheet', id: f.id });
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
 }
-function closeFlowSheet() {
-  if (!flowFrame) return;
-  document.body.classList.remove('flowopen');
-  dsPost({ t: 'chrome', show: true });
-  const fr = flowFrame;
-  flowFrame = null;
-  setTimeout(() => fr.remove(), 500);
+function openFlowSheet(url, id) {           /* card entry point (legacy shape) */
+  const fr = document.createElement('iframe');
+  fr.className = 'flow-frame';
+  fr.src = url + '&embed=1';
+  document.body.append(fr);
+  flowStack.push({ frame: fr, present: 'sheet', id: id || null });
+  document.body.classList.add('flowopen');
+  dsPost({ t: 'chrome', show: false });
+}
+function popFlow(entry) {
+  const i = entry ? flowStack.indexOf(entry) : flowStack.length - 1;
+  if (i < 0) return;
+  for (const p of flowStack.splice(i)) {    /* the entry + everything above */
+    p.frame.classList.add(p.present === 'push' ? 'bye-push' : 'bye');
+    setTimeout((fr => () => fr.remove())(p.frame), 500);
+  }
+  if (!flowStack.length) {
+    document.body.classList.remove('flowopen');
+    dsPost({ t: 'chrome', show: true });
+  }
+}
+function closeFlowSheet() { popFlow(); }
+function flowHiddenNow(f) {
+  const o = (typeof OVR === 'object' && OVR && OVR[f.id]) || {};
+  return o.hidden !== undefined ? !!o.hidden : !!f.hidden;
 }
 addEventListener('message', e => {
-  if (e.data && e.data.t === 'ds-close') closeFlowSheet();
+  const d = e.data;
+  if (!d) return;
+  const src = flowStack.find(en => en.frame.contentWindow === e.source);
+  if (d.t === 'ds-close') {
+    popFlow(src);
+  } else if (d.t === 'ds-nav') {
+    const f = (NAV_FLOWS || []).find(x => x.id === d.to);
+    if (!f || flowHiddenNow(f)) { showUnbuilt(d.to, f); return; }
+    const present = d.present === 'tab' || d.present === 'push' ? d.present : 'sheet';
+    presentFlow(f, present, d.context, src && src.id);
+  }
 });
+
+/* unbuilt / offline ds-nav target: branded dead-end card */
+function showUnbuilt(id, f) {
+  const veil = document.createElement('div');
+  veil.className = 'unbuilt-veil';
+  const card = document.createElement('div');
+  card.className = 'unbuilt';
+  const title = f ? f.title
+    : String(id || 'This flow').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  card.innerHTML =
+    '<button class="u-x" aria-label="Dismiss"><svg viewBox="0 0 16 16" fill="none">' +
+    '<path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>' +
+    '<div class="u-kicker">DietStation · Design Lab</div>' +
+    '<h3>' + title + '</h3>' +
+    '<p>Coming in a later sprint — this flow isn’t on the lab yet. The link is wired and will light up the moment it ships.</p>';
+  const bye = () => { veil.classList.remove('show'); card.classList.remove('show');
+    setTimeout(() => { veil.remove(); card.remove(); }, 300); };
+  veil.addEventListener('click', bye);
+  card.querySelector('.u-x').addEventListener('click', bye);
+  document.body.append(veil, card);
+  setTimeout(() => {                        /* rAF starves in hidden tabs */
+    veil.classList.add('show'); card.classList.add('show');
+  }, 20);
+}
 
 /* ================= header dropdown: everything sheet ================= */
 function setNativeView(view) {
