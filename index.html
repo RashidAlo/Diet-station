@@ -176,8 +176,12 @@
   body.native:not(.sysview) #pane-system { display: none !important; }
   body.native.sysview #pane-prototypes { display: none !important; }
   body.native.sysview #pane-system { display: block !important; padding-top: 12px; }
-  body.native.sysview #pane-system .card { padding: 20px 18px; cursor: default; }
-  body.native.sysview #pane-system .actions { padding: 0; margin-top: 16px;
+  /* same Apple-scale breathing room as the prototype cards */
+  body.native.sysview #pane-system .card { padding: 24px; cursor: default;
+    border-radius: 24px; }
+  body.native.sysview #pane-system .card .desc { margin-top: 12px; }
+  body.native.sysview #pane-system .card .meta { margin-top: 12px; }
+  body.native.sysview #pane-system .actions { padding: 0; margin-top: 18px;
     display: flex !important; }
   body.native .hero { display: none !important; }
   body.native { padding-top: 0; }
