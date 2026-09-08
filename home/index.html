@@ -725,7 +725,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 7';
+const BUILD = 'home 2026-09-08 · 8';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -831,9 +831,32 @@ document.getElementById('sCopy').onclick = () => {
 document.querySelector('.pw-change').addEventListener('click', e => {
   e.stopPropagation(); vibrate(8);
 });
+/* ---- ds-nav intent router (Sprint-0) ----
+   Cross-flow jumps are INTENTS posted to the parent:
+   {t:'ds-nav', to, context, present:'tab'|'sheet'|'push'}. Transitions
+   RESET the target flow (fresh boot, mock data); context = optional
+   overrides only. The hub router announces itself with {t:'ds-router'};
+   until it does, dsNav falls back to today's direct behavior with zero
+   delay, so this page is identical standalone / current hub / future hub. */
+let DS_ROUTER = false;
+addEventListener('message', e => {
+  if (e.data && e.data.t === 'ds-router') DS_ROUTER = true;
+});
+function dsNav(to, present, context, fallback) {
+  if (DS_ROUTER && window.parent !== window) {
+    vibrate(8);
+    try {
+      parent.postMessage({ t: 'ds-nav', to: to, context: context || {}, present: present }, '*');
+      return;
+    } catch (_) {}
+  }
+  fallback();
+}
 document.getElementById('tabCal').onclick = () => {
-  vibrate(8);
-  location.href = '../meal-select/' + (EMBED ? '?embed=1&v=' : '?v=') + Date.now();
+  dsNav('meal-select', 'tab', {}, () => {
+    vibrate(8);
+    location.href = '../meal-select/' + (EMBED ? '?embed=1&v=' : '?v=') + Date.now();
+  });
 };
 /* hooks for the shell's native Liquid Glass tab bar (iOS 26 TestFlight):
    DSHomeTab receives taps from the native bar; DSSetView is a guard so the
@@ -1083,7 +1106,8 @@ function closeFlow() {
   setTimeout(() => fr.remove(), 420);
 }
 addEventListener('message', e => { if (e.data && e.data.t === 'ds-close') closeFlow(); });
-document.getElementById('gDisc').addEventListener('click', () => openFlow('rewards'));
+document.getElementById('gDisc').addEventListener('click', () =>
+  dsNav('rewards', 'sheet', { src: 'discounts-widget' }, () => openFlow('rewards')));
 document.getElementById('gDisc').style.cursor = 'pointer';
 
 /* ================= boot ================= */
