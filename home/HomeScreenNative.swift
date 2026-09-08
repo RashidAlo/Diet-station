@@ -311,7 +311,7 @@ struct HomeScreenNative: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
-        .frame(maxHeight: .infinity)
+        .frame(minHeight: 84, maxHeight: .infinity)   // days' layoutPriority must not crush it
         .glassEffect(.regular.tint(DS.red.opacity(0.3)).interactive(), in: .rect(cornerRadius: 20))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -371,7 +371,8 @@ struct HomeScreenNative: View {
             Spacer()
             Button { withAnimation(.spring(duration: 0.45)) { state.macrosOpen.toggle() } } label: {
                 HStack(spacing: 3) {
-                    Text("\(info.kcal)").font(DS.urbane(16, .semibold)).foregroundStyle(DS.ink)
+                    // verbatim: interpolated Ints localize ("1,200") — web shows "1200"
+                    Text(verbatim: "\(info.kcal)").font(DS.urbane(16, .semibold)).foregroundStyle(DS.ink)
                         .contentTransition(.numericText())
                     Text("Kcal").font(DS.urbane(10, .light)).foregroundStyle(Color(white: 0.6))
                     if state.macrosOpen {
@@ -486,6 +487,8 @@ private struct DaysContent: View {
             Text(expired ? "Expired" : state.endDateString)
                 .font(DS.proxima(10)).foregroundStyle(DS.onColor.opacity(0.65))
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)   // wide shape leaves ~63pt beside the ring
     }
 
     var renew: some View {
