@@ -707,33 +707,79 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     /* Timing reads e.timeStamp (hardware event time), NOT performance.now()
        at processing time: on flows with heavy main-thread work (liquid-glass
        html2canvas snapshots, Rive canvases) handlers run late, and wall-clock
-       deltas made real triple-taps look too slow to ever count. */
+       deltas made real triple-taps look too slow to ever count.
+       Delivery is belt-and-suspenders: WKWebView proved on-device that
+       window-level TOUCH listeners can silently never fire while
+       element-level ones work, so the primary source is POINTER events
+       (dispatched ahead of touch events, immune to touch-layer games),
+       attached at BOTH window (capture) and document (bubble) with a
+       same-event dedupe so whichever path survives delivers exactly once.
+       Touch events remain as the no-PointerEvent fallback. */
     var TAP_MS = 550, HOLD_MS = 380, SLOP = 16;
     var taps = 0, last = 0, hold = null, holdAt = 0, x0 = 0, y0 = 0;
     function cancel() { if (hold) { clearTimeout(hold); hold = null; } }
     function fire() { cancel(); taps = 0; holdAt = 0; openFn(); }
-    addEventListener('touchstart', function (e) {
-      if (e.touches.length > 1) { taps = 0; cancel(); return; }
-      var t = e.touches[0], now = e.timeStamp || performance.now();
-      taps = (now - last < TAP_MS) ? taps + 1 : 1;
-      last = now;
-      x0 = t.clientX; y0 = t.clientY;
+    function down(x, y, ts, multi) {
+      if (multi) { taps = 0; cancel(); return; }
+      taps = (ts - last < TAP_MS) ? taps + 1 : 1;
+      last = ts;
+      x0 = x; y0 = y;
       cancel();
-      if (taps >= 3) { holdAt = now; hold = setTimeout(fire, HOLD_MS); }
-    }, { passive: true, capture: true });
-    addEventListener('touchmove', function (e) {
-      if (!hold) return;
-      var t = e.touches[0];
-      if (Math.abs(t.clientX - x0) > SLOP || Math.abs(t.clientY - y0) > SLOP) cancel();
-    }, { passive: true, capture: true });
-    addEventListener('touchend', function (e) {
-      /* jank can delay the hold timer past the queued touchend — honor a
+      if (taps >= 3) { holdAt = ts; hold = setTimeout(fire, HOLD_MS); }
+    }
+    function move(x, y) {
+      if (hold && (Math.abs(x - x0) > SLOP || Math.abs(y - y0) > SLOP)) cancel();
+    }
+    function up(ts) {
+      /* jank can starve the hold timer past the queued release — honor a
          hold that was physically long enough by its event timestamps */
-      if (hold && holdAt &&
-          (e.timeStamp || performance.now()) - holdAt >= HOLD_MS) { fire(); return; }
+      if (hold && holdAt && ts - holdAt >= HOLD_MS) { fire(); return; }
       cancel();
-    }, { passive: true, capture: true });
-    addEventListener('touchcancel', cancel, { passive: true, capture: true });
+    }
+    var seen = '';
+    function once(fn) {
+      return function (e) {
+        var k = e.type + '|' + e.timeStamp + '|' +
+          (e.pointerId !== undefined ? e.pointerId
+            : (e.changedTouches && e.changedTouches[0]
+                ? e.changedTouches[0].identifier : 0));
+        if (k === seen) return;
+        seen = k;
+        fn(e);
+      };
+    }
+    function on(type, fn) {
+      var h = once(fn);
+      addEventListener(type, h, { passive: true, capture: true });
+      document.addEventListener(type, h, { passive: true });
+    }
+    function ts(e) { return e.timeStamp || performance.now(); }
+    if (window.PointerEvent) {
+      on('pointerdown', function (e) {
+        if (e.pointerType === 'mouse') return;
+        down(e.clientX, e.clientY, ts(e), !e.isPrimary);
+      });
+      on('pointermove', function (e) {
+        if (e.pointerType === 'mouse' || !e.isPrimary) return;
+        move(e.clientX, e.clientY);
+      });
+      on('pointerup', function (e) {
+        if (e.pointerType === 'mouse') return;
+        up(ts(e));
+      });
+      on('pointercancel', function () { cancel(); });
+    } else {
+      on('touchstart', function (e) {
+        var t = e.touches[0];
+        down(t ? t.clientX : 0, t ? t.clientY : 0, ts(e), e.touches.length > 1);
+      });
+      on('touchmove', function (e) {
+        var t = e.touches[0];
+        if (t) move(t.clientX, t.clientY);
+      });
+      on('touchend', function (e) { up(ts(e)); });
+      on('touchcancel', function () { cancel(); });
+    }
   }
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
