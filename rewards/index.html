@@ -1018,7 +1018,11 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
 })();
 </script>
 <script>
-/* Native glass chrome handshake v2 (2026-09-08): native-first from load.
+/* Native glass chrome handshake v3 (2026-09-08): sheet-aware.
+   Overlay presentations (embed spring / hub sheet) settle BEFORE the first
+   report, rects are converted to screen coords through same-origin frame
+   ancestors, and the payload carries mode:sheet so the shell skips the
+   fullscreen top-line normalization for sheets.
    In the shell we PRE-HIDE the web chrome immediately (a 1.6s fallback
    restores it on shells that never render twins, e.g. iOS < 26), report
    geometry as soon as the DOM settles, and re-report late for elements
@@ -1030,6 +1034,9 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   var ELS = { close: '.closebtn' };
   var TAPS = {};
   var nativeConfirmed = false;
+  var EMBED = /[?&]embed=1/.test(location.search);
+  var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
+  var MODE = EMBED ? 'sheet' : 'page';
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
@@ -1042,18 +1049,29 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   }
   function report() {
     prehide();   /* idempotent — catches async-built elements too */
+    /* overlay pages live in (possibly offset / sliding) iframes — convert
+       to SCREEN coords by walking same-origin frame ancestors */
+    var off = { x: 0, y: 0 };
+    try {
+      var fe = window.frameElement;
+      while (fe) {
+        var fr = fe.getBoundingClientRect();
+        off.x += fr.left; off.y += fr.top;
+        fe = fe.ownerDocument.defaultView.frameElement;
+      }
+    } catch (_) {}
     var els = [];
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (!el) return;
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      els.push({ id: id, x: r.left, y: r.top, w: r.width, h: r.height,
+      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
     });
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, els: els });
+        surface: SURFACE, mode: MODE, els: els });
     } catch (_) {}
   }
   window.DSNativeChrome = function (ids) {
@@ -1075,9 +1093,10 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
       el.classList.remove('ds-native-hidden');
     });
     window.DSNativeChrome = function () {};
-  }, 1600);
+  }, ((EMBED || FRAMED) ? 1900 : 1600));
   addEventListener('resize', function () { setTimeout(report, 350); });
-  function boot() { setTimeout(report, 200); setTimeout(report, 1200); setTimeout(report, 2600); }
+  function boot() { var t0 = (EMBED || FRAMED) ? 950 : 200;
+    setTimeout(report, t0); setTimeout(report, t0 + 1000); setTimeout(report, t0 + 2400); }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
   else boot();
 })();

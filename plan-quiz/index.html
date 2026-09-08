@@ -2089,6 +2089,85 @@
   else attach();
 })();
 </script>
+<script>
+/* Native glass chrome handshake v3 (2026-09-08): sheet-aware.
+   Overlay presentations (embed spring / hub sheet) settle BEFORE the first
+   report, rects are converted to screen coords through same-origin frame
+   ancestors, and the payload carries mode:sheet so the shell skips the
+   fullscreen top-line normalization for sheets. */
+(function () {
+  if (!/DietStationLab/.test(navigator.userAgent)) return;
+  var FLOW = 'plan-quiz', SURFACE = 'dark';
+  var ELS = { close: '.chrome .closebtn', cta: '.chrome .cta' };
+  var TAPS = {};
+  var nativeConfirmed = false;
+  var EMBED = /[?&]embed=1/.test(location.search);
+  var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
+  var MODE = EMBED ? 'sheet' : 'page';
+  var st = document.createElement('style');
+  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
+  document.head.appendChild(st);
+
+  function prehide() {
+    Object.keys(ELS).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (el) el.classList.add('ds-native-hidden');
+    });
+  }
+  function report() {
+    prehide();   /* idempotent — catches async-built elements too */
+    /* overlay pages live in (possibly offset / sliding) iframes — convert
+       to SCREEN coords by walking same-origin frame ancestors */
+    var off = { x: 0, y: 0 };
+    try {
+      var fe = window.frameElement;
+      while (fe) {
+        var fr = fe.getBoundingClientRect();
+        off.x += fr.left; off.y += fr.top;
+        fe = fe.ownerDocument.defaultView.frameElement;
+      }
+    } catch (_) {}
+    var els = [];
+    Object.keys(ELS).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
+    });
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: els });
+    } catch (_) {}
+  }
+  window.DSNativeChrome = function (ids) {
+    nativeConfirmed = true;
+    (ids || []).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (el) el.classList.add('ds-native-hidden');
+    });
+  };
+  window.DSChromeTap = function (id) {
+    var sel = TAPS[id] || ELS[id];
+    var el = sel && document.querySelector(sel);
+    if (el) el.click();
+  };
+  /* iOS<26 shells never render twins — restore the web chrome */
+  setTimeout(function () {
+    if (nativeConfirmed) return;
+    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
+      el.classList.remove('ds-native-hidden');
+    });
+    window.DSNativeChrome = function () {};
+  }, ((EMBED || FRAMED) ? 1900 : 1600));
+  addEventListener('resize', function () { setTimeout(report, 350); });
+  function boot() { var t0 = (EMBED || FRAMED) ? 950 : 200;
+    setTimeout(report, t0); setTimeout(report, t0 + 1000); setTimeout(report, t0 + 2400); }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
 <script src="../lab-shell.js?v=20260908d" data-flow="plan-quiz" defer></script>
 </body>
 </html>
