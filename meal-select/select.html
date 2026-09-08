@@ -24,6 +24,12 @@
   html, body { height: 100%; overflow: hidden; background: #ffffff; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+  /* selection color modifier (lab menu): green (default) / brand red / neon.
+     --selc paints fills+borders, --selc-ink is the on-white text/icon variant,
+     --selc-glow feeds the neon particle border. */
+  body { --selc: #26A659; --selc-ink: #26A659; --selc-glow: rgba(38,166,89,.45); }
+  body.selc-red { --selc: #ED1C24; --selc-ink: #ED1C24; --selc-glow: rgba(237,28,36,.45); }
+  body.selc-neon { --selc: #1BF07E; --selc-ink: #0BD167; --selc-glow: rgba(27,240,126,.6); }
   body.desktop { background: #f5f5f7; }
 
   /* ================= playground shell (desktop) ================= */
@@ -57,6 +63,7 @@
   .quota-ctl output { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ED1C24;
     min-width: 12px; text-align: center; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg3 { grid-template-columns: 1fr 1fr 1fr; }
   .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
     padding: 10px 8px; background: #fff;
     font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: #6e6e73; }
@@ -114,7 +121,7 @@
   .card .autobadge { position: absolute; top: -9px; left: 50%;
     transform: translateX(-50%) scale(.6); height: 18px; display: flex;
     align-items: center; gap: 5px; padding: 0 9px 0 7px; z-index: 6;
-    border-radius: 37px 37px 45px 45px; background: #26A659;
+    border-radius: 37px 37px 45px 45px; background: var(--selc);
     box-shadow: 0 1px 6px rgba(56,64,74,.18);
     font: 700 11px/18px 'Proxima Nova', sans-serif; color: #f9f9f9;
     white-space: nowrap; opacity: 0; pointer-events: none;
@@ -237,7 +244,7 @@
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   .of { transition: color .25s ease; }
-  .of.done { color: #26A659; display: inline-flex; align-items: center; gap: 5px; }
+  .of.done { color: var(--selc-ink); display: inline-flex; align-items: center; gap: 5px; }
   .of.done svg { width: 11px; height: 11px; display: block; flex: none; }
   .of.pop { animation: ofdone .4s cubic-bezier(.3,1.5,.4,1); }
   @keyframes ofdone { 40% { transform: scale(1.22); } }
@@ -258,10 +265,28 @@
     background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.41) 35.1%, rgba(0,0,0,.81)); }
   /* selection border springs in — Figma track: 0 -> 3.5px, bezier(.633,2.581,.761,1.433) */
   .card .sel-border { position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
-    border: 0 solid #26a659; z-index: 3;
+    border: 0 solid var(--selc); z-index: 3;
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
+  /* neon mode: the crisp border melts into blurred glowing dots — a nod to the
+     breathe flow's particle field — and breathes softly while selected */
+  body.selc-neon .card .sel-border { border-style: dotted; filter: blur(2px); }
+  body.selc-neon .card.sel .sel-border { border-width: 4.5px;
+    animation: neonbreathe 2.6s ease-in-out infinite; }
+  @keyframes neonbreathe {
+    0%, 100% { box-shadow: 0 0 10px var(--selc-glow), inset 0 0 7px var(--selc-glow);
+      filter: blur(1.6px); }
+    50% { box-shadow: 0 0 22px var(--selc-glow), inset 0 0 15px var(--selc-glow);
+      filter: blur(2.7px); } }
+  /* bright neon fills read better with dark content */
+  body.selc-neon .qty .q-count { color: #0B0E12; }
+  body.selc-neon .qty svg path { fill: #0B0E12; }
+  body.selc-neon .qty svg path[stroke] { stroke: #0B0E12; fill: none; }
+  body.selc-neon .autobadge { color: #0B0E12; }
+  body.selc-neon .autobadge svg path { fill: #0B0E12; }
+  body.selc-neon .mo-select .msc svg path { stroke: #0B0E12; }
+  body.selc-neon .mo-fb .sc svg path { stroke: #0B0E12; }
 
   .card .toprow { position: absolute; left: 14px; right: 10px; top: 10px; z-index: 4;
     display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
@@ -291,7 +316,7 @@
     pointer-events: none; }
   /* QTY pill — pops (scale bezier .7,-.4,.4,1.4), expands 30<->75 (bezier .45,1.45,.8,1) */
   .qty { position: relative; height: 30px; width: 30px; border-radius: 999px;
-    background: #26a659; overflow: hidden; flex: none; align-self: flex-end;
+    background: var(--selc); overflow: hidden; flex: none; align-self: flex-end;
     transform: scale(0); pointer-events: auto; cursor: pointer;
     transition: transform .41s cubic-bezier(.7,-.4,.4,1.4),
       width .41s cubic-bezier(.45,1.45,.8,1); }
@@ -497,7 +522,7 @@
   .mo-select:active { transform: scale(.94); }
   .mo-select.sel { color: #0b0e12; }
   .mo-select .msc { width: 16px; height: 16px; border-radius: 50%;
-    background: #26A659; display: none; align-items: center; justify-content: center; }
+    background: var(--selc); display: none; align-items: center; justify-content: center; }
   .mo-select.sel .msc { display: flex; }
   .mo-select .msc svg { width: 9px; height: 7px; }
   .mo-select.deny { animation: deny .4s ease; }
@@ -535,9 +560,9 @@
     font: 600 12.5px/16px 'Urbane Rounded', sans-serif;
     opacity: 0; transition: opacity .2s ease, transform .25s cubic-bezier(.3,.9,.3,1.25);
     pointer-events: none; }
-  .mo-fb.add { color: #26A659; }
+  .mo-fb.add { color: var(--selc-ink); }
   .mo-fb.rem { color: #ED1C24; }
-  .mo-fb .sc { width: 14px; height: 14px; border-radius: 50%; background: #26A659;
+  .mo-fb .sc { width: 14px; height: 14px; border-radius: 50%; background: var(--selc);
     display: flex; align-items: center; justify-content: center; }
   .mo-fb .sc svg { width: 7px; height: 6px; }
   .mo-fb svg.tr { width: 13px; height: 14px; }
@@ -547,7 +572,7 @@
   .mo-row.fb .mo-sw { opacity: 0; transform: scale(.55); }
   /* Figma small switch: 30x18, p3, knob 12 */
   .mo-sw { width: 30px; height: 18px; border-radius: 50px; flex: none;
-    border: 1px solid #26A659; background: #26A659; padding: 2px;
+    border: 1px solid var(--selc); background: var(--selc); padding: 2px;
     display: flex; justify-content: flex-end; align-items: center; }
   .mo-row.off .mo-sw { background: #f5f5f5; border-color: #e5e5e5;
     justify-content: flex-start; }
@@ -657,6 +682,12 @@
     <div class="seg2" id="tapMode">
       <button data-mode="add" class="on">Tap adds +1</button>
       <button data-mode="select">Tap selects only</button>
+    </div>
+    <div class="s-note" style="margin-top:14px">Selection color</div>
+    <div class="seg2 seg3" id="selcSeg">
+      <button data-v="green" class="on">Green</button>
+      <button data-v="red">Red</button>
+      <button data-v="neon">Neon</button>
     </div>
   </div>
 
@@ -1257,7 +1288,7 @@ function totals() {
   return { kcal, p, c, f, count };
 }
 
-const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#26A659" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function renderOf(el, count, quota) {
   if (!el) return;
   const done = quota > 0 && count >= quota;
@@ -1694,6 +1725,17 @@ bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
   document.querySelectorAll('#tapMode button').forEach(x =>
     x.classList.toggle('on', x.dataset.mode === MODS.tapMode));
 })();
+/* selection color: repaints instantly via the --selc custom properties */
+function applySelc(v) {
+  MODS.selc = v;
+  document.body.classList.toggle('selc-red', v === 'red');
+  document.body.classList.toggle('selc-neon', v === 'neon');
+  document.querySelectorAll('#selcSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.v === v));
+}
+document.querySelectorAll('#selcSeg button').forEach(b =>
+  b.onclick = () => applySelc(b.dataset.v));
+applySelc(MODS.selc || 'green');
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -1865,7 +1907,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 61';
+const BUILD = 'build 2026-09-08 · 62';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
