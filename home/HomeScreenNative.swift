@@ -335,10 +335,11 @@ struct HomeScreenNative: View {
                 Text("KD 32").font(DS.urbane(12, .semibold)).foregroundStyle(DS.onColor)
                 Text("Discounts").font(DS.proxima(12)).foregroundStyle(DS.onColor.opacity(0.8))
             }
-            Spacer()
-            // TODO(Shell): replace with DSBagIcon traced from home/ic-bag.svg
-            // (same pipeline as star/bell/calendar) — Rashid wants the Figma glyph
-            Image(systemName: "bag.fill").font(.system(size: 22)).foregroundStyle(.white)
+            // scale, never wrap — the bag glyph leaves ~67pt for the text column
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            Spacer(minLength: 8)
+            DSBagIcon().frame(width: 34, height: 31.8)
         }
         .padding(.horizontal, 19)
         .frame(height: 72)   // twin of consult — days-left stays dominant
@@ -616,6 +617,69 @@ private struct DaysContent: View {
 }
 
 // MARK: - Figma icon shapes (traced from the home flow's SVG exports)
+
+/// Figma export: home/ic-bag.svg — layered price tags (faint back, solid front
+/// with a punched string hole)
+struct DSBagIcon: View {
+    var body: some View {
+        ZStack {
+            DSBagBackShape().fill(.white.opacity(0.19))
+            DSBagFrontShape().fill(.white.opacity(0.65))
+        }
+    }
+}
+
+struct DSBagBackShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 23.503, y: 4.296))
+        p.addCurve(to: CGPoint(x: 21.524, y: 3.519), control1: CGPoint(x: 22.980, y: 3.773), control2: CGPoint(x: 22.263, y: 3.491))
+        p.addLine(to: CGPoint(x: 13.127, y: 3.833))
+        p.addCurve(to: CGPoint(x: 10.569, y: 6.391), control1: CGPoint(x: 11.736, y: 3.885), control2: CGPoint(x: 10.621, y: 5.001))
+        p.addLine(to: CGPoint(x: 10.255, y: 14.788))
+        p.addCurve(to: CGPoint(x: 11.032, y: 16.768), control1: CGPoint(x: 10.227, y: 15.527), control2: CGPoint(x: 10.508, y: 16.244))
+        p.addLine(to: CGPoint(x: 20.803, y: 26.539))
+        p.addCurve(to: CGPoint(x: 24.563, y: 26.539), control1: CGPoint(x: 21.841, y: 27.577), control2: CGPoint(x: 23.525, y: 27.577))
+        p.addLine(to: CGPoint(x: 33.275, y: 17.827))
+        p.addCurve(to: CGPoint(x: 33.275, y: 14.067), control1: CGPoint(x: 34.313, y: 16.789), control2: CGPoint(x: 34.313, y: 15.105))
+        p.addLine(to: CGPoint(x: 23.503, y: 4.296))
+        p.closeSubpath()
+        let s = min(rect.width / 37.9973, rect.height / 35.4995)
+        let t = CGAffineTransform(translationX: rect.midX - 37.9973 * s / 2,
+                                  y: rect.midY - 35.4995 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
+
+struct DSBagFrontShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 10.955, y: 5.536))
+        p.addCurve(to: CGPoint(x: 14.572, y: 5.536), control1: CGPoint(x: 11.975, y: 4.590), control2: CGPoint(x: 13.552, y: 4.590))
+        p.addCurve(to: CGPoint(x: 20.731, y: 11.251), control1: CGPoint(x: 16.970, y: 7.761), control2: CGPoint(x: 20.709, y: 11.230))
+        p.addCurve(to: CGPoint(x: 21.581, y: 13.200), control1: CGPoint(x: 21.273, y: 11.754), control2: CGPoint(x: 21.581, y: 12.460))
+        p.addLine(to: CGPoint(x: 21.581, y: 27.018))
+        p.addCurve(to: CGPoint(x: 18.922, y: 29.678), control1: CGPoint(x: 21.581, y: 28.487), control2: CGPoint(x: 20.391, y: 29.678))
+        p.addLine(to: CGPoint(x: 6.603, y: 29.678))
+        p.addCurve(to: CGPoint(x: 3.944, y: 27.018), control1: CGPoint(x: 5.134, y: 29.678), control2: CGPoint(x: 3.944, y: 28.487))
+        p.addLine(to: CGPoint(x: 3.944, y: 13.200))
+        p.addCurve(to: CGPoint(x: 4.794, y: 11.251), control1: CGPoint(x: 3.944, y: 12.460), control2: CGPoint(x: 4.252, y: 11.754))
+        p.addCurve(to: CGPoint(x: 10.955, y: 5.536), control1: CGPoint(x: 4.794, y: 11.251), control2: CGPoint(x: 8.549, y: 7.768))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 12.767, y: 6.911))
+        p.addCurve(to: CGPoint(x: 10.889, y: 8.789), control1: CGPoint(x: 11.730, y: 6.911), control2: CGPoint(x: 10.889, y: 7.752))
+        p.addCurve(to: CGPoint(x: 12.767, y: 10.667), control1: CGPoint(x: 10.889, y: 9.826), control2: CGPoint(x: 11.730, y: 10.667))
+        p.addCurve(to: CGPoint(x: 14.645, y: 8.789), control1: CGPoint(x: 13.804, y: 10.667), control2: CGPoint(x: 14.645, y: 9.826))
+        p.addCurve(to: CGPoint(x: 12.767, y: 6.911), control1: CGPoint(x: 14.645, y: 7.752), control2: CGPoint(x: 13.804, y: 6.911))
+        p.closeSubpath()
+        let s = min(rect.width / 37.9973, rect.height / 35.4995)
+        let t = CGAffineTransform(translationX: rect.midX - 37.9973 * s / 2,
+                                  y: rect.midY - 35.4995 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
 
 /// Figma export: home/ic-star.svg
 struct DSStarIcon: Shape {
