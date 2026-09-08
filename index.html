@@ -469,6 +469,28 @@ let OVR = {};
 try { OVR = JSON.parse(localStorage.getItem('ds-lab-overrides') || '{}'); } catch (_) {}
 function saveOvr() { try { localStorage.setItem('ds-lab-overrides', JSON.stringify(OVR)); } catch (_) {} }
 const ADMIN_HASH = 'bfe5c3c7b1db56c1539f1b6ab4e10b250c51532ff15a8f5946c6a2d6caf0a47c';
+/* publish credential, sealed with AES-GCM under a key derived from the admin
+   password (PBKDF2 310k). null until provisioned — publishing then falls
+   back to the copy-command flow. */
+const ENC_TOKEN = null;
+async function deriveKey(pass) {
+  const km = await crypto.subtle.importKey('raw',
+    new TextEncoder().encode(pass.trim()), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: new TextEncoder().encode('ds-lab-publish-v1'),
+      iterations: 310000, hash: 'SHA-256' },
+    km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+}
+async function unlockToken(pass) {
+  if (!ENC_TOKEN) return null;
+  try {
+    const raw = Uint8Array.from(atob(ENC_TOKEN), c => c.charCodeAt(0));
+    const key = await deriveKey(pass);
+    const buf = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12));
+    return new TextDecoder().decode(buf);
+  } catch (_) { return null; }
+}
 async function checkLogin(name, pass) {
   const data = new TextEncoder().encode(name.trim().toLowerCase() + ':' + pass.trim());
   const buf = await crypto.subtle.digest('SHA-256', data);
@@ -490,9 +512,11 @@ function openLogin() {
       document.getElementById('liErr').textContent = 'Wrong name or password.';
       return;
     }
+    const tok = await unlockToken(document.getElementById('liPass').value);
     try {
       localStorage.setItem('ds-admin', '1');
       sessionStorage.setItem('ds-open-edit', '1');
+      if (tok) sessionStorage.setItem('ds-pub-token', tok);
     } catch (_) {}
     location.href = location.pathname;   /* clean URL — no stale query flags */
   };
@@ -729,6 +753,7 @@ function wireEditMode() {
       b.classList.toggle('off', o.hidden);
       b.textContent = o.hidden ? 'Hidden from viewers' : 'Visible to viewers';
       row.querySelector('.draftdot').textContent = 'draft';
+      scheduleAutoPublish();
     };
     const h2 = card.querySelector('h2');
     const desc = card.querySelector('.desc');
@@ -739,6 +764,7 @@ function wireEditMode() {
         o[key] = el.textContent.trim();
         saveOvr();
         row.querySelector('.draftdot').textContent = 'draft';
+        scheduleAutoPublish();
       });
     });
   });
@@ -760,15 +786,66 @@ try {
 } catch (_) {}
 const pubBar = document.createElement('div');
 pubBar.className = 'publishbar';
-pubBar.innerHTML = '<button class="disc">Discard drafts</button><button class="pub">Copy publish command</button>';
+pubBar.innerHTML = '<button class="disc">Discard drafts</button><button class="pub">Saved</button>';
 document.body.appendChild(pubBar);
-pubBar.querySelector('.pub').onclick = () => {
-  const cmd = 'publish lab ' + JSON.stringify(OVR);
-  (navigator.clipboard ? navigator.clipboard.writeText(cmd) : Promise.reject())
-    .then(() => { pubBar.querySelector('.pub').textContent = 'Copied — paste it to Claude'; })
-    .catch(() => prompt('Copy this and paste it to Claude:', cmd));
-  setTimeout(() => { pubBar.querySelector('.pub').textContent = 'Copy publish command'; }, 2600);
-};
+const pubBtn = pubBar.querySelector('.pub');
+let pubTok = null;
+try { pubTok = sessionStorage.getItem('ds-pub-token'); } catch (_) {}
+let pubTimer = null, publishing = false;
+
+async function publishNow() {
+  if (!pubTok) {
+    /* not provisioned yet: fall back to the manual command */
+    const cmd = 'publish lab ' + JSON.stringify(OVR);
+    (navigator.clipboard ? navigator.clipboard.writeText(cmd) : Promise.reject())
+      .then(() => { pubBtn.textContent = 'Copied — paste it to Claude'; })
+      .catch(() => prompt('Copy this and paste it to Claude:', cmd));
+    setTimeout(() => { pubBtn.textContent = 'Publish'; }, 2600);
+    return;
+  }
+  if (publishing) return;
+  publishing = true;
+  pubBtn.textContent = 'Publishing…';
+  try {
+    const api = 'https://api.github.com/repos/RashidAlo/Diet-station/contents/flows.json';
+    const hdrs = { 'Authorization': 'Bearer ' + pubTok,
+      'Accept': 'application/vnd.github+json' };
+    const cur = await fetch(api + '?ref=gh-pages', { headers: hdrs }).then(r => r.json());
+    const json = JSON.parse(new TextDecoder().decode(
+      Uint8Array.from(atob(cur.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
+    for (const f of json.flows) {
+      const o = OVR[f.id];
+      if (!o) continue;
+      if (o.title !== undefined) f.title = o.title;
+      if (o.description !== undefined) f.description = o.description;
+      if (o.hidden !== undefined) f.hidden = o.hidden;
+    }
+    const bytes = new TextEncoder().encode(JSON.stringify(json, null, 2));
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 8192)
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    const res = await fetch(api, { method: 'PUT', headers: hdrs,
+      body: JSON.stringify({
+        message: 'Lab admin edit (auto-published from the hub)',
+        content: btoa(bin), sha: cur.sha, branch: 'gh-pages' }) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    OVR = {}; saveOvr();
+    document.querySelectorAll('.draftdot').forEach(d => d.textContent = '');
+    pubBtn.textContent = 'Live ✓';
+  } catch (e) {
+    pubBtn.textContent = 'Publish failed — retry';
+  }
+  publishing = false;
+  setTimeout(() => { pubBtn.textContent = pubTok ? 'Saved' : 'Publish'; }, 3000);
+}
+function scheduleAutoPublish() {
+  if (!pubTok) return;
+  pubBtn.textContent = 'Saving…';
+  clearTimeout(pubTimer);
+  pubTimer = setTimeout(publishNow, 2000);
+}
+pubBtn.onclick = publishNow;
+if (!pubTok) pubBtn.textContent = 'Publish';
 pubBar.querySelector('.disc').onclick = () => {
   OVR = {}; saveOvr(); location.reload();
 };
