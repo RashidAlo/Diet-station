@@ -742,7 +742,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
    button; each card saves + publishes its own entry independently. */
 let pubTok = null;
 try { pubTok = sessionStorage.getItem('ds-pub-token'); } catch (_) {}
-let publishing = false;
+let publishing = false, pubErr = '';
 
 async function publishCard(id, patch, dot) {
   if (!pubTok) {
@@ -757,28 +757,40 @@ async function publishCard(id, patch, dot) {
     const api = 'https://api.github.com/repos/RashidAlo/Diet-station/contents/flows.json';
     const hdrs = { 'Authorization': 'Bearer ' + pubTok,
       'Accept': 'application/vnd.github+json' };
-    const cur = await fetch(api + '?ref=gh-pages', { headers: hdrs }).then(r => r.json());
-    const json = JSON.parse(new TextDecoder().decode(
-      Uint8Array.from(atob(cur.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
-    const f = json.flows.find(x => x.id === id);
-    if (!f) throw new Error('flow not found');
-    if (patch.title !== undefined) f.title = patch.title;
-    if (patch.description !== undefined) f.description = patch.description;
-    f.hidden = !!patch.hidden;
-    const bytes = new TextEncoder().encode(JSON.stringify(json, null, 2));
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 8192)
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    const res = await fetch(api, { method: 'PUT', headers: hdrs,
-      body: JSON.stringify({
-        message: 'Lab edit: ' + id + ' (published from the hub)',
-        content: btoa(bin), sha: cur.sha, branch: 'gh-pages' }) });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    OVR[id] = Object.assign({}, patch, { ts: Date.now() });
-    saveOvr();
-    publishing = false;
-    return true;
+    /* the browser caches API GETs for 60s (GitHub sends max-age=60), which
+       hands back a stale sha right after a save and every PUT then 409s —
+       bust the cache, and retry once on a conflict anyway */
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const got = await fetch(api + '?ref=gh-pages&t=' + Date.now(),
+        { headers: hdrs, cache: 'no-store' });
+      if (!got.ok) throw new Error('read ' + got.status);
+      const cur = await got.json();
+      const json = JSON.parse(new TextDecoder().decode(
+        Uint8Array.from(atob(cur.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
+      const f = json.flows.find(x => x.id === id);
+      if (!f) throw new Error('flow not found');
+      if (patch.title !== undefined) f.title = patch.title;
+      if (patch.description !== undefined) f.description = patch.description;
+      f.hidden = !!patch.hidden;
+      const bytes = new TextEncoder().encode(JSON.stringify(json, null, 2));
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 8192)
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      const res = await fetch(api, { method: 'PUT', headers: hdrs,
+        body: JSON.stringify({
+          message: 'Lab edit: ' + id + ' (published from the hub)',
+          content: btoa(bin), sha: cur.sha, branch: 'gh-pages' }) });
+      if (res.status === 409 && attempt === 0) continue;
+      if (!res.ok) throw new Error('write ' + res.status);
+      OVR[id] = Object.assign({}, patch, { ts: Date.now() });
+      saveOvr();
+      publishing = false;
+      return true;
+    }
+    throw new Error('write conflict');
   } catch (e) {
+    console.warn('publishCard:', e);
+    pubErr = e.message || 'error';
     publishing = false;
     return false;
   }
@@ -845,7 +857,7 @@ function wireEditMode() {
         dot.textContent = 'Live \u2713';
         setTimeout(() => { dot.textContent = ''; }, 2600);
       } else if (pubTok) {
-        dot.textContent = 'Save failed \u2014 try again';
+        dot.textContent = 'Save failed (' + pubErr + ') \u2014 try again';
       }
     };
   });
