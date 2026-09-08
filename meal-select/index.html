@@ -173,7 +173,11 @@
     margin: -11px 0 0 -11px; border-radius: 999px; border: 2px solid #26A659;
     opacity: 0; pointer-events: none; z-index: 1; }
   @keyframes ringout { 0% { opacity: .8; transform: scale(1); }
-    100% { opacity: 0; transform: scale(2.1); } }
+    100% { opacity: 0; transform: scale(var(--ringend, 2.1)); } }
+  /* cascade finale: a glow shockwave blooming out of the last-checked day */
+  .shock { position: absolute; border-radius: 50%; pointer-events: none; z-index: 70;
+    background: radial-gradient(circle,
+      rgba(38,166,89,.5) 0%, rgba(38,166,89,.28) 42%, rgba(38,166,89,0) 70%); }
   .day.justsel .ring { animation: ringout .55s ease-out; }
 
   /* footer note at the end of the scroll */
@@ -281,8 +285,8 @@
   <div class="s-sec">
     <div class="s-label">Simulate</div>
     <div class="s-note">As if you confirmed this many days in the picker and hit done —
-      checks cascade across the calendar day by day, faster and bigger as they go,
-      capped with a ripple.</div>
+      checks build across the calendar, each pop bigger and faster than the last,
+      until the final one detonates a glow shockwave sized by the run.</div>
     <div class="seg2 seg3" id="simSeg">
       <button data-n="10">10 days</button>
       <button data-n="20">20 days</button>
@@ -363,7 +367,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 8';
+const BUILD = 'calendar 2026-09-08 · 9';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -590,44 +594,71 @@ function simulateDays(n) {
   simRunning = true;
   quietUntil = Date.now() + 90000;   /* hold clock re-renders during the show */
   const months = document.getElementById('months');
+  const phone = document.getElementById('phone');
   const times = [];
-  let t = 350;
+  let t = 200;
   days.forEach((el, i) => {
     const f = days.length > 1 ? i / (days.length - 1) : 1;
     times.push(t);
-    t += 300 - 225 * f * f;          /* accelerando: ~300ms down to ~75ms */
+    t += 180 - 140 * f * f;          /* accelerando: ~180ms down to ~40ms */
   });
   days.forEach((el, i) => {
     const f = days.length > 1 ? i / (days.length - 1) : 1;
     setTimeout(() => {
       sessionSel[el.dataset.mon + ':' + el.dataset.day] = true;
       el.className = 'day sel tap justsel';
-      el.style.setProperty('--pop', (1.12 + 0.42 * f).toFixed(2));
+      /* the build: every check pops bigger and bursts wider than the last */
+      el.style.setProperty('--pop', (1.12 + 0.48 * f).toFixed(2));
+      el.style.setProperty('--ringend', (1.8 + 1.8 * f).toFixed(2));
       el.querySelector('.chip').innerHTML = CHIP.sel;
       const b = el.querySelector('.badge'); if (b) b.remove();
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
-      vibrate(Math.round(6 + 12 * f));
+      vibrate(Math.round(5 + 14 * f));
       setTimeout(() => el.classList.remove('justsel'), 600);
       const y = el.getBoundingClientRect().top - months.getBoundingClientRect().top +
         months.scrollTop - months.clientHeight * 0.45;
       months.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
     }, times[i]);
   });
-  const endT = times[times.length - 1] + 480;
-  setTimeout(() => {                 /* finale: ripple back through the run */
-    vibrate([16, 40, 20, 40, 28]);
-    days.forEach((el, i) => setTimeout(() => {
-      el.classList.remove('justsel'); void el.offsetWidth;
-      el.style.setProperty('--pop', '1.2');
-      el.classList.add('justsel');
-      setTimeout(() => el.classList.remove('justsel'), 440);
-    }, i * 28));
+  /* the explode: the last check detonates a glow shockwave sized by the
+     quantity, and every check thumps once as the wave reaches it */
+  const endT = times[times.length - 1] + 140;
+  setTimeout(() => {
+    const last = days[days.length - 1];
+    const pr = phone.getBoundingClientRect(), lr = last.getBoundingClientRect();
+    const cx = lr.left - pr.left + lr.width / 2, cy = lr.top - pr.top + lr.height / 2;
+    const dia = 200 + n * 16;
+    const shock = document.createElement('div');
+    shock.className = 'shock';
+    shock.style.cssText = 'left:' + (cx - dia / 2) + 'px;top:' + (cy - dia / 2) +
+      'px;width:' + dia + 'px;height:' + dia + 'px';
+    phone.appendChild(shock);
+    shock.animate([
+      { transform: 'scale(.12)', opacity: 1 },
+      { transform: 'scale(1)', opacity: 0 }
+    ], { duration: 520 + n * 8, easing: 'cubic-bezier(.2,.7,.3,1)' })
+      .onfinish = () => shock.remove();
+    vibrate(n >= 30 ? [18, 40, 24, 40, 30, 40, 38] : n >= 20 ?
+      [16, 40, 22, 40, 28] : [14, 40, 20]);
+    const waveSpeed = 1.3;   /* px per ms */
+    days.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const d = Math.hypot(r.left - pr.left + r.width / 2 - cx,
+        r.top - pr.top + r.height / 2 - cy);
+      setTimeout(() => {
+        el.classList.remove('justsel'); void el.offsetWidth;
+        el.style.setProperty('--pop', '1.18');
+        el.style.setProperty('--ringend', '1.7');
+        el.classList.add('justsel');
+        setTimeout(() => el.classList.remove('justsel'), 420);
+      }, d / waveSpeed);
+    });
   }, endT);
   setTimeout(() => {
     simRunning = false;
     quietUntil = 0;
     renderMonths(false);
-  }, endT + days.length * 28 + 900);
+  }, endT + 1600);
 }
 document.querySelectorAll('#simSeg button').forEach(b => b.onclick = () => {
   vibrate(8);
