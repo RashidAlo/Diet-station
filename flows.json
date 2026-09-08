@@ -874,7 +874,7 @@
       "area": "Home",
       "preview": "home/preview.png",
       "sheet": true,
-      "hidden": false,
+      "hidden": true,
       "updated": "2026-09-08",
       "description": "The widget-based home screen over brand red: liquid-glass widgets (plan, days-left, discounts, consultation, promo, rewards/notifications docks), the white meal-preview sheet with today's and tomorrow's dishes, and the floating glass tab bar. The system is modular — hide a widget and the neighbours fill its space; the days-left widget re-shapes (slim/wide/tall) with the room it's given and goes urgent when expired. Lab menu switches the subscription theme (LifeStyle / The Diet / BODYBuilding / Kids), the days state, and per-widget visibility."
     }
