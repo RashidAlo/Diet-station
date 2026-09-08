@@ -790,6 +790,7 @@ function openLogin() {
                                           counted from ANIMATION start */
   const MAX_MS = 7000;
   let riveOk = false, gone = false, TA = 0;
+  let riveStarted; const riveStart = new Promise(r => { riveStarted = r; });
   function dismiss() {
     if (gone) return;
     gone = true;
@@ -815,39 +816,51 @@ function openLogin() {
       .map(n => 'meal-select/' + n));
     return Promise.allSettled(warm.map(u => fetch(u).then(r => r.blob())));
   }).catch(() => null);
-  /* the Rive splash itself */
-  const boot = () => {
+  /* the Rive splash itself. TWO hard-won constraints (2026-09-08):
+     1. the scripted splash renders ONLY on the webgl2 (Rive Renderer)
+        runtime — the canvas-2D build loads it but draws nothing;
+     2. the webgl2 wasm CRASHES (memory OOB) if a Rive instance is created
+        against a canvas that hasn't been laid out yet — so boot waits two
+        rAFs and pre-sizes the drawing surface before instantiating. */
+  const boot = () => requestAnimationFrame(() => requestAnimationFrame(() => {
     try {
+      rive.RuntimeLoader.setWasmUrl('splash/rive-webgl2.wasm');
+      const cv = el.querySelector('canvas');
+      const dpr = window.devicePixelRatio || 1;
+      cv.width = (cv.clientWidth || innerWidth) * dpr;
+      cv.height = (cv.clientHeight || innerHeight) * dpr;
       const rv = new rive.Rive({
         src: 'splash/ds-splash.riv',
-        canvas: el.querySelector('canvas'),
+        canvas: cv,
         artboard: 'Splash',
+        stateMachines: 'State Machine 1',
         autoplay: true,
         layout: new rive.Layout({ fit: rive.Fit.Contain }),
         onLoad: () => {
           riveOk = true;
           TA = performance.now();      /* the choreography starts NOW, not
                                           at page T0 — hold from here */
-          /* size the drawing surface to the element x devicePixelRatio —
-             without this Rive renders into a 300x150 buffer and the CSS
-             stretch smears everything */
+          riveStarted();
           rv.resizeDrawingSurfaceToCanvas();
         },
         onLoadError: () => { /* Splash artboard not exported yet — skip */ dismiss(); },
       });
       addEventListener('resize', () => { try { rv.resizeDrawingSurfaceToCanvas(); } catch (_) {} });
     } catch (_) { dismiss(); }
-  };
-  if (window.rive) boot();
-  else {
+  }));
+  {
+    /* always load the splash's own webgl2 runtime — window.rive from the
+       canvas build must not be reused here (see constraint 1 above) */
     const sc = document.createElement('script');
-    sc.src = 'breathe/rive.js';
+    sc.src = 'splash/rive-webgl2.js';
     sc.onload = boot;
     sc.onerror = dismiss;
     document.head.appendChild(sc);
   }
-  done.then(() => {
-    const wait = Math.max(0, MIN_MS - (performance.now() - (TA || T0)));
+  /* dismiss only after preloads settle AND the animation has actually
+     started, holding MIN_MS from the animation's own first frame */
+  Promise.all([done, riveStart]).then(() => {
+    const wait = Math.max(0, MIN_MS - (performance.now() - TA));
     setTimeout(() => { if (riveOk) dismiss(); }, wait);
   });
   setTimeout(dismiss, MAX_MS);         /* hard ceiling — never trap the user */
