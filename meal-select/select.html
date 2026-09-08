@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 80';
+const BUILD = 'build 2026-09-09 · 81';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2291,7 +2291,10 @@ fit();
   /* fullscreen takeover: the docked bar sits on the canonical top line */
   var MODE = 'page';
   var st = document.createElement('style');
-  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
+  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
+    '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
+    '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
+    '#navigator { transition: opacity .18s ease; }';
   document.head.appendChild(st);
 
   function unhide() {
@@ -2333,8 +2336,12 @@ fit();
       if (!el) return;
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
+      var entry = { id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 };
+      /* stateful glyphs: the twin must mirror the web state exactly —
+         the dual's check is gray until the day completes, then red-trims */
+      if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
+      els.push(entry);
     });
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
@@ -2399,11 +2406,17 @@ fit();
     if (on && gaugeOn) document.getElementById('navigator').classList.add('ds-native-hidden');
   };
   /* every totals change flows through updateAll — wrap it for state posts */
+  var lastDualOn = null;
   if (typeof updateAll === 'function') {
     var _ua = updateAll;
     window.updateAll = function () {
       var r = _ua.apply(this, arguments);
       postGauge();
+      var on = !!(confirmBtn && confirmBtn.classList.contains('on'));
+      if (on !== lastDualOn) {
+        lastDualOn = on;
+        if (docked) report();   /* twin re-renders the check state */
+      }
       return r;
     };
   }
