@@ -1438,6 +1438,7 @@ const QS = new URLSearchParams(location.search);
 const CAL = QS.get('cal') === '1';   /* opened as the calendar page's overlay */
 const DAY_START = +QS.get('day') || 15;
 const MON_LBL = QS.get('mon') || 'Mar';
+const calDone = new Set();           /* days confirmed during this overlay visit */
 let dayIdx = 0;
 
 /* every day opens with deterministic fallback picks the user can just keep */
@@ -1534,16 +1535,7 @@ function nextTapped() {
   vibrate(10);
   dock.classList.remove('wide');
   dock.innerHTML = '<span class="loader"></span>';
-  if (CAL && EMBED) {
-    /* calendar overlay: confirm = this day is done — hand back to the calendar */
-    setTimeout(() => {
-      sheetEl.classList.add('springing');
-      sheetEl.style.transform = 'translateY(103%)';
-      setTimeout(() => parent.postMessage(
-        { t: 'ds-done', day: DAY_START + dayIdx, mon: MON_LBL }, '*'), 400);
-    }, 900);
-    return;
-  }
+  if (CAL) calDone.add(DAY_START + dayIdx);   /* Next = this day confirmed, keep picking */
   setTimeout(() => turnDay(1), 2000);
 }
 
@@ -1584,7 +1576,21 @@ document.getElementById('closeBtn').onclick = () => {
     location.href = '../';
   }
 };
-confirmBtn.onclick = () => { if (completed) nextTapped(); };
+confirmBtn.onclick = () => {
+  if (!completed) return;
+  if (CAL && EMBED) {
+    /* top check = done: dismiss and let the calendar pop every confirmed day */
+    if (turning) return;
+    calDone.add(DAY_START + dayIdx);
+    vibrate(10);
+    sheetEl.classList.add('springing');
+    sheetEl.style.transform = 'translateY(103%)';
+    setTimeout(() => parent.postMessage(
+      { t: 'ds-done', days: [...calDone], mon: MON_LBL }, '*'), 400);
+    return;
+  }
+  nextTapped();
+};
 const clearModal = document.getElementById('clearModal');
 document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
 document.getElementById('clearCancel').onclick = () => clearModal.classList.remove('show');

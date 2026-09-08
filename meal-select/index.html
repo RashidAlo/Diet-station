@@ -116,6 +116,14 @@
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
   .pausebtn:active { transform: scale(.88); }
   .pausebtn img { width: 20px; height: 20px; display: block; }
+  /* header close — the Figma X (opacity-0 on this screen); shown only when the
+     hub embeds the flow, so there is still a way back once the tab bar is gone */
+  .hd-close { display: none; width: 36px; height: 36px; border: none; background: none;
+    cursor: pointer; flex: none; align-items: center; justify-content: center; padding: 0;
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  html.embed .hd-close { display: flex; }
+  .hd-close:active { transform: scale(.88); }
+  .hd-close img { width: 36px; height: 36px; display: block; }
 
   /* ---- the white sheet ---- */
   .sheetc { flex: 1; min-height: 0; background: #fff; border-radius: 38px 38px 0 0;
@@ -133,7 +141,8 @@
     grid-auto-rows: 55px; row-gap: 20px; }
 
   .day { position: relative; width: 44px; height: 55px; border: none; background: none;
-    padding: 0; font: inherit; }
+    padding: 0; font: inherit; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; }
   .day .tile { width: 44px; height: 44px; border-radius: 12px; background: #fff;
     border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center;
     font: 500 15px/1 'Urbane Rounded', sans-serif; color: #0b0e12;
@@ -180,33 +189,14 @@
   .endnote img { width: 24px; height: 24px; display: block; }
   .endnote p { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #0d0d0d; }
   .endnote p b { color: #ed1c24; font-weight: 400; }
-  .endpad { height: calc(140px + env(safe-area-inset-bottom, 0px)); }
+  .endpad { height: calc(46px + env(safe-area-inset-bottom, 0px)); }
 
-  /* ---- bottom scroll-edge blur + floating glass tab bar ---- */
+  /* ---- bottom scroll-edge blur ---- */
   .scrollfade { position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
     pointer-events: none; z-index: 20;
     backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
     mask-image: linear-gradient(to bottom, transparent, black 72%);
     -webkit-mask-image: linear-gradient(to bottom, transparent, black 72%); }
-  .tabbar { position: absolute; left: calc(50% - 157px); width: 314px; height: 65px;
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; }
-  .tb-bg { position: absolute; inset: 0; border-radius: 999px; overflow: hidden;
-    backdrop-filter: blur(14px) saturate(170%); -webkit-backdrop-filter: blur(14px) saturate(170%);
-    box-shadow: 0 8px 40px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.5); }
-  .tb-bg i { position: absolute; inset: 0; display: block; }
-  .tb-bg .f1 { background: rgba(255,255,255,.65); }
-  .tb-bg .f2 { background: #ddd; mix-blend-mode: color-burn; }
-  .tb-bg .f3 { background: #f7f7f7; mix-blend-mode: darken; }
-  .tb-tabs { position: absolute; inset: 4px; display: flex; }
-  .tb-pill { position: absolute; top: 0; bottom: 0; width: 102px; border-radius: 999px;
-    background: #ededed; left: 102px;
-    transition: left .38s cubic-bezier(.3,.9,.3,1.05); }
-  .tb-tab { position: relative; flex: 1; border: none; background: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .tb-tab:active { transform: scale(.9); }
-  .tb-tab img { width: 24px; height: 24px; display: block; position: relative; }
-  .tb-tab .logo { width: 26px; height: 20px; }
 
   /* ---- meal-selection overlay (select.html embedded) ---- */
   .ov-veil { position: absolute; inset: 0; background: rgba(0,0,0,.42); opacity: 0;
@@ -323,6 +313,9 @@
             <h1>Calendar</h1>
             <div class="hd-sub">Time left for Fri 13 Mar meal selection<b id="hdCount">03:26</b></div>
           </div>
+          <button class="hd-close" id="hdClose" aria-label="Close">
+            <img src="cal-close.svg" alt="">
+          </button>
           <button class="pausebtn" id="pauseBtn" aria-label="Pause subscription">
             <img src="cal-pause.svg" alt="">
           </button>
@@ -335,21 +328,6 @@
           <div class="months" id="months"></div>
         </div>
         <div class="scrollfade"></div>
-        <div class="tabbar">
-          <div class="tb-bg"><i class="f1"></i><i class="f2"></i><i class="f3"></i></div>
-          <div class="tb-tabs">
-            <div class="tb-pill"></div>
-            <button class="tb-tab" id="tabHome" aria-label="Home">
-              <img class="logo" src="cal-tablogo.svg" alt="">
-            </button>
-            <button class="tb-tab" aria-label="Calendar">
-              <img src="cal-tabcal.svg" alt="">
-            </button>
-            <button class="tb-tab" id="tabPerson" aria-label="Profile">
-              <img src="cal-tabperson.svg" alt="">
-            </button>
-          </div>
-        </div>
         <div class="ov-veil" id="ovVeil"></div>
       </div>
       <div class="island"></div>
@@ -363,7 +341,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 1';
+const BUILD = 'calendar 2026-09-08 · 2';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -487,7 +465,8 @@ addEventListener('message', e => {
   if (d.t === 'ds-close') closeOverlay();
   if (d.t === 'ds-done') {
     closeOverlay();
-    markSelected(d.mon, d.day);
+    const days = d.days || [d.day];
+    days.forEach((n, i) => setTimeout(() => markSelected(d.mon, n), i * 140));
   }
 });
 function markSelected(mon, day) {
@@ -508,12 +487,11 @@ function markSelected(mon, day) {
 
 /* ================= decorative chrome ================= */
 document.getElementById('pauseBtn').onclick = () => vibrate(8);
-document.getElementById('tabHome').onclick = () => {
+document.getElementById('hdClose').onclick = () => {
   vibrate(8);
   if (EMBED) parent.postMessage({ t: 'ds-close' }, '*');
   else location.href = '../';
 };
-document.getElementById('tabPerson').onclick = () => vibrate(6);
 
 /* ================= sidebar wiring ================= */
 function bindMod(id, out, key, fmt, after) {
