@@ -472,7 +472,7 @@ const ADMIN_HASH = 'bfe5c3c7b1db56c1539f1b6ab4e10b250c51532ff15a8f5946c6a2d6caf0
 /* publish credential, sealed with AES-GCM under a key derived from the admin
    password (PBKDF2 310k). null until provisioned — publishing then falls
    back to the copy-command flow. */
-const ENC_TOKEN = null;
+const ENC_TOKEN = '2Kgr7mBydEJAzvhQiagI5zdzLna4KUpPgPdNb3Xsgxp71sPnBr+ORLimmZhJP8S7b8njZfaxKc4HIeitt6XOsY5GiG3bDc6WFNdkIrvaH2rprXolyqLCw0uXceTQaqZUYCPqOJWscmw0kOIGWIVnTJe202KkLDH9TQ==';
 async function deriveKey(pass) {
   const km = await crypto.subtle.importKey('raw',
     new TextEncoder().encode(pass.trim()), 'PBKDF2', false, ['deriveKey']);
