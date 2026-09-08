@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rive Elements — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
+    border-radius: 999px; padding: 12px 20px; border: none; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: #d4141c; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- rive stages ---- */
+  .stagewrap { position: relative; margin-top: 16px; border-radius: 16px; overflow: hidden;
+    background: #ED1C24; }
+  .stagewrap canvas { display: block; width: 100%; height: 100%; }
+  .shape-stage { aspect-ratio: 520 / 560; }
+  .splash-stage { aspect-ratio: 16 / 10; }
+  .chips { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; gap: 8px;
+    justify-content: center; flex-wrap: wrap; padding: 0 14px; }
+  .chip { font: 500 13px/1 'Urbane Rounded', sans-serif; padding: 11px 15px; cursor: pointer;
+    border-radius: 999px; border: 1px solid #E5E5E5; background: transparent; color: #fff;
+    transition: background .25s ease, color .25s ease, border-color .25s ease,
+      transform .15s cubic-bezier(.3,.8,.3,1); -webkit-tap-highlight-color: transparent; }
+  .chip:active { transform: scale(.95); }
+  .chip.sel { background: #FFF2F2; color: #ED1C24; border-color: #FFF2F2; }
+  .loadhint { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: rgba(255,255,255,.85);
+    font: 500 13px/1.5 'Urbane Rounded', sans-serif; pointer-events: none;
+    transition: opacity .4s ease; }
+  .loadhint.bye { opacity: 0; }
+  .replay { position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px;
+    border-radius: 50%; border: none; cursor: pointer; color: #fff;
+    background: rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(8px) saturate(160%); backdrop-filter: blur(8px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.4);
+    display: flex; align-items: center; justify-content: center; }
+  .replay:active { transform: scale(.94); }
+
+  /* ---- state map ---- */
+  .smap { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 6px 14px; margin-top: 12px;
+    font-size: 13px; }
+  .smap .h { font: 500 11px/1.6 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--ink-soft); }
+  .smap code { font: 12px/1.6 ui-monospace, Menlo, monospace; }
+  .smap div { padding: 4px 0; border-bottom: 0.5px solid var(--line); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+<script src="../breathe/rive.js"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Rive Elements</h1>
+  <p>The living side of the brand — 875 dots drawn by one Luau script, running live below
+    from the same .riv files the prototypes and splash ship. Pink ball, white icons,
+    always.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>Shapeshift dot-field</h2>
+    <p class="desc">The brand's centerpiece: a breathing ball of dots that morphs into each
+      health feature — amoeba-style, dots streaming into the drawn figure while the headline
+      types itself in DietStation Dot. Every dot is procedural; there are no editor shapes.
+      Tap a feature to steer it — the ball is transitional, passing between any two
+      features.</p>
+    <div class="stagewrap shape-stage" id="shapeStage">
+      <canvas id="shapeCanvas"></canvas>
+      <div class="loadhint" id="shapeHint">loading the dot field&hellip;</div>
+      <div class="chips" id="shapeChips">
+        <button class="chip" data-state="1">Weight</button>
+        <button class="chip" data-state="2">Muscle</button>
+        <button class="chip" data-state="3">Pregnancy</button>
+        <button class="chip" data-state="4">Gut</button>
+      </div>
+    </div>
+    <h3>State machine</h3>
+    <p class="desc" style="font-size:13.5px">One ViewModel (&ldquo;Machine&rdquo;) drives
+      everything: write <code>state</code> and the script choreographs the rest — deep
+      inhale, dots stream to the icon, typewriter headline, looping icon life (needle sweep,
+      squeeze reps, belly breath, gut wave), auto-advance after ~6s.</p>
+    <div class="smap">
+      <div class="h">value</div><div class="h">state</div><div class="h">icon life loop</div>
+      <div><code>0</code></div><div>Ball (transitional / intro only)</div><div>asymmetric breath, 3.2s</div>
+      <div><code>1</code></div><div>Weight — dial &amp; needle</div><div>counting needle sweep, 7.5s</div>
+      <div><code>2</code></div><div>Muscle — flexing arm</div><div>squeeze reps + rebound, 6.4s</div>
+      <div><code>3</code></div><div>Pregnancy — mother figure</div><div>belly swells, 4.6s</div>
+      <div><code>4</code></div><div>Gut — digestive tract</div><div>traveling pinch wave, 5.2s</div>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="../breathe/">Open the full flow</a>
+      <a class="btn ghost" href="../breathe/dietstation.riv" download>Download .riv</a>
+      <a class="btn ghost" href="../breathe/dietstation-shapeshift.lottie.json" download>Lottie fallback</a>
+    </div>
+    <p class="meta">Artboard &ldquo;DietStation Breathe&rdquo; 520&times;640, transparent —
+      the app owns buttons and captions, Rive owns only the dots. 4.4&nbsp;MB
+      (embedded fonts); the Lottie is the linear brand loop for non-interactive
+      placements.</p>
+  </section>
+
+  <section class="card">
+    <h2>Splash</h2>
+    <p class="desc">The app's cold-start moment: breathing dots gather into the DS logo —
+      half-speed burst, vacuum, retro pop. It plays once per app session over brand red while
+      the prototypes warm into cache (min 3.5s, hard ceiling 7s).</p>
+    <div class="stagewrap splash-stage" id="splashStage">
+      <canvas id="splashCanvas"></canvas>
+      <div class="loadhint" id="splashHint">loading the splash&hellip;</div>
+      <button class="replay" id="splashReplay" aria-label="Replay" title="Replay">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M4 12a8 8 0 1 0 2.34-5.66M6 3v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="actions">
+      <a class="btn ghost" href="../splash/ds-splash.riv" download>Download .riv (22 KB)</a>
+    </div>
+    <p class="meta">Artboard &ldquo;Splash&rdquo; &middot; same file the hub's native shell
+      plays &middot; timing calls (MIN_MS 3500) are the coordinator's.</p>
+  </section>
+
+  <section class="card">
+    <h2>Rules &amp; pipeline</h2>
+    <p class="desc" style="max-width:66ch">
+      <b style="color:var(--ink)">Never recolor the dots.</b> Ball #FF3848, icons white — the
+      one law from <a href="brand.html" style="color:var(--red)">Brand rules</a>, enforced in
+      the script itself.<br>
+      <b style="color:var(--ink)">Motion is authored in one place.</b> All geometry and
+      choreography live in <code>generate_shapeshift.py</code>; the Lottie JSON, data blobs
+      and the Luau script are compiled from it. Never hand-edit an export.<br>
+      <b style="color:var(--ink)">Rive is the interactive cut, Lottie the linear one.</b>
+      State-machine placements (onboarding, quiz) embed the .riv; passive placements
+      (marketing, previews) use the Lottie loop.<br>
+      <b style="color:var(--ink)">The app owns the chrome.</b> Buttons, captions and pages
+      are HTML/native around a transparent Rive canvas — the artboard renders dots only.</p>
+
+    <h3>Dev handoff</h3>
+    <div class="codewrap">
+      <pre id="webKit">// Web — @rive-app/canvas (the lab vendors 2.41.0 at breathe/rive.js)
+const r = new rive.Rive({
+  src: 'https://rashidalo.github.io/Diet-station/breathe/dietstation.riv',
+  canvas, autoplay: true,
+  stateMachines: 'State Machine 1',
+  autoBind: true,                       // REQUIRED — the SM reads the Machine VM
+  onLoad: () => {
+    r.resizeDrawingSurfaceToCanvas();
+    const st = r.viewModelInstance.number('state');
+    st.value = 1;                       // 1 weight · 2 muscle · 3 pregnancy · 4 gut
+    st.on(v => syncChips(Math.round(v)));  // auto-advance writes back every ~6s
+  },
+});
+
+// Splash: same runtime, src splash/ds-splash.riv, artboard 'Splash',
+// layout: new rive.Layout({ fit: rive.Fit.Contain })</pre>
+      <button class="copycode" data-copy="webKit">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="rnKit">// React Native — rive-react-native
+import Rive, { RiveRef, DataBindBy } from 'rive-react-native';
+
+const ref = useRef&lt;RiveRef&gt;(null);
+&lt;Rive ref={ref}
+  resourceName="dietstation"            // bundle breathe/dietstation.riv
+  artboardName="DietStation Breathe"
+  stateMachineName="State Machine 1"
+  dataBinding={DataBindBy.AutoBind}     // binds the Machine VM
+  style={{ width: 390, height: 480 }} /&gt;
+
+// steer it from your own chips:
+ref.current?.setNumberStateAtPath?.('state', 2, '') // or viewModel API per version
+// keep the canvas transparent and draw buttons/captions natively;
+// splash: resourceName "ds-splash", artboardName "Splash", play once, no inputs.</pre>
+      <button class="copycode" data-copy="rnKit">Copy</button>
+    </div>
+    <p class="meta">Source: Rive editor file &ldquo;untitled&rdquo; 2544677, script
+      DietStationDots &middot; exports land via the watcher and deploy to the flow folders
+      &middot; Rive file edits are the coordinator session's lane — this page only consumes
+      the shipped .rivs.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const copyBtns = document.querySelectorAll('.copycode');
+  copyBtns.forEach(b => b.addEventListener('click', () => {
+    const text = document.getElementById(b.dataset.copy).textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+      b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+    }).catch(() => {});
+  }));
+
+  /* ---------- shapeshift ---------- */
+  const shapeCanvas = document.getElementById('shapeCanvas');
+  const shapeHint = document.getElementById('shapeHint');
+  const chips = [...document.querySelectorAll('#shapeChips .chip')];
+  let shapeStarted = false;
+  function startShape() {
+    if (shapeStarted || !window.rive) return;
+    shapeStarted = true;
+    fetch('../breathe/dietstation.riv').then(r => r.arrayBuffer()).then(buffer => {
+      const r = new rive.Rive({
+        buffer, canvas: shapeCanvas, autoplay: true, autoBind: true,
+        stateMachines: 'State Machine 1',
+        onLoad: () => {
+          r.resizeDrawingSurfaceToCanvas();
+          shapeHint.classList.add('bye');
+          try {
+            const st = r.viewModelInstance.number('state');
+            const sync = v => chips.forEach(c =>
+              c.classList.toggle('sel', parseInt(c.dataset.state, 10) === v));
+            sync(Math.round(st.value));
+            st.on(v => sync(Math.round(v)));
+            chips.forEach(c => c.onclick = () => { st.value = parseInt(c.dataset.state, 10); });
+          } catch (_) {}
+        },
+        onLoadError: () => { shapeHint.textContent = 'could not load the .riv'; },
+      });
+      addEventListener('resize', () => { try { r.resizeDrawingSurfaceToCanvas(); } catch (_) {} });
+    }).catch(() => { shapeHint.textContent = 'could not load the .riv'; });
+  }
+
+  /* ---------- splash ---------- */
+  const splashCanvas = document.getElementById('splashCanvas');
+  const splashHint = document.getElementById('splashHint');
+  let splashBuffer = null, splashRive = null, splashStarted = false;
+  function bootSplash() {
+    if (!splashBuffer || !window.rive) return;
+    if (splashRive) { try { splashRive.cleanup(); } catch (_) {} }
+    splashRive = new rive.Rive({
+      buffer: splashBuffer, canvas: splashCanvas, autoplay: true,
+      artboard: 'Splash',
+      layout: new rive.Layout({ fit: rive.Fit.Contain }),
+      onLoad: () => {
+        splashRive.resizeDrawingSurfaceToCanvas();
+        splashHint.classList.add('bye');
+      },
+      onLoadError: () => { splashHint.textContent = 'could not load the splash'; },
+    });
+  }
+  function startSplash() {
+    if (splashStarted) return;
+    splashStarted = true;
+    fetch('../splash/ds-splash.riv').then(r => r.arrayBuffer()).then(b => {
+      splashBuffer = b; bootSplash();
+    }).catch(() => { splashHint.textContent = 'could not load the splash'; });
+  }
+  document.getElementById('splashReplay').onclick = () => {
+    splashHint.classList.add('bye');
+    bootSplash();
+  };
+  addEventListener('resize', () => { try { splashRive && splashRive.resizeDrawingSurfaceToCanvas(); } catch (_) {} });
+
+  /* lazy start when the stages scroll into view (the .riv is 4.4 MB) */
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      if (e.target.id === 'shapeStage') startShape();
+      if (e.target.id === 'splashStage') startSplash();
+      io.unobserve(e.target);
+    }
+  }, { rootMargin: '200px' });
+  io.observe(document.getElementById('shapeStage'));
+  io.observe(document.getElementById('splashStage'));
+  window.__dsRive = { startShape, startSplash };
+})();
+</script>
+</body>
+</html>

@@ -150,6 +150,8 @@
   /* ---- system cards ---- */
   @font-face { font-family: 'DietStation Dot'; src: url('font/DietStationDot-Medium.woff2') format('woff2');
     font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Avenir Next World'; src: url('font/AvenirNextWorld-Demi.otf');
+    font-weight: 600; font-display: swap; }
   .glasspeek { position: relative; height: 78px; border-radius: 14px; margin-top: 16px; overflow: hidden;
     background: linear-gradient(90deg, #ED1C24 0 25%, #E4A70F 25% 50%, #E5E7EB 50% 75%, #1A1114 75% 100%);
     display: flex; align-items: center; gap: 12px; padding: 0 18px; }
@@ -210,6 +212,23 @@
   .varpeek .vp-al { background: #FFF9E1; color: #584703; }
   .varpeek .vp-m { background: #E9F1D0; color: #365512; }
   .varpeek .vp-a { color: #c9c9cf; flex: none; }
+  .rivepeek { margin-top: 16px; padding: 18px 20px; border-radius: 14px; background: #ED1C24;
+    display: flex; gap: 16px; align-items: center; overflow: hidden; }
+  .rivepeek .rball { flex: none; width: 34px; height: 34px; border-radius: 50%;
+    background: #FF3848; animation: rvbreathe 3.2s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes rvbreathe { 0%,100% { transform: scale(.94); } 45% { transform: scale(1.12); } }
+  .rivepeek .rdots { display: flex; gap: 6px; align-items: center; }
+  .rivepeek .rdots i { width: 8px; height: 8px; border-radius: 50%; background: #fff;
+    animation: rvdot 3.2s cubic-bezier(.5,0,.5,1) infinite; }
+  .rivepeek .rdots i:nth-child(2) { animation-delay: .18s; }
+  .rivepeek .rdots i:nth-child(3) { animation-delay: .36s; }
+  .rivepeek .rdots i:nth-child(4) { animation-delay: .54s; }
+  .rivepeek .rdots i:nth-child(5) { animation-delay: .72s; }
+  @keyframes rvdot { 0%,100% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-4px) scale(1.25); } }
+  .rivepeek .rlbl { margin-left: auto; font: 500 11px/1 'Urbane Rounded', sans-serif;
+    color: rgba(255,255,255,.85); text-transform: uppercase; letter-spacing: .1em;
+    white-space: nowrap; }
 
   /* ---- native TestFlight shell: prototypes only, App Store promo cards ---- */
   body.native { padding-top: env(safe-area-inset-top, 0px); }
@@ -551,7 +570,7 @@
   </section>
 
   <section class="tabpane" id="pane-system">
-    <div class="count" id="syscount">8 elements</div>
+    <div class="count" id="syscount">9 elements</div>
 
     <section class="card">
       <div class="top">
@@ -602,11 +621,11 @@
         <span class="tag">Type system</span>
         <span class="pill ready">Live</span>
       </div>
-      <p class="desc">Three voices: Urbane Rounded speaks, Proxima Nova explains, DietStation
-        Dot performs. The full scale from display to pill text, with the rules for when each
-        family talks.</p>
+      <p class="desc">Four voices: Urbane Rounded speaks, Proxima Nova explains, Avenir Next
+        World carries the Arabic experience, and DietStation Dot performs. The responsive
+        scale from the Figma tokens, applied per typeface.</p>
       <div class="tspeek" aria-hidden="true">
-        <b>Aa</b><s>Aa</s><u>aa</u><small>Urbane &middot; Proxima &middot; Dot</small>
+        <b>Aa</b><s>Aa</s><b dir="rtl" style="font-family:'Avenir Next World','Urbane Rounded',sans-serif">&#1593;&#1571;</b><u>aa</u><small>Urbane &middot; Proxima &middot; Avenir &middot; Dot</small>
       </div>
       <div class="actions">
         <a class="btn primary" href="system/typography.html">Open Typography</a>
@@ -691,6 +710,27 @@
       </div>
       <p class="meta">Durations are part of the token &middot; Reanimated + SwiftUI mappings
         included.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Rive Elements</h2>
+        <span class="tag">Brand motion</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">The living brand pieces, running live — the shapeshift dot-field
+        (875 scripted dots morphing between the four health features, steerable by state)
+        and the cold-start splash, straight from the shipped .riv files.</p>
+      <div class="rivepeek" aria-hidden="true">
+        <span class="rball"></span>
+        <span class="rdots"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="rlbl">shapeshift &middot; splash</span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/rive.html">Open Rive Elements</a>
+      </div>
+      <p class="meta">State machine map + web and React Native embed kits &middot; .riv and
+        Lottie downloads.</p>
     </section>
 
     <section class="card">
