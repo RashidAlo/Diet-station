@@ -102,9 +102,9 @@
   .sbar .g { flex: 1; display: flex; gap: 7px; align-items: center; justify-content: center;
     padding-top: 1px; }
   .sbar .g img { display: block; }
-  body:not(.desktop) .hd { padding-top: calc(var(--top-pad) + 26px); }
+  body:not(.desktop) .hd { padding-top: calc(var(--top-pad) + 4px); }
 
-  .hd { display: flex; align-items: center; gap: 12px; padding: 18px 18px 20px; }
+  .hd { display: flex; align-items: center; gap: 12px; padding: 10px 18px 20px; }
   .hd-txt { flex: 1; min-width: 0; }
   .hd-txt h1 { font: 600 20px/24px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
   .hd-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9;
@@ -367,7 +367,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 9';
+const BUILD = 'calendar 2026-09-08 · 10';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -420,7 +420,11 @@ function dayStatus(D, M) {
   if (t < td) return (td - t) / DAYMS <= 2 ? 'rate' : 'star';
   if (t === td) return 'today';
   if (lockAt(D) <= M.nowT) return 'auto';
-  if (M.soon && t === M.soon.getTime()) return 'soon';
+  /* the deadline badge only appears once a day is truly nearing its lock —
+     inside the final 24h of its selection window, not on whichever far-off
+     day merely happens to be next */
+  if (M.soon && t === M.soon.getTime() &&
+      lockAt(D) - M.nowT <= 24 * 3600e3) return 'soon';
   return 'add';
 }
 
