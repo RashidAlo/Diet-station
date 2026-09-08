@@ -173,15 +173,15 @@ struct HomeScreenNative: View {
             arrival(tabBar, 5)
                 .padding(.bottom, 16)
         }
-        .onLongPressGesture(minimumDuration: 0.6) { state.labOpen = true }
-        /* the lab's house gesture, native: two completed taps + a held third
-           contact — the same 3-touchstart pattern as the web detectors, so
-           triple-tap-and-hold opens the controls on every surface */
-        .simultaneousGesture(
-            TapGesture(count: 2)
-                .sequenced(before: LongPressGesture(minimumDuration: 0.42, maximumDistance: 16))
-                .onEnded { _ in state.labOpen = true }
-        )
+        /* THE lab house gesture (Rashid: singular, every surface, every
+           prototype): triple-tap-and-hold, matching lab-shell's tuned state
+           machine exactly — see TripleTapHoldGesture below, the standard
+           scaffold for every native pilot. The old plain long-press is
+           retired (it fired when holding widgets). */
+        .gesture(TripleTapHoldGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            state.labOpen = true
+        })
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */
@@ -880,6 +880,92 @@ final class FlowPreloader {
         let stamp = Int(Date().timeIntervalSince1970)
         if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
             e.web.load(URLRequest(url: url))
+        }
+    }
+}
+
+// MARK: - The lab house gesture (standard scaffold for every native pilot)
+
+/// Triple-tap-and-hold, matching lab-shell's tripleTapHold() state machine:
+/// taps counted on touch-DOWN with ≤550ms between downs; the 3rd contact must
+/// be HELD ≥380ms (release earlier = no fire); ≤16pt drift allowed during the
+/// hold; a second simultaneous finger cancels. Stays in .possible until it
+/// fires, so normal taps/scrolls are never delayed.
+final class TripleTapHoldRecognizer: UIGestureRecognizer {
+    private var tapCount = 0
+    private var lastDown: TimeInterval = 0
+    private var holdOrigin: CGPoint = .zero
+    private var holdTimer: Timer?
+
+    private func cancelSequence() {
+        holdTimer?.invalidate()
+        holdTimer = nil
+        tapCount = 0
+    }
+
+    override func reset() {
+        super.reset()
+        cancelSequence()
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        if (event.allTouches?.count ?? 1) > 1 {   // second finger cancels
+            cancelSequence()
+            return
+        }
+        guard let t = touches.first else { return }
+        let now = t.timestamp
+        if now - lastDown > 0.55 { tapCount = 0 }
+        lastDown = now
+        tapCount += 1
+        if tapCount >= 3 {
+            holdOrigin = t.location(in: view)
+            holdTimer = Timer.scheduledTimer(withTimeInterval: 0.38, repeats: false) { [weak self] _ in
+                guard let self, self.tapCount >= 3 else { return }
+                self.state = .recognized
+            }
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard tapCount >= 3, holdTimer != nil, let t = touches.first else { return }
+        let p = t.location(in: view)
+        if hypot(p.x - holdOrigin.x, p.y - holdOrigin.y) > 16 {
+            cancelSequence()   // drifted — this became a scroll/drag
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        if holdTimer != nil { cancelSequence() }   // released before 380ms
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        cancelSequence()
+    }
+}
+
+/// SwiftUI bridge — attach with `.gesture(TripleTapHoldGesture { … })`.
+@available(iOS 26.0, *)
+struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
+    let onFire: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func makeUIGestureRecognizer(context: Context) -> TripleTapHoldRecognizer {
+        let r = TripleTapHoldRecognizer()
+        r.delegate = context.coordinator
+        return r
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: TripleTapHoldRecognizer, context: Context) {
+        if recognizer.state == .ended { onFire() }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        // never block the pilot's own taps, scrolls, or other gestures
+        func gestureRecognizer(_ g: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
         }
     }
 }
