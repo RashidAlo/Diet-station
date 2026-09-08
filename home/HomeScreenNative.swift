@@ -187,8 +187,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.clear.interactive(),
-                         in: .rect(cornerRadius: 23))
+            .glassEffect(.clear.interactive())   // Apple default shape (capsule)
     }
 
     // MARK: promo banner
@@ -206,19 +205,26 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.clear, in: .rect(cornerRadius: 23))
+        .glassEffect(.clear)   // Apple default capsule, notification-pill structure
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
 
+    // Apple's stock glass button (glassProminent in white when urgent)
     private func pill(_ label: String, urgent: Bool = false) -> some View {
-        Text(label)
-            .font(DS.urbane(12))
-            .foregroundStyle(urgent ? DS.ink : DS.onColor)
-            .frame(maxWidth: .infinity).frame(height: 36)
-            .background(urgent ? AnyShapeStyle(DS.onColor) : AnyShapeStyle(.white.opacity(0.16)),
-                        in: Capsule())
-            .fixedSize(horizontal: true, vertical: false)
+        Group {
+            if urgent {
+                Button(label) { }
+                    .buttonStyle(.glassProminent)
+                    .tint(DS.onColor)
+                    .foregroundStyle(DS.ink)
+            } else {
+                Button(label) { }
+                    .buttonStyle(.glass)
+                    .foregroundStyle(DS.onColor)
+            }
+        }
+        .font(DS.urbane(12))
     }
 
     // MARK: widget grid — the modular system
@@ -259,18 +265,20 @@ struct HomeScreenNative: View {
                  + Text(words.1).font(DS.urbane(19.6, .semibold)).foregroundStyle(.white))
                     .shadow(color: .black.opacity(0.1), radius: 5.6, y: 1.4)
                 Button { } label: {
-                    Text("Change").font(DS.urbane(14)).foregroundStyle(DS.onColor)
-                        .frame(maxWidth: .infinity).frame(height: 41)
-                        .background(.white.opacity(0.16), in: Capsule())
+                    Text("Change").font(DS.urbane(14))
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.glass)
+                .foregroundStyle(DS.onColor)
+                .controlSize(.large)
                 .padding(.top, 10)
             }
             .padding(EdgeInsets(top: 28, leading: 20, bottom: 22, trailing: 20))
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.clear, in: .rect(cornerRadius: 30))
+        .glassEffect(.clear, in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("plan", in: glassNS)
-        .clipShape(RoundedRectangle(cornerRadius: 30))
+        .clipShape(ConcentricRectangle(corners: .concentric(minimum: .fixed(26)), isUniform: true))
     }
 
     // days-left: re-shapes with the height it is given (tall / wide / slim)
@@ -281,7 +289,7 @@ struct HomeScreenNative: View {
             DaysContent(state: state, shape: shape)
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.clear, in: .rect(cornerRadius: 27))
+        .glassEffect(.clear, in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -297,7 +305,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 19)
         .frame(height: 60)
-        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
+        .glassEffect(.clear.interactive())   // Apple default capsule pill
         .glassEffectID("disc", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -312,7 +320,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 84, maxHeight: .infinity)   // days' layoutPriority must not crush it
-        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
+        .glassEffect(.clear.interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -492,12 +500,25 @@ private struct DaysContent: View {
         .minimumScaleFactor(0.8)   // wide shape leaves ~63pt beside the ring
     }
 
+    // Apple's stock glass button; prominent white when expired
     var renew: some View {
-        Text("Renew").font(DS.urbane(12, expired ? .semibold : .medium))
-            .foregroundStyle(expired ? DS.ink : DS.onColor)
-            .frame(maxWidth: .infinity).frame(height: 36)
-            .background(expired ? AnyShapeStyle(DS.onColor) : AnyShapeStyle(.white.opacity(0.16)),
-                        in: Capsule())
+        Group {
+            if expired {
+                Button { } label: {
+                    Text("Renew").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .tint(DS.onColor)
+                .foregroundStyle(DS.ink)
+            } else {
+                Button { } label: {
+                    Text("Renew").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glass)
+                .foregroundStyle(DS.onColor)
+            }
+        }
+        .font(DS.urbane(12, expired ? .semibold : .medium))
     }
 
     var body: some View {
