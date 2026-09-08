@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Variables — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 56ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2;
+    max-height: 380px; overflow-y: auto; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+  .chipbtn { font: 500 12px/1 'Urbane Rounded', sans-serif; border: none; cursor: pointer;
+    border-radius: 999px; padding: 9px 15px; background: var(--ground); color: var(--ink-soft); }
+  .chipbtn.on { background: var(--ink); color: #fff; }
+  .chiprow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* ---- tree diagram ---- */
+  .tree { margin-top: 18px; display: grid; grid-template-columns: 1fr 26px 1fr 26px 1fr; gap: 0;
+    align-items: stretch; }
+  .tnode { border-radius: 14px; padding: 14px 15px; }
+  .tnode .tn { font: 600 14px/1.3 'Urbane Rounded', sans-serif; }
+  .tnode .tc { font: 500 11px/1.4 'Urbane Rounded', sans-serif; opacity: .75; margin-top: 2px; }
+  .tnode .td { font-size: 12px; line-height: 1.5; margin-top: 8px; opacity: .9; }
+  .tnode .tm { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+  .tnode .tm span { font: 500 10px/1 'Urbane Rounded', sans-serif; padding: 5px 8px 4px;
+    border-radius: 999px; background: rgba(255,255,255,.65); }
+  .t-brand { background: #FDE6E6; color: #721515; }
+  .t-alias { background: #FFF9E1; color: #584703; }
+  .t-map { background: #E9F1D0; color: #365512; }
+  .tarrow { display: flex; align-items: center; justify-content: center; color: #c9c9cf;
+    font-size: 17px; }
+  .sidecols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .tside { border-radius: 14px; padding: 12px 14px; background: var(--ground); }
+  .tside .tn { font: 600 12.5px/1.35 'Urbane Rounded', sans-serif; }
+  .tside .td { font-size: 11.5px; color: var(--ink-soft); line-height: 1.45; margin-top: 4px; }
+  @media (max-width: 600px) {
+    .tree { grid-template-columns: 1fr; }
+    .tarrow { transform: rotate(90deg); padding: 4px 0; }
+    .sidecols { grid-template-columns: 1fr; }
+  }
+
+  /* ---- ramps ---- */
+  .ramp { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .ramp .rname { flex: none; width: 92px; font: 600 12px/1.35 'Urbane Rounded', sans-serif;
+    overflow-wrap: anywhere; }
+  .ramp .rcells { flex: 1; display: flex; border-radius: 9px; overflow: hidden; height: 34px; }
+  .ramp .rcells button { flex: 1; border: none; cursor: pointer; padding: 0; min-width: 0; }
+  .ramp .rcells button:hover { outline: 2px solid #fff; outline-offset: -3px; }
+  .rampnote { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; min-height: 16px;
+    font-family: ui-monospace, Menlo, monospace; }
+  .stepshead { display: flex; gap: 10px; margin-top: 2px; }
+  .stepshead .rname { flex: none; width: 92px; }
+  .stepshead .cells { flex: 1; display: flex; }
+  .stepshead .cells span { flex: 1; text-align: center; font: 500 8.5px/1 'Urbane Rounded', sans-serif;
+    color: var(--ink-soft); min-width: 0; }
+
+  /* ---- alias roles ---- */
+  .role { display: flex; align-items: center; gap: 12px; padding: 11px 0;
+    border-bottom: 0.5px solid var(--line); flex-wrap: wrap; }
+  .role:last-child { border-bottom: 0; }
+  .role .rl { flex: none; width: 118px; font: 600 13.5px/1.3 'Urbane Rounded', sans-serif; }
+  .role .arrow { color: #c9c9cf; flex: none; }
+  .role .rt { flex: none; font: 12px/1.4 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    min-width: 120px; }
+  .role .rsw { display: flex; border-radius: 6px; overflow: hidden; height: 20px; flex: 1;
+    min-width: 120px; }
+  .role .rsw i { flex: 1; }
+
+  /* ---- mapped explorer ---- */
+  .explorer { margin-top: 16px; border-radius: 16px; padding: 18px;
+    transition: background .35s ease; }
+  .explorer.light { background: var(--ground); }
+  .explorer.dark { background: #161A20; }
+  .exhead { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .modeswitch { margin-left: auto; display: inline-flex; background: rgba(127,127,127,.18);
+    border-radius: 999px; padding: 3px; }
+  .modeswitch button { border: none; cursor: pointer; border-radius: 999px; padding: 8px 15px;
+    font: 600 12px/1 'Urbane Rounded', sans-serif; background: transparent; color: #8e8e93; }
+  .explorer.light .modeswitch button.on { background: #fff; color: #1d1d1f;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .explorer.dark .modeswitch button.on { background: #38404A; color: #fff; }
+  .exlist { margin-top: 14px; max-height: 460px; overflow-y: auto; border-radius: 10px; }
+  .exrow { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 10px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .explorer.light .exrow:hover { background: rgba(0,0,0,.04); }
+  .explorer.dark .exrow:hover { background: rgba(255,255,255,.06); }
+  .exrow .sw { flex: none; width: 30px; height: 30px; border-radius: 9px;
+    box-shadow: inset 0 0 0 .5px rgba(127,127,127,.35); }
+  .exrow .nm { flex: 1; min-width: 0; font: 12px/1.45 ui-monospace, Menlo, monospace;
+    overflow-wrap: anywhere; }
+  .explorer.light .exrow .nm { color: #1d1d1f; }
+  .explorer.dark .exrow .nm { color: #f0f3f7; }
+  .exrow .chain { flex: none; text-align: right; font: 10.5px/1.5 ui-monospace, Menlo, monospace; }
+  .explorer.light .exrow .chain { color: #6e6e73; }
+  .explorer.dark .exrow .chain { color: #8695a7; }
+  .exrow .chain b { font-weight: 600; }
+  .explorer.light .exrow .chain b { color: #1d1d1f; }
+  .explorer.dark .exrow .chain b { color: #fff; }
+  .excount { font: 500 11px/1.5 'Urbane Rounded', sans-serif; margin-top: 10px; }
+  .explorer.light .excount { color: var(--ink-soft); }
+  .explorer.dark .excount { color: #8695a7; }
+  @media (max-width: 560px) { .exrow .chain { display: none; } }
+
+  /* ---- responsive ramp ---- */
+  .rrow { display: flex; align-items: baseline; gap: 14px; padding: 10px 0;
+    border-bottom: 0.5px solid var(--line); }
+  .rrow:last-child { border-bottom: 0; }
+  .rrow .rrn { flex: none; width: 100px; font: 500 11px/1.4 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
+  .rrow .rrp { flex: 1; min-width: 0; font-family: 'Urbane Rounded', sans-serif; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em;
+    transition: font-size .3s cubic-bezier(.3,.8,.3,1); }
+  .rrow .rrv { flex: none; font: 11px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    text-align: right; }
+  .spbars { margin-top: 6px; }
+  .spbar { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+  .spbar .sn { flex: none; width: 100px; font: 500 11px/1.4 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
+  .spbar .sb { height: 16px; border-radius: 5px; background: var(--red-soft);
+    border: 1px dashed rgba(237,28,36,.4); transition: width .35s cubic-bezier(.3,.8,.3,1);
+    flex: none; max-width: 60%; }
+  .spbar .sv { font: 11px/1 ui-monospace, Menlo, monospace; color: var(--ink-soft); }
+
+  /* ---- review notes ---- */
+  .note { display: flex; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--line); }
+  .note:last-child { border-bottom: 0; }
+  .note .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+  .note .dot.q { background: #FFB800; }
+  .note .dot.b { background: var(--red); }
+  .note .nb { flex: 1; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+  .note .nb b { color: var(--ink); font-family: 'Urbane Rounded', sans-serif; font-weight: 600; }
+  .note .nb code { font: 12px/1.5 ui-monospace, Menlo, monospace; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+<script src="variables-data.js"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Variables</h1>
+  <p>The token architecture of the DietStation Design System, mapped 1:1 from the Figma
+    file — every ramp, alias and mapped role below is read from the real variables, not
+    retyped. Brand is the roots, alias is the trunk, mapped is the leaves.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The tree</h2>
+    <p class="desc">Three color collections chained by aliases, plus three side collections.
+      Designers and devs only ever consume the <b>mapped</b> layer — brand and alias exist so
+      one change at the root re-themes everything downstream.</p>
+    <div class="tree">
+      <div class="tnode t-brand">
+        <div class="tn">brand</div>
+        <div class="tc">270 variables &middot; the roots</div>
+        <div class="td">Raw values, no roles: 10 core + 9 secondary color ramps (13 steps,
+          100&ndash;1200), the master number scale, font families &amp; weights.</div>
+        <div class="tm"><span>English</span><span>Arabic</span><span>Dietstation</span></div>
+      </div>
+      <div class="tarrow">&rarr;</div>
+      <div class="tnode t-alias">
+        <div class="tn">alias</div>
+        <div class="tc">147 variables &middot; the trunk</div>
+        <div class="td">Ramps get their role: primary, secondary, tertiary, highlight,
+          success, error, warning, information, neutrals — plus border width &amp; radius
+          (which stop here).</div>
+        <div class="tm"><span>one mode</span></div>
+      </div>
+      <div class="tarrow">&rarr;</div>
+      <div class="tnode t-map">
+        <div class="tn">mapped</div>
+        <div class="tc">165 variables &middot; the leaves</div>
+        <div class="td">What gets applied: surface / text / icon / border &times; role &times;
+          state. Light and dark are decided here, never upstream.</div>
+        <div class="tm"><span>Light</span><span>Dark</span></div>
+      </div>
+    </div>
+    <div class="sidecols">
+      <div class="tside"><div class="tn">responsive</div>
+        <div class="td">49 vars &middot; desktop / mobile — type sizes, line heights, paragraph
+          spacing, layout spacing.</div></div>
+      <div class="tside"><div class="tn">gradients &amp; opacity</div>
+        <div class="td">24 vars &middot; Light / Dark — gradient stops + slate/white opacity
+          ladders.</div></div>
+      <div class="tside"><div class="tn">Direction</div>
+        <div class="td">1 var &middot; LTR / RTL — the isRTL boolean the Arabic experience
+          flips on.</div></div>
+    </div>
+    <p class="meta">The DietStation twist on the classic three-tier setup: <b>brand modes
+      localize typography</b> — English (Urbane + Proxima), Arabic (Avenir Next World), and a
+      Dietstation display mode (all-Urbane) — so language is a brand-level switch, while
+      light/dark stays a mapped-level switch and device size lives in responsive.</p>
+  </section>
+
+  <section class="card">
+    <h2>Brand — the roots</h2>
+    <p class="desc">Every ramp runs 100&rarr;1200 with a 150 half-step (station red adds a 650
+      for the pressed brand red). Tap any cell to copy its hex. Note <b>station red/600 =
+      #ED1C24</b> — the brand red lives mid-ramp, not at the top.</p>
+    <div class="chiprow" id="brandTabs">
+      <button class="chipbtn on" data-set="core">Core ramps</button>
+      <button class="chipbtn" data-set="secondary">Secondary ramps</button>
+      <button class="chipbtn" data-set="numbers">Scale &amp; type</button>
+    </div>
+    <div id="brandStage" style="margin-top:8px"></div>
+    <div class="rampnote" id="rampNote">hover or tap a cell for step + hex &middot; tap copies</div>
+  </section>
+
+  <section class="card">
+    <h2>Alias — the roles</h2>
+    <p class="desc">Whole ramps get renamed to what they mean. The DietStation call:
+      <b>primary is grey</b> — the interface's workhorse tone — and the brand red is
+      <b>secondary</b>, kept loud by being scarce. Error borrows the rose ramp so it never
+      clashes with brand red.</p>
+    <div id="roleList" style="margin-top:6px"></div>
+    <h3>Numbers that stop at alias</h3>
+    <p class="desc" style="font-size:13.5px">Border width and radius alias the master scale and
+      go no further — a mapped copy would just repeat them (the same simplification the setup
+      video lands on).</p>
+    <div style="margin-top:10px; font: 12px/2 ui-monospace, Menlo, monospace; color: var(--ink-soft)">
+      border width: xs&nbsp;1 &middot; sm&nbsp;2 &middot; md&nbsp;4 &nbsp;&nbsp;|&nbsp;&nbsp;
+      border radius: none&nbsp;0 &middot; 50&hellip;800 = 2&hellip;32 &middot; round&nbsp;1024
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Mapped — the leaves</h2>
+    <p class="desc">All 165 consumable tokens: surface / text / icon / border &times; role
+      &times; state. Flip the mode and watch every chain re-resolve through alias down to the
+      brand hex — this is exactly what the Figma file does. Tap a row to copy the resolved
+      hex.</p>
+    <div class="explorer light" id="explorer">
+      <div class="exhead">
+        <div class="chiprow" style="margin:0" id="groupTabs">
+          <button class="chipbtn on" data-g="surface">Surface</button>
+          <button class="chipbtn" data-g="text">Text</button>
+          <button class="chipbtn" data-g="icon">Icon</button>
+          <button class="chipbtn" data-g="border">Border</button>
+        </div>
+        <div class="modeswitch" id="modeSwitch">
+          <button class="on" data-m="0">Light</button>
+          <button data-m="1">Dark</button>
+        </div>
+      </div>
+      <div class="exlist" id="exList"></div>
+      <div class="excount" id="exCount"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Responsive — type &amp; spacing</h2>
+    <p class="desc">One collection carries everything that changes with device size: a
+      hero-to-caption type ramp (size / line height / paragraph spacing) and the layout
+      spacing scale. Flip the mode to see the mobile cut.</p>
+    <div class="chiprow">
+      <div class="modeswitch" style="margin:0; background:#e9e9ec" id="respSwitch">
+        <button class="on" data-m="0" style="background:#fff;color:#1d1d1f;box-shadow:0 1px 2px rgba(0,0,0,.08)">Desktop</button>
+        <button data-m="1">Mobile</button>
+      </div>
+    </div>
+    <div id="typeRamp" style="margin-top:10px"></div>
+    <h3>Layout spacing</h3>
+    <div class="spbars" id="spBars"></div>
+    <p class="meta">Fonts come from brand: heading + paragraph families and the 100&ndash;800
+      weight names switch per brand mode (English / Arabic / Dietstation). Composite text
+      styles in Figma (body-md/medium, Button/button-md&hellip;) bind these to the responsive
+      sizes.</p>
+  </section>
+
+  <section class="card">
+    <h2>Review notes — to work through together</h2>
+    <p class="desc">Things the dump surfaced that look like accidents or open questions.
+      Nothing here is changed on the lab side — flag what you want fixed in Figma and I'll
+      keep this page in sync.</p>
+    <div style="margin-top:8px">
+      <div class="note"><span class="dot b"></span><div class="nb"><b>Two stray Arabic-mode
+        values in brand:</b> <code>grey/250</code> is #EDEDED in English but #F2F2F2 in Arabic,
+        and <code>yellow/1200</code> is #322802 vs #332222. Ramp hexes should almost certainly
+        be identical across brand modes — these look like accidental edits while the Arabic
+        mode was active.</div></div>
+      <div class="note"><span class="dot b"></span><div class="nb"><b>Naming typos in
+        mapped/gradients:</b> <code>surface/primary/default-subtle-hover-atl</code> (&ldquo;atl&rdquo;
+        &rarr; &ldquo;alt&rdquo;), <code>full gradients/defualt stop 2</code>,
+        <code>border/warning/action-subtle-hover</code> (others say &ldquo;default-subtle-hover&rdquo;),
+        and <code>icon/warning/on-default-subtle-hover</code> (others say
+        &ldquo;on-color-subtle-hover&rdquo;). Cheap to fix now, expensive after dev handoff.</div></div>
+      <div class="note"><span class="dot q"></span><div class="nb"><b>Duplicate collection:</b>
+        &ldquo;brand exported from Diet Station Design System 1.0&rdquo; (119 vars, one mode)
+        sits beside the real brand collection — looks like an import artifact worth
+        deleting.</div></div>
+      <div class="note"><span class="dot q"></span><div class="nb"><b>Both red ramps:</b>
+        brand has <code>red</code> (unused by alias) and <code>station red</code> (the real
+        secondary). Keep plain red as a spare, or retire it?</div></div>
+      <div class="note"><span class="dot q"></span><div class="nb"><b>neutral light blends two
+        ramps</b> (grey 100&ndash;800, slate 900&ndash;1200) while neutral dark is all grey —
+        intentional warm-dark ink? It's a nice trick; worth writing down as a rule if so.</div></div>
+      <div class="note"><span class="dot q"></span><div class="nb"><b>Lab &harr; Figma deltas
+        to reconcile:</b> the lab's Foundations page documents the shipped prototypes
+        (ink #1D1D1F, ground #F5F5F7, iOS green #34C759), while Figma maps text to slate
+        #0B0E12 and success to emerald #26A659. Once you bless the Figma tokens, I'll re-point
+        the lab pages and the flow CSS to match.</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <p class="desc">The mapped layer resolved to hex as CSS custom properties — light values on
+      <code>:root</code>, dark under <code>[data-theme="dark"]</code> — generated live from the
+      dump above, so it always matches this page.</p>
+    <div class="codewrap">
+      <pre id="cssOut">generating&hellip;</pre>
+      <button class="copycode" id="cssCopy">Copy</button>
+    </div>
+    <p class="meta">Source of truth stays the Figma file; this page re-dumps from it, never the
+      other way around. RN/SwiftUI mapping comes once we've reconciled the review notes.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  /* ---------- parse the dumps ---------- */
+  function parse(text) {
+    const map = {};
+    for (const line of text.split('\n')) {
+      const m = line.match(/^(.*?) \[([CFSB])\] (.*)$/);
+      if (!m) continue;
+      const [, name, type, raw] = m;
+      let val;
+      if (raw.includes('=') && raw.includes(' ; ')) {
+        val = {};
+        for (const part of raw.split(' ; ')) {
+          const i = part.indexOf('=');
+          val[part.slice(0, i)] = part.slice(i + 1);
+        }
+      } else val = raw;
+      map[name] = { type, val };
+    }
+    return map;
+  }
+  const BRAND = parse(window.DS_BRAND);
+  const ALIAS = parse(window.DS_ALIAS);
+  const MAPPED = parse(window.DS_MAPPED);
+  const RESP = parse(window.DS_RESPONSIVE);
+
+  const brandVal = (name, modeIdx = 0) => {
+    const v = BRAND[name]; if (!v) return null;
+    if (typeof v.val === 'object') return v.val[window.DS_BRAND_MODES[modeIdx]];
+    return v.val;
+  };
+  const resolveAlias = (aliasName) => {
+    const a = ALIAS[aliasName]; if (!a) return { hex: null, brand: null };
+    const target = String(a.val).replace('→', '');
+    return { hex: brandVal(target), brand: target };
+  };
+  const resolveMapped = (name, mode /*0=Light 1=Dark*/) => {
+    const mv = MAPPED[name]; if (!mv) return null;
+    let ref = typeof mv.val === 'object' ? (mode ? mv.val.D : mv.val.L) : mv.val;
+    ref = String(ref).replace('→', '');
+    const r = resolveAlias(ref);
+    return { alias: ref, brand: r.brand, hex: r.hex };
+  };
+  const copy = (t, after) => {
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+      .then(after).catch(() => {});
+  };
+
+  /* ---------- brand ramps ---------- */
+  const STEPS = [100,150,200,250,300,400,500,600,650,700,800,900,1000,1100,1200];
+  const CORE = ['grey','slate','station red','red','emerald','lime','orange','yellow','blue'];
+  const SECONDARY = ['purple','gold','brown','navy','cyan','Indigo','rose','lime','teal']
+    .map(n => 'secondary scales/' + n);
+  const note = document.getElementById('rampNote');
+  function ramps(list, prefixStrip) {
+    const frag = document.createDocumentFragment();
+    for (const scale of list) {
+      const row = document.createElement('div');
+      row.className = 'ramp';
+      const label = scale.replace(prefixStrip, '');
+      row.innerHTML = '<span class="rname">' + label + '</span>';
+      const cells = document.createElement('div');
+      cells.className = 'rcells';
+      for (const s of STEPS) {
+        const hexv = brandVal(scale + '/' + s);
+        if (!hexv) continue;
+        const b = document.createElement('button');
+        b.style.background = hexv;
+        b.title = scale + '/' + s + ' · ' + hexv.toUpperCase();
+        const show = () => { note.textContent = scale + '/' + s + ' = ' + hexv.toUpperCase(); };
+        b.addEventListener('mouseenter', show);
+        b.addEventListener('click', () => {
+          show();
+          copy(hexv.toUpperCase(), () => { note.textContent = scale + '/' + s + ' = ' + hexv.toUpperCase() + '  ·  copied ✓'; });
+        });
+        cells.appendChild(b);
+      }
+      row.appendChild(cells);
+      frag.appendChild(row);
+    }
+    return frag;
+  }
+  const stage = document.getElementById('brandStage');
+  function renderBrand(which) {
+    stage.innerHTML = '';
+    if (which === 'core') {
+      const wb = document.createElement('div');
+      wb.className = 'ramp';
+      wb.innerHTML = '<span class="rname">white &amp; black</span>';
+      const c = document.createElement('div'); c.className = 'rcells';
+      [['white','#ffffff'],['black','#000000']].forEach(([n,h]) => {
+        const b = document.createElement('button');
+        b.style.background = h; b.title = 'white & black/' + n;
+        b.addEventListener('click', () => copy(h.toUpperCase(), () => { note.textContent = 'white & black/' + n + ' = ' + h.toUpperCase() + '  ·  copied ✓'; }));
+        c.appendChild(b);
+      });
+      wb.appendChild(c); stage.appendChild(wb);
+      stage.appendChild(ramps(CORE, ''));
+    } else if (which === 'secondary') {
+      stage.appendChild(ramps(SECONDARY, 'secondary scales/'));
+    } else {
+      const scaleVals = Object.keys(BRAND).filter(k => k.startsWith('scale/'))
+        .map(k => [parseInt(k.split('/')[1]), BRAND[k].val])
+        .sort((a,b) => a[0]-b[0]);
+      const wrap = document.createElement('div');
+      wrap.innerHTML = '<h3 style="margin-top:10px">Master scale (scale/0 – scale/1900)</h3>' +
+        '<div style="font:12px/2 ui-monospace, Menlo, monospace; color:var(--ink-soft); overflow-wrap:anywhere">' +
+        scaleVals.map(([s,v]) => s + '&rarr;<b style="color:var(--ink)">' + v + '</b>').join(' &nbsp; ') +
+        '</div>' +
+        '<h3>Type strings (per brand mode)</h3>' +
+        '<div style="overflow-x:auto"><table style="border-collapse:collapse; font-size:12.5px; min-width:420px">' +
+        '<tr style="text-align:left; color:var(--ink-soft); font-family:\'Urbane Rounded\',sans-serif; font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.08em">' +
+        '<th style="padding:6px 14px 6px 0">variable</th><th style="padding:6px 14px">English</th><th style="padding:6px 14px">Arabic</th><th style="padding:6px 14px">Dietstation</th></tr>' +
+        ['font style/heading','font style/paragraph','font weight/400','font weight/500','font weight/600'].map(k => {
+          const v = BRAND[k].val;
+          const cells = typeof v === 'object'
+            ? window.DS_BRAND_MODES.map(m => v[m])
+            : [v, v, v];
+          return '<tr style="border-top:.5px solid var(--line)"><td style="padding:7px 14px 7px 0; font-family:ui-monospace,Menlo,monospace; font-size:12px">' + k + '</td>' +
+            cells.map(c => '<td style="padding:7px 14px">' + c + '</td>').join('') + '</tr>';
+        }).join('') + '</table></div>' +
+        '<p class="meta">Weights run 100 extra light &rarr; 800 black; 500 is Semibold / demi / Demi Bold depending on the mode&rsquo;s family.</p>';
+      stage.appendChild(wrap);
+    }
+  }
+  document.querySelectorAll('#brandTabs .chipbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#brandTabs .chipbtn').forEach(x => x.classList.toggle('on', x === b));
+      renderBrand(b.dataset.set);
+    });
+  });
+  renderBrand('core');
+
+  /* ---------- alias roles ---------- */
+  const ROLES = [
+    ['primary', 'grey', 'the interface workhorse'],
+    ['secondary', 'station red', 'the brand voice'],
+    ['tertiary', 'yellow', 'accents & VIP'],
+    ['highlight', 'lime', 'fresh & highlights'],
+    ['success', 'emerald', 'positive states'],
+    ['error', 'secondary scales/rose', 'errors, off brand-red'],
+    ['warning', 'orange', 'warnings'],
+    ['information', 'blue', 'info & links'],
+    ['neutral light', 'grey + slate', 'ink ramp (slate 900+)'],
+    ['neutral dark', 'grey', 'dark-mode ink ramp'],
+  ];
+  const roleList = document.getElementById('roleList');
+  for (const [role, target, use] of ROLES) {
+    const row = document.createElement('div');
+    row.className = 'role';
+    row.innerHTML = '<span class="rl">' + role + '</span><span class="arrow">&rarr;</span>' +
+      '<span class="rt">' + target + '</span>';
+    const sw = document.createElement('div'); sw.className = 'rsw';
+    for (const s of [100,200,300,400,500,600,700,800,900,1000,1100,1200]) {
+      const r = resolveAlias(role + '/' + s);
+      if (!r.hex) continue;
+      const i = document.createElement('i');
+      i.style.background = r.hex; i.title = role + '/' + s + ' → ' + r.brand + ' = ' + r.hex.toUpperCase();
+      sw.appendChild(i);
+    }
+    row.appendChild(sw);
+    const u = document.createElement('span');
+    u.style.cssText = 'flex:none; font-size:11px; color:var(--ink-soft); width:100%; padding-left:130px';
+    u.textContent = use;
+    if (matchMedia('(max-width:560px)').matches) u.style.paddingLeft = '0';
+    row.appendChild(u);
+    roleList.appendChild(row);
+  }
+
+  /* ---------- mapped explorer ---------- */
+  let exGroup = 'surface', exMode = 0;
+  const exList = document.getElementById('exList');
+  const exCount = document.getElementById('exCount');
+  const explorer = document.getElementById('explorer');
+  function renderExplorer() {
+    explorer.classList.toggle('light', exMode === 0);
+    explorer.classList.toggle('dark', exMode === 1);
+    exList.innerHTML = '';
+    const names = Object.keys(MAPPED).filter(n => n.split('/')[0] === exGroup);
+    for (const n of names) {
+      const r = resolveMapped(n, exMode);
+      if (!r || !r.hex) continue;
+      const row = document.createElement('div');
+      row.className = 'exrow';
+      row.innerHTML = '<span class="sw" style="background:' + r.hex + '"></span>' +
+        '<span class="nm">' + n + '</span>' +
+        '<span class="chain">' + r.alias + ' &rarr; ' + r.brand + ' = <b>' + r.hex.toUpperCase() + '</b></span>';
+      row.addEventListener('click', () => {
+        copy(r.hex.toUpperCase(), () => {
+          const c = row.querySelector('.chain b'); const keep = c.textContent;
+          c.textContent = 'copied ✓';
+          setTimeout(() => c.textContent = keep, 1100);
+        });
+      });
+      exList.appendChild(row);
+    }
+    exCount.textContent = names.length + ' ' + exGroup + ' tokens · ' + (exMode ? 'Dark' : 'Light') +
+      ' · chains resolve mapped → alias → brand';
+  }
+  document.querySelectorAll('#groupTabs .chipbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#groupTabs .chipbtn').forEach(x => x.classList.toggle('on', x === b));
+      exGroup = b.dataset.g; renderExplorer();
+    });
+  });
+  document.querySelectorAll('#modeSwitch button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#modeSwitch button').forEach(x => x.classList.toggle('on', x === b));
+      exMode = +b.dataset.m; renderExplorer();
+    });
+  });
+  renderExplorer();
+
+  /* ---------- responsive ---------- */
+  const TYPE_ROWS = ['hero','h1','h2','h3','h4','h5','h6','h7','paragraph lg','paragraph md','paragraph sm','caption','caption sm','caption xsm'];
+  const SPACE_ROWS = ['xxsm','xsm','sm','md','lg','xl','xxl'];
+  let respMode = 0;
+  const respVal = (name) => {
+    const v = RESP[name]; if (!v) return null;
+    if (typeof v.val === 'object') return +(respMode ? v.val.m : v.val.d);
+    return +v.val;
+  };
+  const typeRamp = document.getElementById('typeRamp');
+  const spBars = document.getElementById('spBars');
+  function renderResp() {
+    typeRamp.innerHTML = '';
+    for (const t of TYPE_ROWS) {
+      const size = respVal(t + '/text size');
+      const lh = respVal(t + '/line height');
+      const ps = respVal(t + '/paragraph spacing');
+      if (size == null) continue;
+      const row = document.createElement('div');
+      row.className = 'rrow';
+      const disp = Math.min(size, 40);
+      row.innerHTML = '<span class="rrn">' + t + '</span>' +
+        '<span class="rrp" style="font-size:' + disp + 'px; line-height:1.15' +
+        (size > 40 ? ';opacity:.9' : '') + '">Diet Station</span>' +
+        '<span class="rrv">' + size + ' / ' + (lh ?? '—') + (ps != null ? ' · ps ' + ps : '') + '</span>';
+      typeRamp.appendChild(row);
+    }
+    spBars.innerHTML = '';
+    for (const s of SPACE_ROWS) {
+      const v = respVal('spacing/layout/' + s);
+      if (v == null) continue;
+      const row = document.createElement('div');
+      row.className = 'spbar';
+      row.innerHTML = '<span class="sn">' + s + '</span>' +
+        '<span class="sb" style="width:' + Math.min(v, 256) + 'px"></span>' +
+        '<span class="sv">' + v + '</span>';
+      spBars.appendChild(row);
+    }
+  }
+  document.querySelectorAll('#respSwitch button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#respSwitch button').forEach(x => {
+        const on = x === b;
+        x.classList.toggle('on', on);
+        x.style.background = on ? '#fff' : 'transparent';
+        x.style.color = on ? '#1d1d1f' : '#8e8e93';
+        x.style.boxShadow = on ? '0 1px 2px rgba(0,0,0,.08)' : 'none';
+      });
+      respMode = +b.dataset.m; renderResp();
+    });
+  });
+  renderResp();
+
+  /* ---------- css export ---------- */
+  const cssName = n => '--ds-' + n.replace(/\//g, '-').replace(/\s+/g, '-').replace(/[()]/g, '').toLowerCase();
+  function buildCss() {
+    const light = [], dark = [];
+    for (const n of Object.keys(MAPPED)) {
+      const l = resolveMapped(n, 0), d = resolveMapped(n, 1);
+      if (!l || !l.hex) continue;
+      light.push('  ' + cssName(n) + ': ' + l.hex.toUpperCase() + ';');
+      if (d && d.hex && d.hex !== l.hex) dark.push('  ' + cssName(n) + ': ' + d.hex.toUpperCase() + ';');
+    }
+    return '/* DietStation mapped tokens — resolved from Figma variables (' +
+      Object.keys(MAPPED).length + ' tokens) */\n:root {\n' + light.join('\n') +
+      '\n}\n\n[data-theme="dark"] {\n' + dark.join('\n') + '\n}';
+  }
+  const css = buildCss();
+  document.getElementById('cssOut').textContent = css;
+  document.getElementById('cssCopy').addEventListener('click', () => {
+    const b = document.getElementById('cssCopy');
+    copy(css, () => { b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400); });
+  });
+})();
+</script>
+</body>
+</html>

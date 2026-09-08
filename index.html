@@ -198,6 +198,18 @@
     animation: bpeek 2.6s cubic-bezier(.5,0,.5,1) infinite; }
   @keyframes bpeek { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
   .brandpeek span { font: 500 24px/1 'DietStation Dot', monospace; color: #fff; white-space: nowrap; }
+  .varpeek { margin-top: 16px; padding: 16px 18px; border-radius: 14px; background: var(--ground);
+    display: flex; gap: 10px; align-items: center; overflow-x: auto; scrollbar-width: none; }
+  .varpeek::-webkit-scrollbar { display: none; }
+  .varpeek .vp { display: inline-flex; align-items: center; gap: 6px; flex: none;
+    font: 600 12px/1 'Urbane Rounded', sans-serif; padding: 10px 14px; border-radius: 999px; }
+  .varpeek .vp i { width: 14px; height: 14px; border-radius: 50%; }
+  .varpeek .vp em { font: 500 10px/1 'Urbane Rounded', sans-serif; font-style: normal;
+    background: rgba(255,255,255,.65); border-radius: 999px; padding: 4px 7px 3px; }
+  .varpeek .vp-b { background: #FDE6E6; color: #721515; }
+  .varpeek .vp-al { background: #FFF9E1; color: #584703; }
+  .varpeek .vp-m { background: #E9F1D0; color: #365512; }
+  .varpeek .vp-a { color: #c9c9cf; flex: none; }
 
   /* ---- native TestFlight shell: prototypes only, App Store promo cards ---- */
   body.native { padding-top: env(safe-area-inset-top, 0px); }
@@ -539,7 +551,30 @@
   </section>
 
   <section class="tabpane" id="pane-system">
-    <div class="count" id="syscount">7 elements</div>
+    <div class="count" id="syscount">8 elements</div>
+
+    <section class="card">
+      <div class="top">
+        <h2>Variables</h2>
+        <span class="tag">Figma tokens</span>
+        <span class="pill in-progress">In review</span>
+      </div>
+      <p class="desc">The Figma file&rsquo;s token tree mapped 1:1 into the lab — brand ramps
+        (roots) &rarr; alias roles (trunk) &rarr; mapped tokens (leaves), plus the responsive
+        and gradient collections. Flip Light/Dark and watch all 165 mapped chains re-resolve.</p>
+      <div class="varpeek" aria-hidden="true">
+        <span class="vp vp-b">brand<i style="background:#ED1C24"></i><i style="background:#FFC52E"></i><i style="background:#26A659"></i></span>
+        <span class="vp-a">&rarr;</span>
+        <span class="vp vp-al">alias</span>
+        <span class="vp-a">&rarr;</span>
+        <span class="vp vp-m">mapped<em>L/D</em></span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/variables.html">Open Variables</a>
+      </div>
+      <p class="meta">Read live from Diet Station Design System 1.0 &middot; includes review
+        notes to work through before dev handoff.</p>
+    </section>
 
     <section class="card">
       <div class="top">
