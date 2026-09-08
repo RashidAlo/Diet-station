@@ -116,14 +116,6 @@
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
   .pausebtn:active { transform: scale(.88); }
   .pausebtn img { width: 20px; height: 20px; display: block; }
-  /* header close — the Figma X (opacity-0 on this screen); shown only when the
-     hub embeds the flow, so there is still a way back once the tab bar is gone */
-  .hd-close { display: none; width: 36px; height: 36px; border: none; background: none;
-    cursor: pointer; flex: none; align-items: center; justify-content: center; padding: 0;
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  html.embed .hd-close { display: flex; }
-  .hd-close:active { transform: scale(.88); }
-  .hd-close img { width: 36px; height: 36px; display: block; }
 
   /* ---- the white sheet ---- */
   .sheetc { flex: 1; min-height: 0; background: #fff; border-radius: 38px 38px 0 0;
@@ -320,9 +312,6 @@
             <h1>Calendar</h1>
             <div class="hd-sub">Time left <span id="hdWhen"></span><b id="hdCount"></b></div>
           </div>
-          <button class="hd-close" id="hdClose" aria-label="Close">
-            <img src="cal-close.svg" alt="">
-          </button>
           <button class="pausebtn" id="pauseBtn" aria-label="Pause subscription">
             <img src="cal-pause.svg" alt="">
           </button>
@@ -348,7 +337,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 3';
+const BUILD = 'calendar 2026-09-08 · 4';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -562,11 +551,6 @@ function markSelected(mon, day) {
 
 /* ================= decorative chrome ================= */
 document.getElementById('pauseBtn').onclick = () => vibrate(8);
-document.getElementById('hdClose').onclick = () => {
-  vibrate(8);
-  if (EMBED) parent.postMessage({ t: 'ds-close' }, '*');
-  else location.href = '../';
-};
 
 /* ================= sidebar wiring ================= */
 function bindMod(id, out, key, fmt, after) {
