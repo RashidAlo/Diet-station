@@ -367,7 +367,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 10';
+const BUILD = 'calendar 2026-09-08 · 11';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -886,6 +886,19 @@ fit();
   addEventListener('resize', function () { setTimeout(report, 350); });
   setTimeout(report, 900);
   setTimeout(report, 2200);   /* glass containers build late on slow loads */
+  /* the meal-selection overlay owns the whole screen: clear our native
+     chrome (pause twin + calendar tab bar) while it is up — it was
+     overlapping the selector's calorie navigator — and restore on close */
+  function clearChrome() {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'calendar', els: [] }); } catch (_) {}
+  }
+  var _open = window.openDay, _close = window.closeOverlay;
+  window.openDay = function () { clearChrome(); return _open.apply(this, arguments); };
+  window.closeOverlay = function () {
+    var r = _close.apply(this, arguments);
+    setTimeout(report, 600);
+    return r;
+  };
 })();
 </script>
 <script src="../lab-shell.js?v=20260908d" data-flow="meal-select" defer></script>

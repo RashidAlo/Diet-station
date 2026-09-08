@@ -157,6 +157,14 @@ struct HomeScreenNative: View {
                 .padding(.bottom, 16)
         }
         .onLongPressGesture(minimumDuration: 0.6) { state.labOpen = true }
+        /* the lab's house gesture, native: two completed taps + a held third
+           contact — the same 3-touchstart pattern as the web detectors, so
+           triple-tap-and-hold opens the controls on every surface */
+        .simultaneousGesture(
+            TapGesture(count: 2)
+                .sequenced(before: LongPressGesture(minimumDuration: 0.42, maximumDistance: 16))
+                .onEnded { _ in state.labOpen = true }
+        )
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */

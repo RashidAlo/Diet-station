@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 71';
+const BUILD = 'build 2026-09-08 · 72';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2268,6 +2268,58 @@ setTimeout(() => {
   }, 600);
 }, 60);
 fit();
+</script>
+<script>
+/* Native glass chrome handshake for the SELECTOR (2026-09-08): in the shell,
+   the top action bar's X and clear/check pill become real Liquid Glass twins.
+   The bar normally rides the scroll-linked sheet, which native twins can't
+   follow — so in the shell we PIN the bar: it reparents from the sheet into
+   the phone (viewport-anchored; position:fixed breaks inside a transformed
+   ancestor) and the sheet slides beneath it. Day label + surface stay web. */
+(function () {
+  if (!/DietStationLab/.test(navigator.userAgent)) return;
+  var st = document.createElement('style');
+  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
+  document.head.appendChild(st);
+  function pinNav() {
+    var nav = document.querySelector('.nav');
+    var ph = document.getElementById('phone');
+    if (nav && ph && nav.parentElement !== ph) ph.appendChild(nav);
+  }
+  function rect(sel, id) {
+    var el = document.querySelector(sel);
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { id: id, x: r.left, y: r.top, w: r.width, h: r.height,
+      r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 };
+  }
+  function report() {
+    pinNav();
+    var els = [];
+    var c = rect('#closeBtn', 'close'); if (c) els.push(c);
+    var d = rect('.dual', 'dual'); if (d) els.push(d);
+    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'selector', els: els }); } catch (_) {}
+  }
+  window.DSNativeChrome = function (ids) {
+    (ids || []).forEach(function (id) {
+      var sel = id === 'close' ? '#closeBtn' : id === 'dual' ? '.dual' : null;
+      if (!sel) return;
+      var el = document.querySelector(sel);
+      if (el) el.classList.add('ds-native-hidden');
+    });
+  };
+  window.DSChromeTap = function (id) {
+    var sel = id === 'close' ? '#closeBtn'
+      : id === 'dual-clear' ? '#clearBtn'
+      : id === 'dual-confirm' ? '#confirmBtn' : null;
+    var el = sel && document.querySelector(sel);
+    if (el) el.click();
+  };
+  addEventListener('resize', function () { setTimeout(report, 350); });
+  setTimeout(report, 1100);   /* after the entry spring settles */
+  setTimeout(report, 2400);
+})();
 </script>
 <script src="../lab-shell.js?v=20260908d" data-flow="meal-select" defer></script>
 </body>
