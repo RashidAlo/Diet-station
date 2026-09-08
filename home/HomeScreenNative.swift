@@ -812,7 +812,8 @@ final class FlowPreloader {
                         CGFloat((e[k] as? NSNumber)?.doubleValue ?? 0)
                     }
                     els.append(GlassChromeEl(id: id, x: n("x"), y: n("y"),
-                                             w: n("w"), h: n("h"), r: n("r")))
+                                             w: n("w"), h: n("h"), r: n("r"),
+                                             on: (e["on"] as? Bool) ?? false))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
