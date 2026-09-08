@@ -382,6 +382,23 @@
   body.selc-neon .navigator.celebrating .done-center span,
   body.selc-neon .navigator.celebrating .done-center svg { filter: none; }
   body.selc-neon .navigator.celebrating .done-center svg path { stroke: #0B0E12; }
+  /* red (default) theme: Done floods the bar brand red, THEN a neon-green
+     ring pops around the counter's edge and breathes for the moment */
+  body.selc-red .navigator.celebrating .glassbase::before { background: var(--selc); }
+  body.selc-red .navigator.celebrating #gaugeCanvas { opacity: 0; }
+  .navigator::after { content: ''; position: absolute; inset: -2.5px;
+    border-radius: 299px; pointer-events: none; opacity: 0;
+    border: 2px solid #1BF07E; transition: opacity .3s ease;
+    box-shadow: 0 0 18px rgba(27,240,126,.65), inset 0 0 12px rgba(27,240,126,.4); }
+  body.selc-red .navigator.celebrating::after {
+    animation: neonpop .55s cubic-bezier(.3,1.4,.4,1) .18s forwards,
+      ringbreathe 1.4s ease-in-out .75s infinite; }
+  @keyframes neonpop { 0% { opacity: 0; transform: scale(.9); }
+    60% { opacity: 1; transform: scale(1.045); }
+    100% { opacity: 1; transform: scale(1); } }
+  @keyframes ringbreathe {
+    0%, 100% { box-shadow: 0 0 14px rgba(27,240,126,.5), inset 0 0 9px rgba(27,240,126,.3); }
+    50% { box-shadow: 0 0 26px rgba(27,240,126,.85), inset 0 0 16px rgba(27,240,126,.5); } }
   /* the gauge: a transparent canvas ON the glass — spring fill, rippling
      leading edge, breathing tip glow. The glass itself is a plain
      backdrop-filter container blurring the live thumbnails beneath. */
@@ -697,8 +714,8 @@
     </div>
     <div class="s-note" style="margin-top:14px">Selection color</div>
     <div class="seg2 seg3" id="selcSeg">
-      <button data-v="green" class="on">Green</button>
-      <button data-v="red">Red</button>
+      <button data-v="green">Green</button>
+      <button data-v="red" class="on">Red</button>
       <button data-v="neon">Neon</button>
     </div>
   </div>
@@ -1839,7 +1856,7 @@ function drawNeonRing(o, now) {
 }
 document.querySelectorAll('#selcSeg button').forEach(b =>
   b.onclick = () => applySelc(b.dataset.v));
-applySelc(MODS.selc || 'green');
+applySelc(MODS.selc || 'red');   /* red is the house default (Rashid 2026-09-08) */
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -2011,7 +2028,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 67';
+const BUILD = 'build 2026-09-08 · 68';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
