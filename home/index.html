@@ -421,6 +421,15 @@
     <button id="sCopy">Copy values</button>
   </div>
 
+  <div class="s-sec" id="nativeRow" style="display:none">
+    <div class="s-label">Native pilot</div>
+    <div class="s-note">Opens the SwiftUI Liquid Glass twin of this screen —
+      real .glassEffect widgets, iOS 26 app only.</div>
+    <div class="s-actions">
+      <button id="sNative" style="background:#ED1C24;color:#fff">Open native pilot</button>
+    </div>
+  </div>
+
   <div class="s-sec" style="margin-top:22px">
     <div class="s-label">Build</div>
     <div class="s-note" id="buildInfo">&mdash;</div>
@@ -709,7 +718,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 5';
+const BUILD = 'home 2026-09-08 · 6';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -820,6 +829,25 @@ document.getElementById('tabCal').onclick = () => {
    DSHomeTab receives taps from the native bar; DSSetView is a guard so the
    shell's hub-oriented calls never throw on this page */
 window.DSSetView = function () {};
+/* native pilot entry that works even inside the hub's flow-sheet iframe:
+   the shell (build 17+) presents HomeScreenNative on {t:'nativehome'} */
+const IN_SHELL = /DietStationLab/.test(navigator.userAgent);
+function openNativePilot() {
+  vibrate(10);
+  try { window.webkit.messageHandlers.ds.postMessage({ t: 'nativehome' }); } catch (_) {}
+}
+if (IN_SHELL) {
+  document.getElementById('nativeRow').style.display = 'block';
+  document.getElementById('sNative').onclick = () => { closeLabMenu(); openNativePilot(); };
+  /* long-press the greeting row = quick entry */
+  (function () {
+    let t = null;
+    const st = document.getElementById('storiesBtn');
+    st.addEventListener('touchstart', () => { t = setTimeout(openNativePilot, 600); }, { passive: true });
+    st.addEventListener('touchmove', () => clearTimeout(t), { passive: true });
+    st.addEventListener('touchend', () => clearTimeout(t), { passive: true });
+  })();
+}
 window.DSHomeTab = function (id) {
   if (id === 'calendar') document.getElementById('tabCal').onclick();
   else vibrate(6);   /* home / profile: stay put for now */
