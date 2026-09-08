@@ -1041,7 +1041,7 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
     });
     try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'dark',
         els: els });
     } catch (_) {}
   }

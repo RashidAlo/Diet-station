@@ -869,7 +869,7 @@ fit();
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
     });
     try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'dark',
         els: els, bar: 'calendar' });
     } catch (_) {}
   }
@@ -890,7 +890,7 @@ fit();
      chrome (pause twin + calendar tab bar) while it is up — it was
      overlapping the selector's calorie navigator — and restore on close */
   function clearChrome() {
-    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'calendar', els: [] }); } catch (_) {}
+    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'calendar', surface: 'dark', els: [] }); } catch (_) {}
   }
   var _open = window.openDay, _close = window.closeOverlay;
   window.openDay = function () { clearChrome(); return _open.apply(this, arguments); };

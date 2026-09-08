@@ -2299,7 +2299,7 @@ fit();
     var els = [];
     var c = rect('#closeBtn', 'close'); if (c) els.push(c);
     var d = rect('.dual', 'dual'); if (d) els.push(d);
-    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'selector', els: els }); } catch (_) {}
+    try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'selector', surface: 'light', els: els }); } catch (_) {}
   }
   window.DSNativeChrome = function (ids) {
     (ids || []).forEach(function (id) {

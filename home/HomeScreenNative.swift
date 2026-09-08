@@ -715,10 +715,12 @@ private struct DaysContent: View {
 final class FlowPreloader {
     static let shared = FlowPreloader()
 
-    /// One handler for both channels: ds-close relays + the shell's haptics
-    /// bridge (identical behavior to the previous per-presentation Coordinator).
+    /// One handler for both channels: ds-close relays, the shell's haptics
+    /// bridge, and the glasschrome protocol forwarded into a per-overlay
+    /// chrome state — flows summoned here get chrome identical to the hub path.
     final class Relay: NSObject, WKScriptMessageHandler {
         var onClose: (() -> Void)?
+        let chrome = OverlayChrome()
 
         private let impact: [String: UIImpactFeedbackGenerator] = [
             "light": UIImpactFeedbackGenerator(style: .light),
@@ -732,11 +734,46 @@ final class FlowPreloader {
 
         func userContentController(_ c: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
-            if message.name == "dsflow" { onClose?(); return }
-            // "ds" bridge — haptics only in the overlay (chrome has no meaning here)
+            if message.name == "dsflow" {
+                onClose?()
+                DispatchQueue.main.async { self.chrome.clear() }
+                return
+            }
             guard message.name == "ds",
                   let body = message.body as? [String: Any],
-                  body["t"] as? String == "haptic" else { return }
+                  let t = body["t"] as? String else { return }
+            if t == "glasschrome" {
+                // same parse + reply as the main webview's Coordinator —
+                // empty els + no bar means clear everything for this overlay
+                var els: [GlassChromeEl] = []
+                for e in body["els"] as? [[String: Any]] ?? [] {
+                    guard let id = e["id"] as? String else { continue }
+                    func n(_ k: String) -> CGFloat {
+                        CGFloat((e[k] as? NSNumber)?.doubleValue ?? 0)
+                    }
+                    els.append(GlassChromeEl(id: id, x: n("x"), y: n("y"),
+                                             w: n("w"), h: n("h"), r: n("r")))
+                }
+                let bar = body["bar"] as? String
+                let flow = body["flow"] as? String
+                let frame = message.frameInfo
+                DispatchQueue.main.async {
+                    self.chrome.frame = frame
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        self.chrome.els = els
+                        self.chrome.bar = bar
+                        self.chrome.flow = flow
+                    }
+                    if !els.isEmpty, let wv = self.chrome.webView {
+                        let ids = els.map { "'\($0.id)'" }.joined(separator: ",")
+                        wv.evaluateJavaScript(
+                            "window.DSNativeChrome && DSNativeChrome([\(ids)])",
+                            in: frame, in: .page, completionHandler: nil)
+                    }
+                }
+                return
+            }
+            guard t == "haptic" else { return }
             let kind = body["kind"] as? String ?? "impact"
             let style = body["style"] as? String ?? "light"
             DispatchQueue.main.async { [self] in
@@ -789,6 +826,7 @@ final class FlowPreloader {
         // Flow pages detect the shell by the UA token (embed styling, haptics)
         wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
             + " DietStationLab/2"
+        relay.chrome.webView = wv
         entries[path] = (wv, relay)
         reload(path)
         return entries[path]!
@@ -805,11 +843,63 @@ final class FlowPreloader {
     }
 }
 
-/// Presents a (preloaded) lab web flow over the native screen. The page runs
-/// its own sheet choreography and posts ds-close when done; after dismissal
-/// the webview re-arms in the background for the next summon.
+/// Chrome state for one preloaded overlay webview — the glasschrome protocol
+/// mirrored, so flows summoned from the native pilot get chrome identical to
+/// the hub path (twins, bar, and the calendar's clear/restore dance).
 @available(iOS 26.0, *)
-struct FlowOverlay: UIViewRepresentable {
+final class OverlayChrome: ObservableObject {
+    @Published var els: [GlassChromeEl] = []
+    @Published var bar: String?
+    @Published var flow: String?
+    weak var webView: WKWebView?
+    var frame: WKFrameInfo?
+
+    func chromeTap(_ id: String) {
+        webView?.evaluateJavaScript("window.DSChromeTap && DSChromeTap('\(id)')",
+                                    in: frame, in: .page, completionHandler: nil)
+    }
+    func clear() {
+        els = []
+        bar = nil
+        flow = nil
+        frame = nil
+    }
+}
+
+/// Presents a (preloaded) lab web flow over the native screen with its native
+/// glass chrome mounted inside the cover. The page runs its own sheet
+/// choreography and posts ds-close when done; after dismissal the webview
+/// re-arms in the background for the next summon.
+@available(iOS 26.0, *)
+struct FlowOverlay: View {
+    let path: String
+    let onClose: () -> Void
+    @ObservedObject private var chrome: OverlayChrome
+
+    @MainActor
+    init(path: String, onClose: @escaping () -> Void) {
+        self.path = path
+        self.onClose = onClose
+        _chrome = ObservedObject(wrappedValue: FlowPreloader.shared.entry(path).relay.chrome)
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            FlowWebView(path: path, onClose: onClose)
+            GlassChromeLayer(els: chrome.els, flow: chrome.flow) { chrome.chromeTap($0) }
+                .ignoresSafeArea()
+            if chrome.bar == "calendar" {
+                // home tab from a flow the native pilot summoned = back to the pilot
+                CalendarGlassTabBar(onHome: onClose)
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+}
+
+@available(iOS 26.0, *)
+private struct FlowWebView: UIViewRepresentable {
     let path: String
     let onClose: () -> Void
 
