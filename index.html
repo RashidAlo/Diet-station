@@ -274,6 +274,41 @@
   .flow-frame.bye { transition: transform .4s cubic-bezier(.5,0,.8,.6);
     transform: translateY(103%); }
 
+  /* ---- admin edit mode ---- */
+  .editbtn { display: none; margin-left: auto; border: none; cursor: pointer;
+    width: 34px; height: 34px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08); color: #1d1d1f;
+    align-items: center; justify-content: center; }
+  body.admin .editbtn { display: flex; }
+  body.native .editbtn { margin-left: 0; }
+  .editbtn svg { width: 16px; height: 16px; }
+  body.editmode .editbtn { background: #ED1C24; color: #fff; }
+  .card .adminrow { display: none; align-items: center; gap: 10px;
+    padding: 10px 0 0; }
+  body.editmode .card .adminrow { display: flex; }
+  .adminrow .eyebtn { border: 1px solid rgba(0,0,0,.14); background: #fff;
+    border-radius: 999px; padding: 7px 14px; cursor: pointer;
+    font: 600 12px/1 'Urbane Rounded', sans-serif; color: #1d1d1f;
+    display: flex; align-items: center; gap: 6px; }
+  .adminrow .eyebtn.off { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+  .adminrow .draftdot { font: 600 11px/1 -apple-system, sans-serif; color: #ED1C24; }
+  .card.is-hidden { opacity: .5; outline: 2px dashed rgba(237,28,36,.5);
+    outline-offset: 4px; }
+  body.editmode .card h2[contenteditable="true"],
+  body.editmode .card .desc[contenteditable="true"] {
+    outline: 1.5px dashed rgba(237,28,36,.35); outline-offset: 3px;
+    border-radius: 6px; cursor: text; }
+  .publishbar { display: none; position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 260;
+    gap: 10px; padding: 10px; border-radius: 999px; background: #1d1d1f;
+    box-shadow: 0 14px 40px -12px rgba(0,0,0,.45); }
+  body.editmode .publishbar { display: flex; }
+  body.editmode.native .tabbar { display: none; }
+  .publishbar button { border: none; border-radius: 999px; padding: 11px 18px;
+    cursor: pointer; font: 600 13px/1 'Urbane Rounded', sans-serif; }
+  .publishbar .pub { background: #ED1C24; color: #fff; }
+  .publishbar .disc { background: rgba(255,255,255,.12); color: #fff; }
+
   /* settings primer sheet */
   .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
     opacity: 0; pointer-events: none; transition: opacity .28s ease; }
@@ -312,7 +347,10 @@
 <header class="bar">
   <div class="bar-inner">
     <img class="mark" src="logo.png" alt="DietStation">
-    <div class="word">DietStation <span>Design Lab</span></div>
+    <div class="word" id="brandWord">DietStation <span>Design Lab</span></div>
+    <button class="editbtn" id="editBtn" aria-label="Edit lab" title="Edit lab">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M11.1 2.2l2.7 2.7-8.2 8.2-3.2.5.5-3.2 8.2-8.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 </header>
 
@@ -415,6 +453,34 @@ document.querySelectorAll('.seg-btn').forEach(b =>
 const NATIVE = /DietStationLab/.test(navigator.userAgent) || /[?&]native=1/.test(location.search);
 if (NATIVE) document.body.classList.add('native');
 
+/* ---- admin: ?admin=1 enables on this device (?admin=0 clears); or
+   long-press the wordmark ~1.2s. Admin sees hidden cards + edit mode. ---- */
+if (/[?&]admin=1/.test(location.search)) { try { localStorage.setItem('ds-admin', '1'); } catch (_) {} }
+if (/[?&]admin=0/.test(location.search)) { try { localStorage.removeItem('ds-admin'); } catch (_) {} }
+let ADMIN = false;
+try { ADMIN = localStorage.getItem('ds-admin') === '1'; } catch (_) {}
+if (ADMIN) document.body.classList.add('admin');
+let OVR = {};
+try { OVR = JSON.parse(localStorage.getItem('ds-lab-overrides') || '{}'); } catch (_) {}
+function saveOvr() { try { localStorage.setItem('ds-lab-overrides', JSON.stringify(OVR)); } catch (_) {} }
+(function () {
+  let lp = null;
+  const word = document.getElementById('brandWord');
+  const start = () => { lp = setTimeout(() => {
+    try {
+      if (localStorage.getItem('ds-admin') === '1') localStorage.removeItem('ds-admin');
+      else localStorage.setItem('ds-admin', '1');
+    } catch (_) {}
+    location.reload();
+  }, 1200); };
+  const end = () => clearTimeout(lp);
+  word.addEventListener('touchstart', start, { passive: true });
+  word.addEventListener('touchend', end);
+  word.addEventListener('mousedown', start);
+  word.addEventListener('mouseup', end);
+  word.addEventListener('mouseleave', end);
+})();
+
 /* ---- splash loader: Rive "Splash" artboard (breathing dots -> DS logo)
    plays while every design asset the prototypes need is warmed into the
    HTTP cache; once per app session ---- */
@@ -496,8 +562,16 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     flows.length + (flows.length === 1 ? ' flow' : ' flows');
   const root = document.getElementById('flows');
   for (const f of flows) {
+    /* admin overrides: local drafts win over flows.json; hidden cards are
+       for the admin's eyes only */
+    const o = OVR[f.id] || {};
+    f.title = o.title !== undefined ? o.title : f.title;
+    f.description = o.description !== undefined ? o.description : f.description;
+    const isHidden = o.hidden !== undefined ? o.hidden : !!f.hidden;
+    if (isHidden && !ADMIN) continue;
     const card = document.createElement('section');
-    card.className = 'card';
+    card.className = 'card' + (isHidden ? ' is-hidden' : '');
+    card.dataset.flow = f.id;
     const statusLabel = f.status === 'ready' ? 'Ready' : 'In progress';
     const kv = Object.entries(f.handoff || {}).map(([k, v]) =>
       `<dt>${k}</dt><dd>${v}</dd>`).join('');
@@ -608,7 +682,66 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     }
     root.appendChild(card);
   }
+  wireEditMode();
 });
+
+/* ================= edit mode (admin) ================= */
+function wireEditMode() {
+  if (!ADMIN) return;
+  document.querySelectorAll('#flows .card').forEach(card => {
+    const id = card.dataset.flow;
+    if (!id) return;
+    const row = document.createElement('div');
+    row.className = 'adminrow';
+    const hid = card.classList.contains('is-hidden');
+    row.innerHTML = '<button class="eyebtn' + (hid ? ' off' : '') + '">' +
+      (hid ? 'Hidden from viewers' : 'Visible to viewers') + '</button>' +
+      '<span class="draftdot">' + (OVR[id] ? 'draft' : '') + '</span>';
+    card.querySelector('.body').appendChild(row);
+    row.querySelector('.eyebtn').onclick = () => {
+      const o = OVR[id] = OVR[id] || {};
+      o.hidden = !card.classList.contains('is-hidden');
+      saveOvr();
+      card.classList.toggle('is-hidden', o.hidden);
+      const b = row.querySelector('.eyebtn');
+      b.classList.toggle('off', o.hidden);
+      b.textContent = o.hidden ? 'Hidden from viewers' : 'Visible to viewers';
+      row.querySelector('.draftdot').textContent = 'draft';
+    };
+    const h2 = card.querySelector('h2');
+    const desc = card.querySelector('.desc');
+    [['title', h2], ['description', desc]].forEach(([key, el]) => {
+      if (!el) return;
+      el.addEventListener('input', () => {
+        const o = OVR[id] = OVR[id] || {};
+        o[key] = el.textContent.trim();
+        saveOvr();
+        row.querySelector('.draftdot').textContent = 'draft';
+      });
+    });
+  });
+}
+function setEditMode(on) {
+  document.body.classList.toggle('editmode', on);
+  document.querySelectorAll('#flows .card h2, #flows .card .desc').forEach(el =>
+    el.setAttribute('contenteditable', on ? 'true' : 'false'));
+}
+document.getElementById('editBtn').addEventListener('click', () =>
+  setEditMode(!document.body.classList.contains('editmode')));
+const pubBar = document.createElement('div');
+pubBar.className = 'publishbar';
+pubBar.innerHTML = '<button class="disc">Discard drafts</button><button class="pub">Copy publish command</button>';
+document.body.appendChild(pubBar);
+pubBar.querySelector('.pub').onclick = () => {
+  const cmd = 'publish lab ' + JSON.stringify(OVR);
+  (navigator.clipboard ? navigator.clipboard.writeText(cmd) : Promise.reject())
+    .then(() => { pubBar.querySelector('.pub').textContent = 'Copied — paste it to Claude'; })
+    .catch(() => prompt('Copy this and paste it to Claude:', cmd));
+  setTimeout(() => { pubBar.querySelector('.pub').textContent = 'Copy publish command'; }, 2600);
+};
+pubBar.querySelector('.disc').onclick = () => {
+  OVR = {}; saveOvr(); location.reload();
+};
 
 function copyFeedback(btn, text, label) {
   (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
