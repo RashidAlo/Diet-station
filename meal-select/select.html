@@ -269,16 +269,13 @@
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
-  /* neon mode: the crisp border melts into blurred glowing dots — a nod to the
-     breathe flow's particle field — and breathes softly while selected */
-  body.selc-neon .card .sel-border { border-style: dotted; filter: blur(2px); }
-  body.selc-neon .card.sel .sel-border { border-width: 4.5px;
-    animation: neonbreathe 2.6s ease-in-out infinite; }
-  @keyframes neonbreathe {
-    0%, 100% { box-shadow: 0 0 10px var(--selc-glow), inset 0 0 7px var(--selc-glow);
-      filter: blur(1.6px); }
-    50% { box-shadow: 0 0 22px var(--selc-glow), inset 0 0 15px var(--selc-glow);
-      filter: blur(2.7px); } }
+  /* neon mode: the crisp border is replaced by a dense dot-matrix particle
+     ring drawn on a per-card canvas (see neon dots engine below) — the
+     breathe flow's dot-field language wrapped around the card */
+  body.selc-neon .card .sel-border { opacity: 0; }
+  .sel-dots { position: absolute; inset: -10px; width: calc(100% + 20px);
+    height: calc(100% + 20px); pointer-events: none; z-index: 3;
+    filter: drop-shadow(0 0 7px var(--selc-glow)); }
   /* bright neon fills read better with dark content */
   body.selc-neon .qty .q-count { color: #0B0E12; }
   body.selc-neon .qty svg path { fill: #0B0E12; }
@@ -1732,6 +1729,100 @@ function applySelc(v) {
   document.body.classList.toggle('selc-neon', v === 'neon');
   document.querySelectorAll('#selcSeg button').forEach(b =>
     b.classList.toggle('on', b.dataset.v === v));
+  startNeonDots();
+}
+
+/* ================= neon dots engine =================
+   A dense dot-matrix ring for selected cards: dots sampled every ~6px
+   along the card's rounded border, with a traveling size wave marching
+   around the ring, per-dot shimmer, and a slow radial drift — plus a
+   clockwise sweep-in when a card is first selected. Decorative only,
+   so the rAF loop runs solely while neon mode is on. */
+const DOTS_M = 10, DOT_PITCH = 6, CARD_W = 183, CARD_H = 259, CARD_R = 24;
+const dotPath = (() => {
+  const inset = 1.75, w = CARD_W - inset * 2, h = CARD_H - inset * 2,
+    r = CARD_R - inset, sw = w - 2 * r, sh = h - 2 * r, arc = Math.PI * r / 2,
+    per = 2 * (sw + sh) + 4 * arc;
+  function at(s) {
+    let d = ((s % per) + per) % per;
+    if (d < sw) return { x: inset + r + d, y: inset };                     d -= sw;
+    if (d < arc) { const a = -Math.PI / 2 + d / r;
+      return { x: inset + w - r + Math.cos(a) * r, y: inset + r + Math.sin(a) * r }; } d -= arc;
+    if (d < sh) return { x: inset + w, y: inset + r + d };                 d -= sh;
+    if (d < arc) { const a = d / r;
+      return { x: inset + w - r + Math.cos(a) * r, y: inset + h - r + Math.sin(a) * r }; } d -= arc;
+    if (d < sw) return { x: inset + w - r - d, y: inset + h };             d -= sw;
+    if (d < arc) { const a = Math.PI / 2 + d / r;
+      return { x: inset + r + Math.cos(a) * r, y: inset + h - r + Math.sin(a) * r }; } d -= arc;
+    if (d < sh) return { x: inset, y: inset + h - r - d };                 d -= sh;
+    const a = Math.PI + d / r;
+    return { x: inset + r + Math.cos(a) * r, y: inset + r + Math.sin(a) * r };
+  }
+  const n = Math.round(per / DOT_PITCH), pts = [];
+  for (let i = 0; i < n; i++) {
+    const s = i / n * per, p = at(s), q = at(s + 0.5);
+    let nx = q.y - p.y, ny = -(q.x - p.x);
+    const l = Math.hypot(nx, ny) || 1;
+    pts.push({ x: p.x, y: p.y, nx: nx / l, ny: ny / l, s });
+  }
+  return { pts, per };
+})();
+const dotRings = new Map();   /* card element -> {cv, ctx, born} */
+let dotsRAF = null, dotsColor = '#1BF07E';
+function neonOn() { return document.body.classList.contains('selc-neon'); }
+function startNeonDots() {
+  dotsColor = getComputedStyle(document.body).getPropertyValue('--selc').trim() || '#1BF07E';
+  if (!dotsRAF) dotsRAF = requestAnimationFrame(neonDotsFrame);
+}
+function neonDotsFrame(now) {
+  dotsRAF = null;
+  if (!neonOn()) {   /* mode left: clean up and stop the loop */
+    dotRings.forEach(o => o.cv.remove());
+    dotRings.clear();
+    return;
+  }
+  const live = new Set();
+  Object.values(cardEls).forEach(el => { if (el.classList.contains('sel')) live.add(el); });
+  dotRings.forEach((o, el) => {
+    if (!live.has(el)) { o.cv.remove(); dotRings.delete(el); }
+  });
+  live.forEach(el => {
+    let o = dotRings.get(el);
+    if (!o) {
+      const cv = document.createElement('canvas');
+      cv.className = 'sel-dots';
+      const d = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = (CARD_W + 2 * DOTS_M) * d;
+      cv.height = (CARD_H + 2 * DOTS_M) * d;
+      el.appendChild(cv);
+      o = { cv, ctx: cv.getContext('2d'), born: now };
+      o.ctx.scale(d, d);
+      dotRings.set(el, o);
+    }
+    const r = el.getBoundingClientRect();
+    if (r.bottom < -40 || r.top > innerHeight + 40) return;  /* offscreen: skip draw */
+    drawDotRing(o, now);
+  });
+  dotsRAF = requestAnimationFrame(neonDotsFrame);
+}
+function drawDotRing(o, now) {
+  const g = o.ctx, t = now / 1000;
+  g.clearRect(0, 0, CARD_W + 2 * DOTS_M, CARD_H + 2 * DOTS_M);
+  g.fillStyle = dotsColor;
+  const entry = Math.min(1, (now - o.born) / 600);
+  dotPath.pts.forEach((p, i) => {
+    const reveal = Math.min(1, Math.max(0, (entry * 1.25 - p.s / dotPath.per) * 4));
+    if (reveal <= 0) return;
+    const wave = Math.sin(t * 2.4 - p.s * 0.05);       /* pulse marching the ring */
+    const tw = Math.sin(t * 1.7 + i * 2.3999);         /* per-dot shimmer */
+    const off = 1.8 * Math.sin(t * 1.1 + i * 1.51);    /* slow radial drift */
+    g.globalAlpha = (0.55 + 0.45 * tw * tw) * reveal;
+    g.beginPath();
+    g.arc(DOTS_M + p.x + p.nx * off, DOTS_M + p.y + p.ny * off,
+      (1.35 + 0.85 * (0.5 + 0.5 * wave)) * (0.4 + 0.6 * reveal), 0, 6.2832);
+    g.fill();
+  });
+  g.globalAlpha = 1;
 }
 document.querySelectorAll('#selcSeg button').forEach(b =>
   b.onclick = () => applySelc(b.dataset.v));
@@ -1907,7 +1998,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 62';
+const BUILD = 'build 2026-09-08 · 63';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
