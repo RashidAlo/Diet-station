@@ -528,6 +528,11 @@ struct HomeScreenNative: View {
                 .coordinateSpace(name: "strip")
                 .onAppear {
                     stripProxy.scrollTo("day1", anchor: .leading)
+                    // seen once in the sim: the first scrollTo can race layout
+                    // and strand the strip on a far day — re-fire next runloop
+                    DispatchQueue.main.async {
+                        stripProxy.scrollTo("day1", anchor: .leading)
+                    }
                 }
             }
             Spacer(minLength: 140)
@@ -898,7 +903,11 @@ final class FlowPreloader {
         let cfg = WKWebViewConfiguration()
         let closeRelay = """
         window.addEventListener('message', function (e) {
-          if (e.data && e.data.t === 'ds-close') {
+          /* only SELF-posted ds-close closes the overlay (top-level flows
+             like rewards post to themselves). A child frame's ds-close is
+             addressed to its parent page — e.g. the selector's, which the
+             calendar's closeOverlay handles — never to the shell. */
+          if (e.data && e.data.t === 'ds-close' && e.source === window) {
             try { webkit.messageHandlers.dsflow.postMessage('close'); } catch (_) {}
           }
         });
