@@ -48,6 +48,7 @@
   .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
   .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg3 { grid-template-columns: 1fr 1fr 1fr; }
   .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
     padding: 10px 8px; background: #fff;
     font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: #6e6e73; }
@@ -278,6 +279,18 @@
   </div>
 
   <div class="s-sec">
+    <div class="s-label">Simulate</div>
+    <div class="s-note">As if you confirmed this many days in the picker and hit done —
+      checks cascade across the calendar day by day, faster and bigger as they go,
+      capped with a ripple.</div>
+    <div class="seg2 seg3" id="simSeg">
+      <button data-n="10">10 days</button>
+      <button data-n="20">20 days</button>
+      <button data-n="30">30 days</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
     <div class="s-label">Feel</div>
     <div class="mod">
       <div class="mod-head"><label>Select pop</label><output id="vPop">1.18&times;</output></div>
@@ -350,7 +363,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 7';
+const BUILD = 'calendar 2026-09-08 · 8';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -563,6 +576,64 @@ function markSelected(mon, day) {
     setTimeout(() => { el.classList.remove('justsel'); renderMonths(false); }, 700);
   }, 260);
 }
+
+/* ================= multi-day cascade (lab menu: Simulate) =================
+   As if the user confirmed N consecutive days in the picker and hit done:
+   checks pop day by day with an accelerating rhythm and a growing pop —
+   anticipation at 10, dopamine at 30 — the scroll follows the action and
+   a fast ripple wave caps the run. */
+let simRunning = false;
+function simulateDays(n) {
+  if (simRunning) return;
+  const days = [...document.querySelectorAll('.day.add, .day.soon')].slice(0, n);
+  if (!days.length) return;
+  simRunning = true;
+  quietUntil = Date.now() + 90000;   /* hold clock re-renders during the show */
+  const months = document.getElementById('months');
+  const times = [];
+  let t = 350;
+  days.forEach((el, i) => {
+    const f = days.length > 1 ? i / (days.length - 1) : 1;
+    times.push(t);
+    t += 300 - 225 * f * f;          /* accelerando: ~300ms down to ~75ms */
+  });
+  days.forEach((el, i) => {
+    const f = days.length > 1 ? i / (days.length - 1) : 1;
+    setTimeout(() => {
+      sessionSel[el.dataset.mon + ':' + el.dataset.day] = true;
+      el.className = 'day sel tap justsel';
+      el.style.setProperty('--pop', (1.12 + 0.42 * f).toFixed(2));
+      el.querySelector('.chip').innerHTML = CHIP.sel;
+      const b = el.querySelector('.badge'); if (b) b.remove();
+      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
+      vibrate(Math.round(6 + 12 * f));
+      setTimeout(() => el.classList.remove('justsel'), 600);
+      const y = el.getBoundingClientRect().top - months.getBoundingClientRect().top +
+        months.scrollTop - months.clientHeight * 0.45;
+      months.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }, times[i]);
+  });
+  const endT = times[times.length - 1] + 480;
+  setTimeout(() => {                 /* finale: ripple back through the run */
+    vibrate([16, 40, 20, 40, 28]);
+    days.forEach((el, i) => setTimeout(() => {
+      el.classList.remove('justsel'); void el.offsetWidth;
+      el.style.setProperty('--pop', '1.2');
+      el.classList.add('justsel');
+      setTimeout(() => el.classList.remove('justsel'), 440);
+    }, i * 28));
+  }, endT);
+  setTimeout(() => {
+    simRunning = false;
+    quietUntil = 0;
+    renderMonths(false);
+  }, endT + days.length * 28 + 900);
+}
+document.querySelectorAll('#simSeg button').forEach(b => b.onclick = () => {
+  vibrate(8);
+  closeLabMenu();
+  setTimeout(() => simulateDays(+b.dataset.n), 400);
+});
 
 /* ================= decorative chrome ================= */
 document.getElementById('pauseBtn').onclick = () => vibrate(8);

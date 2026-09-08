@@ -382,14 +382,15 @@
   body.selc-neon .navigator.celebrating .done-center span,
   body.selc-neon .navigator.celebrating .done-center svg { filter: none; }
   body.selc-neon .navigator.celebrating .done-center svg path { stroke: #0B0E12; }
-  /* red (default) theme: Done floods the bar brand red, THEN a neon-green
-     ring pops around the counter's edge and breathes for the moment */
+  /* red (default) theme: Done floods the bar brand red, THEN an orange-gold
+     ring — the calorie bar's own warmth — pops around the counter's edge
+     and breathes for the moment */
   body.selc-red .navigator.celebrating .glassbase::before { background: var(--selc); }
   body.selc-red .navigator.celebrating #gaugeCanvas { opacity: 0; }
   .navigator::after { content: ''; position: absolute; inset: -2.5px;
     border-radius: 299px; pointer-events: none; opacity: 0;
-    border: 2px solid #1BF07E; transition: opacity .3s ease;
-    box-shadow: 0 0 18px rgba(27,240,126,.65), inset 0 0 12px rgba(27,240,126,.4); }
+    border: 2px solid #FFC52E; transition: opacity .3s ease;
+    box-shadow: 0 0 18px rgba(255,150,40,.7), inset 0 0 12px rgba(255,170,60,.45); }
   body.selc-red .navigator.celebrating::after {
     animation: neonpop .55s cubic-bezier(.3,1.4,.4,1) .18s forwards,
       ringbreathe 1.4s ease-in-out .75s infinite; }
@@ -397,8 +398,8 @@
     60% { opacity: 1; transform: scale(1.045); }
     100% { opacity: 1; transform: scale(1); } }
   @keyframes ringbreathe {
-    0%, 100% { box-shadow: 0 0 14px rgba(27,240,126,.5), inset 0 0 9px rgba(27,240,126,.3); }
-    50% { box-shadow: 0 0 26px rgba(27,240,126,.85), inset 0 0 16px rgba(27,240,126,.5); } }
+    0%, 100% { box-shadow: 0 0 14px rgba(255,150,40,.55), inset 0 0 9px rgba(255,170,60,.32); }
+    50% { box-shadow: 0 0 26px rgba(255,150,40,.9), inset 0 0 16px rgba(255,170,60,.55); } }
   /* the gauge: a transparent canvas ON the glass — spring fill, rippling
      leading edge, breathing tip glow. The glass itself is a plain
      backdrop-filter container blurring the live thumbnails beneath. */
@@ -1773,7 +1774,6 @@ function applySelc(v) {
    rings clockwise on selection. Decorative only, so the rAF loop runs
    solely while neon mode is on. */
 const DOTS_M = 10, CARD_W = 183, CARD_H = 259, CARD_R = 24;
-const RING_PER = 2 * (CARD_W + CARD_H) - 8 * CARD_R + 2 * Math.PI * CARD_R;
 const dotRings = new Map();   /* card element -> {cv, ctx, born} */
 let dotsRAF = null, dotsColor = '#1BF07E';
 let ringBandA = 'rgba(200,255,226,', ringBandB = 'rgba(200,255,226,';
@@ -1822,8 +1822,12 @@ function drawNeonRing(o, now) {
   const g = o.ctx, t = now / 1000;
   const W = CARD_W + 2 * DOTS_M, H = CARD_H + 2 * DOTS_M;
   g.clearRect(0, 0, W, H);
-  const entry = Math.min(1, (now - o.born) / 550);
-  const ease = 1 - Math.pow(1 - entry, 3);
+  const entry = Math.min(1, (now - o.born) / 600);
+  /* glow-encapsulate reveal: the light is born tight on the thumbnail edge,
+     flares, escapes outward past its resting place and settles there */
+  const c1 = 1.70158, c3 = c1 + 1;
+  const eb = 1 + c3 * Math.pow(entry - 1, 3) + c1 * Math.pow(entry - 1, 2);
+  const flash = Math.max(0, 1 - entry * 1.8);   /* brief bright birth */
   const breathe = 0.5 + 0.5 * Math.sin(t * 1.6);
   /* rotating two-pole gradient: the lighter bands sweep around the ring */
   const ang = t * 0.85, cx = W / 2, cy = H / 2, R = 190;
@@ -1834,24 +1838,22 @@ function drawNeonRing(o, now) {
   grad.addColorStop(0.42, dotsColor);
   grad.addColorStop(0.58, dotsColor);
   grad.addColorStop(1, ringBandB + lightA.toFixed(3) + ')');
-  /* clockwise sweep-in while arriving */
-  if (ease < 1) { g.setLineDash([RING_PER]); g.lineDashOffset = RING_PER * (1 - ease); }
   g.lineCap = 'round';
   g.strokeStyle = grad;
-  /* outer halo: lighter, hugging the main stroke so the pair reads as one
-     neon glow rather than two separate lines */
+  /* outer halo: hugging the main stroke so the pair reads as one glow.
+     On entry it escapes outward from the edge (easeOutBack overshoot). */
+  const ho = 1.4 * Math.max(0, eb);
   g.beginPath();
-  roundRectPath(g, DOTS_M - 1.4, DOTS_M - 1.4, CARD_W + 2.8, CARD_H + 2.8, CARD_R + 1.4);
-  g.globalAlpha = (0.42 + 0.28 * breathe) * ease;
-  g.lineWidth = 2.5;
+  roundRectPath(g, DOTS_M - ho, DOTS_M - ho, CARD_W + 2 * ho, CARD_H + 2 * ho, CARD_R + ho);
+  g.globalAlpha = Math.min(1, (0.42 + 0.28 * breathe) * Math.min(1, entry * 1.5) + flash * 0.35);
+  g.lineWidth = 2.5 * (0.35 + 0.65 * Math.min(1, entry * 1.3));
   g.stroke();
-  /* main selected stroke on the card edge */
+  /* main selected stroke, fixed on the card edge — flares bright at birth */
   g.beginPath();
   roundRectPath(g, DOTS_M + 1.75, DOTS_M + 1.75, CARD_W - 3.5, CARD_H - 3.5, CARD_R - 1.75);
-  g.globalAlpha = ease;
-  g.lineWidth = 3.5 + 0.6 * breathe;
+  g.globalAlpha = Math.min(1, entry * 1.6 + flash * 0.3);
+  g.lineWidth = (3.5 + 0.6 * breathe) * (0.55 + 0.45 * Math.min(1, entry * 1.4)) + flash * 1.6;
   g.stroke();
-  g.setLineDash([]);
   g.globalAlpha = 1;
 }
 document.querySelectorAll('#selcSeg button').forEach(b =>
@@ -2028,7 +2030,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 68';
+const BUILD = 'build 2026-09-08 · 69';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
