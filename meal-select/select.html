@@ -28,7 +28,8 @@
      --selc paints fills+borders, --selc-ink is the on-white text/icon variant,
      --selc-glow feeds the neon particle border. */
   body { --selc: #26A659; --selc-ink: #26A659; --selc-glow: rgba(38,166,89,.45); }
-  body.selc-red { --selc: #ED1C24; --selc-ink: #ED1C24; --selc-glow: rgba(237,28,36,.45); }
+  body.selc-red { --selc: #ED1C24; --selc-ink: #ED1C24;
+    --selc-glow: rgba(255,150,40,.55); }   /* glow warms to the calorie-bar orange */
   body.selc-neon { --selc: #1BF07E; --selc-ink: #0BD167; --selc-glow: rgba(27,240,126,.6); }
   body.desktop { background: #f5f5f7; }
 
@@ -269,10 +270,11 @@
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
-  /* neon mode: the crisp border is replaced by a double-stroke highlight
-     ring drawn on a per-card canvas (see neon ring engine below) — main
-     neon stroke + lighter halo, painted with a breathing rotating gradient */
-  body.selc-neon .card .sel-border { opacity: 0; }
+  /* neon + red modes: the crisp border is replaced by a fused double-stroke
+     glow ring drawn on a per-card canvas (see ring engine below) — main
+     stroke + hugging halo, painted with a breathing rotating gradient.
+     Neon glows mint; red glows orange-yellow like the calorie bar. */
+  body.selc-neon .card .sel-border, body.selc-red .card .sel-border { opacity: 0; }
   .sel-dots { position: absolute; inset: -10px; width: calc(100% + 20px);
     height: calc(100% + 20px); pointer-events: none; z-index: 3;
     filter: drop-shadow(0 0 7px var(--selc-glow)); }
@@ -1757,9 +1759,15 @@ const DOTS_M = 10, CARD_W = 183, CARD_H = 259, CARD_R = 24;
 const RING_PER = 2 * (CARD_W + CARD_H) - 8 * CARD_R + 2 * Math.PI * CARD_R;
 const dotRings = new Map();   /* card element -> {cv, ctx, born} */
 let dotsRAF = null, dotsColor = '#1BF07E';
-function neonOn() { return document.body.classList.contains('selc-neon'); }
+let ringBandA = 'rgba(200,255,226,', ringBandB = 'rgba(200,255,226,';
+function neonOn() { return document.body.classList.contains('selc-neon') ||
+  document.body.classList.contains('selc-red'); }
 function startNeonDots() {
   dotsColor = getComputedStyle(document.body).getPropertyValue('--selc').trim() || '#1BF07E';
+  /* red theme: the sweeping bands are the calorie bar's yellow -> orange */
+  const red = document.body.classList.contains('selc-red');
+  ringBandA = red ? 'rgba(255,197,46,' : 'rgba(200,255,226,';
+  ringBandB = red ? 'rgba(255,138,60,' : 'rgba(200,255,226,';
   if (!dotsRAF) dotsRAF = requestAnimationFrame(neonDotsFrame);
 }
 function neonDotsFrame(now) {
@@ -1805,10 +1813,10 @@ function drawNeonRing(o, now) {
   const grad = g.createLinearGradient(cx + Math.cos(ang) * R, cy + Math.sin(ang) * R,
     cx - Math.cos(ang) * R, cy - Math.sin(ang) * R);
   const lightA = 0.55 + 0.4 * breathe;
-  grad.addColorStop(0, 'rgba(200,255,226,' + lightA.toFixed(3) + ')');
+  grad.addColorStop(0, ringBandA + lightA.toFixed(3) + ')');
   grad.addColorStop(0.42, dotsColor);
   grad.addColorStop(0.58, dotsColor);
-  grad.addColorStop(1, 'rgba(200,255,226,' + lightA.toFixed(3) + ')');
+  grad.addColorStop(1, ringBandB + lightA.toFixed(3) + ')');
   /* clockwise sweep-in while arriving */
   if (ease < 1) { g.setLineDash([RING_PER]); g.lineDashOffset = RING_PER * (1 - ease); }
   g.lineCap = 'round';
@@ -2003,7 +2011,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 66';
+const BUILD = 'build 2026-09-08 · 67';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
