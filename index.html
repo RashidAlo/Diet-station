@@ -40,9 +40,7 @@
   /* native chrome mode: the TestFlight shell (iOS 26+) draws Apple's own
      Liquid Glass top bar + tab bar natively and hides the web versions;
      the CSS/JS glass below stays as the fallback everywhere else */
-  html.ds-nativebars header.bar { display: none !important; }
   html.ds-nativebars .tabbar { display: none !important; }
-  html.ds-nativebars body { padding-top: calc(env(safe-area-inset-top, 0px) + 54px); }
 
   /* ---- frosted sticky header ---- */
   header.bar { position: sticky; top: 0; z-index: 40;
@@ -352,14 +350,14 @@
   /* dual-action primary: Prototype launch + settings in one red button */
   .btn.primary.dual { padding: 0; overflow: hidden; }
   .dual .d-main { display: flex; align-items: center; justify-content: center;
-    gap: 8px; flex: 1; padding: 0 14px; height: 100%; }
-  body.native .dual .d-main { font-size: 13.5px; }
-  body.native .dual .d-main svg { width: 13px; height: 13px; }
-  .dual .d-div { width: 1px; align-self: stretch; margin: 11px 0;
+    gap: 7px; flex: 1; padding: 0 16px; height: 100%; min-width: 0; }
+  body.native .dual .d-main { font-size: 13px; letter-spacing: -.01em; }
+  body.native .dual .d-main svg { width: 12px; height: 12px; flex: none; }
+  .dual .d-div { width: 1px; align-self: stretch; margin: 12px 0;
     background: rgba(255,255,255,.32); }
   .dual .d-gear { display: flex; align-items: center; justify-content: center;
-    flex: 0 0 30%; height: 100%; cursor: pointer; }
-  .dual .d-gear svg { width: 21px; height: 21px; }
+    flex: 0 0 30%; min-width: 56px; height: 100%; cursor: pointer; }
+  .dual .d-gear svg { width: 20px; height: 20px; }
   .dual .d-gear:active { background: rgba(0,0,0,.14); }
   /* round Live/Offline power button in the action bar (admin) */
   .livebtn { display: none; }
@@ -374,26 +372,26 @@
       0 5px 14px -6px rgba(52,199,89,.55); }
   .livebtn.off { background: #ececef; color: #8e8e93;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.07); }
-  .livebtn svg { width: 15px; height: 15px;
-    transition: transform .35s cubic-bezier(.3,1.5,.5,1); }
+  .livebtn > svg { width: 15px; height: 15px; }
   .livebtn .lv-t { font: 700 7.5px/1 -apple-system, sans-serif;
     letter-spacing: .04em; text-transform: uppercase; }
-  body.native .livebtn svg { width: 17px; height: 17px; }
+  body.native .livebtn > svg { width: 17px; height: 17px; }
   body.native .livebtn .lv-t { font-size: 8px; }
-  .livebtn.off svg { transform: rotate(180deg) scale(.9); }
-  .livebtn.busy svg { animation: livespin 1s linear infinite; }
-  .livebtn::after { content: ''; position: absolute; inset: 0;
-    border-radius: inherit; opacity: 0; pointer-events: none; }
-  .livebtn.ping::after { animation: livering .65s ease-out; }
-  .livebtn.pop { animation: livepop .45s cubic-bezier(.3,1.7,.5,1); }
+  /* tap feedback: a green ring sweeps around the circle */
+  .livebtn .lv-ring { position: absolute; inset: -1px; width: auto;
+    height: auto; transform: rotate(-90deg); pointer-events: none;
+    opacity: 0; }
+  .livebtn .lv-ring circle { fill: none; stroke: #34C759;
+    stroke-width: 3; stroke-linecap: round;
+    stroke-dasharray: 164; stroke-dashoffset: 164; }
+  .livebtn.busy .lv-ring, .livebtn.ping .lv-ring { opacity: 1; }
+  .livebtn.busy .lv-ring circle {
+    animation: ringsweep .9s cubic-bezier(.4,0,.2,1) infinite; }
+  .livebtn.ping .lv-ring circle { animation: ringsweep .55s ease-out forwards; }
   .livebtn.shake { animation: liveshake .4s ease; }
-  @keyframes livering { from { box-shadow: 0 0 0 0 rgba(52,199,89,.55);
-    opacity: 1; } to { box-shadow: 0 0 0 16px rgba(52,199,89,0); opacity: 0; } }
-  @keyframes livepop { 0% { transform: scale(1); } 40% { transform: scale(1.14); }
-    100% { transform: scale(1); } }
+  @keyframes ringsweep { to { stroke-dashoffset: 0; } }
   @keyframes liveshake { 0%,100% { transform: translateX(0); }
     25% { transform: translateX(-4px); } 60% { transform: translateX(4px); } }
-  @keyframes livespin { to { transform: rotate(360deg); } }
   .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
   .editfoot .draftdot { flex: 1; font: 600 12px/1.35 -apple-system, sans-serif;
     color: #6e6e73; }
@@ -917,7 +915,8 @@ function wireEditMode() {
     const lb = document.createElement('button');
     lb.className = 'livebtn';
     lb.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2v7.6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M7.4 6.4a7.3 7.3 0 1 0 9.2 0" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>' +
-      '<span class="lv-t"></span>';
+      '<span class="lv-t"></span>' +
+      '<svg class="lv-ring" viewBox="0 0 56 56"><circle cx="28" cy="28" r="26"/></svg>';
     const lbT = lb.querySelector('.lv-t');
     const syncLb = () => {
       lb.classList.toggle('on', !cur.hidden);
@@ -934,13 +933,13 @@ function wireEditMode() {
       lb.classList.add('busy');
       const ok = await publishCard(id, { hidden: wantHidden }, { textContent: '' });
       lb.classList.remove('busy');
-      lb.classList.remove('ping', 'pop', 'shake');
+      lb.classList.remove('ping', 'shake');
       void lb.offsetWidth;
       if (ok) {
         cur.hidden = wantHidden;
         card.classList.toggle('is-hidden', wantHidden);
         syncLb();
-        lb.classList.add(wantHidden ? 'pop' : 'ping');
+        if (!wantHidden) lb.classList.add('ping');
       } else {
         lb.classList.add('shake');
       }
