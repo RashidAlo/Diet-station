@@ -187,7 +187,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.regular.tint(DS.red.opacity(0.3)).interactive(),
+            .glassEffect(.clear.interactive(),
                          in: .rect(cornerRadius: 23))
     }
 
@@ -206,7 +206,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.regular.tint(DS.red.opacity(0.3)), in: .rect(cornerRadius: 23))
+        .glassEffect(.clear, in: .rect(cornerRadius: 23))
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
@@ -268,7 +268,7 @@ struct HomeScreenNative: View {
             .padding(EdgeInsets(top: 28, leading: 20, bottom: 22, trailing: 20))
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.regular.tint(DS.red.opacity(0.3)), in: .rect(cornerRadius: 30))
+        .glassEffect(.clear, in: .rect(cornerRadius: 30))
         .glassEffectID("plan", in: glassNS)
         .clipShape(RoundedRectangle(cornerRadius: 30))
     }
@@ -281,7 +281,7 @@ struct HomeScreenNative: View {
             DaysContent(state: state, shape: shape)
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.regular.tint(DS.red.opacity(0.3)), in: .rect(cornerRadius: 27))
+        .glassEffect(.clear, in: .rect(cornerRadius: 27))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -297,7 +297,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 19)
         .frame(height: 60)
-        .glassEffect(.regular.tint(DS.red.opacity(0.3)).interactive(), in: .rect(cornerRadius: 20))
+        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
         .glassEffectID("disc", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -312,7 +312,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 84, maxHeight: .infinity)   // days' layoutPriority must not crush it
-        .glassEffect(.regular.tint(DS.red.opacity(0.3)).interactive(), in: .rect(cornerRadius: 20))
+        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
