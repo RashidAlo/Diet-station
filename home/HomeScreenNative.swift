@@ -108,14 +108,30 @@ private enum DS {
     var showDiscounts = true
     var showConsult = true
     var macrosOpen = false
-    var stripDay = 0                // 0 today / 1 tomorrow
+    var stripDay = 1                // index into days — boots on Today
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
     var calendarOpen = false        // meal-select web flow over this screen
 
-    struct DayInfo { let word: String; let kcal: Int; let c: Int; let p: Int; let f: Int }
-    let days: [DayInfo] = [.init(word: "Today", kcal: 1200, c: 55, p: 87, f: 23),
-                           .init(word: "Tomorrow", kcal: 1140, c: 61, p: 78, f: 20)]
+    /* the carousel spans Yesterday .. Today+4; past Tomorrow the word slot
+       carries the weekday name and the date line carries the date */
+    struct DayInfo { let off: Int; let kcal: Int; let c: Int; let p: Int; let f: Int }
+    let days: [DayInfo] = [.init(off: -1, kcal: 1185, c: 52, p: 84, f: 22),
+                           .init(off: 0,  kcal: 1200, c: 55, p: 87, f: 23),
+                           .init(off: 1,  kcal: 1140, c: 61, p: 78, f: 20),
+                           .init(off: 2,  kcal: 1225, c: 58, p: 90, f: 24),
+                           .init(off: 3,  kcal: 1090, c: 49, p: 75, f: 19),
+                           .init(off: 4,  kcal: 1175, c: 54, p: 82, f: 21)]
+    func dayWord(_ ix: Int) -> String {
+        switch days[ix].off {
+        case -1: return "Yesterday"
+        case 0:  return "Today"
+        case 1:  return "Tomorrow"
+        default:
+            let d = Calendar.current.date(byAdding: .day, value: days[ix].off, to: .now) ?? .now
+            return d.formatted(.dateTime.weekday(.wide))
+        }
+    }
     func dateString(_ offset: Int) -> String {
         let d = Calendar.current.date(byAdding: .day, value: offset, to: .now) ?? .now
         return d.formatted(.dateTime.day().month(.abbreviated))
@@ -477,39 +493,59 @@ struct HomeScreenNative: View {
     private var mealSheet: some View {
         VStack(alignment: .leading, spacing: 20) {
             sheetHeader.padding(.top, 30).padding(.horizontal, 24)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 29) {
-                    HStack(spacing: 12) {
-                        mealCard("meal1.jpg", "Chicken Machbous", 245)
-                        mealCard("meal2.jpg", "Egg Sandwich", 343)
-                        mealCard("meal3.jpg", "Biryani with tomato sauce and Veggies", 554)
-                    }
-                    Rectangle().fill(Color(white: 0.925)).frame(width: 1, height: 135)
-                        .onGeometryChange(for: CGFloat.self) { proxy in
-                            proxy.frame(in: .named("strip")).minX
-                        } action: { x in
-                            // the divider is the day boundary (hysteresis 38% / 52%)
-                            let w = UIScreen.main.bounds.width
-                            if x < w * 0.38, state.stripDay == 0 {
-                                withAnimation(.spring(duration: 0.35)) { state.stripDay = 1 }
-                            } else if x > w * 0.52, state.stripDay == 1 {
-                                withAnimation(.spring(duration: 0.35)) { state.stripDay = 0 }
+            ScrollViewReader { stripProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 29) {
+                        ForEach(0..<state.days.count, id: \.self) { i in
+                            if i > 0 {
+                                Rectangle().fill(Color(white: 0.925)).frame(width: 1, height: 135)
                             }
+                            dayGroup(i)
                         }
-                    HStack(spacing: 12) {
-                        mealCard("meal1.jpg", "Chicken Machbous", 245)
-                        mealCard("meal2.jpg", "Egg Sandwich", 343)
-                        mealCard("meal3.jpg", "Biryani with tomato sauce and Veggies", 554)
                     }
+                    .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
+                // margins (not HStack padding) so scrollTo(.leading) lands
+                // day groups exactly at the standard 24pt inset
+                .contentMargins(.horizontal, 24, for: .scrollContent)
+                .coordinateSpace(name: "strip")
+                .onAppear {
+                    stripProxy.scrollTo("day1", anchor: .leading)
+                }
             }
-            .coordinateSpace(name: "strip")
             Spacer(minLength: 140)
         }
         .frame(maxWidth: .infinity, minHeight: 520, alignment: .top)
         .background(.white, in: UnevenRoundedRectangle(topLeadingRadius: 38, topTrailingRadius: 38))
+        // bottom-overscroll rubber band must show white, never the red page
+        .background(alignment: .bottom) {
+            Color.white.frame(height: 600).offset(y: 600)
+        }
+    }
+
+    private let stripMeals = [("meal1.jpg", "Chicken Machbous", 245),
+                              ("meal2.jpg", "Egg Sandwich", 343),
+                              ("meal3.jpg", "Biryani with tomato sauce and Veggies", 554)]
+
+    private func dayGroup(_ i: Int) -> some View {
+        HStack(spacing: 12) {
+            ForEach(0..<3, id: \.self) { k in
+                // rotate per day; Today (i=1) keeps the original order
+                let m = stripMeals[(k + i + 2) % 3]
+                mealCard(m.0, m.1, m.2)
+            }
+        }
+        .id("day\(i)")
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .named("strip"))
+        } action: { r in
+            /* the group under the 45% anchor is the active day; ±15pt bands
+               leave a dead zone across each divider gap = hysteresis */
+            let ax = UIScreen.main.bounds.width * 0.45
+            if r.minX - 15 <= ax, ax < r.maxX + 15, state.stripDay != i {
+                withAnimation(.spring(duration: 0.35)) { state.stripDay = i }
+            }
+        }
     }
 
     private var sheetHeader: some View {
@@ -523,9 +559,9 @@ struct HomeScreenNative: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
             VStack(alignment: .leading, spacing: 1) {
-                Text(info.word).font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
+                Text(state.dayWord(state.stripDay)).font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
                     .contentTransition(.numericText())
-                Text(state.dateString(state.stripDay)).font(DS.proxima(11)).foregroundStyle(DS.caption)
+                Text(state.dateString(state.days[state.stripDay].off)).font(DS.proxima(11)).foregroundStyle(DS.caption)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.75)
