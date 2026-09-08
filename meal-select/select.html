@@ -365,6 +365,12 @@
     transition: stroke-dashoffset .38s cubic-bezier(.3,.7,.3,1.15) .12s, opacity .05s .12s; }
   .navigator.celebrating .done-center svg path { stroke-dashoffset: 0; opacity: 1; }
   .navigator.warn .content { opacity: 0; }
+  /* over-quota: the whole bar shakes left-right so the eye lands on the error */
+  @keyframes navshake { 0%, 100% { transform: translateX(0); }
+    12% { transform: translateX(-9px); } 30% { transform: translateX(8px); }
+    48% { transform: translateX(-6px); } 64% { transform: translateX(4px); }
+    80% { transform: translateX(-2px); } }
+  .navigator.warn { animation: navshake .5s cubic-bezier(.36,.07,.19,.97); }
   .navigator .warnmsg { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; padding: 0 20px; text-align: center;
     font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #ed1c24;
@@ -1219,7 +1225,7 @@ function denied(catId) {
   const cat = CATS.find(c => c.id === catId);
   const nav = document.getElementById('navigator');
   document.getElementById('warnMsg').textContent =
-    cat.title + ' is full — deselect a meal there to swap';
+    cat.title + ' is full — remove one first';
   clearTimeout(warnTimer);
   nav.classList.remove('warn'); void nav.offsetWidth; nav.classList.add('warn');
   gaugeFx.alphaTarget = 0;
@@ -1859,7 +1865,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 59';
+const BUILD = 'build 2026-09-08 · 60';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
