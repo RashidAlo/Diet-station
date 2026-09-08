@@ -1865,7 +1865,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 60';
+const BUILD = 'build 2026-09-08 · 61';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -1913,31 +1913,39 @@ setTimeout(() => {
   if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
 }, 150);
 (function () {
-  let taps = 0, lastTap = 0, holdTimer = null, sx = 0, sy = 0;
+  let taps = 0, lastTap = 0, holdTimer = null, holdStart = 0, sx = 0, sy = 0;
+  const holdFire = () => {
+    holdTimer = null; holdStart = 0;
+    openLabMenu();
+    phone.addEventListener('click', ev => {
+      ev.stopPropagation(); ev.preventDefault();
+    }, { capture: true, once: true });
+  };
   phone.addEventListener('touchstart', e => {
     if (document.body.classList.contains('desktop')) return;
-    const now = performance.now();
-    taps = (now - lastTap < 380) ? taps + 1 : 1;
-    lastTap = now;
+    /* e.timeStamp = hardware event time — jank on the main thread can't
+       stretch real tap intervals past the window (mirrors lab-shell) */
+    taps = (e.timeStamp - lastTap < 550) ? taps + 1 : 1;
+    lastTap = e.timeStamp;
     if (taps >= 3) {
       const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
-      holdTimer = setTimeout(() => {
-        openLabMenu();
-        phone.addEventListener('click', ev => {
-          ev.stopPropagation(); ev.preventDefault();
-        }, { capture: true, once: true });
-      }, 420);
+      holdStart = e.timeStamp;
+      holdTimer = setTimeout(holdFire, 420);
     }
   }, { passive: true });
   phone.addEventListener('touchmove', e => {
     if (!holdTimer) return;
     const t = e.touches[0];
     if (Math.hypot(t.clientX - sx, t.clientY - sy) > 12) {
-      clearTimeout(holdTimer); holdTimer = null;
+      clearTimeout(holdTimer); holdTimer = null; holdStart = 0;
     }
   }, { passive: true });
-  phone.addEventListener('touchend', () => {
+  phone.addEventListener('touchend', e => {
+    if (!holdTimer) return;
     clearTimeout(holdTimer); holdTimer = null;
+    /* timer starved but the finger physically held long enough — honor it */
+    if (holdStart && e.timeStamp - holdStart >= 420) holdFire();
+    holdStart = 0;
   }, { passive: true });
 })();
 
@@ -2087,6 +2095,6 @@ setTimeout(() => {
 }, 60);
 fit();
 </script>
-<script src="../lab-shell.js?v=20260908b" data-flow="meal-select" defer></script>
+<script src="../lab-shell.js?v=20260908c" data-flow="meal-select" defer></script>
 </body>
 </html>
