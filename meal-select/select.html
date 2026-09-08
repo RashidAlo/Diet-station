@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 79';
+const BUILD = 'build 2026-09-09 · 80';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2286,7 +2286,7 @@ fit();
   if (!/DietStationLab/.test(navigator.userAgent)) return;
   var FLOW = 'selector', SURFACE = 'light';
   var ELS = { close: '#closeBtn', dual: '.dual' };
-  var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn' };
+  var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
   var nativeConfirmed = false;
   /* fullscreen takeover: the docked bar sits on the canonical top line */
   var MODE = 'page';
@@ -2305,15 +2305,9 @@ fit();
       if (el) el.classList.add('ds-native-hidden');
     });
   }
-  var restoreT = null;
-  function report() {
-    if (!docked) return;   /* twins exist only in the docked, static state */
-    prehide();
-    /* iOS<26 shells never confirm — hand chrome back to the web bar */
-    clearTimeout(restoreT);
-    restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
-    /* overlay pages live in (possibly offset) iframes — convert to SCREEN
-       coords by walking same-origin frame ancestors */
+  /* overlay pages live in (possibly offset) iframes — convert to SCREEN
+     coords by walking same-origin frame ancestors */
+  function frameOffset() {
     var off = { x: 0, y: 0 };
     try {
       var fe = window.frameElement;
@@ -2323,6 +2317,16 @@ fit();
         fe = fe.ownerDocument.defaultView.frameElement;
       }
     } catch (_) {}
+    return off;
+  }
+  var restoreT = null;
+  function report() {
+    if (!docked) return;   /* twins exist only in the docked, static state */
+    prehide();
+    /* iOS<26 shells never confirm — hand chrome back to the web bar */
+    clearTimeout(restoreT);
+    restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
+    var off = frameOffset();
     var els = [];
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
@@ -2356,7 +2360,62 @@ fit();
     var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
-  addEventListener('resize', function () { setTimeout(report, 350); });
+  addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
+
+  /* ---- macros gauge: REAL Liquid Glass twin (Rashid 2026-09-09) ----
+     The navigator is screen-static outside entry/dismissal (its bottom
+     compensates for the sheet transform), so per the motion-state
+     doctrine it earns a persistent native twin: glass capsule + animated
+     fill + counters, driven by these state posts. Theatrical moments
+     (warn shake, Done celebration) hand back to the web bar that
+     choreographs them; the web bar hides only after the shell CONFIRMS
+     the native gauge, so hosts without macrogauge degrade gracefully. */
+  var gaugeOn = false, gaugeArmed = false, gaugeReT = null;
+  function gaugeState() {
+    var nav = document.getElementById('navigator');
+    var r = nav.getBoundingClientRect();
+    var off = frameOffset();
+    var t = totals();
+    var quotaTotal = CATS.reduce(function (s, c) { return s + c.quota; }, 0);
+    var frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
+    return { t: 'macrogauge', flow: FLOW, surface: SURFACE,
+      rect: { x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height },
+      fill: GAUGE_BASE + frac * (1 - GAUGE_BASE),
+      kcal: t.kcal, goal: MODS.target, p: t.p, c: t.c, f: t.f,
+      next: dock.classList.contains('show') };
+  }
+  function postGauge() {
+    if (!gaugeArmed) return;
+    var nav = document.getElementById('navigator');
+    if (nav.classList.contains('warn') || nav.classList.contains('celebrating')) return;
+    try { webkit.messageHandlers.ds.postMessage(gaugeState()); gaugeOn = true; } catch (_) {}
+  }
+  function clearGauge() {
+    gaugeOn = false;
+    try { webkit.messageHandlers.ds.postMessage({ t: 'macrogauge', flow: FLOW, clear: true }); } catch (_) {}
+    document.getElementById('navigator').classList.remove('ds-native-hidden');
+  }
+  window.DSNativeGauge = function (on) {
+    if (on && gaugeOn) document.getElementById('navigator').classList.add('ds-native-hidden');
+  };
+  /* every totals change flows through updateAll — wrap it for state posts */
+  if (typeof updateAll === 'function') {
+    var _ua = updateAll;
+    window.updateAll = function () {
+      var r = _ua.apply(this, arguments);
+      postGauge();
+      return r;
+    };
+  }
+  /* warn / celebrating are class-driven: watch the class list and hand
+     the bar back to the web for those moments, retake it after */
+  new MutationObserver(function () {
+    var nav = document.getElementById('navigator');
+    var busy = nav.classList.contains('warn') || nav.classList.contains('celebrating');
+    clearTimeout(gaugeReT);
+    if (busy) { if (gaugeOn) clearGauge(); }
+    else gaugeReT = setTimeout(postGauge, 260);
+  }).observe(document.getElementById('navigator'), { attributes: true, attributeFilter: ['class'] });
 
   /* ---- dock watcher: the single source of chrome state ---- */
   var docked = false, dockT = null;
@@ -2390,13 +2449,14 @@ fit();
       sh.removeEventListener('transitionstart', h);
       docked = false; clearTimeout(dockT);
       clearChrome(); unhide();
+      clearGauge();
     });
   }
   function boot() {
     /* arm only after the entry spring, so its own transition events don't
        consume the dismissal listener */
     var sh = document.getElementById('sheet'), done = false;
-    function go() { if (done) return; done = true; armDismissRelease(); watchDock(); }
+    function go() { if (done) return; done = true; armDismissRelease(); watchDock(); gaugeArmed = true; postGauge(); }
     if (sh) sh.addEventListener('transitionend', function h(e) {
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionend', h); go();

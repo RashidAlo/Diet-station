@@ -600,7 +600,8 @@ struct HomeScreenNative: View {
                 .padding(.horizontal, 12).frame(height: 44)
                 .clipped()   // clips the macro slide only — BEFORE the background,
                              // so the shadow is never cropped (same finish as the tile)
-                .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                // the macros calculator is REAL Liquid Glass (Rashid 2026-09-09)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
             }
             .fixedSize()
@@ -831,6 +832,43 @@ final class FlowPreloader {
                 }
                 return
             }
+            if t == "macrogauge" {
+                // the selector's macros gauge: a persistent Liquid Glass twin
+                // (static-state furniture per the motion-state doctrine); the
+                // page hides its web bar only after DSNativeGauge confirms
+                let frame = message.frameInfo
+                if body["clear"] as? Bool == true {
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.2)) { self.chrome.gauge = nil }
+                    }
+                    return
+                }
+                func num(_ k: String) -> Double {
+                    (body[k] as? NSNumber)?.doubleValue ?? 0
+                }
+                var rect = CGRect.zero
+                if let r = body["rect"] as? [String: Any] {
+                    func rn(_ k: String) -> CGFloat {
+                        CGFloat((r[k] as? NSNumber)?.doubleValue ?? 0)
+                    }
+                    rect = CGRect(x: rn("x"), y: rn("y"), width: rn("w"), height: rn("h"))
+                }
+                let model = DSGaugeModel(rect: rect, fill: num("fill"),
+                                         kcal: Int(num("kcal")), goal: Int(num("goal")),
+                                         p: Int(num("p")), c: Int(num("c")), f: Int(num("f")),
+                                         next: (body["next"] as? Bool) ?? false)
+                DispatchQueue.main.async {
+                    self.chrome.frame = frame
+                    withAnimation(.spring(response: 0.55, dampingFraction: 1)) {
+                        self.chrome.gauge = model
+                    }
+                    if let wv = self.chrome.webView {
+                        wv.evaluateJavaScript("window.DSNativeGauge && DSNativeGauge(true)",
+                                              in: frame, in: .page, completionHandler: nil)
+                    }
+                }
+                return
+            }
             guard t == "haptic" else { return }
             let kind = body["kind"] as? String ?? "impact"
             let style = body["style"] as? String ?? "light"
@@ -987,6 +1025,121 @@ struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
     }
 }
 
+// MARK: - Macros gauge: real Liquid Glass twin of the selector's navigator
+//
+// The web navigator (358x69 capsule, Figma "Meal Selection Navigator 2.0")
+// stays the choreographer for warn/celebrate; this twin owns the resting
+// selection states — REAL glassEffect base refracting the meal cards, the
+// tri-tone fill gliding with each pick, counters ticking natively.
+
+struct DSGaugeModel: Equatable {
+    var rect: CGRect
+    var fill: Double            // 0..1 of bar width (web's GAUGE_BASE applied)
+    var kcal: Int
+    var goal: Int
+    var p: Int
+    var c: Int
+    var f: Int
+    var next: Bool
+}
+
+@available(iOS 26.0, *)
+struct DSGaugeGlassView: View {
+    let model: DSGaugeModel
+    var onNext: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            fillBar
+            content
+        }
+        .overlay(alignment: .trailing) {
+            if model.next {
+                Button(action: onNext) {
+                    HStack(spacing: 7) {
+                        Text("Next").font(DS.urbane(14, .medium))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .frame(height: 53)
+                }
+                .buttonStyle(.glass)
+                .padding(.trailing, 8)
+                .transition(.scale(scale: 0.6).combined(with: .opacity))
+            }
+        }
+        .glassEffect(.regular, in: .capsule)
+        .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+    }
+
+    private var fillBar: some View {
+        GeometryReader { geo in
+            let w = geo.size.width * model.fill
+            // the web painter's tri-tone warmth with a feathered leading edge
+            LinearGradient(stops: [
+                .init(color: Color(red: 238/255, green: 32/255, blue: 35/255).opacity(0.94), location: 0),
+                .init(color: Color(red: 245/255, green: 120/255, blue: 19/255).opacity(0.94), location: 0.62),
+                .init(color: Color(red: 253/255, green: 215/255, blue: 2/255).opacity(0.94), location: 0.96),
+                .init(color: Color(red: 253/255, green: 222/255, blue: 60/255).opacity(0.94), location: 1),
+            ], startPoint: .leading, endPoint: .trailing)
+            .frame(width: max(8, w))
+            .mask(alignment: .leading) {
+                // feather compresses toward the cap, matching the web glide
+                let soft = max(2, min(48, (1 - model.fill) / 0.12 * 48))
+                LinearGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: max(0, (w - soft) / max(w, 1))),
+                    .init(color: .black.opacity(0), location: 1),
+                ], startPoint: .leading, endPoint: .trailing)
+            }
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+        .clipShape(Capsule())
+        .animation(.spring(response: 0.65, dampingFraction: 1), value: model.fill)
+    }
+
+    private var content: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Kcal").font(DS.urbane(9, .medium))
+                HStack(alignment: .lastTextBaseline, spacing: 0) {
+                    Text(verbatim: "\(model.kcal)").font(DS.urbane(19, .semibold))
+                        .contentTransition(.numericText(value: Double(model.kcal)))
+                    Text(verbatim: "/\(model.goal)").font(DS.urbane(10, .medium))
+                        .opacity(0.46)
+                }
+            }
+            .frame(width: 78, alignment: .leading)
+            HStack(spacing: 3) {
+                pair("Protein", model.p, minW: 38)
+                pair("Carbs", model.c, minW: 32)
+                pair("Fat", model.f, minW: 28)
+            }
+            .padding(.bottom, 4)
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, 28)
+        .padding(.trailing, 64)
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+        .animation(.spring(duration: 0.5), value: model.kcal)
+    }
+
+    private func pair(_ label: String, _ v: Int, minW: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(label).font(DS.urbane(9, .medium))
+            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                Text(verbatim: "\(v)").font(DS.urbane(14, .semibold))
+                    .contentTransition(.numericText(value: Double(v)))
+                Text("g").font(DS.proxima(10))
+            }
+        }
+        .frame(minWidth: minW, alignment: .leading)
+    }
+}
+
 /// Chrome state for one preloaded overlay webview — the glasschrome protocol
 /// mirrored, so flows summoned from the native pilot get chrome identical to
 /// the hub path (twins, bar, and the calendar's clear/restore dance).
@@ -997,6 +1150,7 @@ final class OverlayChrome: ObservableObject {
     @Published var flow: String?
     @Published var surface: String?
     @Published var mode: String?
+    @Published var gauge: DSGaugeModel?
     weak var webView: WKWebView?
     var frame: WKFrameInfo?
 
@@ -1010,6 +1164,7 @@ final class OverlayChrome: ObservableObject {
         flow = nil
         surface = nil
         mode = nil
+        gauge = nil
         frame = nil
     }
 }
@@ -1042,6 +1197,13 @@ struct FlowOverlay: View {
                              surface: chrome.surface,
                              mode: chrome.mode) { chrome.chromeTap($0) }
                 .ignoresSafeArea()
+            if let g = chrome.gauge {
+                DSGaugeGlassView(model: g) { chrome.chromeTap("gauge-next") }
+                    .frame(width: g.rect.width, height: g.rect.height)
+                    .position(x: g.rect.midX, y: g.rect.midY)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
             if chrome.bar == "calendar" {
                 // home tab from a flow the native pilot summoned = back to the pilot
                 CalendarGlassTabBar(onHome: onClose)
