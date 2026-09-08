@@ -785,9 +785,11 @@ function openLogin() {
   try { window.webkit.messageHandlers.ds.postMessage({ t: 'chrome', show: false }); } catch (_) {}
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
-  const MIN_MS = 3200;                 /* gapless burst->vacuum -> ripple pop */
+  const MIN_MS = 3400;                 /* full v17 run: burst->vacuum->draw->
+                                          logo-echo pop (3.18s) + settle beat,
+                                          counted from ANIMATION start */
   const MAX_MS = 7000;
-  let riveOk = false, gone = false;
+  let riveOk = false, gone = false, TA = 0;
   function dismiss() {
     if (gone) return;
     gone = true;
@@ -824,6 +826,8 @@ function openLogin() {
         layout: new rive.Layout({ fit: rive.Fit.Contain }),
         onLoad: () => {
           riveOk = true;
+          TA = performance.now();      /* the choreography starts NOW, not
+                                          at page T0 — hold from here */
           /* size the drawing surface to the element x devicePixelRatio —
              without this Rive renders into a 300x150 buffer and the CSS
              stretch smears everything */
@@ -843,7 +847,7 @@ function openLogin() {
     document.head.appendChild(sc);
   }
   done.then(() => {
-    const wait = Math.max(0, MIN_MS - (performance.now() - T0));
+    const wait = Math.max(0, MIN_MS - (performance.now() - (TA || T0)));
     setTimeout(() => { if (riveOk) dismiss(); }, wait);
   });
   setTimeout(dismiss, MAX_MS);         /* hard ceiling — never trap the user */
