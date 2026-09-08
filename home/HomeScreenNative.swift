@@ -756,6 +756,7 @@ final class FlowPreloader {
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
+                let surface = body["surface"] as? String
                 let frame = message.frameInfo
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
@@ -763,6 +764,7 @@ final class FlowPreloader {
                         self.chrome.els = els
                         self.chrome.bar = bar
                         self.chrome.flow = flow
+                        self.chrome.surface = surface
                     }
                     if !els.isEmpty, let wv = self.chrome.webView {
                         let ids = els.map { "'\($0.id)'" }.joined(separator: ",")
@@ -851,6 +853,7 @@ final class OverlayChrome: ObservableObject {
     @Published var els: [GlassChromeEl] = []
     @Published var bar: String?
     @Published var flow: String?
+    @Published var surface: String?
     weak var webView: WKWebView?
     var frame: WKFrameInfo?
 
@@ -862,6 +865,7 @@ final class OverlayChrome: ObservableObject {
         els = []
         bar = nil
         flow = nil
+        surface = nil
         frame = nil
     }
 }
@@ -886,7 +890,8 @@ struct FlowOverlay: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             FlowWebView(path: path, onClose: onClose)
-            GlassChromeLayer(els: chrome.els, flow: chrome.flow) { chrome.chromeTap($0) }
+            GlassChromeLayer(els: chrome.els, flow: chrome.flow,
+                             surface: chrome.surface) { chrome.chromeTap($0) }
                 .ignoresSafeArea()
             if chrome.bar == "calendar" {
                 // home tab from a flow the native pilot summoned = back to the pilot
