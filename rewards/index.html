@@ -974,6 +974,49 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   setTimeout(buildCoupons, 50);
 });
 </script>
+<script>
+/* Lab-menu access workaround (2026-09-08): lab-shell's shared window-level
+   triple-tap gesture doesn't fire on this flow on device (Rashid-confirmed;
+   only meal-select, which runs its own element-level detector, works). Until
+   the shell gesture is fixed, replicate that proven detector here and open
+   the shared sheet directly by its body class — the sheet content itself
+   (topbar/links/done/veil) is still built and closed by lab-shell. */
+(function () {
+  function attach() {
+    var host = document.getElementById('phone') || document.body;
+    function openSharedMenu() {
+      if (document.body.classList.contains('desktop')) return;
+      document.body.classList.add('labshell-menu');
+      try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+    }
+    var taps = 0, last = 0, hold = null, holdAt = 0, sx = 0, sy = 0;
+    var fire = function () { hold = null; holdAt = 0; openSharedMenu(); };
+    host.addEventListener('touchstart', function (e) {
+      if (document.body.classList.contains('desktop')) return;
+      taps = (e.timeStamp - last < 550) ? taps + 1 : 1;
+      last = e.timeStamp;
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+      if (taps >= 3) { holdAt = e.timeStamp; hold = setTimeout(fire, 420); }
+    }, { passive: true });
+    host.addEventListener('touchmove', function (e) {
+      if (!hold) return;
+      var t = e.touches[0];
+      if (Math.abs(t.clientX - sx) > 16 || Math.abs(t.clientY - sy) > 16) {
+        clearTimeout(hold); hold = null; holdAt = 0;
+      }
+    }, { passive: true });
+    host.addEventListener('touchend', function (e) {
+      if (!hold) return;
+      clearTimeout(hold); hold = null;
+      if (holdAt && e.timeStamp - holdAt >= 420) fire();
+      holdAt = 0;
+    }, { passive: true });
+  }
+  if (document.readyState === 'loading')
+    addEventListener('DOMContentLoaded', attach);
+  else attach();
+})();
+</script>
 <script src="../lab-shell.js?v=20260908c" data-flow="rewards" defer></script>
 </body>
 </html>
