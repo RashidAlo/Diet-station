@@ -311,7 +311,14 @@
     transition: background .18s ease, color .18s ease; }
   .devbar button.on { background: rgba(255,255,255,.16); color: #fff; }
   .devbar .sep { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
+
+  /* TestFlight app: Apple system-material glass replaces the WebGL X */
+  html.ds-apl .glass-container.closebtn {
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06); }
 </style>
+<script>if(/DietStationLab/.test(navigator.userAgent))document.documentElement.classList.add('ds-apl');</script>
 </head>
 <body>
 
@@ -447,7 +454,10 @@ function couponDefs(lvl) {
 }
 
 /* ---------------- liquid glass plumbing (liquid-glass-js) ---------------- */
-const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+/* In the TestFlight app the WebGL refraction is replaced by Apple's
+   system-material recipe (CSS below) — cleaner and native-looking there. */
+const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function'
+  && typeof Container === 'function' && !/DietStationLab/.test(navigator.userAgent);
 let liveGlass = [];
 
 function makeGlass(cls, radius) {
@@ -580,6 +590,8 @@ function buildCoupons() {
   // nav X: liquid-glass-js (rebuilt per theme so the snapshot matches the sheet)
   document.querySelectorAll('.closebtn').forEach(el => el.remove());
   const cb = makeGlass('closebtn', 20);
+  if (!GLASS_OK) cb.element.classList.toggle('glass-dark-content',
+    phone.dataset.level === 'silver');
   cb.element.insertAdjacentHTML('beforeend', `<img src="rewards-close.svg" alt="">`);
   cb.element.title = 'close';
   cb.element.addEventListener('click', () => {

@@ -589,7 +589,27 @@
     background: #ececef; color: #1d1d1f; z-index: 2;
     font: 600 12px/16px 'Urbane Rounded', sans-serif; }
   body.labmenu-open:not(.desktop) #sDone { display: block; }
+
+  /* TestFlight app: Apple system-material glass for nav controls (the
+     lighter CSS glass stays the fallback on every other platform) */
+  html.ds-apl .navbtn, html.ds-apl .dual {
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.8),
+      inset 0 -1px 1px rgba(255,255,255,.28),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 14px 44px -14px rgba(0,0,0,.38); }
+  html.ds-apl .navbtn.on-dark, html.ds-apl .dual.on-dark {
+    background: rgba(64,64,70,.42); }
+  html.ds-apl .navigator .glassbase {
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.7),
+      inset 0 -1px 1px rgba(255,255,255,.25),
+      inset 0 0 0 .8px rgba(255,255,255,.45); }
 </style>
+<script>if(/DietStationLab/.test(navigator.userAgent))document.documentElement.classList.add('ds-apl');</script>
 </head>
 <body>
 

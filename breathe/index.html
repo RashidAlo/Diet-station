@@ -140,7 +140,14 @@
     box-shadow: 0 1px 15px -15px rgba(56,64,74,0.1);
     transition: left .4s cubic-bezier(.3,.8,.3,1), width .4s cubic-bezier(.3,.8,.3,1),
       opacity .25s ease; }
+
+  /* TestFlight app: Apple system-material glass for the X + Get Started */
+  html.ds-apl .chrome .closebtn, html.ds-apl .chrome .cta {
+    background: rgba(255,255,255,.22);
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06); }
 </style>
+<script>if(/DietStationLab/.test(navigator.userAgent))document.documentElement.classList.add('ds-apl');</script>
 </head>
 <body>
 
@@ -205,7 +212,9 @@
   let r = null;
 
   /* ---- liquid glass plumbing (liquid-glass-js) ---- */
-  const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
+  /* TestFlight app: Apple system-material CSS instead of WebGL refraction */
+  const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function'
+    && typeof Container === 'function' && !/DietStationLab/.test(navigator.userAgent);
   /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
   const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
   const GV = {
