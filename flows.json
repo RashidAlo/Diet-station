@@ -2,7 +2,7 @@
   "flows": [
     {
       "id": "meal-select",
-      "title": "Meal Selector — Build Your Week",
+      "title": "Meal Selector A",
       "status": "in-progress",
       "updated": "2026-09-07",
       "description": "Figma-faithful subscription meal picker. Five categories, each with a quota (the x-of-y counters). Tapping a thumbnail claims it: the green border springs in with a self-drawing check, the pill unfolds into a − 1 + stepper, then settles into a quiet number badge. The bottom navigator is a glass pill whose brand-gradient filler sweeps right as the plate builds, counting calories and macros; completing every quota triggers the Saved moment — check draw + confetti — before the Next button pops in.",
