@@ -1036,7 +1036,9 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   var nativeConfirmed = false;
   var EMBED = /[?&]embed=1/.test(location.search);
   var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
-  var MODE = EMBED ? 'sheet' : 'page';
+  /* true card sheet: chrome anchors to the floating sheet, so the
+     shell must render verbatim rects (no top-line normalization) */
+  var MODE = 'sheet';
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
