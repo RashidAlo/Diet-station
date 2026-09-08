@@ -301,6 +301,38 @@ pill                  .capsule                                    border radius/
   </section>
 
   <section class="card">
+    <h2>The lab gesture — triple-tap-and-hold</h2>
+    <p class="desc">One gesture summons the lab settings sheet on <b>every</b> prototype —
+      web and native SwiftUI, TestFlight and browser. Singular by direction (it supersedes
+      the retired three-finger tap). Identical numbers on both platforms:</p>
+    <div class="pair">
+      <div class="ph">The recognizer <small>TAP 550 &middot; HOLD 380 &middot; SLOP 16</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Rules (both platforms)</div>
+          <div class="cb">taps count on touch-DOWN; consecutive downs &le; 550ms apart<br>
+          3rd touch HELD &ge; 380ms to fire — earlier release = no fire<br>
+          &le; 16pt/px drift tolerated in the hold; more = cancel <i>(a drag never triggers)</i><br>
+          a second simultaneous finger cancels the sequence<br>
+          on fire: present the lab sheet + light haptic <i>(web vibrate(12) where available;
+          native light impact)</i><br>
+          never delay or block normal interaction</div></div>
+        <div class="col"><div class="ct web">Implementation notes</div>
+          <div class="cb"><i>web (reference: tripleTapHold() in lab-shell.js — auto-standard
+          on every flow that includes it):</i> passive listeners; POINTER events primary at
+          window-capture AND document-bubble with same-event dedupe (WKWebView can starve
+          window-level touch), touch events as fallback; timing from hardware
+          <i>e.timeStamp</i>, never processing time; a hold that was physically &ge; 380ms
+          still fires on release even if jank starved the timer.<br>
+          <i>native (reference: HomeScreenNative recognizer, Shell session, build &gt; 24):</i>
+          simultaneous gesture recognition, no delaysTouchesBegan.</div></div>
+      </div>
+    </div>
+    <p class="meta">Sheet content standard: top bar = <b>Restart</b> (fresh cache-busted
+      reload) + <b>Exit prototype</b> (red), then User flow / Dev handoff links, then the
+      flow's live controls.</p>
+  </section>
+
+  <section class="card">
     <h2>Intent protocol — ds-nav</h2>
     <p class="desc">How flows interconnect from now on: a flow never navigates to another
       flow — it posts an <b>intent</b> and the hub presents the target. Specified here like a
