@@ -317,6 +317,10 @@
   .tb-tab:active { transform: scale(.92); }
   .tb-tab img, .tb-tab svg { width: 24px; height: 24px; display: block; position: relative; }
   .tb-tab .logo { width: 26px; height: 20px; }
+  /* TestFlight shell (iOS 26): the app shows its REAL Liquid Glass tab bar
+     over this flow — the web bar steps aside so the native material owns it */
+  html.ds-native .tabbar { display: none !important; }
+  html.ds-native .sheetc { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
   /* ---- mobile lab sheet (triple-tap & hold) ---- */
   body.lab-mobile .lab-chip { display: none !important; }
@@ -702,7 +706,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 3';
+const BUILD = 'home 2026-09-08 · 4';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -808,6 +812,14 @@ document.querySelector('.pw-change').addEventListener('click', e => {
 document.getElementById('tabCal').onclick = () => {
   vibrate(8);
   location.href = '../meal-select/' + (EMBED ? '?embed=1&v=' : '?v=') + Date.now();
+};
+/* hooks for the shell's native Liquid Glass tab bar (iOS 26 TestFlight):
+   DSHomeTab receives taps from the native bar; DSSetView is a guard so the
+   shell's hub-oriented calls never throw on this page */
+window.DSSetView = function () {};
+window.DSHomeTab = function (id) {
+  if (id === 'calendar') document.getElementById('tabCal').onclick();
+  else vibrate(6);   /* home / profile: stay put for now */
 };
 
 /* today's date, real */
