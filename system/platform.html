@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Platform Mapping — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 56ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- doctrine ladder ---- */
+  .ladder { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .rung { flex: 1; min-width: 150px; border-radius: 14px; padding: 14px 15px; }
+  .rung .rn { font: 600 13.5px/1.35 'Urbane Rounded', sans-serif; }
+  .rung .rd { font-size: 12px; line-height: 1.5; margin-top: 5px; opacity: .85; }
+  .rung.r1 { background: #1d1d1f; color: #f5f5f7; }
+  .rung.r2 { background: var(--ground); color: var(--ink); }
+  .rung.r2 .rd, .rung.r3 .rd { color: var(--ink-soft); }
+  .rung.r3 { background: var(--ground); color: var(--ink); }
+
+  /* ---- mapping pairs ---- */
+  .pair { margin-top: 16px; border: 0.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .pair .ph { padding: 12px 16px; background: var(--ground);
+    font: 600 13.5px/1.35 'Urbane Rounded', sans-serif; display: flex; gap: 10px;
+    align-items: baseline; flex-wrap: wrap; }
+  .pair .ph small { font: 400 12px/1.4 'Proxima Nova', sans-serif; color: var(--ink-soft); }
+  .pair .cols { display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 600px) { .pair .cols { grid-template-columns: 1fr; } }
+  .pair .col { padding: 13px 16px 15px; }
+  .pair .col + .col { border-left: 0.5px solid var(--line); }
+  @media (max-width: 600px) { .pair .col + .col { border-left: 0; border-top: 0.5px solid var(--line); } }
+  .pair .ct { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .1em; margin-bottom: 8px; }
+  .pair .ct.native { color: var(--red); }
+  .pair .ct.web { color: var(--ink-soft); }
+  .pair .cb { font: 11.5px/1.7 ui-monospace, Menlo, monospace; color: var(--ink);
+    overflow-wrap: anywhere; }
+  .pair .cb i { font-style: normal; color: var(--ink-soft); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Platform Mapping</h1>
+  <p>DietStation is <b>native-first</b>: every material and behavior is designed for native
+    iOS, and every one has a specified React/web fallback. This page is the pairing table —
+    all values extracted from the shipping code, nothing invented.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The doctrine</h2>
+    <p class="desc">Rashid's standing direction (2026-09-08): the native build is the design
+      standard; the web twin replicates settled native design, with fallbacks only for
+      iOS-only materials. When native and web disagree, native wins and the web catches up —
+      never the reverse.</p>
+    <div class="ladder">
+      <div class="rung r1"><div class="rn">1 &middot; Native iOS 26+</div>
+        <div class="rd">SwiftUI + real Liquid Glass APIs. The design standard —
+          HomeScreenNative.swift is the reference implementation.</div></div>
+      <div class="rung r2"><div class="rn">2 &middot; Older iOS shell</div>
+        <div class="rd">Same WKWebView flows; the 1.6s handshake fallback restores web chrome
+          where Liquid Glass twins can't render.</div></div>
+      <div class="rung r3"><div class="rn">3 &middot; React / web</div>
+        <div class="rd">Every other platform. The recipes on this page ARE the spec — not
+          approximations to eyeball.</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Materials</h2>
+    <p class="desc">The three glass tiers, paired. Native code is quoted from the shipping
+      Swift pilot; web code from the flows and glass.json.</p>
+
+    <div class="pair">
+      <div class="ph">Refractive glass — buttons &amp; cards <small>tinted, interactive</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">.glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: 26))<br>
+          <i>tab bar:</i> .glassEffect(.regular, in: .capsule)<br>
+          <i>morphs:</i> .glassEffectID("plan", in: glassNS)<br>
+          <i>concentric radii:</i> .rect(corners: .concentric(minimum: .fixed(26)))</div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">liquid-glass-js Container + html2canvas snapshot, recipe from
+          <i>glass.json</i>: blur 5 &middot; tint .07 &middot; rim .015/0.8 &middot; edge 0/.14
+          &middot; corner .03 &middot; ripple .06<br>
+          <i>scaled stages:</i> c.contextScale = stageScale<br>
+          <i>+ CSS seat:</i> inset 0 1.5px 1px #FFF/.75, inset ring .8px #FFF/.5, 0 8px 24px -10px #000/.3</div></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div class="ph">Simple glass chrome — X, tab bars <small>static nav</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">.glassEffect() <i>(default regular)</i> on a bare Button /
+          .buttonStyle(.glass)<br><i>bars:</i> native toolbars get Liquid Glass for free</div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">rgba(255,255,255,.5) + backdrop-filter: blur(24px) saturate(190%)<br>
+          <i>tab bars:</i> rgba(255,255,255,.34) + blur(30px) saturate(200%) contrast(1.06) + 165&deg; bevel gradient<br>
+          <i>adaptive contrast:</i> sample backdrop, L &gt; 0.5 &rarr; #0B0E12 else #FFF</div></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div class="ph">Frosted surfaces — over live content <small>cards, nav over scroll</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">.background(.ultraThinMaterial) <i>or</i> .regularMaterial<br>
+          <i>tinted:</i> .background(.ultraThinMaterial); .tint on content</div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">backdrop-filter: blur(14px) saturate(170%) <i>(12&ndash;18 by context)</i> + white fill ~.3 + inset seat ring<br>
+          <i>overlays on frost:</i> transparent canvas at ~94% opacity<br>
+          <i>never</i> refractive glass over scrolling content</div></div>
+      </div>
+    </div>
+
+    <h3>The chrome handshake (how a flow goes native)</h3>
+    <p class="desc" style="font-size:13.5px">Glass handshake v2, live on three flows: the web
+      page pre-hides its own chrome and reports element geometry; the shell draws real Liquid
+      Glass twins on top and confirms. On shells that never answer (iOS &lt; 26), a 1.6s
+      fallback restores the web chrome.</p>
+    <div class="codewrap">
+      <pre id="handshake">// web → native (on DOM settle, re-reported for async elements)
+webkit.messageHandlers.ds.postMessage({
+  t: 'glasschrome', flow: 'rewards', surface: 'dark',
+  els: [{ id: 'close', x, y, w, h, r }]      // geometry per chrome element
+});
+// native → web: confirm twins (web keeps .ds-native-hidden on those ids)
+window.DSNativeChrome(['close']);
+// native → web: route taps back
+window.DSChromeTap('close');
+// guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome</pre>
+      <button class="copycode" data-copy="handshake">Copy</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Haptics</h2>
+    <p class="desc">iOS Safari has no vibration API — on the web, haptics exist only on
+      Android; in the shell they ride the ds bridge to UIKit generators. Values below are the
+      shipping ones.</p>
+    <div class="pair">
+      <div class="ph">Feedback map</div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">.sensoryFeedback(.impact(weight: .light), &hellip;) <i>chip taps, toggles</i><br>
+          .sensoryFeedback(.impact(weight: .medium), &hellip;) <i>day strip, commits</i><br>
+          .sensoryFeedback(.impact(weight: .light, intensity: 0.4), &hellip;) <i>dial ticks</i><br>
+          <i>UIKit:</i> UIImpactFeedbackGenerator(style: .light/.medium)<br>
+          <i>notification:</i> UINotificationFeedbackGenerator (success on rip/redeem)</div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">navigator.vibrate(4) <i>micro tick (dial)</i><br>
+          navigator.vibrate(6&ndash;8) <i>selection tick (chips, pills, pops)</i><br>
+          navigator.vibrate(10&ndash;12) <i>commit / menu open</i><br>
+          navigator.vibrate([14, 40, 22]) <i>coupon rip (pattern)</i><br>
+          <i>always wrapped:</i> try/catch, feature-detected</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Sheets &amp; motion</h2>
+    <p class="desc">Native sheets come from the system; the web sheet physics below are the
+      lab's measured equivalents (see <a href="motion.html" style="color:var(--red)">Motion</a>
+      for the full easing table).</p>
+    <div class="pair">
+      <div class="ph">Bottom sheets</div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">.sheet { }.presentationDetents([.medium, .large])<br>
+          <i>UIKit:</i> UISheetPresentationController detents + grabber<br>
+          <i>corners:</i> .presentationCornerRadius(24)</div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">in: translateY(105%) &rarr; 0, .42s cubic-bezier(.25,.9,.3,1)<br>
+          <i>chrome slide:</i> .45&ndash;.55s cubic-bezier(.32,.72,0,1)<br>
+          out: .4s cubic-bezier(.5,0,.8,.6) <i>(accelerate away)</i><br>
+          veil: rgba(11,14,18,.45), .28s ease &middot; ground #FBFBFC &middot; radius 24 24 0 0</div></div>
+      </div>
+    </div>
+    <div class="pair">
+      <div class="ph">Springs &amp; staggers</div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Native primary</div>
+          <div class="cb">withAnimation(.spring(duration: 0.35&ndash;0.55)) <i>state flips</i><br>
+          .spring(duration: 0.4, bounce: 0.12) <i>macros open</i><br>
+          <i>stagger:</i> .delay(0.07 * index) <i>arrival cascade</i></div></div>
+        <div class="col"><div class="ct web">React / web fallback</div>
+          <div class="cb">press: .15s cubic-bezier(.3,.8,.3,1) &rarr; scale(.96)<br>
+          settle: .42s cubic-bezier(.25,.9,.3,1)<br>
+          bounce: .5&ndash;.88s cubic-bezier(.26,1.36,.42,1) <i>brand only</i><br>
+          <i>stagger:</i> 70&ndash;100ms &times; index</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Tokens, both notations</h2>
+    <p class="desc">Points equal pixels 1:1 across the system. Colors and type quote the
+      shipping Swift constants; the full palettes and ramps live on
+      <a href="variables.html" style="color:var(--red)">Variables</a> and
+      <a href="typography.html" style="color:var(--red)">Typography</a>.</p>
+    <div class="codewrap">
+      <pre id="tokens">// COLOR                SwiftUI (shipping)                          web
+brand red             Color(red: 237/255, g: 28/255, b: 36/255)   #ED1C24  --ds-surface-secondary-default
+on-color              Color(249/255, 249/255, 249/255)            #F9F9F9  --ds-text-primary-on-color
+ink                   Color(11/255, 14/255, 18/255)               #0B0E12  --ds-text-default-heading
+caption               Color(94/255, 94/255, 94/255)               #5E5E5E  (grey/800)
+
+// TYPE                Font.custom(...)                            CSS family
+heading               "UrbaneRounded-DemiBold" / "-Medium"        'Urbane Rounded' 600/500
+body                  "ProximaNova-Regular"                       'Proxima Nova' 400
+arabic (both roles)   "AvenirNextWorld-Demi" / "-Medium"          'Avenir Next World' 600/500
+// ramp: hero 96 · h1 72 · h2 60 · h3 48 · h4 36 · h5 30 · h6 24 · h7 22
+//       para 20/16/14 · captions 12/10/10 (desktop; mobile cut on Typography page)
+
+// RADIUS              SwiftUI                                     web token
+card                  RoundedRectangle(cornerRadius: 26)          border radius/600+ (24) · 18 web cards
+concentric nests      .rect(corners: .concentric(minimum: .fixed(26)))   inner = outer − inset
+pill                  .capsule                                    border radius/round (1024 / 999px)
+
+// SPACING: layout xxsm 8 · xsm 12 · sm 16 · md 32 · lg 64 · xl 128 · xxl 256 (desktop)
+// ELEVATION: web double-layer shadows (Foundations) ↔ .shadow(color:.black.opacity(0.10),
+//            radius: 20, y: 8) — Figma effect styles xs–xl are slate #38404A glows</pre>
+      <button class="copycode" data-copy="tokens">Copy</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Handoff template v2 — proposed</h2>
+    <p class="desc">Per the native-first doctrine, every flow's dev handoff leads with a
+      <b>SwiftUI spec</b> and repositions the existing RN kit as the <b>React fallback
+      kit</b>. Content model below; the hub renderer change is with the Hub session.</p>
+    <div class="codewrap">
+      <pre id="template">// flows.json per-flow handoff — proposed v2 content model
+{
+  "handoff": { ... },                  // unchanged spec key-values
+  "swift": [                           // NEW — primary section, renders FIRST
+    { "t": "Stack",       "note": "SwiftUI, iOS 26 min for glass APIs", "code": "..." },
+    { "t": "Materials",   "note": ".glassEffect recipes used, per element", "code": "..." },
+    { "t": "Motion",      "note": "withAnimation springs + sensoryFeedback map", "code": "..." },
+    { "t": "Tokens",      "note": "DS palette/type constants (see HomeScreenNative.swift)", "code": "..." }
+  ],
+  "rn": [ ... ]                        // existing kit, retitled "React fallback kit"
+}
+// Renderer asks (Hub session): render swift[] first titled "SwiftUI spec",
+// fall back gracefully when a flow has no swift[] yet, retitle rn[] to
+// "React fallback kit", keep Copy-full-kit per section.</pre>
+      <button class="copycode" data-copy="template">Copy</button>
+    </div>
+    <p class="meta">Status: proposed to the Hub session (they own the hub renderer; this page
+      owns the content model). The flows' swift[] kits get authored as each flow settles its
+      native pass. <b>Coming next here:</b> the ds-nav intent protocol (to/context/present
+      with tab | sheet | push) gets specified like a deep-link scheme once the Hub session
+      lands it.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+})();
+</script>
+</body>
+</html>
