@@ -334,6 +334,15 @@
     transition: transform .22s cubic-bezier(.3,.9,.4,1); }
   .switch input:checked + .track { background: #34C759; }
   .switch input:checked + .track::after { transform: translateX(20px); }
+  .switch.sm { width: 44px; height: 26px; }
+  .switch.sm .track::after { width: 22px; height: 22px; }
+  .switch.sm input:checked + .track::after { transform: translateX(18px); }
+  /* quick publish/unpublish switch on the card itself */
+  .livesw { display: none; }
+  body.admin .livesw { display: inline-flex; align-items: center; gap: 8px; }
+  .card.editing .livesw { display: none; }
+  .livesw .livemsg { font: 600 11px/1.2 -apple-system, sans-serif;
+    color: #6e6e73; white-space: nowrap; }
   .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
   .editfoot .draftdot { flex: 1; font: 600 12px/1.35 -apple-system, sans-serif;
     color: #6e6e73; }
@@ -695,7 +704,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const fresh = () => f.path + '?v=' + Date.now();
       const open = () => f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
       card.addEventListener('click', e => {
-        if (!e.target.closest('a, button, .editor')) open();
+        if (!e.target.closest('a, button, .editor, .livesw')) open();
       });
       const primary = card.querySelector('.btn.primary');
       primary.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype';
@@ -848,6 +857,39 @@ function wireEditMode() {
     tag.textContent = 'Offline';
     card.querySelector('.top').appendChild(tag);
 
+    /* quick Live/Offline switch, always on the card in admin view */
+    const lw = document.createElement('span');
+    lw.className = 'livesw';
+    lw.innerHTML = '<span class="livemsg"></span>' +
+      '<span class="switch sm"><input type="checkbox" aria-label="Live on the lab">' +
+      '<span class="track"></span></span>';
+    card.querySelector('.top').appendChild(lw);
+    const lwIn = lw.querySelector('input');
+    const lwMsg = lw.querySelector('.livemsg');
+    lwIn.checked = !cur.hidden;
+    lw.addEventListener('click', e => e.stopPropagation());
+    lwIn.onchange = async () => {
+      const wantHidden = !lwIn.checked;
+      lwIn.disabled = true;
+      lwMsg.style.color = '';
+      lwMsg.textContent = 'Saving\u2026';
+      const ok = await publishCard(id, { hidden: wantHidden }, lwMsg);
+      lwIn.disabled = false;
+      if (ok) {
+        cur.hidden = wantHidden;
+        card.classList.toggle('is-hidden', wantHidden);
+        lwMsg.style.color = '#1F8A4C';
+        lwMsg.textContent = wantHidden ? 'Offline \u2713' : 'Live \u2713';
+        setTimeout(() => { lwMsg.textContent = ''; }, 2200);
+      } else {
+        lwIn.checked = !cur.hidden;   /* revert to the real published state */
+        if (pubTok) {
+          lwMsg.style.color = '#ED1C24';
+          lwMsg.textContent = 'Failed (' + pubErr + ')';
+        }
+      }
+    };
+
     const eb = document.createElement('button');
     eb.className = 'cardedit';
     eb.setAttribute('aria-label', 'Edit card');
@@ -911,6 +953,7 @@ function wireEditMode() {
         top.insertBefore(sp, pill);
       });
       card.classList.toggle('is-hidden', cur.hidden);
+      lwIn.checked = !cur.hidden;
     };
 
     $('.savebtn').onclick = async () => {
