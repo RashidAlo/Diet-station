@@ -195,6 +195,9 @@ struct HomeScreenNative: View {
     private func runIntro() async {
         try? await Task.sleep(for: .milliseconds(60))
         arrived = true
+        /* warm the summonable flows while the intro plays — a Discounts or
+           calendar tap then presents an already-loaded page instantly */
+        FlowPreloader.shared.warm(["rewards", "meal-select"])
         try? await Task.sleep(for: .milliseconds(500))
         withAnimation(.easeOut(duration: 0.9)) { dialFrac = Double(state.daysLeft) / 30 }
         while dialNumber > state.daysLeft {
@@ -429,7 +432,9 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)   // fill the 151pt column exactly — no bleed
-        .frame(height: 60)   // twin of discounts — slimmer so days-left breathes
+        // when Discounts is away, Consultation grows +50 so the sparse column
+        // doesn't gape between it and the days widget (Rashid)
+        .frame(height: state.showDiscounts ? 60 : 110)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -619,18 +624,22 @@ private struct DaysContent: View {
 
     var expired: Bool { state.daysLeft == 0 }
 
+    private var ringSize: CGFloat { shape == .slim ? 40 : (shape == .tall ? 60 : 50) }
+
     var ring: some View {
         ZStack {
             Circle().stroke(.white.opacity(0.25), lineWidth: 3)
             Circle().trim(from: 0, to: min(1, frac))
                 .stroke(.white, style: .init(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .scaleEffect(x: -1)   // mirrored: the intro depletes CLOCKWISE,
+                                      // eating down the right side (Rashid)
             Text(verbatim: "\(number)")
-                .font(DS.urbane(shape == .slim ? 16 : 20, .semibold))
+                .font(DS.urbane(shape == .slim ? 16 : (shape == .tall ? 24 : 20), .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText(countsDown: true))
         }
-        .frame(width: shape == .slim ? 40 : 50, height: shape == .slim ? 40 : 50)
+        .frame(width: ringSize, height: ringSize)   // tall: +20% dial (Rashid)
     }
 
     var texts: some View {
@@ -689,59 +698,19 @@ private struct DaysContent: View {
     }
 }
 
-// MARK: - Web flow overlay (rewards / meal-select summoned over the native screen)
+// MARK: - Web flow overlays, preloaded (summoning coupons felt slow — the
+// webviews are now built and loaded warm while the intro plays, so a tap
+// presents an already-rendered flow instantly)
 
-/// Presents a lab web flow in embed mode on a transparent webview: the page
-/// runs its own sheet choreography, and its `parent.postMessage({t:'ds-close'})`
-/// — which at top level lands back on the page's own window — is relayed to
-/// native by an injected listener so the cover can dismiss.
 @available(iOS 26.0, *)
-struct FlowOverlay: UIViewRepresentable {
-    let path: String
-    let onClose: () -> Void
+@MainActor
+final class FlowPreloader {
+    static let shared = FlowPreloader()
 
-    func makeCoordinator() -> Coordinator { Coordinator(onClose: onClose) }
-
-    func makeUIView(context: Context) -> WKWebView {
-        let cfg = WKWebViewConfiguration()
-        let relay = """
-        window.addEventListener('message', function (e) {
-          if (e.data && e.data.t === 'ds-close') {
-            try { webkit.messageHandlers.dsflow.postMessage('close'); } catch (_) {}
-          }
-        });
-        """
-        cfg.userContentController.addUserScript(
-            WKUserScript(source: relay, injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        cfg.userContentController.add(context.coordinator, name: "dsflow")
-        cfg.allowsInlineMediaPlayback = true
-        cfg.mediaTypesRequiringUserActionForPlayback = []   // flow sound autoplay
-        // Same haptics bridge as the main shell webview — the rewards rip's
-        // navigator.vibrate must feel identical here
-        cfg.userContentController.addUserScript(
-            WKUserScript(source: LabWebView.Coordinator.bridgeJS,
-                         injectionTime: .atDocumentStart, forMainFrameOnly: false))
-        cfg.userContentController.add(context.coordinator, name: "ds")
-        let wv = WKWebView(frame: .zero, configuration: cfg)
-        wv.isOpaque = false
-        wv.backgroundColor = .clear
-        wv.scrollView.backgroundColor = .clear
-        wv.scrollView.contentInsetAdjustmentBehavior = .never
-        // Flow pages detect the shell by the UA token (embed styling, haptics)
-        wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
-            + " DietStationLab/2"
-        let stamp = Int(Date().timeIntervalSince1970)
-        if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
-            wv.load(URLRequest(url: url))
-        }
-        return wv
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-
-    final class Coordinator: NSObject, WKScriptMessageHandler {
-        let onClose: () -> Void
-        init(onClose: @escaping () -> Void) { self.onClose = onClose }
+    /// One handler for both channels: ds-close relays + the shell's haptics
+    /// bridge (identical behavior to the previous per-presentation Coordinator).
+    final class Relay: NSObject, WKScriptMessageHandler {
+        var onClose: (() -> Void)?
 
         private let impact: [String: UIImpactFeedbackGenerator] = [
             "light": UIImpactFeedbackGenerator(style: .light),
@@ -755,7 +724,7 @@ struct FlowOverlay: UIViewRepresentable {
 
         func userContentController(_ c: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
-            if message.name == "dsflow" { onClose(); return }
+            if message.name == "dsflow" { onClose?(); return }
             // "ds" bridge — haptics only in the overlay (chrome has no meaning here)
             guard message.name == "ds",
                   let body = message.body as? [String: Any],
@@ -777,6 +746,77 @@ struct FlowOverlay: UIViewRepresentable {
             }
         }
     }
+
+    private var entries: [String: (web: WKWebView, relay: Relay)] = [:]
+
+    func warm(_ paths: [String]) { for p in paths { _ = entry(p) } }
+
+    func entry(_ path: String) -> (web: WKWebView, relay: Relay) {
+        if let e = entries[path] { return e }
+        let relay = Relay()
+        let cfg = WKWebViewConfiguration()
+        let closeRelay = """
+        window.addEventListener('message', function (e) {
+          if (e.data && e.data.t === 'ds-close') {
+            try { webkit.messageHandlers.dsflow.postMessage('close'); } catch (_) {}
+          }
+        });
+        """
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: closeRelay, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        cfg.userContentController.add(relay, name: "dsflow")
+        cfg.allowsInlineMediaPlayback = true
+        cfg.mediaTypesRequiringUserActionForPlayback = []   // flow sound autoplay
+        // Same haptics bridge as the main shell webview — the rewards rip's
+        // navigator.vibrate must feel identical here
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: LabWebView.Coordinator.bridgeJS,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        cfg.userContentController.add(relay, name: "ds")
+        let wv = WKWebView(frame: .zero, configuration: cfg)
+        wv.isOpaque = false
+        wv.backgroundColor = .clear
+        wv.scrollView.backgroundColor = .clear
+        wv.scrollView.contentInsetAdjustmentBehavior = .never
+        // Flow pages detect the shell by the UA token (embed styling, haptics)
+        wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
+            + " DietStationLab/2"
+        entries[path] = (wv, relay)
+        reload(path)
+        return entries[path]!
+    }
+
+    /// Fresh load — used to warm initially and to re-arm after a visit
+    /// (the page's sheet has slid away once ds-close fires).
+    func reload(_ path: String) {
+        guard let e = entries[path] else { return }
+        let stamp = Int(Date().timeIntervalSince1970)
+        if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
+            e.web.load(URLRequest(url: url))
+        }
+    }
+}
+
+/// Presents a (preloaded) lab web flow over the native screen. The page runs
+/// its own sheet choreography and posts ds-close when done; after dismissal
+/// the webview re-arms in the background for the next summon.
+@available(iOS 26.0, *)
+struct FlowOverlay: UIViewRepresentable {
+    let path: String
+    let onClose: () -> Void
+
+    func makeUIView(context: Context) -> WKWebView {
+        let e = FlowPreloader.shared.entry(path)
+        e.relay.onClose = {
+            onClose()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                FlowPreloader.shared.reload(path)
+            }
+        }
+        return e.web
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
 
 // MARK: - Figma icon shapes (traced from the home flow's SVG exports)

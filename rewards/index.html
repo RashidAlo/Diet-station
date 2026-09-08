@@ -1017,6 +1017,49 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   else attach();
 })();
 </script>
+<script>
+/* Native glass chrome handshake (2026-09-08, TestFlight shell iOS 26+):
+   in the app, this page reports its chrome geometry; the shell renders REAL
+   Liquid Glass twins on top, then calls DSNativeChrome(ids) so the web
+   versions step aside, and DSChromeTap(id) to route native taps back into
+   the page's own handlers. Outside the app nothing changes. */
+(function () {
+  if (!/DietStationLab/.test(navigator.userAgent)) return;
+  var FLOW = 'rewards';
+  var ELS = { close: '.closebtn' };
+  var st = document.createElement('style');
+  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
+  document.head.appendChild(st);
+  function report() {
+    var els = [];
+    Object.keys(ELS).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      els.push({ id: id, x: r.left, y: r.top, w: r.width, h: r.height,
+        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
+    });
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        els: els });
+    } catch (_) {}
+  }
+  window.DSNativeChrome = function (ids) {
+    (ids || []).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (el) el.classList.add('ds-native-hidden');
+    });
+  };
+  window.DSChromeTap = function (id) {
+    var el = document.querySelector(ELS[id]);
+    if (el) el.click();
+  };
+  addEventListener('resize', function () { setTimeout(report, 350); });
+  setTimeout(report, 900);
+  setTimeout(report, 2200);   /* glass containers build late on slow loads */
+})();
+</script>
 <script src="../lab-shell.js?v=20260908d" data-flow="rewards" defer></script>
 </body>
 </html>
