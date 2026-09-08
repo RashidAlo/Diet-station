@@ -434,16 +434,6 @@
   body.native .dual .d-gear { width: 50px; }
   .dual .d-gear svg { width: 20px; height: 20px; }
   .dual .d-gear:active { background: rgba(0,0,0,.14); }
-  /* native-pilot front door: full-width second action row, app only —
-     flows.json `native: "<msg>"` posts that message type to the shell */
-  .btn.nativeflow { display: none; }
-  body.native .actions .btn.nativeflow { order: 3; flex: 1 0 100%;
-    height: 54px; display: flex; align-items: center; justify-content: center;
-    gap: 8px; background: #1d1d1f; color: #fff; border-radius: 999px;
-    font-size: 14px; }
-  body.native .actions .btn.nativeflow svg { width: 15px; height: 15px;
-    flex: none; }
-  body.native .card.has-nativeflow .actions { flex-wrap: wrap; }
   /* round Live/Offline power button in the action bar (admin) —
      a plain filled circle, power glyph only: green = live, gray = offline */
   .livebtn { display: none; }
@@ -1011,7 +1001,13 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       /* flow pages are cached max-age=600 by Pages — in the app, always
          open them with a fresh query so deploys show up immediately */
       const fresh = () => f.path + '?v=' + Date.now();
-      const open = () => f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
+      /* flows with a native pilot (flows.json `native: "<msg>"`) open the
+         SwiftUI view directly in the TestFlight shell — one access point;
+         the web prototype stays the path everywhere the bridge doesn't
+         exist (browser, standalone PWA, ?native=1 preview) */
+      const inShell = /DietStationLab/.test(navigator.userAgent);
+      const open = () => (f.native && inShell) ? dsPost({ t: f.native })
+        : f.sheet ? openFlowSheet(fresh()) : (location.href = fresh());
       card.addEventListener('click', e => {
         if (!e.target.closest('a, button, .editor, .livebtn')) open();
       });
@@ -1027,18 +1023,6 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         open();
       });
       btn.remove();                                   /* no Dev handoff in the app */
-      if (f.native) {
-        /* discoverable front door to the SwiftUI pilot (shell build 17+) */
-        card.classList.add('has-nativeflow');
-        const nb = document.createElement('button');
-        nb.className = 'btn nativeflow';
-        nb.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><rect x="7" y="2.5" width="10" height="19" rx="2.6" stroke="currentColor" stroke-width="1.8"/><path d="M10.6 18.6h2.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Open iOS native flow';
-        nb.addEventListener('click', e => {
-          e.stopPropagation();
-          dsPost({ t: f.native });
-        });
-        card.querySelector('.actions').appendChild(nb);
-      }
       /* animated hero: wireframe phone flipping through the flow's screens */
       const shots = f.shots && f.shots.length ? f.shots : (f.preview ? [f.preview] : []);
       if (shots.length) {
