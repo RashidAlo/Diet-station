@@ -185,14 +185,17 @@ struct HomeScreenNative: View {
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */
+        /* NOTE: no .ignoresSafeArea() on the cover content — FlowOverlay's
+           webview/glass layers ignore it internally, but its DS bar must get
+           safe-area placement (bottom = inset + 12, the Rashid-endorsed rule
+           every DS bar shares; a whole-cover ignore pushed the bar to the
+           raw screen edge). */
         .fullScreenCover(isPresented: $state.couponsOpen) {
             FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
-                .ignoresSafeArea()
                 .presentationBackground(Color.black.opacity(0.42))
         }
         .fullScreenCover(isPresented: $state.calendarOpen) {
             FlowOverlay(path: "meal-select") { instant { state.calendarOpen = false } }
-                .ignoresSafeArea()
                 .presentationBackground(Color.black.opacity(0.42))
         }
         .animation(.spring(duration: 0.45), value: state.showPromo)
@@ -203,6 +206,20 @@ struct HomeScreenNative: View {
         .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
         .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: dialNumber)
         .task { await runIntro() }
+        #if DEBUG
+        // Headless QA: SIMCTL_CHILD_DSLAB_OVERLAY=meal-select|rewards summons
+        // the flow overlay without a tap (overlay paths are untappable in
+        // scripted sim runs)
+        .task {
+            if let p = ProcessInfo.processInfo.environment["DSLAB_OVERLAY"] {
+                try? await Task.sleep(for: .seconds(2))
+                instant {
+                    if p == "meal-select" { state.calendarOpen = true }
+                    if p == "rewards" { state.couponsOpen = true }
+                }
+            }
+        }
+        #endif
         .onChange(of: state.daysLeft) {   /* lab changes bypass the intro */
             dialNumber = state.daysLeft
             withAnimation(.spring(duration: 0.35)) {
@@ -1015,8 +1032,12 @@ struct FlowOverlay: View {
     }
 
     var body: some View {
+        // The ZStack respects safe areas so the DS bar lands on the shared
+        // placement rule (bottom = safeArea.bottom + 12, same as home);
+        // webview + glass twins individually span the full screen.
         ZStack(alignment: .bottom) {
             FlowWebView(path: path, onClose: onClose)
+                .ignoresSafeArea()
             GlassChromeLayer(els: chrome.els, flow: chrome.flow,
                              surface: chrome.surface,
                              mode: chrome.mode) { chrome.chromeTap($0) }
