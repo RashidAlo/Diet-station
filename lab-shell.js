@@ -155,6 +155,14 @@ body.labshell-menu:not(.desktop) #side { display: block !important; left: 0; rig
   border-radius: 24px 24px 0 0; z-index: 129; background: #fbfbfc;\
   box-shadow: 0 -18px 60px rgba(0,0,0,.28);\
   padding: 22px 22px calc(30px + env(safe-area-inset-bottom, 0px)); }\
+.labshell-topbar { display: none; gap: 10px; margin: 0 0 12px; }\
+body.labshell-menu:not(.desktop) .labshell-topbar { display: flex; }\
+.labshell-topbar button { flex: 1; display: flex; align-items: center;\
+  justify-content: center; gap: 7px; padding: 13px;\
+  border: 1px solid rgba(0,0,0,.12); border-radius: 14px; background: #fff;\
+  color: #1d1d1f; font: 600 13px/1 -apple-system, sans-serif; }\
+.labshell-topbar button svg { width: 13px; height: 13px; flex: none; }\
+.labshell-topbar .lx-exit { color: #ED1C24; border-color: rgba(237,28,36,.28); }\
 .labshell-links { display: none; gap: 10px; margin: 0 0 18px; }\
 body.labshell-menu:not(.desktop) .labshell-links { display: flex; }\
 .labshell-links button { flex: 1; padding: 13px; border: 1px solid rgba(0,0,0,.12);\
@@ -690,8 +698,41 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
 
   /* Standard mobile lab menu: triple-tap & hold anywhere. Flows with their own
      implementation (meal-select) set window.dsOwnLabMenu before this runs. */
+  /* Gesture tuned for real fingers on device: taps are counted in the
+     CAPTURE phase on the window, so prototype surfaces that stopPropagation
+     in their own touch handlers can't swallow them (the old bubble-phase
+     listener only fired on "dead" spots), and the hold tolerates up to
+     16px of finger jitter instead of dying on the first touchmove. */
+  function tripleTapHold(openFn) {
+    var taps = 0, last = 0, hold = null, x0 = 0, y0 = 0;
+    function cancel() { if (hold) { clearTimeout(hold); hold = null; } }
+    addEventListener('touchstart', function (e) {
+      if (e.touches.length > 1) { taps = 0; cancel(); return; }
+      var t = e.touches[0], now = performance.now();
+      taps = (now - last < 450) ? taps + 1 : 1;
+      last = now;
+      x0 = t.clientX; y0 = t.clientY;
+      cancel();
+      if (taps >= 3) hold = setTimeout(function () { taps = 0; openFn(); }, 380);
+    }, { passive: true, capture: true });
+    addEventListener('touchmove', function (e) {
+      if (!hold) return;
+      var t = e.touches[0];
+      if (Math.abs(t.clientX - x0) > 16 || Math.abs(t.clientY - y0) > 16) cancel();
+    }, { passive: true, capture: true });
+    addEventListener('touchend', cancel, { passive: true, capture: true });
+    addEventListener('touchcancel', cancel, { passive: true, capture: true });
+  }
   function setupLabMenu() {
-    if (window.dsOwnLabMenu) return;
+    if (window.dsOwnLabMenu) {
+      /* flows with their own sheet still get the reliable window-level
+         gesture, routed to their opener when they expose one */
+      if (typeof window.openLabMenu === 'function')
+        tripleTapHold(function () {
+          if (!document.body.classList.contains('desktop')) window.openLabMenu();
+        });
+      return;
+    }
     var side = document.getElementById('side');
     if (!side) return;
     var veil = document.createElement('div');
@@ -702,6 +743,32 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     links.innerHTML = '<button data-t="userflow">User flow</button>' +
       '<button data-t="handoff">Dev handoff</button>';
     side.insertBefore(links, side.firstChild);
+    /* top action bar: restart the prototype fresh, or exit back to the hub */
+    var bar = document.createElement('div');
+    bar.className = 'labshell-topbar';
+    bar.innerHTML =
+      '<button class="lx-restart"><svg viewBox="0 0 16 16" fill="none">' +
+      '<path d="M13.7 8a5.7 5.7 0 1 1-1.67-4.03" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<path d="M12.4 1.5v2.7H9.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>Restart</button>' +
+      '<button class="lx-exit"><svg viewBox="0 0 16 16" fill="none">' +
+      '<path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+      '</svg>Exit prototype</button>';
+    side.insertBefore(bar, links);
+    bar.querySelector('.lx-restart').addEventListener('click', function () {
+      /* fresh reload with a cache-bust, keeping flags like embed=1 */
+      var q = location.search.replace(/^\?/, '').split('&')
+        .filter(function (p) { return p && p.indexOf('v=') !== 0; });
+      q.push('v=' + Date.now());
+      location.replace(location.pathname + '?' + q.join('&'));
+    });
+    bar.querySelector('.lx-exit').addEventListener('click', function () {
+      /* inside the hub's flow sheet the hub closes us; standalone, go home */
+      if (window.parent !== window) {
+        try { window.parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {}
+      }
+      location.href = '../?v=' + Date.now();
+    });
     var done = document.createElement('button');
     done.className = 'labshell-done';
     done.textContent = 'Done';
@@ -717,15 +784,7 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     links.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
     });
-    var taps = 0, last = 0, hold = null;
-    addEventListener('touchstart', function () {
-      var now = performance.now();
-      taps = (now - last < 380) ? taps + 1 : 1;
-      last = now;
-      if (taps >= 3) hold = setTimeout(open, 420);
-    }, { passive: true });
-    addEventListener('touchend', function () { clearTimeout(hold); }, { passive: true });
-    addEventListener('touchmove', function () { clearTimeout(hold); }, { passive: true });
+    tripleTapHold(open);
     /* hub Settings button lands here with #labmenu: open the sheet on arrival */
     if (location.hash === '#labmenu') {
       history.replaceState(null, '', location.pathname);
