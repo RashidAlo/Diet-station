@@ -225,7 +225,7 @@
   body.native.adminview #pane-system { display: none !important; }
   body.native.adminview #pane-admin { display: block; padding-top: 12px;
     padding-bottom: 120px; }
-  body.native #pane-admin .card { padding: 22px 20px; cursor: default;
+  body.native #pane-admin .card { padding: 24px; cursor: default;
     border-radius: 24px; }
   body.native #pane-admin .actions { padding: 0; margin-top: 16px; }
   #pane-admin .p-link:last-of-type { border-bottom: none; }
@@ -248,10 +248,10 @@
   body.native .gearbtn svg { width: 23px; height: 23px; }
   body.native .card:active { transform: scale(.98); }
   body.native .row { flex-direction: column; gap: 0; align-items: stretch; }
-  body.native .row .body { padding: 18px 18px 0; }
+  body.native .row .body { padding: 22px 24px 0; }
   body.native .card .desc { display: -webkit-box; -webkit-line-clamp: 3;
     -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
-  body.native .actions { padding: 0 18px 18px; margin-top: 16px; flex-wrap: nowrap; }
+  body.native .actions { padding: 0 24px 24px; margin-top: 18px; flex-wrap: nowrap; }
   body.native .actions .btn.primary { flex: 1; text-align: center; justify-content: center; }
   /* animated hero: the wireframe phone flipping through real screens */
   .appshots { display: none; }
@@ -353,16 +353,15 @@
   .livesw { display: inline-flex; align-items: center; gap: 8px; }
   .livesw .livemsg { font: 600 11px/1.2 -apple-system, sans-serif;
     color: #6e6e73; white-space: nowrap; }
-  /* admin strip: publish control on its own footer row of the card */
+  /* admin strip: publish control above the title, under the artwork */
   .adminbar { display: none; }
   body.admin .adminbar { display: flex; align-items: center; gap: 10px;
-    margin: 20px -26px -22px; padding: 12px 26px;
-    border-top: 0.5px solid var(--line); background: #fbfbfc;
-    border-radius: 0 0 18px 18px; }
+    margin: 0 0 16px; padding: 11px 15px;
+    border: 0.5px solid var(--line); background: #fbfbfc;
+    border-radius: 14px; }
   .adminbar .ab-label { font: 600 11px/14px 'Urbane Rounded', sans-serif;
     text-transform: uppercase; letter-spacing: .08em; color: #6e6e73; }
   .adminbar .livesw { margin-left: auto; }
-  body.native .adminbar { margin: 0; padding: 12px 18px; border-radius: 0; }
   .card.editing .adminbar { display: none; }
   .editfoot { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
   .editfoot .draftdot { flex: 1; font: 600 12px/1.35 -apple-system, sans-serif;
@@ -921,7 +920,9 @@ function wireEditMode() {
     bar.className = 'adminbar';
     bar.innerHTML = '<span class="ab-label">Publish</span>';
     bar.appendChild(lw);
-    card.appendChild(bar);
+    /* above the title, under the card's artwork */
+    const bodyEl = card.querySelector('.row .body');
+    bodyEl.insertBefore(bar, bodyEl.firstChild);
 
     const platforms = ['iOS', 'Android', 'Web', 'macOS', 'watchOS'];
     if (cur.platform && platforms.indexOf(cur.platform) < 0) platforms.unshift(cur.platform);
