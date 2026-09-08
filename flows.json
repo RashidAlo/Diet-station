@@ -269,7 +269,7 @@
         }
       ],
       "sheet": true,
-      "hidden": false
+      "hidden": true
     },
     {
       "id": "breathe",
