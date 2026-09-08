@@ -279,8 +279,15 @@
     width: 34px; height: 34px; border-radius: 50%; background: #fff;
     box-shadow: 0 1px 4px rgba(0,0,0,.08); color: #1d1d1f;
     align-items: center; justify-content: center; }
-  body.admin .editbtn { display: flex; }
+  .editbtn { display: flex; }
   body.native .editbtn { margin-left: 0; }
+  .loginbox label { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    color: #6e6e73; margin: 14px 0 6px; }
+  .loginbox input { width: 100%; box-sizing: border-box; padding: 13px 14px;
+    border: 1px solid rgba(0,0,0,.14); border-radius: 12px; background: #fff;
+    font: 500 15px/20px -apple-system, sans-serif; color: #1d1d1f; }
+  .loginbox .err { color: #ED1C24; font: 600 12px/16px -apple-system, sans-serif;
+    margin-top: 10px; min-height: 16px; }
   .editbtn svg { width: 16px; height: 16px; }
   body.editmode .editbtn { background: #ED1C24; color: #fff; }
   .card .adminrow { display: none; align-items: center; gap: 10px;
@@ -453,9 +460,7 @@ document.querySelectorAll('.seg-btn').forEach(b =>
 const NATIVE = /DietStationLab/.test(navigator.userAgent) || /[?&]native=1/.test(location.search);
 if (NATIVE) document.body.classList.add('native');
 
-/* ---- admin: ?admin=1 enables on this device (?admin=0 clears); or
-   long-press the wordmark ~1.2s. Admin sees hidden cards + edit mode. ---- */
-if (/[?&]admin=1/.test(location.search)) { try { localStorage.setItem('ds-admin', '1'); } catch (_) {} }
+/* ---- admin: the pencil asks for a login; ?admin=0 signs out ---- */
 if (/[?&]admin=0/.test(location.search)) { try { localStorage.removeItem('ds-admin'); } catch (_) {} }
 let ADMIN = false;
 try { ADMIN = localStorage.getItem('ds-admin') === '1'; } catch (_) {}
@@ -463,23 +468,40 @@ if (ADMIN) document.body.classList.add('admin');
 let OVR = {};
 try { OVR = JSON.parse(localStorage.getItem('ds-lab-overrides') || '{}'); } catch (_) {}
 function saveOvr() { try { localStorage.setItem('ds-lab-overrides', JSON.stringify(OVR)); } catch (_) {} }
-(function () {
-  let lp = null;
-  const word = document.getElementById('brandWord');
-  const start = () => { lp = setTimeout(() => {
+const ADMIN_HASH = 'bfe5c3c7b1db56c1539f1b6ab4e10b250c51532ff15a8f5946c6a2d6caf0a47c';
+async function checkLogin(name, pass) {
+  const data = new TextEncoder().encode(name.trim().toLowerCase() + ':' + pass.trim());
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('') === ADMIN_HASH;
+}
+function openLogin() {
+  primerEl.innerHTML = '<h3>Admin sign in</h3>' +
+    '<div class="loginbox"><label>Name</label><input id="liName" autocomplete="username" autocapitalize="none">' +
+    '<label>Password</label><input id="liPass" type="password" autocomplete="current-password">' +
+    '<div class="err" id="liErr"></div></div>' +
+    '<div class="p-actions"><button class="btn ghost" id="liCancel">Cancel</button>' +
+    '<button class="btn primary" id="liGo">Sign in</button></div>';
+  primerVeil.classList.add('show'); primerEl.classList.add('show');
+  const go = async () => {
+    const ok = await checkLogin(
+      document.getElementById('liName').value,
+      document.getElementById('liPass').value);
+    if (!ok) {
+      document.getElementById('liErr').textContent = 'Wrong name or password.';
+      return;
+    }
     try {
-      if (localStorage.getItem('ds-admin') === '1') localStorage.removeItem('ds-admin');
-      else localStorage.setItem('ds-admin', '1');
+      localStorage.setItem('ds-admin', '1');
+      sessionStorage.setItem('ds-open-edit', '1');
     } catch (_) {}
-    location.reload();
-  }, 1200); };
-  const end = () => clearTimeout(lp);
-  word.addEventListener('touchstart', start, { passive: true });
-  word.addEventListener('touchend', end);
-  word.addEventListener('mousedown', start);
-  word.addEventListener('mouseup', end);
-  word.addEventListener('mouseleave', end);
-})();
+    location.href = location.pathname;   /* clean URL — no stale query flags */
+  };
+  document.getElementById('liGo').onclick = go;
+  document.getElementById('liPass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') go();
+  });
+  document.getElementById('liCancel').onclick = closePrimer;
+}
 
 /* ---- splash loader: Rive "Splash" artboard (breathing dots -> DS logo)
    plays while every design asset the prototypes need is warmed into the
@@ -726,8 +748,16 @@ function setEditMode(on) {
   document.querySelectorAll('#flows .card h2, #flows .card .desc').forEach(el =>
     el.setAttribute('contenteditable', on ? 'true' : 'false'));
 }
-document.getElementById('editBtn').addEventListener('click', () =>
-  setEditMode(!document.body.classList.contains('editmode')));
+document.getElementById('editBtn').addEventListener('click', () => {
+  if (!ADMIN) return openLogin();
+  setEditMode(!document.body.classList.contains('editmode'));
+});
+try {
+  if (ADMIN && sessionStorage.getItem('ds-open-edit')) {
+    sessionStorage.removeItem('ds-open-edit');
+    setTimeout(() => setEditMode(true), 400);
+  }
+} catch (_) {}
 const pubBar = document.createElement('div');
 pubBar.className = 'publishbar';
 pubBar.innerHTML = '<button class="disc">Discard drafts</button><button class="pub">Copy publish command</button>';
