@@ -244,24 +244,31 @@
     <button id="mvHandoff">Dev handoff</button>
   </div>
   <h2>Calendar — Your Subscription Days</h2>
-  <p class="s-desc">The meal flow now opens on the calendar: every subscription day carries a
-    status chip — green plus means ready to pick, green check is selected, the truck is out for
-    delivery, the yellow star wants a rating, OFF and pause are rest days. Tap any green-plus day
-    and the meal selector rises over the calendar; confirm your plate and the day pops into a
-    check.</p>
+  <p class="s-desc">A live calendar on the real clock: thirty subscription days roll forward
+    from today (Fridays off). Days inside the 72-hour horizon are locked with auto-selected
+    meals — green check; days beyond it show the green plus and open the meal selector empty
+    for manual picking. The first still-open day carries the deadline badge and the header
+    countdown; today is the truck out for delivery, and recent days wear the rating star.</p>
 
   <div class="s-sec">
-    <div class="s-label">Deadlines</div>
-    <div class="s-note">The countdowns in the header, on the badged day, and in the footer.</div>
+    <div class="s-label">The rule</div>
+    <div class="s-note">Real dates, real clock. Days closer than the horizon to their noon
+      delivery lock with auto-selected meals (green check); days beyond it stay a green
+      plus and open the selector empty.</div>
     <div class="mod">
-      <div class="mod-head"><label>Next-day deadline</label><output id="vDead">3h 26m</output></div>
-      <input type="range" id="mDead" min="15" max="600" step="1" value="206">
-      <div class="mod-desc">Time left to pick meals for the badged day (Mar 13).</div>
+      <div class="mod-head"><label>Auto-select horizon</label><output id="vHor">72h</output></div>
+      <input type="range" id="mHor" min="24" max="120" step="6" value="72">
+      <div class="mod-desc">Hours before delivery when selection locks and auto-picks apply.</div>
     </div>
     <div class="mod">
-      <div class="mod-head"><label>Selection window</label><output id="vWin">5h 39m</output></div>
-      <input type="range" id="mWin" min="30" max="720" step="1" value="339">
-      <div class="mod-desc">The footer's "hrs left for selection to end".</div>
+      <div class="mod-head"><label>Active days</label><output id="vAct">30</output></div>
+      <input type="range" id="mAct" min="7" max="45" step="1" value="30">
+      <div class="mod-desc">Subscription days on the calendar, Fridays off, rolling from today.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Time machine</label><output id="vFF">now</output></div>
+      <input type="range" id="mFF" min="0" max="96" step="1" value="0">
+      <div class="mod-desc">Jump the clock forward and watch plus days lock into checks.</div>
     </div>
   </div>
 
@@ -311,7 +318,7 @@
         <div class="hd">
           <div class="hd-txt">
             <h1>Calendar</h1>
-            <div class="hd-sub">Time left for Fri 13 Mar meal selection<b id="hdCount">03:26</b></div>
+            <div class="hd-sub">Time left <span id="hdWhen"></span><b id="hdCount"></b></div>
           </div>
           <button class="hd-close" id="hdClose" aria-label="Close">
             <img src="cal-close.svg" alt="">
@@ -341,116 +348,184 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 2';
+const BUILD = 'calendar 2026-09-08 · 3';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
-const MODS = { dead: 206, win: 339, pop: 1.18, haptics: true };
+const MODS = { horizon: 72, active: 30, ff: 0, pop: 1.18, haptics: true };
 
-/* ================= calendar data (statuses per Figma 14994-86172) =================
-   add   green plus — ready to pick (opens the meal selector)
-   soon  green plus + yellow deadline badge
-   sel   green check — meals chosen
-   truck out for delivery (past days: delivered)
-   rate  yellow star — delivered, waiting on a rating
-   today red date + dot, star chip
-   off   subscription off-day
-   pause paused day */
-const MONTHS = [
-  { name: 'March', ab: 'Mar', startCol: 7, first: 7, last: 31,
-    st: { 7: 'truck', 8: 'rate', 9: 'truck', 10: 'rate', 11: 'today', 12: 'rate',
-          13: 'soon', 14: 'sel', 15: 'sel', 16: 'sel', 17: 'sel', 20: 'off', 27: 'off' },
-    past: [7, 8, 9, 10] },
-  { name: 'April', ab: 'Apr', startCol: 1, first: 1, last: 30,
-    st: { 4: 'pause', 6: 'off', 13: 'off', 20: 'off', 27: 'off' }, past: [] },
-];
-const sessionSel = {};   /* 'Mar:18' -> true — days completed this session */
+/* ================= live calendar model =================
+   Real dates, real clock. The active window is the next `active`
+   non-Friday days starting tomorrow (Fridays are OFF). A day's meals
+   deliver at noon; selection locks `horizon` hours (72 by default)
+   before delivery. Locked days are auto-selected — green check, picks
+   seeded in the overlay. Days beyond the horizon keep the green plus
+   and open the selector empty, so the user picks by hand. The first
+   day still open carries the deadline badge + header countdown.
+   today = truck (out for delivery); the two days before = yellow star
+   (delivered, rate them); older past days settle into the quiet star. */
+const MABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MFULL = ['January','February','March','April','May','June','July','August',
+  'September','October','November','December'];
+const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYMS = 864e5;
+const sessionSel = {};   /* 'Sep:18' -> true — days confirmed by hand this session */
+
+function calNow() { return Date.now() + MODS.ff * 3600e3; }
+function midnight(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d; }
+function lockAt(d) { return d.getTime() + 12 * 3600e3 - MODS.horizon * 3600e3; }
+function keyOf(d) { return MABBR[d.getMonth()] + ':' + d.getDate(); }
+
+function computeModel() {
+  const nowT = calNow();
+  const today = midnight(nowT);
+  const active = [];
+  let d = today;
+  while (active.length < MODS.active) {
+    d = new Date(d.getTime() + DAYMS);
+    if (d.getDay() !== 5) active.push(d);
+  }
+  let soon = null;
+  for (const a of active) {
+    if (!sessionSel[keyOf(a)] && lockAt(a) > nowT) { soon = a; break; }
+  }
+  return { nowT, today, soon,
+    first: new Date(today.getTime() - 4 * DAYMS),
+    last: active[active.length - 1] };
+}
+
+function dayStatus(D, M) {
+  if (sessionSel[keyOf(D)]) return 'sel';
+  if (D.getDay() === 5) return 'off';
+  const t = D.getTime(), td = M.today.getTime();
+  if (t < td) return (td - t) / DAYMS <= 2 ? 'rate' : 'star';
+  if (t === td) return 'today';
+  if (lockAt(D) <= M.nowT) return 'auto';
+  if (M.soon && t === M.soon.getTime()) return 'soon';
+  return 'add';
+}
 
 const CHIP = {
   add:   '<img src="cal-add.svg" width="20" height="20" alt="">',
   soon:  '<img src="cal-add.svg" width="20" height="20" alt="">',
   sel:   '<img src="cal-check.svg" width="16" height="16" alt="">',
-  truck: '<img src="cal-truck.svg" width="16" height="16" alt="">',
+  auto:  '<img src="cal-check.svg" width="16" height="16" alt="">',
+  today: '<img src="cal-truck.svg" width="16" height="16" alt="">',
   rate:  '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
-  today: '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
+  star:  '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
   off:   '<img src="cal-off.svg" width="14" height="6" alt="">',
-  pause: '<img src="cal-pausecircle.svg" width="20" height="20" alt="">',
 };
 
-function fmtHM(mins) { return Math.floor(mins / 60) + ':' + String(mins % 60).padStart(2, '0'); }
-function fmtHMlong(mins) { return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm'; }
-
-function dayState(m, d) {
-  if (sessionSel[m.ab + ':' + d]) return 'sel';
-  return m.st[d] || 'add';
+function fmtHM(ms) {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 }
 
-function renderMonths() {
+function nudge(el) { vibrate(6); el.classList.remove('nudge');
+  void el.offsetWidth; el.classList.add('nudge'); }
+
+let lastStatuses = {};   /* key -> status, so days that lock over get the pop */
+function renderMonths(popNew) {
+  const M = computeModel();
   const root = document.getElementById('months');
   root.innerHTML = '';
-  MONTHS.forEach(m => {
-    const sec = document.createElement('section');
-    sec.className = 'month';
-    sec.innerHTML = '<h3 class="mtitle">' + m.name + '</h3>';
-    const grid = document.createElement('div');
-    grid.className = 'mgrid';
-    for (let d = m.first; d <= m.last; d++) {
-      const st = dayState(m, d);
-      const el = document.createElement('button');
-      el.className = 'day ' + st + (m.past.includes(d) ? ' past' : '');
-      el.dataset.mon = m.ab; el.dataset.day = d;
-      if (d === m.first) el.style.gridColumn = m.startCol;
-      let inner = '<span class="tile">' + d + '</span>' +
-        '<span class="chip">' + CHIP[st] + '</span><span class="ring"></span>';
-      if (st === 'today') inner += '<img class="dot" src="cal-dot.svg" width="4" height="4" alt="">';
-      if (st === 'soon') inner += '<span class="badge"><span class="bb">' +
-        Math.floor(MODS.dead / 60) + ':00</span><span class="bt">' +
-        '<img src="cal-tri.svg" alt=""></span></span>';
-      el.innerHTML = inner;
-      if (st === 'add' || st === 'soon') {
-        el.classList.add('tap');
-        el.onclick = () => openDay(m.ab, d);
-      } else {
-        el.onclick = () => { vibrate(6); el.classList.remove('nudge');
-          void el.offsetWidth; el.classList.add('nudge'); };
-      }
-      grid.appendChild(el);
+  const statuses = {};
+  let grid = null, curMonth = -1, firstOfMonth = false;
+  for (let t = M.first.getTime(); t <= M.last.getTime() + DAYMS / 2; t += DAYMS) {
+    const D = midnight(t);
+    if (D.getMonth() !== curMonth) {
+      curMonth = D.getMonth();
+      const sec = document.createElement('section');
+      sec.className = 'month';
+      sec.innerHTML = '<h3 class="mtitle">' + MFULL[curMonth] + '</h3>';
+      grid = document.createElement('div');
+      grid.className = 'mgrid';
+      sec.appendChild(grid);
+      root.appendChild(sec);
+      firstOfMonth = true;
     }
-    sec.appendChild(grid);
-    root.appendChild(sec);
-  });
+    const st = dayStatus(D, M);
+    const key = keyOf(D);
+    statuses[key] = st;
+    const el = document.createElement('button');
+    el.className = 'day ' + st + (D.getTime() < M.today.getTime() ? ' past' : '');
+    el.dataset.mon = MABBR[D.getMonth()]; el.dataset.day = D.getDate();
+    if (firstOfMonth) { el.style.gridColumn = D.getDay() + 1; firstOfMonth = false; }
+    let inner = '<span class="tile">' + D.getDate() + '</span>' +
+      '<span class="chip">' + CHIP[st] + '</span><span class="ring"></span>';
+    if (st === 'today') inner += '<img class="dot" src="cal-dot.svg" width="4" height="4" alt="">';
+    if (st === 'soon') inner += '<span class="badge"><span class="bb">' +
+      Math.max(0, Math.floor((lockAt(D) - M.nowT) / 3600e3)) + ':00</span><span class="bt">' +
+      '<img src="cal-tri.svg" alt=""></span></span>';
+    el.innerHTML = inner;
+    if (st === 'add' || st === 'soon') {
+      el.classList.add('tap');
+      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false);
+    } else if (st === 'auto' || st === 'sel') {
+      el.classList.add('tap');
+      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
+    } else {
+      el.onclick = () => nudge(el);
+    }
+    if (popNew && lastStatuses[key] && lastStatuses[key] !== 'auto' &&
+        lastStatuses[key] !== 'sel' && st === 'auto') {
+      el.classList.add('justsel');
+      el.style.setProperty('--pop', MODS.pop);
+      vibrate(12);
+      setTimeout(() => el.classList.remove('justsel'), 650);
+    }
+    grid.appendChild(el);
+  }
+  lastStatuses = statuses;
   const note = document.createElement('div');
   note.className = 'endnote';
-  note.innerHTML = '<img src="cal-clock.svg" alt=""><p><b id="winTxt">' +
-    fmtHM(MODS.win) + ' hrs left</b> for selection to end</p>';
+  note.innerHTML = '<img src="cal-clock.svg" alt=""><p><b id="winTxt"></b>' +
+    ' for selection to end</p>';
   root.appendChild(note);
   const pad = document.createElement('div');
   pad.className = 'endpad';
   root.appendChild(pad);
+  syncClock(M);
 }
 
-/* ================= header countdown (ticks a real minute) ================= */
-function syncCountdown() {
-  document.getElementById('hdCount').textContent =
-    String(Math.floor(MODS.dead / 60)).padStart(2, '0') + ':' +
-    String(MODS.dead % 60).padStart(2, '0');
-  const w = document.getElementById('winTxt');
-  if (w) w.firstChild.textContent = fmtHM(MODS.win) + ' hrs left';
-  const bb = document.querySelector('.day.soon .bb');
-  if (bb) bb.textContent = Math.floor(MODS.dead / 60) + ':00';
+/* header + badge + footer countdowns off the real clock; when the next
+   open day crosses its lock the calendar re-renders and it pops over */
+let soonKey = null, quietUntil = 0;
+function syncClock(M) {
+  M = M || computeModel();
+  const lbl = document.getElementById('hdWhen');
+  const cnt = document.getElementById('hdCount');
+  if (M.soon) {
+    const left = lockAt(M.soon) - M.nowT;
+    lbl.textContent = 'for ' + WD[M.soon.getDay()] + ' ' + M.soon.getDate() + ' ' +
+      MABBR[M.soon.getMonth()] + ' meal selection';
+    cnt.textContent = fmtHM(left);
+    const w = document.getElementById('winTxt');
+    if (w) w.textContent = fmtHM(left) + ' hrs left';
+    const bb = document.querySelector('.day.soon .bb');
+    if (bb) bb.textContent = Math.max(0, Math.floor(left / 3600e3)) + ':00';
+  } else {
+    lbl.textContent = '— every day is set';
+    cnt.textContent = '';
+  }
+  const sk = M.soon ? keyOf(M.soon) : null;
+  const changed = soonKey !== null && sk !== soonKey;
+  soonKey = sk;
+  if (changed && Date.now() > quietUntil) renderMonths(true);
 }
-setInterval(() => { if (MODS.dead > 0) { MODS.dead--; syncCountdown(); } }, 60000);
+setInterval(() => syncClock(), 1000);
 
 /* ================= meal-selection overlay ================= */
 const ovVeil = document.getElementById('ovVeil');
 let ovFrame = null;
-function openDay(mon, day) {
+function openDay(mon, day, auto) {
   if (ovFrame) return;
   vibrate(8);
   ovVeil.classList.add('show');
   ovFrame = document.createElement('iframe');
   ovFrame.className = 'ov-frame';
-  ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day;
+  ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day +
+    '&auto=' + (auto ? 1 : 0);
   document.getElementById('phone').appendChild(ovFrame);
 }
 function closeOverlay() {
@@ -471,17 +546,17 @@ addEventListener('message', e => {
 });
 function markSelected(mon, day) {
   sessionSel[mon + ':' + day] = true;
+  quietUntil = Date.now() + 1400;   /* let the pop play before the clock re-renders */
   const el = document.querySelector('.day[data-mon="' + mon + '"][data-day="' + day + '"]');
   if (!el) return;
   setTimeout(() => {
-    el.className = 'day sel justsel';
+    el.className = 'day sel tap justsel';
     el.style.setProperty('--pop', MODS.pop);
     el.querySelector('.chip').innerHTML = CHIP.sel;
     const b = el.querySelector('.badge'); if (b) b.remove();
-    el.onclick = () => { vibrate(6); el.classList.remove('nudge');
-      void el.offsetWidth; el.classList.add('nudge'); };
+    el.onclick = () => openDay(mon, day, true);
     vibrate([10, 40, 18]);
-    setTimeout(() => el.classList.remove('justsel'), 650);
+    setTimeout(() => { el.classList.remove('justsel'); renderMonths(false); }, 700);
   }, 260);
 }
 
@@ -501,8 +576,9 @@ function bindMod(id, out, key, fmt, after) {
     if (after) after();
   });
 }
-bindMod('mDead', 'vDead', 'dead', v => fmtHMlong(+v), syncCountdown);
-bindMod('mWin', 'vWin', 'win', v => fmtHMlong(+v), syncCountdown);
+bindMod('mHor', 'vHor', 'horizon', v => v + 'h', () => renderMonths(true));
+bindMod('mAct', 'vAct', 'active', v => v, () => renderMonths(false));
+bindMod('mFF', 'vFF', 'ff', v => +v ? '+' + v + 'h' : 'now', () => renderMonths(true));
 bindMod('mPop', 'vPop', 'pop', v => (+v).toFixed(2) + '×');
 document.querySelectorAll('#hapSeg button').forEach(b => b.onclick = () => {
   MODS.haptics = b.dataset.v === 'on';
@@ -511,13 +587,15 @@ document.querySelectorAll('#hapSeg button').forEach(b => b.onclick = () => {
 });
 document.getElementById('sReset').onclick = () => {
   Object.keys(sessionSel).forEach(k => delete sessionSel[k]);
-  MODS.dead = +document.getElementById('mDead').value;
-  renderMonths(); syncCountdown();
+  MODS.ff = 0;
+  document.getElementById('mFF').value = 0;
+  document.getElementById('vFF').textContent = 'now';
+  renderMonths(false);
 };
 document.getElementById('sCopy').onclick = () => {
-  const s = 'calendar · deadline ' + fmtHMlong(MODS.dead) + ' · window ' +
-    fmtHMlong(MODS.win) + ' · pop ' + (+MODS.pop).toFixed(2) +
-    ' · haptics ' + (MODS.haptics ? 'on' : 'off');
+  const s = 'calendar · horizon ' + MODS.horizon + 'h · active ' + MODS.active +
+    ' days · clock ' + (MODS.ff ? '+' + MODS.ff + 'h' : 'now') +
+    ' · pop ' + (+MODS.pop).toFixed(2) + ' · haptics ' + (MODS.haptics ? 'on' : 'off');
   try { navigator.clipboard.writeText(s); } catch (_) {}
 };
 
@@ -638,8 +716,7 @@ setTimeout(() => {
   }, { passive: true });
 })();
 
-renderMonths();
-syncCountdown();
+renderMonths(false);
 fit();
 </script>
 <script src="../lab-shell.js" data-flow="meal-select" defer></script>

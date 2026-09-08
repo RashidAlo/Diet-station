@@ -404,6 +404,9 @@
       transform .7s cubic-bezier(.26,1.36,.42,1),
       width .45s cubic-bezier(.45,1.45,.8,1); }
   .dock.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+  /* the over-quota error owns the navigator — Next steps aside while it speaks */
+  .navigator.warn .dock { opacity: 0; transform: scale(.6) translateY(6px);
+    pointer-events: none; }
   .dock.wide { width: 92px; }
   .dock .d-label { white-space: nowrap; opacity: 0; transition: opacity .25s ease .1s; }
   .dock.wide .d-label { opacity: 1; }
@@ -1436,6 +1439,7 @@ function scrollToNextCat(fromCatId) {
 
 const QS = new URLSearchParams(location.search);
 const CAL = QS.get('cal') === '1';   /* opened as the calendar page's overlay */
+const AUTO = QS.get('auto') !== '0'; /* auto=0: beyond the horizon — open empty, pick by hand */
 const DAY_START = +QS.get('day') || 15;
 const MON_LBL = QS.get('mon') || 'Mar';
 const calDone = new Set();           /* days confirmed during this overlay visit */
@@ -1460,7 +1464,7 @@ function saveDay() {
 }
 
 function applyDay(idx) {
-  const st = dayStates[idx] || seedAutoDay(idx);
+  const st = dayStates[idx] || (AUTO ? seedAutoDay(idx) : { sel: {}, auto: [] });
   resetAll(true);
   userActed = false;
   Object.entries(st.sel).forEach(([key, q]) => {
