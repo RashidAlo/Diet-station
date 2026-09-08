@@ -268,7 +268,8 @@
           "note": "Tapping a selected meal adds one more, or re-opens the stepper"
         }
       ],
-      "sheet": true
+      "sheet": true,
+      "hidden": false
     },
     {
       "id": "breathe",
