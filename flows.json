@@ -8,7 +8,7 @@
       "description": "Figma-faithful subscription meal picker. Five categories, each with a quota (the x-of-y counters). Tapping a thumbnail claims it: the green border springs in with a self-drawing check, the pill unfolds into a − 1 + stepper, then settles into a quiet number badge. The bottom navigator is a glass pill whose brand-gradient filler sweeps right as the plate builds, counting calories and macros; completing every quota triggers the Saved moment — check draw + confetti — before the Next button pops in.",
       "path": "meal-select/",
       "platform": "iOS",
-      "area": "Subscription",
+      "area": "Meal Selection",
       "preview": "meal-select/preview.png",
       "handoff": {
         "Design source": "Figma · Diet Station 4.0 · Meal Selection (section 17179-75872; screen 17179-75874, card 17179-76751, navigator 17179-75920)",
