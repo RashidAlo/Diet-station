@@ -430,6 +430,7 @@
     transition: transform .52s cubic-bezier(.3,1,.32,1); }
   .meal-ov.open { transform: none; pointer-events: auto; }
   html.embed .meal-ov { top: calc(env(safe-area-inset-top, 34px) + 4px); }
+  body.desktop .meal-ov { top: 56px; }   /* clear the frame's island */
   .meal-ov.drag { transition: none; }
   .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 62%;
     overflow: hidden; z-index: 1; }
@@ -1822,7 +1823,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-07 · 57';
+const BUILD = 'build 2026-09-08 · 58';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2016,6 +2017,7 @@ function syncSheet() {
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
 SHEET_GAP = EMBED ? REAL_PAD + 16
+  : document.body.classList.contains('desktop') ? 56
   : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');

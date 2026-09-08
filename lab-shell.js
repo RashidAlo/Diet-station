@@ -619,6 +619,7 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     }
     syncMobileClass();
     setupLabMenu();
+    setupSideResize();
     fetch('../flows.json?v=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (data) {
@@ -636,6 +637,51 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
         }
       })
       .catch(function () { /* offline / file:// — shell stays dormant */ });
+  }
+
+  /* Desktop: resizable sidebar (drag the divider), default half the screen */
+  function setupSideResize() {
+    if (!document.body.classList.contains('desktop')) return;
+    if (!document.getElementById('side')) return;
+    var saved = null;
+    try { saved = localStorage.getItem('ds-sidew'); } catch (e) {}
+    var setW = function (px) {
+      document.documentElement.style.setProperty('--sidew', px + 'px');
+      try { localStorage.setItem('ds-sidew', String(px)); } catch (e) {}
+    };
+    var st = document.createElement('style');
+    st.textContent = '\
+body.desktop #side { width: var(--sidew, 50vw) !important; }\
+body.desktop #stage { left: var(--sidew, 50vw) !important; }\
+body.desktop .lab-tabs:not(.in-side) { left: var(--sidew, 50vw) !important; }\
+body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
+.side-resizer { position: fixed; top: 0; bottom: 0;\
+  left: calc(var(--sidew, 50vw) - 3px); width: 7px; cursor: col-resize;\
+  z-index: 300; }\
+.side-resizer:hover, .side-resizer.dragging { background: rgba(237,28,36,.18); }';
+    document.head.appendChild(st);
+    setW(saved ? parseFloat(saved) : Math.round(innerWidth / 2));
+    var rz = document.createElement('div');
+    rz.className = 'side-resizer';
+    document.body.appendChild(rz);
+    var dragging = false;
+    rz.addEventListener('mousedown', function (e) {
+      dragging = true;
+      rz.classList.add('dragging');
+      e.preventDefault();
+    });
+    addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      var w = Math.max(260, Math.min(innerWidth - 320, e.clientX));
+      setW(w);
+      dispatchEvent(new Event('resize'));
+    });
+    addEventListener('mouseup', function () {
+      if (!dragging) return;
+      dragging = false;
+      rz.classList.remove('dragging');
+      dispatchEvent(new Event('resize'));
+    });
   }
 
   /* Native TestFlight shell (DietStationLab UA token): chrome-free prototypes */
