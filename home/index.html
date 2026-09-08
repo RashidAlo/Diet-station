@@ -237,11 +237,14 @@
   .co-txt { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #f9f9f9; width: 84px; }
 
   /* ================= white meal sheet (in the page scroll) ================= */
+  /* breathing room is PADDING on the sheet, not margin on the header — a
+     top margin on the first child collapses out of the container and shows
+     as red above the sheet instead of space inside it */
   .sheetc { position: relative; min-height: 520px;
     background: #fff; border-radius: 38px 38px 0 0; z-index: 20;
+    padding-top: 30px;
     padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
-  /* content sits clear of the 38px corner sweep, Apple-style insets */
-  .sh-head { height: 51px; margin: 28px 0 16px;
+  .sh-head { height: 51px; margin: 0 0 20px;
     display: flex; align-items: center; padding: 0 24px; gap: 14px; }
   .sh-tile { width: 48px; height: 48px; border-radius: 16px; background: #fff;
     display: flex; align-items: center; justify-content: center; flex: none;
@@ -268,7 +271,7 @@
   .sh-kcal .mp { display: flex; align-items: center; gap: 2px;
     font: 500 13px/18px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .sh-kcal .mp i { font: 400 9px/14px 'Proxima Nova', sans-serif; color: #0d0d0d; }
-  .mealstrip { display: flex; align-items: flex-start; gap: 29px; padding: 0 20px;
+  .mealstrip { display: flex; align-items: flex-start; gap: 29px; padding: 4px 24px 8px;
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     -webkit-overflow-scrolling: touch; }
   .mealstrip::-webkit-scrollbar { display: none; }
@@ -706,7 +709,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 4';
+const BUILD = 'home 2026-09-08 · 5';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */

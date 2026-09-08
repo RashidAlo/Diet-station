@@ -320,8 +320,8 @@ struct HomeScreenNative: View {
     // MARK: meal sheet
 
     private var mealSheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            sheetHeader.padding(.top, 28).padding(.horizontal, 24)
+        VStack(alignment: .leading, spacing: 20) {
+            sheetHeader.padding(.top, 30).padding(.horizontal, 24)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 29) {
                     HStack(spacing: 12) {
@@ -347,7 +347,8 @@ struct HomeScreenNative: View {
                         mealCard("meal3.jpg", "Biryani with tomato sauce and Veggies", 554)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
             }
             .coordinateSpace(name: "strip")
             Spacer(minLength: 140)
