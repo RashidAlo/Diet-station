@@ -352,11 +352,13 @@
   /* dual-action primary: Prototype launch + settings in one red button */
   .btn.primary.dual { padding: 0; overflow: hidden; }
   .dual .d-main { display: flex; align-items: center; justify-content: center;
-    gap: 9px; flex: 1; padding: 0 18px; height: 100%; }
+    gap: 8px; flex: 1; padding: 0 14px; height: 100%; }
+  body.native .dual .d-main { font-size: 13.5px; }
+  body.native .dual .d-main svg { width: 13px; height: 13px; }
   .dual .d-div { width: 1px; align-self: stretch; margin: 11px 0;
     background: rgba(255,255,255,.32); }
   .dual .d-gear { display: flex; align-items: center; justify-content: center;
-    width: 52px; height: 100%; cursor: pointer; }
+    flex: 0 0 30%; height: 100%; cursor: pointer; }
   .dual .d-gear svg { width: 21px; height: 21px; }
   .dual .d-gear:active { background: rgba(0,0,0,.14); }
   /* round Live/Offline power button in the action bar (admin) */
@@ -366,12 +368,18 @@
     align-items: center; justify-content: center; cursor: pointer;
     transition: background .28s ease, color .28s ease, box-shadow .28s ease; }
   body.native .livebtn { width: 54px; height: 54px; order: 1; }
-  .livebtn.on { background: #34C759; color: #fff;
-    box-shadow: 0 5px 16px -5px rgba(52,199,89,.6); }
+  .livebtn { flex-direction: column; gap: 2px; }
+  .livebtn.on { background: #fff; color: #34C759;
+    box-shadow: inset 0 0 0 1.5px #34C759,
+      0 5px 14px -6px rgba(52,199,89,.55); }
   .livebtn.off { background: #ececef; color: #8e8e93;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.07); }
-  .livebtn svg { width: 20px; height: 20px;
+  .livebtn svg { width: 15px; height: 15px;
     transition: transform .35s cubic-bezier(.3,1.5,.5,1); }
+  .livebtn .lv-t { font: 700 7.5px/1 -apple-system, sans-serif;
+    letter-spacing: .04em; text-transform: uppercase; }
+  body.native .livebtn svg { width: 17px; height: 17px; }
+  body.native .livebtn .lv-t { font-size: 8px; }
   .livebtn.off svg { transform: rotate(180deg) scale(.9); }
   .livebtn.busy svg { animation: livespin 1s linear infinite; }
   .livebtn::after { content: ''; position: absolute; inset: 0;
@@ -607,7 +615,9 @@ function openLogin() {
     const tok = await unlockToken(document.getElementById('liPass').value);
     try {
       localStorage.setItem('ds-admin', '1');
-      if (tok) sessionStorage.setItem('ds-pub-token', tok);
+      /* persists across app launches — sessionStorage died with every
+         WKWebView session and forced a re-login on each publish */
+      if (tok) localStorage.setItem('ds-pub-token', tok);
     } catch (_) {}
     location.href = location.pathname;   /* clean URL — no stale query flags */
   };
@@ -761,8 +771,9 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
       const primary = card.querySelector('.btn.primary');
       const hasSet = f.settings && f.settings.length;
       primary.classList.add('dual');
-      primary.innerHTML = '<span class="d-main"><svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype</span>' +
-        (hasSet ? '<span class="d-div"></span><span class="d-gear" role="button" aria-label="Prototype settings"><svg viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></span>' : '');
+      primary.innerHTML =
+        (hasSet ? '<span class="d-gear" role="button" aria-label="Prototype settings"><svg viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></span><span class="d-div"></span>' : '') +
+        '<span class="d-main"><svg viewBox="0 0 24 24" fill="none"><path d="M8.5 5.8c0-1 1.1-1.6 2-1.1l9.2 5.9c.8.5.8 1.7 0 2.2l-9.2 5.9c-.9.5-2-.1-2-1.1V5.8z" fill="currentColor"/></svg>Prototype</span>';
       primary.addEventListener('click', e => {
         e.preventDefault();
         if (e.target.closest('.d-gear')) { openPrimer(f); return; }
@@ -828,7 +839,10 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
 /* One global Login button (header). Signed in, every card grows an Edit
    button; each card saves + publishes its own entry independently. */
 let pubTok = null;
-try { pubTok = sessionStorage.getItem('ds-pub-token'); } catch (_) {}
+try {
+  pubTok = localStorage.getItem('ds-pub-token')
+    || sessionStorage.getItem('ds-pub-token');
+} catch (_) {}
 let publishing = false, pubErr = '';
 
 async function publishCard(id, patch, dot) {
@@ -902,10 +916,13 @@ function wireEditMode() {
     /* round Live/Offline power button in the action bar */
     const lb = document.createElement('button');
     lb.className = 'livebtn';
-    lb.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2v7.6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M7.4 6.4a7.3 7.3 0 1 0 9.2 0" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>';
+    lb.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2v7.6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M7.4 6.4a7.3 7.3 0 1 0 9.2 0" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>' +
+      '<span class="lv-t"></span>';
+    const lbT = lb.querySelector('.lv-t');
     const syncLb = () => {
       lb.classList.toggle('on', !cur.hidden);
       lb.classList.toggle('off', !!cur.hidden);
+      lbT.textContent = cur.hidden ? 'Offline' : 'Live';
       lb.setAttribute('aria-label', cur.hidden
         ? 'Offline \u2014 tap to publish' : 'Live \u2014 tap to take offline');
     };
@@ -1027,6 +1044,7 @@ function adminAccess() {
   if (confirm('Sign out of admin?')) {
     try {
       localStorage.removeItem('ds-admin');
+      localStorage.removeItem('ds-pub-token');
       sessionStorage.removeItem('ds-pub-token');
     } catch (_) {}
     location.href = location.pathname;
@@ -1059,6 +1077,7 @@ function renderAdminPane() {
     box.querySelector('#paOut').onclick = () => {
       try {
         localStorage.removeItem('ds-admin');
+        localStorage.removeItem('ds-pub-token');
         sessionStorage.removeItem('ds-pub-token');
         sessionStorage.setItem('ds-return-admin', '1');
       } catch (_) {}
