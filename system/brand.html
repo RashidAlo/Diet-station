@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brand rules — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Medium.woff2') format('woff2');
+    font-weight: 500; font-display: swap; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF; --pink: #FF3848;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+
+  /* ---- ball law stage ---- */
+  .lawstage { margin-top: 16px; border-radius: 16px; overflow: hidden;
+    display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 560px) { .lawstage { grid-template-columns: 1fr; } }
+  .lawhalf { padding: 28px 22px 22px; text-align: center; }
+  .lawhalf .lt { font: 500 11px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .1em; margin-top: 16px; }
+  .lawhalf .lv { font: 11.5px/1.6 ui-monospace, Menlo, monospace; margin-top: 4px; opacity: .75; }
+  .half-anim { background: #fff; }
+  .half-anim .lt, .half-anim .lv { color: var(--ink-soft); }
+  .half-ui { background: var(--ground); }
+  .half-ui .lt, .half-ui .lv { color: var(--ink-soft); }
+  .ball { width: 74px; height: 74px; border-radius: 50%; background: var(--pink);
+    margin: 0 auto; animation: breathe 2.6s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  .uibtns { display: flex; flex-direction: column; gap: 10px; align-items: center; height: 74px;
+    justify-content: center; }
+  .uibtns .b1 { background: var(--red); color: #fff; border: none; border-radius: 999px;
+    font: 500 14px/1 'Urbane Rounded', sans-serif; padding: 12px 20px; }
+  .uibtns .p1 { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em;
+    text-transform: uppercase; padding: 6px 10px 5px; border-radius: 999px;
+    background: var(--red-soft); color: var(--red); }
+
+  /* ---- icon rule stage ---- */
+  .iconstage { margin-top: 16px; border-radius: 16px; background: var(--pink);
+    padding: 26px 22px; display: flex; gap: 26px; align-items: center; justify-content: center;
+    flex-wrap: wrap; }
+  .dotmark { font: 500 30px/1 'DietStation Dot', monospace; color: #fff; }
+  .icondots { display: grid; grid-template-columns: repeat(5, 10px); gap: 5px; }
+  .icondots i { width: 10px; height: 10px; border-radius: 50%; background: #fff; opacity: 0; }
+  .icondots i.on { opacity: 1; }
+  .iconstage .cap { flex-basis: 100%; text-align: center;
+    font: 500 11px/1.5 'Urbane Rounded', sans-serif; color: rgba(255,255,255,.85);
+    text-transform: uppercase; letter-spacing: .1em; }
+
+  /* ---- laws list ---- */
+  .law { display: flex; gap: 14px; padding: 15px 0; border-bottom: 0.5px solid var(--line); }
+  .law:last-child { border-bottom: 0; }
+  .law .no { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--red-soft);
+    color: var(--red); display: flex; align-items: center; justify-content: center;
+    font: 600 13px/1 'Urbane Rounded', sans-serif; }
+  .law .lb { flex: 1; min-width: 0; }
+  .law .ln { font: 600 14.5px/1.4 'Urbane Rounded', sans-serif; }
+  .law .ld { color: var(--ink-soft); font-size: 13.5px; margin-top: 3px; line-height: 1.55; }
+  .law .ld code { font: 12px/1.5 ui-monospace, Menlo, monospace; }
+
+  /* do / don't */
+  .dd { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 560px) { .dd { grid-template-columns: 1fr; } }
+  .ddx { border-radius: 14px; padding: 14px 16px; font-size: 13px; line-height: 1.55; }
+  .ddx b { font: 600 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .08em; display: block; margin-bottom: 6px; }
+  .ddx.do { background: var(--ok-soft); color: #14532D; }
+  .ddx.do b { color: var(--ok); }
+  .ddx.dont { background: var(--red-soft); color: #7F1D1D; }
+  .ddx.dont b { color: var(--red); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Brand rules</h1>
+  <p>The few things that are law. Everything else in the system bends to taste —
+    these don't.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The two reds</h2>
+    <p class="desc">DietStation has two reds and they never trade places. The <b>animation
+      pink</b> is the living ball in brand motion. The <b>UI red</b> is interface voice —
+      buttons, accents, active states. Swapping them is the fastest way to make either feel
+      off-brand.</p>
+    <div class="lawstage">
+      <div class="lawhalf half-anim">
+        <div class="ball"></div>
+        <div class="lt">Animation ball</div>
+        <div class="lv">#FF3848 — motion only</div>
+      </div>
+      <div class="lawhalf half-ui">
+        <div class="uibtns">
+          <button class="b1">Get started</button>
+          <span class="p1">In progress</span>
+        </div>
+        <div class="lt">UI red</div>
+        <div class="lv">#ED1C24 — interface only</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>White icons</h2>
+    <p class="desc">Inside brand motion, the ball morphs into icons and glyphs — and those
+      are always pure white. The pink ball and white icons are the entire cast; no third
+      color ever joins the animation.</p>
+    <div class="iconstage">
+      <span class="dotmark">diet station</span>
+      <span class="icondots" id="dots" aria-hidden="true"></span>
+      <span class="cap">pink stage &middot; white performers</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The laws</h2>
+    <div style="margin-top:6px">
+      <div class="law"><span class="no">1</span><div class="lb">
+        <div class="ln">Never recolor the animation</div>
+        <div class="ld">Ball <code>#FF3848</code>, icons white. Not tints, not themes, not
+          dark-mode variants. The choreography can change; the colors cannot.</div></div></div>
+      <div class="law"><span class="no">2</span><div class="lb">
+        <div class="ln">One loud color per screen</div>
+        <div class="ld">UI red <code>#ED1C24</code> is the only saturated voice in any view —
+          one primary action, plus small accents (active states, kickers). If two things
+          shout, neither does.</div></div></div>
+      <div class="law"><span class="no">3</span><div class="lb">
+        <div class="ln">The canvas is Apple-light</div>
+        <div class="ld">Ground <code>#F5F5F7</code>, white cards, ink text. The brand lives in
+          moments of red on calm gray — never a red or dark interface.</div></div></div>
+      <div class="law"><span class="no">4</span><div class="lb">
+        <div class="ln">The wordmark is unicase Dot</div>
+        <div class="ld">Brand display moments set "diet station" in DietStation Dot — caps and
+          lowercase share one form, so casing is a non-question. UI chrome uses Urbane
+          ("DietStation" camel-cased).</div></div></div>
+      <div class="law"><span class="no">5</span><div class="lb">
+        <div class="ln">Icons on red are white</div>
+        <div class="ld">Any glyph sitting on brand red or pink — buttons, badges, splash —
+          renders white. On glass, adaptive contrast decides (<code>#0B0E12</code> over light,
+          white over dark).</div></div></div>
+    </div>
+    <div class="dd">
+      <div class="ddx do"><b>Do</b>Red CTA on a white card on the gray canvas; pink ball
+        breathing on white or red splash; white dot-icons in motion.</div>
+      <div class="ddx dont"><b>Don't</b>Pink buttons, red body text, tinted animation frames,
+        a second saturated accent, or the ball in UI red.</div>
+    </div>
+    <p class="meta">Source of truth for motion is the Rive/Lottie pipeline — colors are baked
+      there and verified on every export. See Foundations for the full palette and
+      Typography for the Dot family.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  /* 5×5 white dot heart-ish icon — pop in with the stagger pattern */
+  const ON = [
+    0,1,0,1,0,
+    1,1,1,1,1,
+    1,1,1,1,1,
+    0,1,1,1,0,
+    0,0,1,0,0];
+  const root = document.getElementById('dots');
+  ON.forEach((v, i) => {
+    const d = document.createElement('i');
+    if (v) {
+      d.className = 'on';
+      d.style.transition = 'opacity .3s ease ' + (i * 28) + 'ms';
+    }
+    root.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>

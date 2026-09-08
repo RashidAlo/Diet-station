@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- easing cards ---- */
+  .eases { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  @media (max-width: 560px) { .eases { grid-template-columns: 1fr; } }
+  .ease { border: none; text-align: left; cursor: pointer; background: var(--ground);
+    border-radius: 16px; padding: 16px 16px 14px; -webkit-tap-highlight-color: transparent;
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .ease:active { transform: scale(.98); }
+  .ease .eh { display: flex; align-items: baseline; gap: 8px; }
+  .ease .en { font: 600 14px/1.3 'Urbane Rounded', sans-serif; margin-right: auto; }
+  .ease .ed { font: 600 11px/1 'Urbane Rounded', sans-serif; color: var(--red); }
+  .ease .ecurve { display: block; width: 100%; height: 64px; margin: 10px 0 4px; }
+  .ease .ecurve path.c { stroke: var(--red); stroke-width: 2; fill: none; stroke-linecap: round; }
+  .ease .ecurve line { stroke: rgba(0,0,0,.1); stroke-width: 1; stroke-dasharray: 3 4; }
+  .ease .etrack { position: relative; height: 16px; margin: 6px 2px 8px; }
+  .ease .etrack::before { content: ''; position: absolute; left: 0; right: 0; top: 7px;
+    height: 2px; border-radius: 1px; background: rgba(0,0,0,.08); }
+  .ease .eball { position: absolute; top: 0; left: 0; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--red);
+    box-shadow: 0 3px 8px rgba(237,28,36,.4); }
+  .ease .ev { font: 11px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft); }
+  .ease .eu { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-top: 4px; }
+  .ease.copied .ed::after { content: ' — copied ✓'; color: var(--ok); }
+
+  /* ---- choreography ---- */
+  .chore { padding: 16px 0; border-bottom: 0.5px solid var(--line); }
+  .chore:last-child { border-bottom: 0; }
+  .chore .cn { font: 600 14.5px/1.35 'Urbane Rounded', sans-serif; }
+  .chore .cd { color: var(--ink-soft); font-size: 13.5px; margin-top: 4px; line-height: 1.55; }
+  .chore .cv { font: 11.5px/1.6 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    margin-top: 6px; }
+  /* stagger demo */
+  .holes { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+  .holes .h { width: 14px; height: 14px; border-radius: 50%; background: var(--red-soft);
+    box-shadow: inset 0 0 0 1.5px rgba(237,28,36,.4); }
+  .holes.play .h { animation: hpop .3s cubic-bezier(.3,.8,.3,1) both; }
+  .holes.play .h:nth-child(2) { animation-delay: .09s; }
+  .holes.play .h:nth-child(3) { animation-delay: .18s; }
+  .holes.play .h:nth-child(4) { animation-delay: .27s; }
+  .holes.play .h:nth-child(5) { animation-delay: .36s; }
+  .holes.play .h:nth-child(6) { animation-delay: .45s; }
+  .holes.play .h:nth-child(7) { animation-delay: .54s; }
+  @keyframes hpop { 0% { transform: scale(1); background: var(--red-soft); }
+    55% { transform: scale(1.55); background: var(--red); }
+    100% { transform: scale(1); background: var(--red); } }
+  .replay { font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--red);
+    background: var(--red-soft); border: none; border-radius: 999px; padding: 8px 14px;
+    cursor: pointer; margin-top: 12px; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Motion</h1>
+  <p>Seven named curves cover every animation in the lab. Tap a curve to replay its ball
+    and copy the CSS. Durations are part of the token — a curve without its time isn't
+    the token.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>Easing tokens</h2>
+    <div class="eases" id="eases"></div>
+    <p class="meta">Values are lifted verbatim from the shipping prototypes — Press appears
+      16&times; across the flows, Glide 7&times;, Pop 4&times;. When in doubt: Press for touch feedback,
+      Sheet for anything that slides in from an edge.</p>
+  </section>
+
+  <section class="card">
+    <h2>Choreography patterns</h2>
+    <p class="desc">How the curves combine. These are the lab's recurring moves — reuse them
+      before inventing new ones.</p>
+
+    <div class="chore">
+      <div class="cn">Staggered pops</div>
+      <div class="cd">A row of elements fires top-down or left-right with a fixed delay step,
+        each on the Press curve — the coupon perforation holes pop one by one at thresholds
+        between 30 and 100% of the gesture. Every pop pairs with a haptic tick (Android
+        vibrate(8); iOS haptics via the native shell).</div>
+      <div class="holes" id="holes"><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span><span class="h"></span></div>
+      <button class="replay" id="holesGo">Replay</button>
+      <div class="cv">step 80&ndash;100ms &middot; each pop .3s cubic-bezier(.3,.8,.3,1)</div>
+    </div>
+
+    <div class="chore">
+      <div class="cn">Sheet in, veil under</div>
+      <div class="cd">The sheet settles on its own curve while the veil just fades — two
+        different clocks that end together. Dismissal accelerates out (Exit) so the release
+        feels lighter than the arrival.</div>
+      <div class="cv">sheet .42s Settle (or .45s Sheet) &middot; veil .28s ease &middot; out .4s Exit</div>
+    </div>
+
+    <div class="chore">
+      <div class="cn">Tuck &amp; return</div>
+      <div class="cd">Chrome gets out of the way during use: the mobile tab bar auto-collapses
+        into a corner chip after ~2s of prototype use and slides back on view change — always
+        on the Sheet curve, always fading opacity in the last third.</div>
+      <div class="cv">.45s cubic-bezier(.32,.72,0,1) + opacity .3s ease</div>
+    </div>
+
+    <div class="chore">
+      <div class="cn">Press everywhere</div>
+      <div class="cd">Anything tappable scales to .96&ndash;.98 on touch-down and springs back on
+        release. It's feedback, not decoration — 150&ndash;180ms, never longer.</div>
+      <div class="cv">transform .15&ndash;.18s cubic-bezier(.3,.8,.3,1) &rarr; scale(.96)</div>
+    </div>
+
+    <div class="chore">
+      <div class="cn">Brand moments overshoot</div>
+      <div class="cd">Only brand/reward moments earn a bounce (Bounce or Spring) — a coupon
+        ripping free, the splash's retro pop, a reward revealing. UI chrome never bounces.</div>
+      <div class="cv">.5&ndash;.88s cubic-bezier(.26,1.36,.42,1)</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <p class="desc">Tokens as CSS custom properties and a Reanimated mapping. The bezier
+      curves translate to withTiming; only brand moments use withSpring.</p>
+    <div class="codewrap">
+      <pre id="cssMotion">:root {
+  --e-press:  cubic-bezier(.3,.8,.3,1);    /* touch feedback     .15–.18s */
+  --e-sheet:  cubic-bezier(.32,.72,0,1);   /* slide-in chrome    .45–.55s */
+  --e-settle: cubic-bezier(.25,.9,.3,1);   /* bottom sheets       .42s    */
+  --e-glide:  cubic-bezier(.5,0,.5,1);     /* symmetric moves    .27–.46s */
+  --e-pop:    cubic-bezier(.2,.8,.3,1.4);  /* small overshoots    .18s    */
+  --e-bounce: cubic-bezier(.26,1.36,.42,1);/* brand overshoot    .5–.88s  */
+  --e-exit:   cubic-bezier(.5,0,.8,.6);    /* accelerate away     .4s     */
+}
+.pressable:active { transform: scale(.96); transition: transform .15s var(--e-press); }</pre>
+      <button class="copycode" data-copy="cssMotion">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="rnMotion">// React Native Reanimated
+import { withTiming, withSpring, Easing } from 'react-native-reanimated';
+
+export const ease = {
+  press:  { duration: 150, easing: Easing.bezier(0.3, 0.8, 0.3, 1) },
+  sheet:  { duration: 450, easing: Easing.bezier(0.32, 0.72, 0, 1) },
+  settle: { duration: 420, easing: Easing.bezier(0.25, 0.9, 0.3, 1) },
+  glide:  { duration: 300, easing: Easing.bezier(0.5, 0, 0.5, 1) },
+  pop:    { duration: 180, easing: Easing.bezier(0.2, 0.8, 0.3, 1.4) },
+  exit:   { duration: 400, easing: Easing.bezier(0.5, 0, 0.8, 0.6) },
+};
+// brand overshoot — spring, not bezier:
+export const bounce = { damping: 12, stiffness: 180, mass: 0.9 }; // withSpring
+// stagger: index * 90ms delay, each item on ease.press
+// haptics: expo-haptics selectionAsync() on every pop / threshold cross
+
+// SwiftUI: .animation(.timingCurve(0.3, 0.8, 0.3, 1, duration: 0.15))
+//          sheets ≈ .spring(response: 0.45, dampingFraction: 0.86)</pre>
+      <button class="copycode" data-copy="rnMotion">Copy</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const EASES = [
+    ['Press', '.3,.8,.3,1', '.15–.18s', 'Touch feedback: card and button press-scale, small state flips. The lab\'s workhorse.'],
+    ['Sheet', '.32,.72,0,1', '.45–.55s', 'The iOS-feel slide: tab bars, chrome tuck, flow sheets presenting.'],
+    ['Settle', '.25,.9,.3,1', '.42s', 'Bottom sheets landing — a Sheet with a softer touchdown.'],
+    ['Glide', '.5,0,.5,1', '.27–.46s', 'Symmetric ease for position swaps and carousel moves — no drama either end.'],
+    ['Pop', '.2,.8,.3,1.4', '.18s', 'Tiny overshoot for chips, toggles and icons acknowledging a tap.'],
+    ['Bounce', '.26,1.36,.42,1', '.5–.88s', 'Big playful overshoot — brand and reward moments only, never chrome.'],
+    ['Exit', '.5,0,.8,.6', '.4s', 'Accelerate away: dismissing sheets and flows — leaves feel lighter than arrivals.'],
+  ];
+  const root = document.getElementById('eases');
+  EASES.forEach(([name, bez, dur, use]) => {
+    const [x1, y1, x2, y2] = bez.split(',').map(parseFloat);
+    const W = 200, H = 60, pad = 6;
+    const px = t => pad + t * (W - 2 * pad);
+    const py = v => (H - pad) - v * (H - 2 * pad) * 0.72 - 8;
+    const d = `M ${px(0)} ${py(0)} C ${px(x1)} ${py(y1)}, ${px(x2)} ${py(y2)}, ${px(1)} ${py(1)}`;
+    const el = document.createElement('button');
+    el.className = 'ease';
+    el.dataset.css = `cubic-bezier(${bez})`;
+    el.innerHTML = `<div class="eh"><span class="en">${name}</span><span class="ed">${dur}</span></div>
+      <svg class="ecurve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        <line x1="${px(0)}" y1="${py(0)}" x2="${px(1)}" y2="${py(1)}"></line>
+        <path class="c" d="${d}"></path></svg>
+      <div class="etrack"><span class="eball"></span></div>
+      <div class="ev">cubic-bezier(${bez})</div>
+      <div class="eu">${use}</div>`;
+    const ball = el.querySelector('.eball');
+    const play = () => {
+      const ms = Math.round(parseFloat(dur.replace(/[^0-9.]/g, ' ').trim().split(/\s+/).pop()) * 1000) || 300;
+      ball.style.transition = 'none';
+      ball.style.left = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        ball.style.transition = `left ${ms}ms cubic-bezier(${bez})`;
+        ball.style.left = 'calc(100% - 16px)';
+      }));
+      clearTimeout(el._r);
+      el._r = setTimeout(() => {
+        ball.style.transition = `left 400ms cubic-bezier(.5,0,.5,1)`;
+        ball.style.left = '0';
+      }, ms + 900);
+    };
+    el.addEventListener('click', () => {
+      play();
+      (navigator.clipboard ? navigator.clipboard.writeText(el.dataset.css) : Promise.reject()).then(() => {
+        el.classList.add('copied');
+        clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('copied'), 1200);
+      }).catch(() => {});
+    });
+    root.appendChild(el);
+    setTimeout(play, 600 + root.children.length * 180);
+  });
+
+  const holes = document.getElementById('holes');
+  const goHoles = () => {
+    holes.classList.remove('play');
+    void holes.offsetWidth;
+    holes.classList.add('play');
+  };
+  document.getElementById('holesGo').onclick = goHoles;
+  setTimeout(goHoles, 1200);
+
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+})();
+</script>
+</body>
+</html>

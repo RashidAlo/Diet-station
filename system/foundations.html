@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Foundations — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- color chips ---- */
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 12px; margin-top: 4px; }
+  .chip { border: none; text-align: left; cursor: pointer; padding: 0; background: none;
+    -webkit-tap-highlight-color: transparent; }
+  .chip .sw { height: 64px; border-radius: 14px; position: relative;
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06);
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .chip:active .sw { transform: scale(.96); }
+  .chip .sw .ck { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; font: 600 13px/1 'Urbane Rounded', sans-serif;
+    opacity: 0; transition: opacity .2s ease; }
+  .chip.copied .sw .ck { opacity: 1; }
+  .chip .cn { font: 600 13px/1.35 'Urbane Rounded', sans-serif; margin-top: 9px; }
+  .chip .cv { font: 12px/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--ink-soft); }
+  .chip .cu { font-size: 11.5px; color: var(--ink-soft); line-height: 1.4; margin-top: 2px; }
+
+  /* ---- spacing ---- */
+  .sprow { display: flex; align-items: center; gap: 16px; padding: 8px 0; }
+  .sprow .spv { flex: none; width: 52px; font: 600 13px/1 'Urbane Rounded', sans-serif; }
+  .sprow .spbar { height: 22px; border-radius: 6px; background: var(--red-soft);
+    position: relative; flex: none; }
+  .sprow .spbar::after { content: ''; position: absolute; inset: 0; border-radius: 6px;
+    border: 1px dashed rgba(237,28,36,.45); }
+  .sprow .spu { font-size: 12.5px; color: var(--ink-soft); min-width: 0; }
+
+  /* ---- radii ---- */
+  .radgrid { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-top: 4px; }
+  .rad { text-align: center; }
+  .rad .rbox { width: 74px; height: 74px; background: var(--ground);
+    box-shadow: inset 0 0 0 1.5px rgba(237,28,36,.5); }
+  .rad.rpill .rbox { width: 120px; height: 47px; }
+  .rad .rv { font: 600 12px/1 'Urbane Rounded', sans-serif; margin-top: 8px; }
+  .rad .ru { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
+  /* ---- elevation ---- */
+  .elgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px; margin-top: 4px; }
+  .el { background: #fff; border-radius: 14px; padding: 16px; }
+  .el .en { font: 600 13.5px/1.3 'Urbane Rounded', sans-serif; }
+  .el .eu { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.45; }
+  .el .ev { font: 10.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    margin-top: 8px; overflow-wrap: anywhere; }
+  .elstage { background: var(--ground); border-radius: 16px; padding: 22px; margin-top: 4px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Foundations</h1>
+  <p>The ground everything sits on — color, spacing, corner radii and elevation.
+    Every value here is pulled from the shipping prototypes, not invented.
+    Tap any color to copy its hex.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>Color</h2>
+    <p class="desc">An Apple-light canvas with one loud voice: brand red. Grays do the
+      talking everywhere else, green is reserved for success and live states.</p>
+
+    <h3>Brand</h3>
+    <div class="chips">
+      <button class="chip" data-hex="#ED1C24"><div class="sw" style="background:#ED1C24"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Brand Red</div><div class="cv">#ED1C24</div>
+        <div class="cu">CTAs, active states, accents — the only loud color in the UI</div></button>
+      <button class="chip" data-hex="#FF3848"><div class="sw" style="background:#FF3848"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Animation Pink</div><div class="cv">#FF3848</div>
+        <div class="cu">The dot ball in brand motion only — never a UI color</div></button>
+      <button class="chip" data-hex="#FFF2F2"><div class="sw" style="background:#FFF2F2"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Red Soft</div><div class="cv">#FFF2F2</div>
+        <div class="cu">Red-tinted fills: in-progress pills, focus rings</div></button>
+      <button class="chip" data-hex="#D4141C"><div class="sw" style="background:#D4141C"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Red Pressed</div><div class="cv">#D4141C</div>
+        <div class="cu">Hover / pressed state of red buttons</div></button>
+    </div>
+
+    <h3>Canvas &amp; ink</h3>
+    <div class="chips">
+      <button class="chip" data-hex="#F5F5F7"><div class="sw" style="background:#F5F5F7"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Ground</div><div class="cv">#F5F5F7</div>
+        <div class="cu">The Apple canvas behind everything; also ghost-button fill</div></button>
+      <button class="chip" data-hex="#FFFFFF"><div class="sw" style="background:#FFFFFF"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Card</div><div class="cv">#FFFFFF</div>
+        <div class="cu">Card and control surfaces on the ground</div></button>
+      <button class="chip" data-hex="#FBFBFC"><div class="sw" style="background:#FBFBFC"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Sheet</div><div class="cv">#FBFBFC</div>
+        <div class="cu">Bottom sheets and the desktop sidebar</div></button>
+      <button class="chip" data-hex="#1D1D1F"><div class="sw" style="background:#1D1D1F"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Ink</div><div class="cv">#1D1D1F</div>
+        <div class="cu">Primary text; also code-block and active-chip fill</div></button>
+      <button class="chip" data-hex="#6E6E73"><div class="sw" style="background:#6E6E73"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Ink Soft</div><div class="cv">#6E6E73</div>
+        <div class="cu">Secondary text, descriptions, labels</div></button>
+      <button class="chip" data-hex="#8E8E93"><div class="sw" style="background:#8E8E93"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Ink Faint</div><div class="cv">#8E8E93</div>
+        <div class="cu">Tertiary text, placeholders, inactive tabs</div></button>
+      <button class="chip" data-hex="#0B0E12"><div class="sw" style="background:#0B0E12"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Glass Ink</div><div class="cv">#0B0E12</div>
+        <div class="cu">Content color on glass over light backdrops (adaptive contrast)</div></button>
+    </div>
+
+    <h3>Controls &amp; lines</h3>
+    <div class="chips">
+      <button class="chip" data-hex="#E9E9EC"><div class="sw" style="background:#E9E9EC"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Control</div><div class="cv">#E9E9EC</div>
+        <div class="cu">Segmented-control track, hovered ghost buttons</div></button>
+      <button class="chip" data-hex="#ECECEF"><div class="sw" style="background:#ECECEF"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Control Deep</div><div class="cv">#ECECEF</div>
+        <div class="cu">Off switches, disabled circles, dividers on white</div></button>
+      <button class="chip" data-hex="rgba(0,0,0,.08)"><div class="sw" style="background:#fff"><span style="position:absolute;inset:0;border-radius:14px;border:2px solid rgba(0,0,0,.08)"></span><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">Line</div><div class="cv">rgba(0,0,0,.08)</div>
+        <div class="cu">Hairline borders — used at 0.5px on cards and bars</div></button>
+      <button class="chip" data-hex="#111114"><div class="sw" style="background:#111114"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">Bezel</div><div class="cv">#111114</div>
+        <div class="cu">Device-frame chrome in the desktop playground</div></button>
+    </div>
+
+    <h3>Status</h3>
+    <div class="chips">
+      <button class="chip" data-hex="#1F8A4C"><div class="sw" style="background:#1F8A4C"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">OK</div><div class="cv">#1F8A4C</div>
+        <div class="cu">"Ready" pills, success notes</div></button>
+      <button class="chip" data-hex="#EAF6EF"><div class="sw" style="background:#EAF6EF"><span class="ck">Copied &#10003;</span></div>
+        <div class="cn">OK Soft</div><div class="cv">#EAF6EF</div>
+        <div class="cu">Green-tinted pill fill</div></button>
+      <button class="chip" data-hex="#34C759"><div class="sw" style="background:#34C759"><span class="ck" style="color:#fff">Copied &#10003;</span></div>
+        <div class="cn">iOS Green</div><div class="cv">#34C759</div>
+        <div class="cu">Switches and live indicators — system control green</div></button>
+    </div>
+    <p class="meta">Flow-local accents (rewards gold #FFC52E, bronze #C9A682&hellip;) stay inside
+      their flow and never join the system palette.</p>
+  </section>
+
+  <section class="card">
+    <h2>Spacing</h2>
+    <p class="desc">Apple-loose, on a 2px grid. Micro gaps inside controls, 10&ndash;14 between
+      siblings, 18&ndash;26 for card insets and stacking. One number to remember: cards breathe
+      at <b>24&ndash;26px</b>.</p>
+    <div style="margin-top:16px">
+      <div class="sprow"><span class="spv">4</span><span class="spbar" style="width:4px"></span><span class="spu">icon-to-label gaps inside buttons</span></div>
+      <div class="sprow"><span class="spv">8</span><span class="spbar" style="width:8px"></span><span class="spu">chip padding, tight control gaps</span></div>
+      <div class="sprow"><span class="spv">10</span><span class="spbar" style="width:10px"></span><span class="spu">action-bar gaps, pill text padding</span></div>
+      <div class="sprow"><span class="spv">12</span><span class="spbar" style="width:12px"></span><span class="spu">header gaps, input padding, peek gaps</span></div>
+      <div class="sprow"><span class="spv">14</span><span class="spbar" style="width:14px"></span><span class="spu">bar padding, grid gaps</span></div>
+      <div class="sprow"><span class="spv">18</span><span class="spbar" style="width:18px"></span><span class="spu">card-to-card stack, action-row top margin</span></div>
+      <div class="sprow"><span class="spv">20</span><span class="spbar" style="width:20px"></span><span class="spu">page gutters (.wrap side padding)</span></div>
+      <div class="sprow"><span class="spv">24</span><span class="spbar" style="width:24px"></span><span class="spu">standard card inset (native + flow surfaces)</span></div>
+      <div class="sprow"><span class="spv">26</span><span class="spbar" style="width:26px"></span><span class="spu">web card inset (hub + lab cards)</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Radii</h2>
+    <p class="desc">Soft everywhere, round where it acts. Inputs and code sit at 10&ndash;12,
+      surfaces at 14&ndash;18, sheets and native cards at 24+, and anything tappable that isn't
+      a card is a full pill.</p>
+    <div class="radgrid" style="margin-top:16px">
+      <div class="rad"><div class="rbox" style="border-radius:10px"></div><div class="rv">10</div><div class="ru">small controls</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:12px"></div><div class="rv">12</div><div class="ru">inputs, code</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:14px"></div><div class="rv">14</div><div class="ru">peeks, rows</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:16px"></div><div class="rv">16</div><div class="ru">stages, thumbs</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:18px"></div><div class="rv">18</div><div class="ru">cards (web)</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:24px"></div><div class="rv">24</div><div class="ru">sheets, native cards</div></div>
+      <div class="rad"><div class="rbox" style="border-radius:38px"></div><div class="rv">38</div><div class="ru">launcher cards</div></div>
+      <div class="rad rpill"><div class="rbox" style="border-radius:999px"></div><div class="rv">999</div><div class="ru">buttons, pills, tags</div></div>
+    </div>
+    <p class="meta">Special: the desktop device bezel sits at 58; the flow sheet inherits the
+      device's own corners.</p>
+  </section>
+
+  <section class="card">
+    <h2>Elevation</h2>
+    <p class="desc">Shadows are soft, warm-neutral and always double-layered: a hairline
+      contact shadow plus a large, heavily-offset ambient blur with negative spread. Nothing
+      floats hard.</p>
+    <div class="elstage">
+      <div class="el" style="box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.06)">
+        <div class="en">Raise 1 &middot; Control</div>
+        <div class="eu">Segmented thumb, small chips</div>
+        <div class="ev">0 1px 2px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.06)</div>
+      </div>
+      <div class="el" style="box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14)">
+        <div class="en">Raise 2 &middot; Card</div>
+        <div class="eu">Every card on the canvas</div>
+        <div class="ev">0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14)</div>
+      </div>
+      <div class="el" style="box-shadow: 0 0 0 .5px rgba(0,0,0,.08), 0 12px 26px -16px rgba(0,0,0,.3)">
+        <div class="en">Raise 3 &middot; Float</div>
+        <div class="eu">Phone thumbnails, floating previews</div>
+        <div class="ev">0 0 0 .5px var(--line), 0 12px 26px -16px rgba(0,0,0,.3)</div>
+      </div>
+      <div class="el" style="box-shadow: 0 -18px 60px rgba(0,0,0,.28)">
+        <div class="en">Raise 4 &middot; Sheet</div>
+        <div class="eu">Bottom sheets over a veil</div>
+        <div class="ev">0 -18px 60px rgba(0,0,0,.28)</div>
+      </div>
+      <div class="el" style="box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16)">
+        <div class="en">Knob</div>
+        <div class="eu">Switch thumbs, draggable dots</div>
+        <div class="ev">0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16)</div>
+      </div>
+      <div class="el" style="box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75), inset 0 0 0 .8px rgba(255,255,255,.5), 0 8px 24px -10px rgba(0,0,0,.3)">
+        <div class="en">Glass seat</div>
+        <div class="eu">Inset specular ring + lift under every glass control</div>
+        <div class="ev">inset 0 1.5px 1px rgba(255,255,255,.75), inset 0 0 0 .8px rgba(255,255,255,.5), 0 8px 24px -10px rgba(0,0,0,.3)</div>
+      </div>
+    </div>
+    <p class="meta">Colored glows are allowed only on live/status controls, tinted with the
+      control's own color &mdash; e.g. 0 5px 14px -6px rgba(52,199,89,.55) under a green
+      publish button.</p>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <p class="desc">The full token sheet as CSS custom properties and a React Native object.
+      Native devs: these map 1:1 to a SwiftUI <code>Color</code> + spacing extension.</p>
+    <div class="codewrap">
+      <pre id="cssTokens">:root {
+  /* color */
+  --ground: #F5F5F7;   /* canvas */
+  --card: #FFFFFF;     /* surfaces */
+  --sheet: #FBFBFC;    /* bottom sheets, sidebars */
+  --ink: #1D1D1F;      /* primary text */
+  --ink-soft: #6E6E73; /* secondary text */
+  --ink-faint: #8E8E93;/* tertiary text */
+  --glass-ink: #0B0E12;/* content on glass over light backdrops */
+  --line: rgba(0,0,0,.08);      /* hairlines, draw at 0.5px */
+  --control: #E9E9EC;  --control-deep: #ECECEF;
+  --red: #ED1C24;      /* THE brand color in UI */
+  --red-pressed: #D4141C;
+  --red-soft: #FFF2F2;
+  --motion-pink: #FF3848;       /* animation ball ONLY — never UI */
+  --ok: #1F8A4C;  --ok-soft: #EAF6EF;  --ios-green: #34C759;
+
+  /* radius */
+  --r-control: 12px; --r-surface: 14px; --r-stage: 16px;
+  --r-card: 18px; --r-sheet: 24px; --r-card-native: 24px;
+  --r-launcher: 38px; --r-pill: 999px;
+
+  /* elevation */
+  --raise-control: 0 1px 2px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.06);
+  --raise-card: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14);
+  --raise-float: 0 0 0 .5px rgba(0,0,0,.08), 0 12px 26px -16px rgba(0,0,0,.3);
+  --raise-sheet: 0 -18px 60px rgba(0,0,0,.28);
+  --raise-knob: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16);
+}
+/* spacing scale (2px grid): 4 8 10 12 14 18 20 24 26 */</pre>
+      <button class="copycode" data-copy="cssTokens">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="rnTokens">// DietStation foundation tokens — React Native
+export const color = {
+  ground: '#F5F5F7', card: '#FFFFFF', sheet: '#FBFBFC',
+  ink: '#1D1D1F', inkSoft: '#6E6E73', inkFaint: '#8E8E93',
+  glassInk: '#0B0E12', line: 'rgba(0,0,0,0.08)',
+  control: '#E9E9EC', controlDeep: '#ECECEF',
+  red: '#ED1C24', redPressed: '#D4141C', redSoft: '#FFF2F2',
+  motionPink: '#FF3848',           // animation ball ONLY
+  ok: '#1F8A4C', okSoft: '#EAF6EF', iosGreen: '#34C759',
+};
+export const space = { xs: 4, s: 8, m: 12, l: 18, gutter: 20, inset: 24 };
+export const radius = { control: 12, surface: 14, stage: 16, card: 18,
+  sheet: 24, launcher: 38, pill: 999 };
+export const shadow = { // iOS shadow props; Android: elevation 2 / 6 / 12
+  card:  { shadowColor: '#000', shadowOpacity: 0.10, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
+  float: { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 10 } },
+  sheet: { shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 40, shadowOffset: { width: 0, height: -12 } },
+};</pre>
+      <button class="copycode" data-copy="rnTokens">Copy</button>
+    </div>
+    <p class="meta">SwiftUI: surfaces use <code>Color(.systemGroupedBackground)</code>-style
+      grouping with these exact hexes; hairlines draw at 0.5pt.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('click', () => {
+      const v = ch.dataset.hex;
+      (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => {
+        ch.classList.add('copied');
+        clearTimeout(ch._t); ch._t = setTimeout(() => ch.classList.remove('copied'), 1200);
+      }).catch(() => {});
+    });
+  });
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+})();
+</script>
+</body>
+</html>

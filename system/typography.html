@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Typography — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Light.woff2') format('woff2');
+    font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Regular.woff2') format('woff2');
+    font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Medium.woff2') format('woff2');
+    font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'DietStation Dot'; src: url('../font/DietStationDot-Bold.woff2') format('woff2');
+    font-weight: 700; font-display: swap; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
+    border-radius: 999px; padding: 12px 20px; border: none; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: #d4141c; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- family cards ---- */
+  .fam { display: flex; gap: 20px; align-items: baseline; padding: 18px 0;
+    border-bottom: 0.5px solid var(--line); }
+  .fam:last-of-type { border-bottom: 0; }
+  .fam .fa { flex: none; width: 96px; font-size: 44px; line-height: 1; }
+  .fam .fbody { flex: 1; min-width: 0; }
+  .fam .fname { font: 600 15px/1.3 'Urbane Rounded', sans-serif; }
+  .fam .frole { font-size: 12.5px; color: var(--red); font-weight: 400;
+    text-transform: uppercase; letter-spacing: .08em; font-family: 'Urbane Rounded', sans-serif; }
+  .fam .fnote { color: var(--ink-soft); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
+
+  /* ---- scale rows ---- */
+  .srow { display: flex; align-items: baseline; gap: 18px; padding: 13px 0;
+    border-bottom: 0.5px solid var(--line); cursor: pointer;
+    -webkit-tap-highlight-color: transparent; }
+  .srow:last-child { border-bottom: 0; }
+  .srow .sd { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .srow .sv { flex: none; text-align: right; font: 11.5px/1.5 ui-monospace, Menlo, monospace;
+    color: var(--ink-soft); }
+  .srow .sv b { display: block; font: 600 12px/1.4 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .srow.copied .sv b { color: var(--ok); }
+  .stage { margin-top: 16px; padding: 4px 22px; border-radius: 16px; background: var(--ground); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Typography</h1>
+  <p>Three voices: Urbane Rounded speaks, Proxima Nova explains, and DietStation Dot
+    performs. Tap any scale row to copy its CSS.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The families</h2>
+    <div style="margin-top:6px">
+      <div class="fam">
+        <span class="fa" style="font: 600 44px/1 'Urbane Rounded', sans-serif">Aa</span>
+        <div class="fbody">
+          <div class="fname">Urbane Rounded <span class="frole">&middot; headings &amp; controls</span></div>
+          <p class="fnote">Every title, button, label and pill. Two cuts only: DemiBold 600
+            for headings, Medium 500 for controls and labels. Tracking tightens as size grows
+            (-.01em at 19px, -.015em at 30px+). Licensed — served from the lab, never
+            redistributed.</p>
+        </div>
+      </div>
+      <div class="fam">
+        <span class="fa" style="font: 400 44px/1 'Proxima Nova', sans-serif">Aa</span>
+        <div class="fbody">
+          <div class="fname">Proxima Nova <span class="frole">&middot; body</span></div>
+          <p class="fnote">All running text: descriptions, notes, metas. Regular 400 only,
+            at a relaxed 1.6 line-height. Falls back to -apple-system so native devices can
+            substitute SF seamlessly.</p>
+        </div>
+      </div>
+      <div class="fam">
+        <span class="fa" style="font: 500 44px/1 'DietStation Dot', monospace">aa</span>
+        <div class="fbody">
+          <div class="fname">DietStation Dot <span class="frole">&middot; brand display</span></div>
+          <p class="fnote">The dot-matrix brand font compiled from the animation's typewriter
+            grid — four weights (300/400/500/700, weight = dot size), Latin + fully-shaped
+            Arabic, unicase. Display moments only: wordmarks, splash, brand peeks. Never body
+            text.</p>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="../type/">Open Type Lab</a>
+      <a class="btn ghost" href="../font/DietStationDot-family.zip" download>Download Dot family</a>
+    </div>
+    <p class="meta">Urbane &amp; Proxima are licensed faces — web embeds load from the lab's own
+      folders; native apps bundle their own licensed copies.</p>
+  </section>
+
+  <section class="card">
+    <h2>Scale</h2>
+    <p class="desc">The full ramp as it ships in the hub and flows. Sizes hold on desktop and
+      mobile web; the native shell steps the two display sizes down (34&rarr;24, 30&rarr;24).</p>
+    <div class="stage">
+      <div class="srow" data-css="font: 600 34px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em;">
+        <span class="sd" style="font: 600 34px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em">Display</span>
+        <span class="sv"><b>34 / 600</b>Urbane &middot; lh 1.15 &middot; -.015em</span>
+      </div>
+      <div class="srow" data-css="font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em;">
+        <span class="sd" style="font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em">Page title</span>
+        <span class="sv"><b>30 / 600</b>Urbane &middot; lh 1.15 &middot; -.015em</span>
+      </div>
+      <div class="srow" data-css="font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em;">
+        <span class="sd" style="font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em">Card title</span>
+        <span class="sv"><b>19 / 600</b>Urbane &middot; lh 1.3 &middot; -.01em</span>
+      </div>
+      <div class="srow" data-css="font: 600 17px/1 'Urbane Rounded', sans-serif; letter-spacing: -.01em;">
+        <span class="sd" style="font: 600 17px/1 'Urbane Rounded', sans-serif; letter-spacing: -.01em">Brand word / nav title</span>
+        <span class="sv"><b>17 / 600</b>Urbane &middot; lh 1 &middot; -.01em</span>
+      </div>
+      <div class="srow" data-css="font: 400 15px/1.6 'Proxima Nova', -apple-system, sans-serif;">
+        <span class="sd" style="font: 400 15px/1.6 'Proxima Nova', sans-serif">Body — running text, descriptions and notes</span>
+        <span class="sv"><b>15 / 400</b>Proxima &middot; lh 1.6</span>
+      </div>
+      <div class="srow" data-css="font: 500 14px/1 'Urbane Rounded', sans-serif;">
+        <span class="sd" style="font: 500 14px/1 'Urbane Rounded', sans-serif">Button</span>
+        <span class="sv"><b>14 / 500</b>Urbane &middot; lh 1</span>
+      </div>
+      <div class="srow" data-css="font: 500 13px/1.4 'Urbane Rounded', sans-serif;">
+        <span class="sd" style="font: 500 13px/1.4 'Urbane Rounded', sans-serif">Control label / small button</span>
+        <span class="sv"><b>13 / 500</b>Urbane &middot; lh 1.4</span>
+      </div>
+      <div class="srow" data-css="font-size: 12.5px; color: #6e6e73; /* Proxima 400 */">
+        <span class="sd" style="font-size: 12.5px; color: var(--ink-soft)">Meta — footnotes and fine print under cards</span>
+        <span class="sv"><b>12.5 / 400</b>Proxima &middot; ink-soft</span>
+      </div>
+      <div class="srow" data-css="font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .12em; color: #6e6e73;">
+        <span class="sd" style="font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-soft)">Section kicker</span>
+        <span class="sv"><b>12 / 500</b>caps &middot; +.12em</span>
+      </div>
+      <div class="srow" data-css="font: 500 11px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .06em;">
+        <span class="sd" style="font: 500 11px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .06em">Pill / tag</span>
+        <span class="sv"><b>11 / 500</b>caps &middot; +.06em</span>
+      </div>
+    </div>
+    <p class="meta">Tap a row to copy its CSS. Code renders in ui-monospace / SF Mono at 12px,
+      line-height 1.6, on ink (#1D1D1F).</p>
+  </section>
+
+  <section class="card">
+    <h2>Rules of voice</h2>
+    <p class="desc" style="max-width:66ch">
+      <b style="color:var(--ink)">Urbane never runs long.</b> If it wraps past two lines it
+      should have been Proxima.<br>
+      <b style="color:var(--ink)">Proxima never shouts.</b> Emphasis inside body text is a
+      color shift to ink, not a weight jump.<br>
+      <b style="color:var(--ink)">Dot never explains.</b> It's the brand performing — one or
+      two words, display size, then hand back to Urbane.<br>
+      <b style="color:var(--ink)">Caps are labels.</b> Uppercase always comes with tracking
+      (+.06 to +.12em) and 500 weight, never larger than 12px.</p>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <p class="desc">Web embed for all three families, and the React Native mapping. RN
+      addresses custom weights by family name — <code>fontWeight</code> is unreliable with
+      custom faces.</p>
+    <div class="codewrap">
+      <pre id="cssType">/* web — families (Urbane/Proxima paths are lab-internal; license applies) */
+@font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: 'Proxima Nova'; src: url('breathe/proxima-regular.otf'); font-weight: 400; }
+/* DietStation Dot — public hosted weights */
+@font-face { font-family: 'DietStation Dot'; src: url('https://rashidalo.github.io/Diet-station/font/DietStationDot-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+/* + Light 300 / Medium 500 / Bold 700 from the same folder */
+
+/* the ramp */
+.display    { font: 600 34px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+.page-title { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+.card-title { font: 600 19px/1.3  'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+.nav-title  { font: 600 17px/1    'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+body        { font: 400 15px/1.6  'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif; }
+.button     { font: 500 14px/1    'Urbane Rounded', sans-serif; }
+.label      { font: 500 13px/1.4  'Urbane Rounded', sans-serif; }
+.meta       { font-size: 12.5px; color: #6E6E73; }
+.kicker     { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .12em; color: #6E6E73; }
+.pill-text  { font: 500 11px/1 'Urbane Rounded', sans-serif; text-transform: uppercase; letter-spacing: .06em; }</pre>
+      <button class="copycode" data-copy="cssType">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="rnType">// React Native — expo-font, weights by family name
+import { useFonts } from 'expo-font';
+const [loaded] = useFonts({
+  'UrbaneRounded-DemiBold': require('./assets/fonts/UrbaneRounded-DemiBold.ttf'),
+  'UrbaneRounded-Medium':   require('./assets/fonts/UrbaneRounded-Medium.ttf'),
+  'ProximaNova-Regular':    require('./assets/fonts/proxima-regular.otf'),
+  'DietStationDot-Regular': require('./assets/fonts/DietStationDot-Regular.otf'),
+  // + Dot Light/Medium/Bold from the family zip
+});
+
+export const type = {
+  display:   { fontFamily: 'UrbaneRounded-DemiBold', fontSize: 34, lineHeight: 39, letterSpacing: -0.5 },
+  pageTitle: { fontFamily: 'UrbaneRounded-DemiBold', fontSize: 30, lineHeight: 35, letterSpacing: -0.45 },
+  cardTitle: { fontFamily: 'UrbaneRounded-DemiBold', fontSize: 19, lineHeight: 25, letterSpacing: -0.19 },
+  navTitle:  { fontFamily: 'UrbaneRounded-DemiBold', fontSize: 17, letterSpacing: -0.17 },
+  body:      { fontFamily: 'ProximaNova-Regular',    fontSize: 15, lineHeight: 24 },
+  button:    { fontFamily: 'UrbaneRounded-Medium',   fontSize: 14 },
+  label:     { fontFamily: 'UrbaneRounded-Medium',   fontSize: 13, lineHeight: 18 },
+  meta:      { fontFamily: 'ProximaNova-Regular',    fontSize: 12.5, color: '#6E6E73' },
+  kicker:    { fontFamily: 'UrbaneRounded-Medium',   fontSize: 12, letterSpacing: 1.44, textTransform: 'uppercase', color: '#6E6E73' },
+};
+// SwiftUI: .font(.custom("UrbaneRounded-DemiBold", size: 34)) — same names.
+// Arabic in DietStation Dot shapes natively (contextual forms are in the font).</pre>
+      <button class="copycode" data-copy="rnType">Copy</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.srow').forEach(r => {
+    r.addEventListener('click', () => {
+      (navigator.clipboard ? navigator.clipboard.writeText(r.dataset.css) : Promise.reject()).then(() => {
+        r.classList.add('copied');
+        const b = r.querySelector('.sv b'), keep = b.textContent;
+        b.textContent = 'Copied ✓';
+        clearTimeout(r._t); r._t = setTimeout(() => { r.classList.remove('copied'); b.textContent = keep; }, 1200);
+      }).catch(() => {});
+    });
+  });
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+})();
+</script>
+</body>
+</html>

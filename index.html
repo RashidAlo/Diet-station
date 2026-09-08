@@ -166,6 +166,38 @@
     font-family: 'DietStation Dot', monospace; font-size: 29px; font-weight: 500; color: var(--ink);
     line-height: 1.3; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
   .typepeek::-webkit-scrollbar { display: none; }
+  /* doc-card peeks (Design System session) */
+  .fndpeek { margin-top: 16px; padding: 18px 20px; border-radius: 14px; background: var(--ground);
+    display: flex; gap: 10px; align-items: center; overflow: hidden; }
+  .fndpeek i { flex: none; width: 34px; height: 34px; border-radius: 50%;
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06); }
+  .fndpeek .fr14 { border-radius: 10px; }
+  .tspeek { margin-top: 16px; padding: 16px 20px; border-radius: 14px; background: var(--ground);
+    display: flex; gap: 22px; align-items: baseline; overflow: hidden; }
+  .tspeek b { font: 600 34px/1 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .tspeek s { text-decoration: none; font: 400 34px/1 'Proxima Nova', sans-serif; color: var(--ink-soft); }
+  .tspeek u { text-decoration: none; font: 500 34px/1 'DietStation Dot', monospace; color: var(--red); }
+  .tspeek small { font-size: 11.5px; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
+  .comppeek { margin-top: 16px; padding: 16px 18px; border-radius: 14px; background: var(--ground);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .comppeek .cb { font: 500 13px/1 'Urbane Rounded', sans-serif; border-radius: 999px;
+    padding: 10px 16px; border: none; pointer-events: none; }
+  .comppeek .cpill { font: 500 10px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em;
+    text-transform: uppercase; padding: 6px 9px 5px; border-radius: 999px;
+    background: var(--ok-soft); color: var(--ok); }
+  .motionpeek { position: relative; margin-top: 16px; height: 56px; border-radius: 14px;
+    background: var(--ground); overflow: hidden; }
+  .motionpeek i { position: absolute; top: 20px; left: 18px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--red); box-shadow: 0 3px 8px rgba(237,28,36,.4);
+    animation: mpeek 2.4s cubic-bezier(.3,.8,.3,1) infinite alternate; }
+  @keyframes mpeek { from { left: 18px; } to { left: calc(100% - 34px); } }
+  .motionpeek svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; }
+  .brandpeek { margin-top: 16px; padding: 18px 20px; border-radius: 14px; background: #FF3848;
+    display: flex; gap: 16px; align-items: center; overflow: hidden; }
+  .brandpeek .bball { flex: none; width: 34px; height: 34px; border-radius: 50%; background: #fff;
+    animation: bpeek 2.6s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes bpeek { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+  .brandpeek span { font: 500 24px/1 'DietStation Dot', monospace; color: #fff; white-space: nowrap; }
 
   /* ---- native TestFlight shell: prototypes only, App Store promo cards ---- */
   body.native { padding-top: env(safe-area-inset-top, 0px); }
@@ -507,7 +539,83 @@
   </section>
 
   <section class="tabpane" id="pane-system">
-    <div class="count" id="syscount">2 elements</div>
+    <div class="count" id="syscount">7 elements</div>
+
+    <section class="card">
+      <div class="top">
+        <h2>Foundations</h2>
+        <span class="tag">Tokens</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">The ground everything sits on — the full color palette, the spacing
+        grid, corner radii and the elevation ramp, every value pulled straight from the
+        shipping prototypes. Tap any color to copy it.</p>
+      <div class="fndpeek" aria-hidden="true">
+        <i style="background:#ED1C24"></i><i style="background:#FF3848"></i><i style="background:#1d1d1f"></i><i style="background:#6e6e73"></i><i style="background:#fff"></i><i class="fr14" style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04),0 10px 24px -16px rgba(0,0,0,.2)"></i><i class="fr14" style="background:#fff;box-shadow:0 -6px 24px rgba(0,0,0,.18)"></i>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/foundations.html">Open Foundations</a>
+      </div>
+      <p class="meta">Color &middot; spacing &middot; radii &middot; elevation — with the CSS
+        variables and React Native token objects ready to copy.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Typography</h2>
+        <span class="tag">Type system</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">Three voices: Urbane Rounded speaks, Proxima Nova explains, DietStation
+        Dot performs. The full scale from display to pill text, with the rules for when each
+        family talks.</p>
+      <div class="tspeek" aria-hidden="true">
+        <b>Aa</b><s>Aa</s><u>aa</u><small>Urbane &middot; Proxima &middot; Dot</small>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/typography.html">Open Typography</a>
+      </div>
+      <p class="meta">Tap any scale row to copy its CSS &middot; expo-font mapping included.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>DietStation Dot</h2>
+        <span class="tag">Typeface &middot; 4 weights</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">The dot-matrix brand font — Latin from the animation&rsquo;s typewriter grid,
+        Arabic traced onto the same grid with full contextual shaping. Weight is dot size:
+        heavier cuts fuse the dots into strokes.</p>
+      <div class="typepeek" dir="ltr">diet station &nbsp;<span dir="rtl">&#1583;&#1575;&#1610;&#1578; &#1587;&#1578;&#1610;&#1588;&#1606;</span></div>
+      <div class="actions">
+        <a class="btn primary" href="type/">Open Type Lab</a>
+        <a class="btn ghost" href="font/DietStationDot-family.zip" download>Download family</a>
+      </div>
+      <p class="meta">Specimen and live weight tester, plus the Font Lab glyph editor — dial
+        dots, pitch and kashida, then hand off to Claude to compile a new build.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Components</h2>
+        <span class="tag">Patterns</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">The working parts — buttons, pills, cards, bottom sheets, and the three
+        tiers of glass with the one law that binds them (adaptive contrast). Every specimen
+        on the page is live.</p>
+      <div class="comppeek" aria-hidden="true">
+        <span class="cb" style="background:var(--red);color:#fff">Open prototype</span>
+        <span class="cb" style="background:#fff;color:var(--ink)">Dev handoff</span>
+        <span class="cpill">Ready for dev</span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/components.html">Open Components</a>
+      </div>
+      <p class="meta">Includes the CSS glass, frosted-surface and refractive recipes, plus the
+        native SwiftUI .glassEffect() mapping.</p>
+    </section>
 
     <section class="card">
       <div class="top">
@@ -531,20 +639,40 @@
 
     <section class="card">
       <div class="top">
-        <h2>DietStation Dot</h2>
-        <span class="tag">Typeface &middot; 4 weights</span>
+        <h2>Motion</h2>
+        <span class="tag">Easing &middot; 7 tokens</span>
         <span class="pill ready">Live</span>
       </div>
-      <p class="desc">The dot-matrix brand font — Latin from the animation&rsquo;s typewriter grid,
-        Arabic traced onto the same grid with full contextual shaping. Weight is dot size:
-        heavier cuts fuse the dots into strokes.</p>
-      <div class="typepeek" dir="ltr">diet station &nbsp;<span dir="rtl">&#1583;&#1575;&#1610;&#1578; &#1587;&#1578;&#1610;&#1588;&#1606;</span></div>
-      <div class="actions">
-        <a class="btn primary" href="type/">Open Type Lab</a>
-        <a class="btn ghost" href="font/DietStationDot-family.zip" download>Download family</a>
+      <p class="desc">Seven named curves cover every animation in the lab, from the .15s press
+        to the .88s brand bounce — plus the choreography patterns that combine them. Tap a
+        curve to replay it.</p>
+      <div class="motionpeek" aria-hidden="true">
+        <svg viewBox="0 0 200 56" preserveAspectRatio="none"><path d="M 14 46 C 70 12, 70 10, 186 10" fill="none" stroke="#ED1C24" stroke-width="1.5" stroke-dasharray="3 4"/></svg>
+        <i></i>
       </div>
-      <p class="meta">Specimen and live weight tester, plus the Font Lab glyph editor — dial
-        dots, pitch and kashida, then hand off to Claude to compile a new build.</p>
+      <div class="actions">
+        <a class="btn primary" href="system/motion.html">Open Motion</a>
+      </div>
+      <p class="meta">Durations are part of the token &middot; Reanimated + SwiftUI mappings
+        included.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Brand rules</h2>
+        <span class="tag">Law</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">The few things that don&rsquo;t bend: the two reds and where each lives, white
+        icons in motion, the Apple-light canvas, and the unicase wordmark. Five laws with the
+        do / don&rsquo;t to match.</p>
+      <div class="brandpeek" aria-hidden="true">
+        <span class="bball"></span><span>diet station</span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/brand.html">Open Brand rules</a>
+      </div>
+      <p class="meta">Ball #FF3848 in motion, UI red #ED1C24 in interface — never swapped.</p>
     </section>
   </section>
 

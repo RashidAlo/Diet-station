@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 54ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
+    border-radius: 999px; padding: 12px 20px; border: none; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: #d4141c; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+  .stage { margin-top: 4px; padding: 22px; border-radius: 16px; background: var(--ground);
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .spec { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; line-height: 1.55; }
+  .spec code { font: 11.5px/1.5 ui-monospace, Menlo, monospace; }
+
+  /* live specimens */
+  .demo-press { transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .demo-press:active { transform: scale(.96); }
+  .pill { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em; text-transform: uppercase;
+    padding: 6px 10px 5px; border-radius: 999px; white-space: nowrap; }
+  .pill.in-progress { background: var(--red-soft); color: var(--red); }
+  .pill.ready { background: var(--ok-soft); color: var(--ok); }
+  .tag { font: 500 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .06em; text-transform: uppercase;
+    padding: 6px 10px 5px; border-radius: 999px; background: #fff;
+    color: var(--ink-soft); white-space: nowrap; }
+  .minicard { background: #fff; border-radius: 18px; padding: 26px 26px 22px; max-width: 340px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+
+  /* glass strip demos */
+  .gstrip { position: relative; height: 120px; border-radius: 16px; overflow: hidden;
+    background: linear-gradient(90deg, #ED1C24 0 25%, #E4A70F 25% 50%, #E5E7EB 50% 75%, #1A1114 75% 100%);
+    display: flex; align-items: center; gap: 14px; padding: 0 20px; }
+  .cssglass { display: flex; align-items: center; justify-content: center; flex: none;
+    color: #fff; background: rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.40),
+      0 6px 16px -8px rgba(0,0,0,.40); }
+  .cssglass.circ { width: 44px; height: 44px; border-radius: 50%; }
+  .cssglass.pillg { height: 44px; padding: 0 18px; border-radius: 999px;
+    font: 500 13px/1 'Urbane Rounded', sans-serif; white-space: nowrap; }
+  .cssglass.dark { color: #0B0E12; }
+  .frostcard { position: relative; border-radius: 20px; padding: 16px 18px; flex: 1; min-width: 200px;
+    background: rgba(255,255,255,.3);
+    -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: inset 0 0 0 .8px rgba(255,255,255,.45), 0 10px 30px -14px rgba(0,0,0,.35);
+    color: #fff; font: 500 13.5px/1.45 'Urbane Rounded', sans-serif; }
+  .frostcard small { display: block; font: 400 11.5px/1.5 'Proxima Nova', sans-serif; opacity: .85; }
+  .tierhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .tierhead .tno { font: 600 12px/1 'Urbane Rounded', sans-serif; color: var(--red);
+    letter-spacing: .08em; }
+  .tierhead h3 { margin: 0; }
+  .tier { margin-top: 22px; }
+
+  /* sheet demo */
+  .demo-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
+    opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+  .demo-veil.show { opacity: 1; pointer-events: auto; }
+  .demo-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 201;
+    background: #fbfbfc; border-radius: 24px 24px 0 0; max-height: 78vh;
+    overflow-y: auto; padding: 24px 22px calc(30px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(105%); transition: transform .42s cubic-bezier(.25,.9,.3,1);
+    box-shadow: 0 -18px 60px rgba(0,0,0,.28); }
+  .demo-sheet.show { transform: none; }
+  .demo-sheet h3 { font: 600 20px/26px 'Urbane Rounded', sans-serif; margin: 0 0 2px;
+    text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .demo-sheet .p-sub { color: var(--ink-soft); font-size: 13px; margin: 0 0 18px; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Components</h1>
+  <p>The working parts — buttons, pills, cards, sheets, and the three tiers of glass.
+    Everything below is live: press it, open it, drag past it.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>Buttons</h2>
+    <p class="desc">Always a full pill, always Urbane Medium 14. One red voice per view —
+      everything else goes ghost. Press feedback is a 0.96 scale at the standard press
+      curve.</p>
+    <div class="stage">
+      <button class="btn primary demo-press">Open prototype</button>
+      <button class="btn ghost demo-press" style="background:#fff">Dev handoff</button>
+      <button class="btn ghost demo-press" style="background:#e9e9ec">Ghost on card</button>
+    </div>
+    <p class="spec">Primary: red on white text, hover/pressed <code>#D4141C</code> &middot;
+      padding <code>12px 20px</code>, height 47 in action bars (54 native) &middot; Ghost:
+      ground fill, ink text, hover <code>#E9E9EC</code> &middot; press:
+      <code>transform .15s cubic-bezier(.3,.8,.3,1)</code> to scale(.96).</p>
+
+    <h3>Pills &amp; tags</h3>
+    <div class="stage">
+      <span class="pill in-progress">In progress</span>
+      <span class="pill ready">Ready for dev</span>
+      <span class="tag">iOS</span>
+      <span class="tag">Material</span>
+    </div>
+    <p class="spec">Urbane 500 11, caps +.06em, padding <code>6px 10px 5px</code>, full pill.
+      Status pills tint fill + text from one hue (red-soft/red, ok-soft/ok); tags are
+      neutral (ground fill, ink-soft text).</p>
+  </section>
+
+  <section class="card">
+    <h2>Cards</h2>
+    <p class="desc">White on the ground, radius 18 on the web (24 in the native shell, 38 for
+      launcher heroes), inset 24&ndash;26px, double-layer shadow. Title row first, description in
+      ink-soft, actions at the bottom.</p>
+    <div class="stage">
+      <div class="minicard">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 style="margin-right:auto">Card title</h2>
+          <span class="pill ready">Live</span>
+        </div>
+        <p class="desc">Description in ink-soft at body size — one or two lines that earn the
+          open.</p>
+        <div class="actions">
+          <button class="btn primary demo-press">Open</button>
+          <button class="btn ghost demo-press" style="background:var(--ground)">More</button>
+        </div>
+      </div>
+    </div>
+    <p class="spec">Shadow: <code>0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14)</code>
+      &middot; stack gap 18px &middot; native cards are tappable whole with the press scale.</p>
+  </section>
+
+  <section class="card">
+    <h2>Sheets</h2>
+    <p class="desc">Everything secondary presents as a bottom sheet: settings, sign-in, lab
+      menus. Sheet ground #FBFBFC, top radius 24, over a #0B0E12 veil at 45%.</p>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn primary" id="sheetGo">Present a sheet</button>
+    </div>
+    <p class="spec">In: <code>translateY(105%) &rarr; 0</code> over
+      <code>.42s cubic-bezier(.25,.9,.3,1)</code>; veil fades <code>.28s ease</code>.
+      Out: reverse, accelerating (<code>cubic-bezier(.5,0,.8,.6)</code> on full-screen flow
+      sheets). Max height 78vh, content scrolls inside.</p>
+  </section>
+
+  <section class="card">
+    <h2>Glass</h2>
+    <p class="desc">Three tiers, one law. Glass is chrome — it floats over content and must
+      read as material, not decoration. The law: <b>adaptive contrast is mandatory</b> —
+      sample the backdrop behind every glass control; if it reads light (relative luminance
+      &gt; 0.5), flip the content to #0B0E12, else white.</p>
+
+    <div class="tier">
+      <div class="tierhead"><span class="tno">TIER 1</span><h3>CSS Liquid Glass — simple chrome</h3></div>
+      <p class="desc" style="font-size:13.5px">Close buttons, tab bars, static nav. Pure CSS:
+        translucent white fill, blur + saturate, and the specular "seat" — an inset top
+        highlight plus hairline ring. This page's own X is the recipe, live.</p>
+      <div class="gstrip">
+        <span class="cssglass circ demo-press"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <span class="cssglass pillg demo-press">Let&rsquo;s get Started</span>
+        <span class="cssglass circ dark demo-press" style="margin-left:auto"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </div>
+      <p class="spec">Fill <code>rgba(255,255,255,.16&ndash;.5)</code> by backdrop &middot;
+        <code>backdrop-filter: blur(24px) saturate(190%)</code> (tab bars go to
+        <code>blur(30px) saturate(200%) contrast(1.06)</code>) &middot; seat:
+        <code>inset 0 1.5px 1px rgba(255,255,255,.75), inset 0 0 0 .8px rgba(255,255,255,.5),
+        0 8px 24px -10px rgba(0,0,0,.3)</code>. The right-hand X above shows the contrast flip
+        over the light band.</p>
+    </div>
+
+    <div class="tier">
+      <div class="tierhead"><span class="tno">TIER 2</span><h3>Frosted surface — over live content</h3></div>
+      <p class="desc" style="font-size:13.5px">In-app surfaces: coupons, cards, nav bars over
+        scrolling content. Frosted CSS with the Figma fill stack — never refractive glass
+        over anything that moves (a refracted snapshot reads frozen and fake).</p>
+      <div class="gstrip" style="background: url('../meal-select/m-thaicurry.jpg') center/cover, #E4A70F">
+        <div class="frostcard">Frosted surface
+          <small>blur 14 + saturate 170% over the real pixels behind it</small></div>
+      </div>
+      <p class="spec"><code>backdrop-filter: blur(14px) saturate(170%)</code> (12&ndash;18px by
+        context) + white fill at ~.3 + inset seat ring &middot; dynamic overlays (gauges,
+        fills) sit ON the frost as ~94%-opacity canvases so the blur breathes through &middot;
+        Figma blend layers (plus-lighter) must blend with the sheet — no filter/clip-path/
+        z-index between them or the blend isolates and washes out.</p>
+    </div>
+
+    <div class="tier">
+      <div class="tierhead"><span class="tno">TIER 3</span><h3>Refractive glass — liquid-glass-js</h3></div>
+      <p class="desc" style="font-size:13.5px">Nav and action buttons (X, CTA) over static-ish
+        backdrops get true WebGL refraction — the vendored dashersw/liquid-glass-js Container
+        rendering an html2canvas page snapshot through the DietStation shader. The one global
+        recipe lives in glass.json; dial it in the Glass Lab.</p>
+      <div class="actions" style="margin-top:12px">
+        <a class="btn primary" href="../glass/">Open Glass Lab</a>
+      </div>
+      <p class="spec">Published recipe: blur 5 &middot; frost .07 &middot; rim .015 / 0.8 &middot;
+        edge 0 / .14 &middot; corner boost .03 &middot; ripple .06 &middot; every flow fetches
+        <code>glass.json?v=Date.now()</code> and layers the device draft on top &middot;
+        scaled stages must set <code>contextScale = stageScale</code> or falloffs break.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <p class="desc">The glass tiers in code. Native iOS 26+ gets Apple's real material —
+      SwiftUI <code>.glassEffect()</code> — which replaces tiers 1 and 3 entirely.</p>
+    <div class="codewrap">
+      <pre id="glassCss">/* TIER 1 — CSS Liquid Glass (close button / nav chrome) */
+.glass-x {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,.5);            /* .16 over dark backdrops */
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),  /* specular seat  */
+              inset 0 0 0 .8px rgba(255,255,255,.5),    /* hairline ring  */
+              0 8px 24px -10px rgba(0,0,0,.3);          /* lift           */
+}
+/* tab bars: blur(30px) saturate(200%) contrast(1.06) + a 165deg white bevel gradient */
+
+/* TIER 2 — frosted surface (over live/scrolling content) */
+.frost {
+  background: rgba(255,255,255,.3);            /* + the Figma fill stack  */
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.45);
+}
+
+/* TIER 3 — refractive (liquid-glass-js Container, X/CTA only) */
+// const c = new Container({ borderRadius: 22, tintOpacity: recipe.tintOpacity });
+// recipe = await fetch('glass.json?v=' + Date.now()).then(r => r.json());
+// c.contextScale = stageScale;   // mandatory inside scaled device stages
+
+/* THE LAW — adaptive contrast on every glass control */
+// sample ~16×16 backdrop behind the control, average relative luminance L:
+// content color = L > 0.5 ? '#0B0E12' : '#FFFFFF'</pre>
+      <button class="copycode" data-copy="glassCss">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="glassNative">// ── Native iOS 26+ (SwiftUI) — replaces tiers 1 & 3 ──────────────
+Button { } label: { Image(systemName: "xmark") }
+  .glassEffect()                          // Apple's real Liquid Glass
+  .glassEffect(.regular.interactive())    // press response for CTAs
+
+// ── React Native ────────────────────────────────────────────────
+// iOS 26+:  npx expo install expo-glass-effect
+import { GlassView } from 'expo-glass-effect';
+<GlassView glassEffectStyle="regular" isInteractive
+  style={{ width: 44, height: 44, borderRadius: 22 }} />
+
+// Cross-platform approximation (Android / older iOS):
+import { BlurView } from 'expo-blur';
+<BlurView intensity={40} tint="default"
+  style={{ borderRadius: 22, overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.07)',       // frost (recipe tint)
+    borderWidth: 0.6, borderColor: 'rgba(255,255,255,0.36)' }} />
+
+// TIER 2 frost is BlurView intensity ~112 (blur 14 × 8) + white overlay 0.3.
+// Adaptive contrast: react-native-view-shot 16×16 behind the control,
+// average luminance L → color = L > 0.5 ? '#0B0E12' : '#FFFFFF'.</pre>
+      <button class="copycode" data-copy="glassNative">Copy</button>
+    </div>
+  </section>
+
+</div>
+
+<div class="demo-veil" id="veil"></div>
+<div class="demo-sheet" id="sheet">
+  <h3>A standard sheet</h3>
+  <p class="p-sub">#FBFBFC ground &middot; radius 24 24 0 0 &middot; .42s settle &middot; veil at 45%</p>
+  <p style="color:var(--ink-soft);font-size:14px">Settings, sign-in, lab menus and every
+    secondary surface present exactly like this. Content scrolls inside; the sheet never
+    grows past 78vh.</p>
+  <div class="actions"><button class="btn primary" id="sheetBye" style="flex:1;text-align:center;justify-content:center">Done</button></div>
+</div>
+
+<script>
+(() => {
+  const veil = document.getElementById('veil'), sheet = document.getElementById('sheet');
+  const set = on => { veil.classList.toggle('show', on); sheet.classList.toggle('show', on); };
+  document.getElementById('sheetGo').onclick = () => set(true);
+  document.getElementById('sheetBye').onclick = () => set(false);
+  veil.onclick = () => set(false);
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+})();
+</script>
+</body>
+</html>
