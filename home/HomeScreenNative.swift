@@ -1064,6 +1064,9 @@ struct DSGaugeGlassView: View {
         }
         .overlay(alignment: .trailing) {
             if model.next {
+                // web dock parity: 53pt capsule, 8pt off the bar's top/bottom/
+                // right (.glass buttonStyle padded past the 53 frame — build
+                // the glass capsule explicitly so the margins hold)
                 Button(action: onNext) {
                     HStack(spacing: 7) {
                         Text("Next").font(DS.urbane(14, .medium))
@@ -1073,8 +1076,9 @@ struct DSGaugeGlassView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 18)
                     .frame(height: 53)
+                    .glassEffect(.regular, in: .capsule)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.plain)
                 .padding(.trailing, 8)
                 .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
