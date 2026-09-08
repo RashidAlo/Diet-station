@@ -129,20 +129,25 @@ struct HomeScreenNative: View {
     @State private var state = HomeState()
     @Namespace private var glassNS
     var onClose: (() -> Void)? = nil
+    /* entrance choreography: widgets arrive staggered, then the days dial
+       sweeps to its value while the number counts down from 30 */
+    @State private var arrived = false
+    @State private var dialNumber = 30
+    @State private var dialFrac: Double = 1.0
 
     var body: some View {
         ZStack(alignment: .bottom) {
             DS.red.ignoresSafeArea()
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 12) {
-                    topRow
-                    if state.showPromo { promoBanner }
+                    arrival(topRow, 0)
+                    if state.showPromo { arrival(promoBanner, 1) }
                     widgetGrid
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 20)
-                mealSheet
+                arrival(mealSheet, 4)
             }
             .ignoresSafeArea(edges: .bottom)
         }
@@ -152,6 +157,33 @@ struct HomeScreenNative: View {
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
         .animation(.spring(duration: 0.45), value: state.showConsult)
         .animation(.spring(duration: 0.4), value: state.plan)
+        .sensoryFeedback(.impact(weight: .medium), trigger: state.stripDay)
+        .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: dialNumber)
+        .task { await runIntro() }
+        .onChange(of: state.daysLeft) {   /* lab changes bypass the intro */
+            dialNumber = state.daysLeft
+            withAnimation(.spring(duration: 0.35)) {
+                dialFrac = Double(state.daysLeft) / 30
+            }
+        }
+    }
+
+    private func arrival<V: View>(_ v: V, _ index: Double) -> some View {
+        v.opacity(arrived ? 1 : 0)
+            .scaleEffect(arrived ? 1 : 0.94, anchor: .center)
+            .animation(.spring(duration: 0.55).delay(0.07 * index), value: arrived)
+    }
+
+    private func runIntro() async {
+        try? await Task.sleep(for: .milliseconds(60))
+        arrived = true
+        try? await Task.sleep(for: .milliseconds(500))
+        withAnimation(.easeOut(duration: 0.9)) { dialFrac = Double(state.daysLeft) / 30 }
+        while dialNumber > state.daysLeft {
+            try? await Task.sleep(for: .milliseconds(75))
+            withAnimation(.linear(duration: 0.07)) { dialNumber -= 1 }
+        }
     }
 
     // MARK: top row — stories strip + glass docks
@@ -210,7 +242,8 @@ struct HomeScreenNative: View {
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
 
-    // Apple's stock glass button (glassProminent in white when urgent)
+    // near-transparent glass capsule (Rashid: stock .glass was too bright —
+    // ~20% white tint reads right over the red); prominent white when urgent
     private func pill(_ label: String, urgent: Bool = false) -> some View {
         Group {
             if urgent {
@@ -218,13 +251,15 @@ struct HomeScreenNative: View {
                     .buttonStyle(.glassProminent)
                     .tint(DS.onColor)
                     .foregroundStyle(DS.ink)
+                    .font(DS.urbane(12))
             } else {
-                Button(label) { }
-                    .buttonStyle(.glass)
-                    .foregroundStyle(DS.onColor)
+                Button { } label: {
+                    Text(label).font(DS.urbane(12)).foregroundStyle(DS.onColor)
+                        .padding(.horizontal, 17).frame(height: 36)
+                }
+                .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
             }
         }
-        .font(DS.urbane(12))
     }
 
     // MARK: widget grid — the modular system
@@ -265,22 +300,20 @@ struct HomeScreenNative: View {
                  + Text(words.1).font(DS.urbane(19.6, .semibold)).foregroundStyle(.white))
                     .shadow(color: .black.opacity(0.1), radius: 5.6, y: 1.4)
                 Button { } label: {
-                    Text("Change").font(DS.urbane(14))
-                        .frame(maxWidth: .infinity)
+                    Text("Change").font(DS.urbane(14)).foregroundStyle(DS.onColor)
+                        .frame(maxWidth: .infinity).frame(height: 41)
                 }
-                .buttonStyle(.glass)
-                .foregroundStyle(DS.onColor)
-                .controlSize(.large)
-                .padding(.top, 10)
+                .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
+                .padding(.top, 4)   // title sits close to Change (Rashid)
             }
             .padding(EdgeInsets(top: 28, leading: 20, bottom: 22, trailing: 20))
         }
         .frame(maxHeight: .infinity)
-        // fixed radius for BOTH glass and clip — concentric resolved differently
-        // for the two on-device, letting the gradient bleed past sharp corners
+        // clip the CONTENT (gradient) before the glass so it can never bleed
+        // past the rounded bottom edges; both shapes are the same fixed 26
+        .clipShape(RoundedRectangle(cornerRadius: 26))
         .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: 26))
         .glassEffectID("plan", in: glassNS)
-        .clipShape(RoundedRectangle(cornerRadius: 26))
     }
 
     // days-left: re-shapes with the height it is given (tall / wide / slim)
@@ -288,7 +321,7 @@ struct HomeScreenNative: View {
         GeometryReader { geo in
             let h = geo.size.height
             let shape: DaysShape = h >= 168 ? .tall : (h < 82 ? .slim : .wide)
-            DaysContent(state: state, shape: shape)
+            DaysContent(state: state, shape: shape, number: dialNumber, frac: dialFrac)
         }
         .frame(maxHeight: .infinity)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
@@ -303,6 +336,8 @@ struct HomeScreenNative: View {
                 Text("Discounts").font(DS.proxima(12)).foregroundStyle(DS.onColor.opacity(0.8))
             }
             Spacer()
+            // TODO(Shell): replace with DSBagIcon traced from home/ic-bag.svg
+            // (same pipeline as star/bell/calendar) — Rashid wants the Figma glyph
             Image(systemName: "bag.fill").font(.system(size: 22)).foregroundStyle(.white)
         }
         .padding(.horizontal, 19)
@@ -314,17 +349,40 @@ struct HomeScreenNative: View {
 
     private var consultWidget: some View {
         HStack(spacing: 12) {
-            DSCalendarIcon().fill(.white.opacity(0.6))
-                .frame(width: 24.5, height: 22.6)
+            consultIcon
             Text("Book Consultation").font(DS.urbane(12)).foregroundStyle(DS.onColor)
-                .frame(width: 84, alignment: .leading)
-            Spacer(minLength: 0)
+                .lineLimit(2).minimumScaleFactor(0.9)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)   // fill the 151pt column exactly — no bleed
         .frame(height: 72)   // twin of discounts — days-left stays dominant
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
+    }
+
+    /// The Figma consultation calendar is MULTILAYERED (mirrors the web
+    /// `.calico` composite): translucent plate, traced subtract body, and
+    /// two binding posts poking above the plate.
+    private var consultIcon: some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: 4.7)
+                .fill(.white.opacity(0.25))
+                .shadow(color: .black.opacity(0.07), radius: 2, y: 1.9)
+                .padding(EdgeInsets(top: 2.4, leading: 2, bottom: 3.1, trailing: 2))
+            DSCalendarIcon().fill(.white.opacity(0.6))
+                .frame(width: 24, height: 21.6)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 2.6)
+            HStack {
+                Capsule().fill(.white.opacity(0.4)).frame(width: 1.9, height: 4.6)
+                Spacer()
+                Capsule().fill(.white.opacity(0.4)).frame(width: 1.9, height: 4.6)
+            }
+            .padding(.horizontal, 9)
+        }
+        .frame(width: 28, height: 28)
     }
 
     // MARK: meal sheet
@@ -369,44 +427,51 @@ struct HomeScreenNative: View {
 
     private var sheetHeader: some View {
         let info = state.days[state.stripDay]
-        return HStack(spacing: 14) {
-            Image(systemName: "fork.knife").font(.system(size: 20)).foregroundStyle(DS.red)
-                .frame(width: 48, height: 48)
-                .background(.white, in: RoundedRectangle(cornerRadius: 16))
+        /* the whole strip is sized so the macro expansion has real room:
+           smaller tile + fonts, the pill keeps its intrinsic width and the
+           day/date column scales down before anything collides */
+        return HStack(spacing: 12) {
+            Image(systemName: "fork.knife").font(.system(size: 18)).foregroundStyle(DS.red)
+                .frame(width: 44, height: 44)
+                .background(.white, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
             VStack(alignment: .leading, spacing: 1) {
-                Text(info.word).font(DS.urbane(16, .semibold)).foregroundStyle(DS.ink)
+                Text(info.word).font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
                     .contentTransition(.numericText())
-                Text(state.dateString(state.stripDay)).font(DS.proxima(12)).foregroundStyle(DS.caption)
+                Text(state.dateString(state.stripDay)).font(DS.proxima(11)).foregroundStyle(DS.caption)
             }
-            Spacer()
-            Button { withAnimation(.spring(duration: 0.45)) { state.macrosOpen.toggle() } } label: {
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            Spacer(minLength: 8)
+            Button { withAnimation(.spring(duration: 0.4, bounce: 0.12)) { state.macrosOpen.toggle() } } label: {
                 HStack(spacing: 3) {
                     // verbatim: interpolated Ints localize ("1,200") — web shows "1200"
-                    Text(verbatim: "\(info.kcal)").font(DS.urbane(16, .semibold)).foregroundStyle(DS.ink)
+                    Text(verbatim: "\(info.kcal)").font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
                         .contentTransition(.numericText())
-                    Text("Kcal").font(DS.urbane(10, .light)).foregroundStyle(Color(white: 0.6))
+                    Text("Kcal").font(DS.urbane(9, .light)).foregroundStyle(Color(white: 0.6))
                     if state.macrosOpen {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             macro(info.c, "C"); macro(info.p, "P"); macro(info.f, "F")
                         }
-                        .padding(.leading, 8)
+                        .padding(.leading, 6)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
-                .padding(.horizontal, 16).frame(height: 48)
-                .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 12).frame(height: 44)
+                .background(.white, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
+                .clipped()
             }
+            .fixedSize()
         }
-        .frame(height: 51)
+        .frame(height: 48)
     }
 
     private func macro(_ v: Int, _ u: String) -> some View {
         HStack(spacing: 2) {
-            Text("\(v)").font(DS.urbane(13)).foregroundStyle(DS.ink)
+            Text(verbatim: "\(v)").font(DS.urbane(12)).foregroundStyle(DS.ink)
                 .contentTransition(.numericText())
-            Text(u).font(DS.proxima(9)).foregroundStyle(DS.ink)
+            Text(u).font(DS.proxima(8)).foregroundStyle(DS.ink)
         }
     }
 
@@ -475,19 +540,21 @@ private enum DaysShape { case slim, wide, tall }
 private struct DaysContent: View {
     let state: HomeState
     let shape: DaysShape
+    var number: Int          /* display value — the intro counts 30 down to daysLeft */
+    var frac: Double
 
     var expired: Bool { state.daysLeft == 0 }
 
     var ring: some View {
         ZStack {
             Circle().stroke(.white.opacity(0.25), lineWidth: 3)
-            Circle().trim(from: 0, to: min(1, Double(state.daysLeft) / 30))
+            Circle().trim(from: 0, to: min(1, frac))
                 .stroke(.white, style: .init(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            Text("\(state.daysLeft)")
+            Text(verbatim: "\(number)")
                 .font(DS.urbane(shape == .slim ? 16 : 20, .semibold))
                 .foregroundStyle(.white)
-                .contentTransition(.numericText())
+                .contentTransition(.numericText(countsDown: true))
         }
         .frame(width: shape == .slim ? 40 : 50, height: shape == .slim ? 40 : 50)
     }
@@ -502,7 +569,7 @@ private struct DaysContent: View {
         .minimumScaleFactor(0.8)   // wide shape leaves ~63pt beside the ring
     }
 
-    // Apple's stock glass button; prominent white when expired
+    // near-transparent glass capsule (~20% tint); prominent white when expired
     var renew: some View {
         Group {
             if expired {
@@ -514,10 +581,10 @@ private struct DaysContent: View {
                 .foregroundStyle(DS.ink)
             } else {
                 Button { } label: {
-                    Text("Renew").frame(maxWidth: .infinity)
+                    Text("Renew").foregroundStyle(DS.onColor)
+                        .frame(maxWidth: .infinity).frame(height: 36)
                 }
-                .buttonStyle(.glass)
-                .foregroundStyle(DS.onColor)
+                .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
             }
         }
         .font(DS.urbane(12, expired ? .semibold : .medium))
