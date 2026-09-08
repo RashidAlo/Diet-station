@@ -301,7 +301,75 @@ pill                  .capsule                                    border radius/
   </section>
 
   <section class="card">
-    <h2>Handoff template v2 — proposed</h2>
+    <h2>Intent protocol — ds-nav</h2>
+    <p class="desc">How flows interconnect from now on: a flow never navigates to another
+      flow — it posts an <b>intent</b> and the hub presents the target. Specified here like a
+      deep-link scheme; the grammar below is verified against the shipped router.</p>
+
+    <div class="pair">
+      <div class="ph">The grammar</div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Emit — flow &rarr; hub</div>
+          <div class="cb">parent.postMessage({<br>
+          &nbsp;&nbsp;t: 'ds-nav',<br>
+          &nbsp;&nbsp;to: '&lt;flow-id&gt;',&nbsp;&nbsp;<i>// flows.json id</i><br>
+          &nbsp;&nbsp;present: 'tab' | 'sheet' | 'push',<br>
+          &nbsp;&nbsp;context: { &hellip; }&nbsp;&nbsp;<i>// optional overrides</i><br>
+          }, '*')<br>
+          <i>close:</i> parent.postMessage({ t: 'ds-close' }, '*')</div></div>
+        <div class="col"><div class="ct web">Announce — hub &rarr; flow</div>
+          <div class="cb">{ t: 'ds-router', v: 1 }<br>
+          <i>posted into the frame on every load, including tab swaps. A flow emits ds-nav
+          ONLY after hearing this — without it, fall back to direct navigation. Lets both
+          sides ship independently.</i></div></div>
+      </div>
+    </div>
+
+    <h3>Presentation modes</h3>
+    <p class="desc" style="font-size:13.5px">
+      <b style="color:var(--ink)">tab</b> — instant in-place frame swap, app tab-bar feel;
+      stack depth unchanged.<br>
+      <b style="color:var(--ink)">sheet</b> — slides up over the stack (also the coercion
+      target: any unknown <code>present</code> value becomes sheet).<br>
+      <b style="color:var(--ink)">push</b> — full-screen slide-from-right; dismisses with the
+      matching slide-out.<br>
+      <b style="color:var(--ink)">ds-close</b> — pops the <i>posting</i> frame and everything
+      stacked above it, each with its own dismiss animation.</p>
+
+    <h3>State policy &amp; context</h3>
+    <p class="desc" style="font-size:13.5px"><b style="color:var(--ink)">Reset on every
+      transition</b> (Rashid's call): the target always boots fresh, cache-busted with
+      <code>?v=</code>. Context is optional overrides only — never restored state — delivered
+      on the target URL:</p>
+    <div class="codewrap">
+      <pre id="dsnavCtx">// target URL the hub builds:
+&lt;flow path&gt;?v=&lt;ts&gt;&amp;embed=1&amp;from=&lt;posting flow id&gt;&amp;ctx=&lt;encodeURIComponent(JSON.stringify(context))&gt;
+
+// reading it inside a flow:
+const q = new URLSearchParams(location.search);
+const from = q.get('from');                       // who sent you here (may be null)
+const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
+
+// dead ends are SAFE: ds-nav to an unknown or offline flow id shows the
+// branded "Coming in a later sprint" card — wire links to unbuilt flows freely.</pre>
+      <button class="copycode" data-copy="dsnavCtx">Copy</button>
+    </div>
+
+    <h3>Integration manifest (flows.json)</h3>
+    <div class="codewrap">
+      <pre id="dsnavManifest">// optional per-flow fields, rendered as "Integration points" in both
+// handoff surfaces (hub card panel + lab-shell Dev handoff view):
+"entries": [ { "id": "meal-select", "params": "ctx.day", "note": "opened from home day strip" } ],
+"exits":   [ { "intent": "view rewards", "to": "rewards", "present": "sheet", "note": "coupon chip tap" } ]</pre>
+      <button class="copycode" data-copy="dsnavManifest">Copy</button>
+    </div>
+    <p class="meta">Native mapping: tab &harr; TabView selection, sheet &harr;
+      .sheet/detents, push &harr; NavigationStack push — the intent grammar is
+      presentation-agnostic so the shell can route the same messages to real containers.</p>
+  </section>
+
+  <section class="card">
+    <h2>Handoff template v2 — shipped</h2>
     <p class="desc">Per the native-first doctrine, every flow's dev handoff leads with a
       <b>SwiftUI spec</b> and repositions the existing RN kit as the <b>React fallback
       kit</b>. Content model below; the hub renderer change is with the Hub session.</p>
@@ -322,11 +390,12 @@ pill                  .capsule                                    border radius/
 // "React fallback kit", keep Copy-full-kit per section.</pre>
       <button class="copycode" data-copy="template">Copy</button>
     </div>
-    <p class="meta">Status: proposed to the Hub session (they own the hub renderer; this page
-      owns the content model). The flows' swift[] kits get authored as each flow settles its
-      native pass. <b>Coming next here:</b> the ds-nav intent protocol (to/context/present
-      with tab | sheet | push) gets specified like a deep-link scheme once the Hub session
-      lands it.</p>
+    <p class="meta">Status: <b>shipped</b> — the hub renders <code>swift[]</code> first as
+      &ldquo;SwiftUI spec&rdquo; in both handoff surfaces (hub card panel + lab-shell Dev
+      handoff view), <code>rn[]</code> is retitled &ldquo;React fallback kit&rdquo;, and the
+      optional <code>entries</code>/<code>exits</code> manifest renders as
+      &ldquo;Integration points&rdquo;. Flows without <code>swift[]</code> render as before —
+      kits get authored as each flow settles its native pass.</p>
   </section>
 
 </div>
