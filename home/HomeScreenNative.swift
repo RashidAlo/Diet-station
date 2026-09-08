@@ -170,11 +170,11 @@ struct HomeScreenNative: View {
             Spacer()
             GlassEffectContainer(spacing: 12) {
                 HStack(spacing: 12) {
-                    dock { Image(systemName: "star.fill").font(.system(size: 24)) }
+                    dock { DSStarIcon().fill(.white.opacity(0.7)).frame(width: 32, height: 32) }
                     dock {
-                        Image(systemName: "bell.fill").font(.system(size: 24))
+                        DSBellIcon().fill(.white.opacity(0.7)).frame(width: 32, height: 32)
                             .overlay(alignment: .topTrailing) {
-                                Circle().fill(.yellow).frame(width: 6, height: 6).offset(x: 4, y: -2)
+                                Circle().fill(.yellow).frame(width: 6, height: 6).offset(x: -2, y: 2)
                             }
                     }
                 }
@@ -187,7 +187,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.clear.interactive())   // Apple default shape (capsule)
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: 23))   // Figma rounded square
     }
 
     // MARK: promo banner
@@ -205,7 +205,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.clear)   // Apple default capsule, notification-pill structure
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: 26))   // rounded square per Rashid
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
@@ -276,9 +276,11 @@ struct HomeScreenNative: View {
             .padding(EdgeInsets(top: 28, leading: 20, bottom: 22, trailing: 20))
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.clear, in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        // fixed radius for BOTH glass and clip — concentric resolved differently
+        // for the two on-device, letting the gradient bleed past sharp corners
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: 26))
         .glassEffectID("plan", in: glassNS)
-        .clipShape(ConcentricRectangle(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .clipShape(RoundedRectangle(cornerRadius: 26))
     }
 
     // days-left: re-shapes with the height it is given (tall / wide / slim)
@@ -289,7 +291,7 @@ struct HomeScreenNative: View {
             DaysContent(state: state, shape: shape)
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.clear, in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -304,23 +306,23 @@ struct HomeScreenNative: View {
             Image(systemName: "bag.fill").font(.system(size: 22)).foregroundStyle(.white)
         }
         .padding(.horizontal, 19)
-        .frame(height: 60)
-        .glassEffect(.clear.interactive())   // Apple default capsule pill
+        .frame(height: 72)   // twin of consult — days-left stays dominant
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("disc", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
     private var consultWidget: some View {
         HStack(spacing: 12) {
-            Image(systemName: "calendar").font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.85))
+            DSCalendarIcon().fill(.white.opacity(0.6))
+                .frame(width: 24.5, height: 22.6)
             Text("Book Consultation").font(DS.urbane(12)).foregroundStyle(DS.onColor)
                 .frame(width: 84, alignment: .leading)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
-        .frame(minHeight: 84, maxHeight: .infinity)   // days' layoutPriority must not crush it
-        .glassEffect(.clear.interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .frame(height: 72)   // twin of discounts — days-left stays dominant
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -543,6 +545,151 @@ private struct DaysContent: View {
         }
         .padding(EdgeInsets(top: shape == .tall ? 16 : 12, leading: 16, bottom: 12, trailing: 14))
         .animation(.spring(duration: 0.35), value: state.daysLeft)
+    }
+}
+
+// MARK: - Figma icon shapes (traced from the home flow's SVG exports)
+
+/// Figma export: home/ic-star.svg
+struct DSStarIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 16.000, y: 23.360))
+        p.addLine(to: CGPoint(x: 21.533, y: 26.706))
+        p.addCurve(to: CGPoint(x: 23.520, y: 25.266), control1: CGPoint(x: 22.547, y: 27.320), control2: CGPoint(x: 23.787, y: 26.413))
+        p.addLine(to: CGPoint(x: 22.053, y: 18.973))
+        p.addLine(to: CGPoint(x: 26.947, y: 14.733))
+        p.addCurve(to: CGPoint(x: 26.187, y: 12.399), control1: CGPoint(x: 27.840, y: 13.960), control2: CGPoint(x: 27.360, y: 12.493))
+        p.addLine(to: CGPoint(x: 19.747, y: 11.853))
+        p.addLine(to: CGPoint(x: 17.227, y: 5.906))
+        p.addCurve(to: CGPoint(x: 14.773, y: 5.906), control1: CGPoint(x: 16.773, y: 4.826), control2: CGPoint(x: 15.227, y: 4.826))
+        p.addLine(to: CGPoint(x: 12.253, y: 11.839))
+        p.addLine(to: CGPoint(x: 5.813, y: 12.386))
+        p.addCurve(to: CGPoint(x: 5.053, y: 14.720), control1: CGPoint(x: 4.640, y: 12.479), control2: CGPoint(x: 4.160, y: 13.946))
+        p.addLine(to: CGPoint(x: 9.947, y: 18.959))
+        p.addLine(to: CGPoint(x: 8.480, y: 25.253))
+        p.addCurve(to: CGPoint(x: 10.467, y: 26.693), control1: CGPoint(x: 8.213, y: 26.399), control2: CGPoint(x: 9.453, y: 27.306))
+        p.addLine(to: CGPoint(x: 16.000, y: 23.360))
+        p.closeSubpath()
+        let s = min(rect.width / 32, rect.height / 32)
+        let t = CGAffineTransform(translationX: rect.midX - 32 * s / 2,
+                                  y: rect.midY - 32 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
+
+/// Figma export: home/ic-bell.svg
+struct DSBellIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 16.002, y: 29.000))
+        p.addCurve(to: CGPoint(x: 18.668, y: 26.333), control1: CGPoint(x: 17.468, y: 29.000), control2: CGPoint(x: 18.668, y: 27.800))
+        p.addLine(to: CGPoint(x: 13.335, y: 26.333))
+        p.addCurve(to: CGPoint(x: 16.002, y: 29.000), control1: CGPoint(x: 13.335, y: 27.800), control2: CGPoint(x: 14.522, y: 29.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 24.002, y: 21.000))
+        p.addLine(to: CGPoint(x: 24.002, y: 14.333))
+        p.addCurve(to: CGPoint(x: 18.002, y: 5.907), control1: CGPoint(x: 24.002, y: 10.240), control2: CGPoint(x: 21.815, y: 6.813))
+        p.addLine(to: CGPoint(x: 18.002, y: 5.000))
+        p.addCurve(to: CGPoint(x: 16.002, y: 3.000), control1: CGPoint(x: 18.002, y: 3.893), control2: CGPoint(x: 17.108, y: 3.000))
+        p.addCurve(to: CGPoint(x: 14.002, y: 5.000), control1: CGPoint(x: 14.895, y: 3.000), control2: CGPoint(x: 14.002, y: 3.893))
+        p.addLine(to: CGPoint(x: 14.002, y: 5.907))
+        p.addCurve(to: CGPoint(x: 8.002, y: 14.333), control1: CGPoint(x: 10.175, y: 6.813), control2: CGPoint(x: 8.002, y: 10.227))
+        p.addLine(to: CGPoint(x: 8.002, y: 21.000))
+        p.addLine(to: CGPoint(x: 6.282, y: 22.720))
+        p.addCurve(to: CGPoint(x: 7.215, y: 25.000), control1: CGPoint(x: 5.442, y: 23.560), control2: CGPoint(x: 6.028, y: 25.000))
+        p.addLine(to: CGPoint(x: 24.775, y: 25.000))
+        p.addCurve(to: CGPoint(x: 25.722, y: 22.720), control1: CGPoint(x: 25.962, y: 25.000), control2: CGPoint(x: 26.562, y: 23.560))
+        p.addLine(to: CGPoint(x: 24.002, y: 21.000))
+        p.closeSubpath()
+        let s = min(rect.width / 32, rect.height / 32)
+        let t = CGAffineTransform(translationX: rect.midX - 32 * s / 2,
+                                  y: rect.midY - 32 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
+
+/// Figma export: home/ic-calbody.svg — white body, dot holes let the red through
+struct DSCalendarIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 19.258, y: 0.271))
+        p.addCurve(to: CGPoint(x: 23.942, y: 4.955), control1: CGPoint(x: 21.845, y: 0.271), control2: CGPoint(x: 23.942, y: 2.368))
+        p.addLine(to: CGPoint(x: 23.942, y: 17.136))
+        p.addCurve(to: CGPoint(x: 19.258, y: 21.822), control1: CGPoint(x: 23.942, y: 19.724), control2: CGPoint(x: 21.845, y: 21.822))
+        p.addLine(to: CGPoint(x: 5.202, y: 21.822))
+        p.addCurve(to: CGPoint(x: 0.517, y: 17.136), control1: CGPoint(x: 2.615, y: 21.822), control2: CGPoint(x: 0.517, y: 19.724))
+        p.addLine(to: CGPoint(x: 0.517, y: 4.955))
+        p.addCurve(to: CGPoint(x: 5.202, y: 0.271), control1: CGPoint(x: 0.517, y: 2.368), control2: CGPoint(x: 2.615, y: 0.271))
+        p.addLine(to: CGPoint(x: 19.258, y: 0.271))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 6.139, y: 12.155))
+        p.addCurve(to: CGPoint(x: 5.202, y: 13.092), control1: CGPoint(x: 5.622, y: 12.155), control2: CGPoint(x: 5.202, y: 12.575))
+        p.addLine(to: CGPoint(x: 5.202, y: 14.029))
+        p.addCurve(to: CGPoint(x: 6.139, y: 14.966), control1: CGPoint(x: 5.202, y: 14.546), control2: CGPoint(x: 5.622, y: 14.966))
+        p.addLine(to: CGPoint(x: 7.076, y: 14.966))
+        p.addCurve(to: CGPoint(x: 8.013, y: 14.029), control1: CGPoint(x: 7.593, y: 14.966), control2: CGPoint(x: 8.013, y: 14.546))
+        p.addLine(to: CGPoint(x: 8.013, y: 13.092))
+        p.addCurve(to: CGPoint(x: 7.076, y: 12.155), control1: CGPoint(x: 8.013, y: 12.575), control2: CGPoint(x: 7.593, y: 12.155))
+        p.addLine(to: CGPoint(x: 6.139, y: 12.155))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 11.761, y: 12.155))
+        p.addCurve(to: CGPoint(x: 10.824, y: 13.092), control1: CGPoint(x: 11.244, y: 12.155), control2: CGPoint(x: 10.824, y: 12.575))
+        p.addLine(to: CGPoint(x: 10.824, y: 14.029))
+        p.addCurve(to: CGPoint(x: 11.761, y: 14.966), control1: CGPoint(x: 10.824, y: 14.546), control2: CGPoint(x: 11.244, y: 14.966))
+        p.addLine(to: CGPoint(x: 12.698, y: 14.966))
+        p.addCurve(to: CGPoint(x: 13.635, y: 14.029), control1: CGPoint(x: 13.215, y: 14.966), control2: CGPoint(x: 13.635, y: 14.546))
+        p.addLine(to: CGPoint(x: 13.635, y: 13.092))
+        p.addCurve(to: CGPoint(x: 12.698, y: 12.155), control1: CGPoint(x: 13.635, y: 12.575), control2: CGPoint(x: 13.215, y: 12.155))
+        p.addLine(to: CGPoint(x: 11.761, y: 12.155))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 17.383, y: 12.155))
+        p.addCurve(to: CGPoint(x: 16.446, y: 13.092), control1: CGPoint(x: 16.866, y: 12.155), control2: CGPoint(x: 16.446, y: 12.575))
+        p.addLine(to: CGPoint(x: 16.446, y: 14.029))
+        p.addCurve(to: CGPoint(x: 17.383, y: 14.966), control1: CGPoint(x: 16.446, y: 14.546), control2: CGPoint(x: 16.866, y: 14.966))
+        p.addLine(to: CGPoint(x: 18.320, y: 14.966))
+        p.addCurve(to: CGPoint(x: 19.258, y: 14.029), control1: CGPoint(x: 18.837, y: 14.966), control2: CGPoint(x: 19.258, y: 14.546))
+        p.addLine(to: CGPoint(x: 19.258, y: 13.092))
+        p.addCurve(to: CGPoint(x: 18.320, y: 12.155), control1: CGPoint(x: 19.258, y: 12.575), control2: CGPoint(x: 18.837, y: 12.155))
+        p.addLine(to: CGPoint(x: 17.383, y: 12.155))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 6.139, y: 6.533))
+        p.addCurve(to: CGPoint(x: 5.202, y: 7.470), control1: CGPoint(x: 5.622, y: 6.533), control2: CGPoint(x: 5.202, y: 6.953))
+        p.addLine(to: CGPoint(x: 5.202, y: 8.407))
+        p.addCurve(to: CGPoint(x: 6.139, y: 9.344), control1: CGPoint(x: 5.202, y: 8.924), control2: CGPoint(x: 5.622, y: 9.344))
+        p.addLine(to: CGPoint(x: 7.076, y: 9.344))
+        p.addCurve(to: CGPoint(x: 8.013, y: 8.407), control1: CGPoint(x: 7.593, y: 9.344), control2: CGPoint(x: 8.013, y: 8.924))
+        p.addLine(to: CGPoint(x: 8.013, y: 7.470))
+        p.addCurve(to: CGPoint(x: 7.076, y: 6.533), control1: CGPoint(x: 8.013, y: 6.953), control2: CGPoint(x: 7.593, y: 6.533))
+        p.addLine(to: CGPoint(x: 6.139, y: 6.533))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 11.761, y: 6.533))
+        p.addCurve(to: CGPoint(x: 10.824, y: 7.470), control1: CGPoint(x: 11.244, y: 6.533), control2: CGPoint(x: 10.824, y: 6.953))
+        p.addLine(to: CGPoint(x: 10.824, y: 8.407))
+        p.addCurve(to: CGPoint(x: 11.761, y: 9.344), control1: CGPoint(x: 10.824, y: 8.924), control2: CGPoint(x: 11.244, y: 9.344))
+        p.addLine(to: CGPoint(x: 12.698, y: 9.344))
+        p.addCurve(to: CGPoint(x: 13.635, y: 8.407), control1: CGPoint(x: 13.215, y: 9.344), control2: CGPoint(x: 13.635, y: 8.924))
+        p.addLine(to: CGPoint(x: 13.635, y: 7.470))
+        p.addCurve(to: CGPoint(x: 12.698, y: 6.533), control1: CGPoint(x: 13.635, y: 6.953), control2: CGPoint(x: 13.215, y: 6.533))
+        p.addLine(to: CGPoint(x: 11.761, y: 6.533))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 17.383, y: 6.533))
+        p.addCurve(to: CGPoint(x: 16.446, y: 7.470), control1: CGPoint(x: 16.866, y: 6.533), control2: CGPoint(x: 16.446, y: 6.953))
+        p.addLine(to: CGPoint(x: 16.446, y: 8.407))
+        p.addCurve(to: CGPoint(x: 17.383, y: 9.344), control1: CGPoint(x: 16.446, y: 8.924), control2: CGPoint(x: 16.866, y: 9.344))
+        p.addLine(to: CGPoint(x: 18.320, y: 9.344))
+        p.addCurve(to: CGPoint(x: 19.258, y: 8.407), control1: CGPoint(x: 18.837, y: 9.344), control2: CGPoint(x: 19.258, y: 8.924))
+        p.addLine(to: CGPoint(x: 19.258, y: 7.470))
+        p.addCurve(to: CGPoint(x: 18.320, y: 6.533), control1: CGPoint(x: 19.258, y: 6.953), control2: CGPoint(x: 18.837, y: 6.533))
+        p.addLine(to: CGPoint(x: 17.383, y: 6.533))
+        p.closeSubpath()
+        let s = min(rect.width / 24.4592, rect.height / 22.5852)
+        let t = CGAffineTransform(translationX: rect.midX - 24.4592 * s / 2,
+                                  y: rect.midY - 22.5852 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
     }
 }
 
