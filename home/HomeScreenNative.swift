@@ -161,12 +161,12 @@ struct HomeScreenNative: View {
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */
         .fullScreenCover(isPresented: $state.couponsOpen) {
-            FlowOverlay(path: "rewards") { state.couponsOpen = false }
+            FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
                 .ignoresSafeArea()
                 .presentationBackground(Color.black.opacity(0.42))
         }
         .fullScreenCover(isPresented: $state.calendarOpen) {
-            FlowOverlay(path: "meal-select") { state.calendarOpen = false }
+            FlowOverlay(path: "meal-select") { instant { state.calendarOpen = false } }
                 .ignoresSafeArea()
                 .presentationBackground(Color.black.opacity(0.42))
         }
@@ -236,23 +236,30 @@ struct HomeScreenNative: View {
     // (home selected / calendar / account; regular glass, NOT .interactive —
     // the interactive layer eats tab taps, per the shell's build-7 lesson)
 
+    /// State change with the fullScreenCover's own slide suppressed — the web
+    /// flow plays its own sheet choreography; the cover must not double it.
+    private func instant(_ change: () -> Void) {
+        var t = Transaction()
+        t.disablesAnimations = true
+        withTransaction(t, change)
+    }
+
     private var tabBar: some View {
         HStack(spacing: 0) {
             tabItem(selected: true) {
-                // TODO(Shell): swap for your traced DS wordmark Shape from
-                // HomeGlassTabBar (same target — reuse the struct directly)
-                Image(systemName: "face.smiling").font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.18))
+                DSLogoMark()
+                    .fill(Color(white: 0.18))
+                    .frame(width: 26, height: 20)
             } action: { }
             tabItem {
-                // TODO(Shell): your traced brand-red calendar_month Shape
-                Image(systemName: "calendar").font(.system(size: 22))
-                    .foregroundStyle(DS.red.opacity(0.85))
-            } action: { state.calendarOpen = true }
+                DSTabCalendarIcon()
+                    .fill(DS.red.opacity(0.85))
+                    .frame(width: 24, height: 24)
+            } action: { instant { state.calendarOpen = true } }
             tabItem {
-                // TODO(Shell): your traced person Shape
-                Image(systemName: "person.fill").font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.12).opacity(0.85))
+                DSTabPersonIcon()
+                    .fill(Color(white: 0.12).opacity(0.85))
+                    .frame(width: 24, height: 24)
             } action: { }
         }
         .padding(4)
@@ -409,7 +416,7 @@ struct HomeScreenNative: View {
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
         .glassEffectID("disc", in: glassNS)
         .contentShape(RoundedRectangle(cornerRadius: 26))
-        .onTapGesture { state.couponsOpen = true }   // summon the coupons flow
+        .onTapGesture { instant { state.couponsOpen = true } }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
@@ -708,11 +715,21 @@ struct FlowOverlay: UIViewRepresentable {
             WKUserScript(source: relay, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         cfg.userContentController.add(context.coordinator, name: "dsflow")
         cfg.allowsInlineMediaPlayback = true
+        cfg.mediaTypesRequiringUserActionForPlayback = []   // flow sound autoplay
+        // Same haptics bridge as the main shell webview — the rewards rip's
+        // navigator.vibrate must feel identical here
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: LabWebView.Coordinator.bridgeJS,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        cfg.userContentController.add(context.coordinator, name: "ds")
         let wv = WKWebView(frame: .zero, configuration: cfg)
         wv.isOpaque = false
         wv.backgroundColor = .clear
         wv.scrollView.backgroundColor = .clear
         wv.scrollView.contentInsetAdjustmentBehavior = .never
+        // Flow pages detect the shell by the UA token (embed styling, haptics)
+        wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
+            + " DietStationLab/2"
         let stamp = Int(Date().timeIntervalSince1970)
         if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
             wv.load(URLRequest(url: url))
@@ -725,14 +742,149 @@ struct FlowOverlay: UIViewRepresentable {
     final class Coordinator: NSObject, WKScriptMessageHandler {
         let onClose: () -> Void
         init(onClose: @escaping () -> Void) { self.onClose = onClose }
+
+        private let impact: [String: UIImpactFeedbackGenerator] = [
+            "light": UIImpactFeedbackGenerator(style: .light),
+            "medium": UIImpactFeedbackGenerator(style: .medium),
+            "heavy": UIImpactFeedbackGenerator(style: .heavy),
+            "soft": UIImpactFeedbackGenerator(style: .soft),
+            "rigid": UIImpactFeedbackGenerator(style: .rigid),
+        ]
+        private let notify = UINotificationFeedbackGenerator()
+        private let select = UISelectionFeedbackGenerator()
+
         func userContentController(_ c: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
-            if message.name == "dsflow" { onClose() }
+            if message.name == "dsflow" { onClose(); return }
+            // "ds" bridge — haptics only in the overlay (chrome has no meaning here)
+            guard message.name == "ds",
+                  let body = message.body as? [String: Any],
+                  body["t"] as? String == "haptic" else { return }
+            let kind = body["kind"] as? String ?? "impact"
+            let style = body["style"] as? String ?? "light"
+            DispatchQueue.main.async { [self] in
+                switch kind {
+                case "notification":
+                    let map: [String: UINotificationFeedbackGenerator.FeedbackType] = [
+                        "success": .success, "warning": .warning, "error": .error,
+                    ]
+                    notify.notificationOccurred(map[style] ?? .success)
+                case "selection":
+                    select.selectionChanged()
+                default:
+                    (impact[style] ?? impact["light"]!).impactOccurred()
+                }
+            }
         }
     }
 }
 
 // MARK: - Figma icon shapes (traced from the home flow's SVG exports)
+
+/// Figma export: home/cal-tabcal.svg
+struct DSTabCalendarIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 19.000, y: 4.000))
+        p.addLine(to: CGPoint(x: 18.000, y: 4.000))
+        p.addLine(to: CGPoint(x: 18.000, y: 2.000))
+        p.addLine(to: CGPoint(x: 16.000, y: 2.000))
+        p.addLine(to: CGPoint(x: 16.000, y: 4.000))
+        p.addLine(to: CGPoint(x: 8.000, y: 4.000))
+        p.addLine(to: CGPoint(x: 8.000, y: 2.000))
+        p.addLine(to: CGPoint(x: 6.000, y: 2.000))
+        p.addLine(to: CGPoint(x: 6.000, y: 4.000))
+        p.addLine(to: CGPoint(x: 5.000, y: 4.000))
+        p.addCurve(to: CGPoint(x: 3.010, y: 6.000), control1: CGPoint(x: 3.890, y: 4.000), control2: CGPoint(x: 3.010, y: 4.900))
+        p.addLine(to: CGPoint(x: 3.000, y: 20.000))
+        p.addCurve(to: CGPoint(x: 5.000, y: 22.000), control1: CGPoint(x: 3.000, y: 21.100), control2: CGPoint(x: 3.890, y: 22.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 22.000))
+        p.addCurve(to: CGPoint(x: 21.000, y: 20.000), control1: CGPoint(x: 20.100, y: 22.000), control2: CGPoint(x: 21.000, y: 21.100))
+        p.addLine(to: CGPoint(x: 21.000, y: 6.000))
+        p.addCurve(to: CGPoint(x: 19.000, y: 4.000), control1: CGPoint(x: 21.000, y: 4.900), control2: CGPoint(x: 20.100, y: 4.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 19.000, y: 20.000))
+        p.addLine(to: CGPoint(x: 5.000, y: 20.000))
+        p.addLine(to: CGPoint(x: 5.000, y: 10.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 10.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 20.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 19.000, y: 8.000))
+        p.addLine(to: CGPoint(x: 5.000, y: 8.000))
+        p.addLine(to: CGPoint(x: 5.000, y: 6.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 6.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 8.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 9.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 7.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 7.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 9.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 9.000, y: 14.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 13.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 11.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 11.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 13.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 13.000, y: 14.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 17.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 15.000, y: 14.000))
+        p.addLine(to: CGPoint(x: 15.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 17.000, y: 12.000))
+        p.addLine(to: CGPoint(x: 17.000, y: 14.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 9.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 7.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 7.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 9.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 9.000, y: 18.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 13.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 11.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 11.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 13.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 13.000, y: 18.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 17.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 15.000, y: 18.000))
+        p.addLine(to: CGPoint(x: 15.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 17.000, y: 16.000))
+        p.addLine(to: CGPoint(x: 17.000, y: 18.000))
+        p.closeSubpath()
+        let s = min(rect.width / 24, rect.height / 24)
+        let t = CGAffineTransform(translationX: rect.midX - 24 * s / 2,
+                                  y: rect.midY - 24 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
+
+/// Figma export: home/cal-tabperson.svg
+struct DSTabPersonIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 12.000, y: 12.000))
+        p.addCurve(to: CGPoint(x: 16.000, y: 8.000), control1: CGPoint(x: 14.210, y: 12.000), control2: CGPoint(x: 16.000, y: 10.210))
+        p.addCurve(to: CGPoint(x: 12.000, y: 4.000), control1: CGPoint(x: 16.000, y: 5.790), control2: CGPoint(x: 14.210, y: 4.000))
+        p.addCurve(to: CGPoint(x: 8.000, y: 8.000), control1: CGPoint(x: 9.790, y: 4.000), control2: CGPoint(x: 8.000, y: 5.790))
+        p.addCurve(to: CGPoint(x: 12.000, y: 12.000), control1: CGPoint(x: 8.000, y: 10.210), control2: CGPoint(x: 9.790, y: 12.000))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 12.000, y: 14.000))
+        p.addCurve(to: CGPoint(x: 4.000, y: 18.000), control1: CGPoint(x: 9.330, y: 14.000), control2: CGPoint(x: 4.000, y: 15.340))
+        p.addLine(to: CGPoint(x: 4.000, y: 19.000))
+        p.addCurve(to: CGPoint(x: 5.000, y: 20.000), control1: CGPoint(x: 4.000, y: 19.550), control2: CGPoint(x: 4.450, y: 20.000))
+        p.addLine(to: CGPoint(x: 19.000, y: 20.000))
+        p.addCurve(to: CGPoint(x: 20.000, y: 19.000), control1: CGPoint(x: 19.550, y: 20.000), control2: CGPoint(x: 20.000, y: 19.550))
+        p.addLine(to: CGPoint(x: 20.000, y: 18.000))
+        p.addCurve(to: CGPoint(x: 12.000, y: 14.000), control1: CGPoint(x: 20.000, y: 15.340), control2: CGPoint(x: 14.670, y: 14.000))
+        p.closeSubpath()
+        let s = min(rect.width / 24, rect.height / 24)
+        let t = CGAffineTransform(translationX: rect.midX - 24 * s / 2,
+                                  y: rect.midY - 24 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
 
 /// Figma export: home/ic-bag.svg — layered price tags (faint back, solid front
 /// with a punched string hole)
