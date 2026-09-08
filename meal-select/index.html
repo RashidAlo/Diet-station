@@ -219,6 +219,15 @@
     animation: sheetup .32s cubic-bezier(.2,.9,.3,1); }
   @keyframes sheetup { from { transform: translateY(60px); opacity: .4; }
     to { transform: translateY(0); opacity: 1; } }
+  /* top action bar — mirrors lab-shell's shared .labshell-topbar */
+  .lab-topbar { display: none; gap: 10px; margin: 0 0 12px; }
+  body.labmenu-open:not(.desktop) .lab-topbar { display: flex; }
+  .lab-topbar button { flex: 1; display: flex; align-items: center; justify-content: center;
+    gap: 7px; padding: 13px; border: 1px solid rgba(0,0,0,.12); border-radius: 14px;
+    background: #fff; color: #1d1d1f; font: 600 13px/1 -apple-system, sans-serif;
+    cursor: pointer; }
+  .lab-topbar button svg { width: 13px; height: 13px; flex: none; }
+  .lab-topbar .lx-exit { color: #ED1C24; border-color: rgba(237,28,36,.28); }
   #sDone { display: none; position: sticky; top: -28px; margin: -8px -4px 14px auto;
     border: none; border-radius: 999px; padding: 9px 18px; cursor: pointer;
     background: #ececef; color: #1d1d1f; z-index: 2;
@@ -230,6 +239,10 @@
 
 <aside id="side">
   <button id="sDone">Done</button>
+  <div class="lab-topbar">
+    <button class="lx-restart" id="labRestart"><svg viewBox="0 0 16 16" fill="none"><path d="M13.7 8a5.7 5.7 0 1 1-1.67-4.03" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.4 1.5v2.7H9.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Restart</button>
+    <button class="lx-exit" id="labExit"><svg viewBox="0 0 16 16" fill="none"><path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Exit prototype</button>
+  </div>
   <div class="s-kicker">DietStation &middot; Design Lab</div>
   <div class="menu-views">
     <button id="mvFlow">User flow</button>
@@ -337,7 +350,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-08 · 4';
+const BUILD = 'calendar 2026-09-08 · 5';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -654,6 +667,19 @@ function refreshBuildInfo() {
 document.getElementById('sFresh').onclick = () => {
   location.href = location.pathname + '?fresh=' + Date.now();
 };
+/* top action bar — same behavior as lab-shell's shared Restart/Exit */
+document.getElementById('labRestart').onclick = () => {
+  const q = location.search.replace(/^\?/, '').split('&')
+    .filter(p => p && p.indexOf('v=') !== 0);
+  q.push('v=' + Date.now());
+  location.replace(location.pathname + '?' + q.join('&'));
+};
+document.getElementById('labExit').onclick = () => {
+  if (window.parent !== window) {
+    try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {}
+  }
+  location.href = '../?v=' + Date.now();
+};
 labVeil.addEventListener('click', closeLabMenu);
 if (location.hash === '#labmenu' && !document.body.classList.contains('desktop')) {
   history.replaceState(null, '', location.pathname);
@@ -703,6 +729,6 @@ setTimeout(() => {
 renderMonths(false);
 fit();
 </script>
-<script src="../lab-shell.js" data-flow="meal-select" defer></script>
+<script src="../lab-shell.js?v=20260908b" data-flow="meal-select" defer></script>
 </body>
 </html>
