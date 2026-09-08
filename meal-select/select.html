@@ -1559,7 +1559,6 @@ function turnDay(dir) {
   if (turning) return;
   if (dir < 0 && dayIdx === 0) return;
   turning = true;
-  const wasFull = scrollArea.scrollTop >= SHEET_GAP - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1585,7 +1584,10 @@ function turnDay(dir) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    scrollArea.scrollTop = wasFull ? SHEET_GAP : 0;
+    /* a fresh day always rides in from its very top — keeping the docked
+       scrollTop (SHEET_GAP) hid the first row under the nav, because the
+       sheet collapse consumes exactly that many pixels of scroll */
+    scrollArea.scrollTop = 0;
     syncSheet();
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
     scrollArea.classList.add('stagger');
@@ -2037,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 70';
+const BUILD = 'build 2026-09-08 · 71';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
