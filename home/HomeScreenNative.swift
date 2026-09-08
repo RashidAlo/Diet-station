@@ -1198,11 +1198,15 @@ struct FlowOverlay: View {
                              mode: chrome.mode) { chrome.chromeTap($0) }
                 .ignoresSafeArea()
             if let g = chrome.gauge {
-                DSGaugeGlassView(model: g) { chrome.chromeTap("gauge-next") }
-                    .frame(width: g.rect.width, height: g.rect.height)
-                    .position(x: g.rect.midX, y: g.rect.midY)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+                // its own full-screen space: .position() must resolve in raw
+                // screen coords, not this ZStack's safe-area-inset space
+                GeometryReader { _ in
+                    DSGaugeGlassView(model: g) { chrome.chromeTap("gauge-next") }
+                        .frame(width: g.rect.width, height: g.rect.height)
+                        .position(x: g.rect.midX, y: g.rect.midY)
+                }
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
             if chrome.bar == "calendar" {
                 // home tab from a flow the native pilot summoned = back to the pilot
