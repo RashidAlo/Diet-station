@@ -664,7 +664,7 @@
     },
     {
       "id": "rewards",
-      "title": "Rewards — Pull to Redeem",
+      "title": "Vouchers & Loyalty",
       "status": "in-progress",
       "updated": "2026-09-03",
       "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. The perforation is punched holes: pull the stub and they pop one by one with an elastic recoil and a haptic tick (Android), each ejecting its punched-out disc, until the tab rips free with confetti and heals into the redeemed card with the promo code. Desktop opens the full playground; mobile is fullscreen.",
@@ -861,7 +861,8 @@
           "note": "Burst size on redeem"
         }
       ],
-      "sheet": true
+      "sheet": true,
+      "hidden": false
     }
   ]
 }
