@@ -92,11 +92,6 @@
     font: 600 17px/22px -apple-system, 'SF Pro', sans-serif; color: #fff; }
   .sbar .g { flex: 1; display: flex; gap: 7px; align-items: center; justify-content: center; }
   .sbar .g img { display: block; }
-  /* soft scroll-edge blur behind the status area */
-  .topfade { position: absolute; left: 0; right: 0; top: 0; height: 120px; z-index: 22;
-    pointer-events: none; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    mask-image: linear-gradient(to top, transparent, black 62%);
-    -webkit-mask-image: linear-gradient(to top, transparent, black 62%); }
 
   /* --- vertical page scroll: red zone then the meal sheet flow together --- */
   .scroller { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
@@ -148,13 +143,12 @@
 
   /* widget grid */
   .widgets { flex: 1; min-height: 0; display: flex; gap: 20px; }
-  .planw { flex: none; width: 191px; border-radius: 30px; position: relative;
-    overflow: hidden; display: flex; flex-direction: column;
+  /* the plan widget is the SAME glass, with its theme gradient layered on top
+     of the shared base (below the milk + rim), so all widgets finish alike */
+  .planw { flex: none; width: 191px; border-radius: 30px;
+    display: flex; flex-direction: column;
     justify-content: space-between; padding: 28px 20px 22px; cursor: pointer; }
-  .planw::before { content: ''; position: absolute; inset: 0; border-radius: 30px;
-    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter; pointer-events: none;
-    z-index: 2; }
-  .planw .grad { position: absolute; inset: 0; border-radius: 30px; }
+  .planw .grad { position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
   .planw .z { position: relative; z-index: 3; }
   .pw-cap { font: 400 12px/16px 'Proxima Nova', -apple-system, sans-serif; color: #f9f9f9; }
   .pw-title { display: flex; align-items: baseline; margin-bottom: 10px;
@@ -179,20 +173,21 @@
   .deco.d3 { right: -14px; bottom: 48px; width: 52px; transform: rotate(-15deg); }
 
   .rightcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-  /* Figma's red glass, verbatim layers: the widget INHERITS the red beneath
-     (backdrop blur + red tint) with the plus-lighter milk and a soft inner
-     rim — no refraction; surfaces stay frosted per the house glass split */
-  .gwrap { position: relative; border-radius: 20px;
-    background: rgba(255,255,255,.045);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    backdrop-filter: blur(10px) saturate(150%);
+  /* ONE glass recipe for every widget — identical layers via pseudo-elements
+     so nothing can drift: red tint base + backdrop blur, plus-lighter milk,
+     soft inner rim. The widget inherits the red beneath it. */
+  .gwrap { position: relative; border-radius: 20px; overflow: hidden;
+    background: rgba(237,28,36,.30);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%); }
+  .gwrap::before { content: ''; position: absolute; inset: 0; border-radius: inherit;
+    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter;
+    pointer-events: none; z-index: 2; }
+  .gwrap::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none; z-index: 2;
     box-shadow: inset 0 1px 1px rgba(255,255,255,.22),
-      inset 0 0 0 .6px rgba(255,255,255,.13); }
+      inset 0 0 0 1px rgba(255,255,255,.10); }
   .gwrap .z { position: relative; z-index: 3; }
-  .gwrap .glass-tint { position: absolute; inset: 0; border-radius: inherit; z-index: 2;
-    background: rgba(237,28,36,.35); pointer-events: none; }
-  .gwrap .glass-lighter { position: absolute; inset: 0; border-radius: inherit; z-index: 2;
-    background: rgba(173,173,173,.12); mix-blend-mode: plus-lighter; pointer-events: none; }
 
   /* days-left widget — one widget, many shapes (Figma 4798-19569) */
   .daysw { flex: 1.6; min-height: 0; border-radius: 27px; padding: 12px 14px 12px 16px;
@@ -245,15 +240,17 @@
   .sheetc { position: relative; min-height: 520px;
     background: #fff; border-radius: 38px 38px 0 0; z-index: 20;
     padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
-  .sh-head { height: 51px; margin: 23px 0 14px;
+  /* content sits clear of the 38px corner sweep, Apple-style insets */
+  .sh-head { height: 51px; margin: 28px 0 16px;
     display: flex; align-items: center; padding: 0 24px; gap: 14px; }
   .sh-tile { width: 48px; height: 48px; border-radius: 16px; background: #fff;
     display: flex; align-items: center; justify-content: center; flex: none;
     filter: drop-shadow(0 0 6.65px rgba(56,64,74,.08)); }
   .sh-tile img { width: 23px; height: 23px; display: block; }
   .sh-today { flex: 1; min-width: 0; }
-  .sh-today b { display: block; font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .sh-today span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e; }
+  .sh-today b { display: block; font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .sh-today span { display: block; font: 400 12px/14px 'Proxima Nova', sans-serif;
+    color: #5e5e5e; margin-top: 1px; }
   .sh-kcal { height: 48px; border-radius: 16px; background: #fff; flex: none;
     border: none; cursor: pointer;
     display: flex; gap: 3px; padding: 0 16px; align-items: center;
@@ -263,14 +260,14 @@
     font-style: normal; }
   /* the macro calculator hides folded inside the pill; tapping expands it
      leftward (Figma: Info Pairs behind a clipped 1px column) */
-  .sh-kcal .mac { display: flex; gap: 12px; align-items: center; overflow: hidden;
-    width: 0; opacity: 0; margin-right: 0;
+  .sh-kcal .mac { display: flex; gap: 8px; align-items: center; overflow: hidden;
+    width: 0; opacity: 0; margin-left: 0;
     transition: width .45s cubic-bezier(.3,1.15,.35,1), opacity .3s ease,
       margin-left .45s cubic-bezier(.3,1.15,.35,1); }
-  .sh-kcal.open .mac { width: 108px; opacity: 1; margin-left: 12px; }
+  .sh-kcal.open .mac { width: 84px; opacity: 1; margin-left: 10px; }
   .sh-kcal .mp { display: flex; align-items: center; gap: 2px;
-    font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .sh-kcal .mp i { font: 400 10px/16px 'Proxima Nova', sans-serif; color: #0d0d0d; }
+    font: 500 13px/18px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .sh-kcal .mp i { font: 400 9px/14px 'Proxima Nova', sans-serif; color: #0d0d0d; }
   .mealstrip { display: flex; align-items: flex-start; gap: 29px; padding: 0 20px;
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     -webkit-overflow-scrolling: touch; }
@@ -294,24 +291,31 @@
   .mealcard .kc b { font: 500 16.5px/24px 'Urbane Rounded', sans-serif; }
   .mealcard .kc i { font: 400 11px/17px 'Proxima Nova', sans-serif; font-style: normal; }
 
-  /* ================= floating glass tab bar ================= */
-  .tabbar { position: absolute; left: calc(50% - 157px); width: 314px; height: 65px;
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; }
-  .tb-bg { position: absolute; inset: 0; border-radius: 999px; overflow: hidden;
-    backdrop-filter: blur(14px) saturate(170%); -webkit-backdrop-filter: blur(14px) saturate(170%);
-    box-shadow: 0 8px 40px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.5); }
-  .tb-bg i { position: absolute; inset: 0; display: block; }
-  .tb-bg .f1 { background: rgba(255,255,255,.65); }
-  .tb-bg .f2 { background: #ddd; mix-blend-mode: color-burn; }
-  .tb-bg .f3 { background: #f7f7f7; mix-blend-mode: darken; }
-  .tb-tabs { position: absolute; inset: 4px; display: flex; }
-  .tb-pill { position: absolute; top: 0; bottom: 0; width: 102px; border-radius: 999px;
-    background: #ededed; left: 0; }
-  .tb-tab { position: relative; flex: 1; border: none; background: none; cursor: pointer;
+  /* ============ Apple glass tab bar — the hub's exact recipe ============ */
+  .tabbar { position: absolute; left: calc(50% - 157px); width: 314px; height: 58px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+    display: flex; gap: 4px; padding: 5px; border-radius: 999px;
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.8),
+      inset 0 -1px 1px rgba(255,255,255,.28),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 14px 44px -14px rgba(0,0,0,.38);
+    overflow: hidden; }
+  .tabbar::before { content: ''; position: absolute; inset: 0;
+    border-radius: inherit; pointer-events: none;
+    background: linear-gradient(165deg, rgba(255,255,255,.5), rgba(255,255,255,0) 42%,
+      rgba(255,255,255,0) 68%, rgba(255,255,255,.18));
+    opacity: .8; }
+  .tb-tab { position: relative; flex: 1; border: none; background: transparent;
+    border-radius: 999px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .tb-tab:active { transform: scale(.9); }
-  .tb-tab img { width: 24px; height: 24px; display: block; position: relative; }
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4), background .25s ease; }
+  .tb-tab.on { background: rgba(255,255,255,.85);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.9), 0 2px 12px rgba(0,0,0,.1); }
+  .tb-tab:active { transform: scale(.92); }
+  .tb-tab img, .tb-tab svg { width: 24px; height: 24px; display: block; position: relative; }
   .tb-tab .logo { width: 26px; height: 20px; }
 
   /* ---- mobile lab sheet (triple-tap & hold) ---- */
@@ -439,8 +443,7 @@
             </button>
             <div class="topdocks">
               <button class="dockbtn gwrap" id="gStar" style="border-radius:23px" aria-label="Rewards">
-                <span class="glass-lighter"></span>
-                <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
+                                <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="star" clip-path="url(#clip0_0_1070)">
 <foreignObject x="0.390724" y="2.89612" width="31.2185" height="30.2078"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_1070_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_1070)" data-figma-bg-blur-radius="5.3">
 <path d="M16 23.3595L21.5333 26.7061C22.5467 27.3195 23.7867 26.4128 23.52 25.2661L22.0533 18.9728L26.9467 14.7328C27.84 13.9595 27.36 12.4928 26.1867 12.3995L19.7467 11.8528L17.2267 5.90612C16.7733 4.82612 15.2267 4.82612 14.7733 5.90612L12.2533 11.8395L5.81333 12.3861C4.64 12.4795 4.16 13.9461 5.05333 14.7195L9.94667 18.9595L8.48 25.2528C8.21333 26.3995 9.45333 27.3061 10.4667 26.6928L16 23.3595Z" fill="white" fill-opacity="0.7" shape-rendering="crispEdges"/>
@@ -466,8 +469,7 @@
 </svg>
               </button>
               <button class="dockbtn gwrap" id="gBell" style="border-radius:23px" aria-label="Notifications">
-                <span class="glass-lighter"></span>
-                <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
+                                <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="notifications" clip-path="url(#clip0_0_869)">
 <foreignObject x="1.68634" y="0.8" width="28.6273" height="34.4"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_869_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_869)" data-figma-bg-blur-radius="5.3">
 <path d="M16.0016 29C17.4683 29 18.6683 27.8 18.6683 26.3333H13.335C13.335 27.8 14.5216 29 16.0016 29ZM24.0016 21V14.3333C24.0016 10.24 21.815 6.81333 18.0016 5.90667V5C18.0016 3.89333 17.1083 3 16.0016 3C14.895 3 14.0016 3.89333 14.0016 5V5.90667C10.175 6.81333 8.00164 10.2267 8.00164 14.3333V21L6.28164 22.72C5.44164 23.56 6.02831 25 7.21498 25H24.775C25.9616 25 26.5616 23.56 25.7216 22.72L24.0016 21Z" fill="white" fill-opacity="0.7" shape-rendering="crispEdges"/>
@@ -499,8 +501,7 @@
           </div>
 
           <div class="promo gwrap" id="gPromo" style="border-radius:23px">
-            <span class="glass-lighter"></span>
-            <div class="p-texts z">
+                        <div class="p-texts z">
               <div class="p-title"><span class="kd">KD</span>109 Discount Expiring</div>
               <div class="p-sub">Rewnew before you lose the benefit</div>
             </div>
@@ -508,7 +509,7 @@
           </div>
 
           <div class="widgets">
-            <div class="planw" id="planW">
+            <div class="planw gwrap" id="planW" style="border-radius:30px">
               <div class="grad" id="planGrad"></div>
               <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24.0932" height="23.0765" viewBox="0 0 24.0932 23.0765" fill="none" xmlns="http://www.w3.org/2000/svg" class="deco d1">
 <path id="Vector" d="M12.7168 2.98845L17.8892 0.177813C18.9654 -0.400375 20.2344 0.51509 20.0095 1.71965L18.9333 7.50153C18.8369 7.98335 18.9975 8.48123 19.367 8.81851L23.6398 12.8658C24.5233 13.701 24.0414 15.1946 22.8366 15.3552L17.0057 16.1101C16.5238 16.1743 16.0901 16.4795 15.8813 16.9292L13.3593 22.2453C12.8292 23.3535 11.2711 23.3535 10.741 22.2453L8.2191 16.9292C8.01028 16.4795 7.59264 16.1743 7.09468 16.1101L1.26373 15.3552C0.0589927 15.1946 -0.438967 13.701 0.460573 12.8658L4.73339 8.81851C5.08678 8.48123 5.24741 7.98335 5.16709 7.50153L4.09086 1.71965C3.86597 0.51509 5.13497 -0.400375 6.2112 0.177813L11.3675 2.98845C11.8012 3.22936 12.3152 3.22936 12.7489 2.98845" fill="#FFB800"/>
@@ -530,9 +531,7 @@
             </div>
             <div class="rightcol" id="rightcol">
               <div class="daysw gwrap" id="gDays" style="border-radius:27px">
-                <span class="glass-tint"></span>
-                <span class="glass-lighter"></span>
-                <div class="dw-main z">
+                                                <div class="dw-main z">
                   <div class="dw-ring">
                     <svg viewBox="0 0 50 50">
                       <circle cx="25" cy="25" r="23" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3"/>
@@ -549,9 +548,7 @@
                 <div class="dw-renew z"><button class="pillbtn" id="dwRenew">Renew</button></div>
               </div>
               <div class="discw gwrap" id="gDisc" style="border-radius:20px">
-                <span class="glass-tint"></span>
-                <span class="glass-lighter"></span>
-                <div class="di-texts z">
+                                                <div class="di-texts z">
                   <div class="di-kd">KD 32</div>
                   <div class="di-cap">Discounts</div>
                 </div>
@@ -591,9 +588,7 @@
 </svg>
               </div>
               <div class="consw gwrap" id="gConsult" style="border-radius:20px">
-                <span class="glass-tint"></span>
-                <span class="glass-lighter"></span>
-                <div class="row z">
+                                                <div class="row z">
                   <div class="calico">
                     <span class="plate"></span>
                     <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24.4592" height="22.5852" viewBox="0 0 24.4592 22.5852" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -661,7 +656,6 @@
         </div>
 
         </div><!-- /scroller -->
-        <div class="topfade"></div>
         <div class="sbar">
           <div class="t">9:41</div>
           <div class="g">
@@ -681,10 +675,8 @@
           </div>
         </div>
         <div class="tabbar">
-          <div class="tb-bg"><i class="f1"></i><i class="f2"></i><i class="f3"></i></div>
-          <div class="tb-tabs">
-            <div class="tb-pill"></div>
-            <button class="tb-tab" aria-label="Home"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30.936" height="24" viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
+          
+            <button class="tb-tab on" aria-label="Home"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30.936" height="24" viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
 <path id="Vector" d="M15.5627 24C8.55971 24 2.81792 18.4611 2.43079 11.5046C2.40837 11.0984 2.73438 10.7558 3.13781 10.7558H3.39658C3.76945 10.7558 4.07916 11.0491 4.09953 11.4246C4.44592 17.4887 9.45419 22.3158 15.5607 22.3158C21.6672 22.3158 26.6775 17.4887 27.0239 11.4246C27.0463 11.0491 27.354 10.7558 27.7269 10.7558H27.9856C28.3911 10.7558 28.7171 11.0984 28.6927 11.5046C28.3055 18.459 22.5637 24 15.5607 24H15.5627ZM0.707027 7.83246H2.19239C5.30168 7.83246 6.51198 6.47645 6.51198 3.96752C6.51198 1.45859 5.30372 0.094367 2.19239 0.094367H0.707027C0.250618 0.094367 0 0.346696 0 0.806223V7.12061C0 7.58014 0.250618 7.83246 0.707027 7.83246ZM2.25963 6.3308H1.67486V1.58167H2.24537C4.1953 1.58167 4.81879 2.35097 4.81879 3.95111C4.81879 5.55124 4.1953 6.32875 2.25963 6.32875V6.3308ZM27.9754 7.92478C29.7216 7.92478 30.936 7.01188 30.936 5.62099C30.936 2.70587 26.6816 3.84648 26.6816 2.20737C26.6816 1.67809 27.136 1.34781 27.8715 1.34781C28.385 1.34781 28.7558 1.51603 29.1205 1.83811C29.4384 2.12121 29.6116 2.31199 30.0721 2.20121L30.2493 2.15813C30.7384 2.0412 30.8647 1.71707 30.5855 1.26165C30.1088 0.484144 29.0105 0 27.8002 0C26.1743 0 25.0434 0.906744 25.0434 2.24635C25.0434 5.14916 29.2591 4.16651 29.2591 5.67023C29.2591 6.24669 28.7762 6.58928 27.9653 6.58928C27.3234 6.58928 26.7835 6.3349 26.3617 5.88768C26.0581 5.56355 25.8503 5.44457 25.4754 5.56766L25.3328 5.61484C24.8641 5.7687 24.7235 6.07437 24.9741 6.48876C25.4958 7.34627 26.6714 7.92478 27.9795 7.92478H27.9754Z" fill="#2F2F2F"/>
 </svg></button>
             <button class="tb-tab" id="tabCal" aria-label="Calendar"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -697,7 +689,6 @@
 <path id="Vector" d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V19C4 19.55 4.45 20 5 20H19C19.55 20 20 19.55 20 19V18C20 15.34 14.67 14 12 14Z" fill="#0D0D0D"/>
 </g>
 </svg></button>
-          </div>
         </div>
       </div>
       <div class="island"></div>
@@ -711,7 +702,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-08 · 2';
+const BUILD = 'home 2026-09-08 · 3';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
