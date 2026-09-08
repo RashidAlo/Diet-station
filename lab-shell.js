@@ -833,61 +833,16 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       on('touchcancel', function () { cancel(); });
     }
   }
-  /* Three-finger tap: the fast lane on device (triple-tap & hold stays as
-     the fallback everywhere). Fires once per contact group. */
-  function threeFingerTap(openFn) {
-    /* Both sources run in parallel behind one latch: pointer tracking
-       (window+capture) AND the Shell-audited document-level touchstart
-       count — on-device WKWebView has already proven one delivery path
-       can silently die while another works. Passive everywhere, so 1-2
-       finger scrolling is never affected; a 600ms latch means whichever
-       source lands first wins and the other can't double-open. */
-    var opts = { passive: true, capture: true };
-    var fired = false, lastFire = 0;
-    function tryFire() {
-      var now = performance.now();
-      if (fired || now - lastFire < 600) return;
-      fired = true; lastFire = now;
-      openFn();
-    }
-    if (window.PointerEvent) {
-      var active = {};
-      var count = function () {
-        var n = 0; for (var k in active) n++;
-        return n;
-      };
-      addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'mouse') return;
-        active[e.pointerId] = 1;
-        if (count() === 3) tryFire();
-      }, opts);
-      var lift = function (e) {
-        delete active[e.pointerId];
-        if (count() === 0) fired = false;
-      };
-      addEventListener('pointerup', lift, opts);
-      addEventListener('pointercancel', lift, opts);
-    }
-    document.addEventListener('touchstart', function (e) {
-      if (e.touches && e.touches.length === 3) tryFire();
-    }, { passive: true });
-    var touchLift = function (e) {
-      if (e.touches && e.touches.length === 0) fired = false;
-    };
-    document.addEventListener('touchend', touchLift, { passive: true });
-    document.addEventListener('touchcancel', touchLift, { passive: true });
-  }
+  /* Canonical lab gesture (Rashid): a SINGULAR triple-tap-and-hold,
+     identical on web and native — no secondary gestures. */
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
       /* flows with their own sheet still get the reliable window-level
          gestures, routed to their opener when they expose one */
-      if (typeof window.openLabMenu === 'function') {
-        var routed = function () {
+      if (typeof window.openLabMenu === 'function')
+        tripleTapHold(function () {
           if (!document.body.classList.contains('desktop')) window.openLabMenu();
-        };
-        tripleTapHold(routed);
-        threeFingerTap(routed);
-      }
+        });
       return;
     }
     var side = document.getElementById('side');
@@ -942,7 +897,6 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
     });
     tripleTapHold(open);
-    threeFingerTap(open);
     /* hub Settings button lands here with #labmenu: open the sheet on arrival */
     if (location.hash === '#labmenu') {
       history.replaceState(null, '', location.pathname);
