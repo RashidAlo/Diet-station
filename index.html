@@ -657,7 +657,7 @@ function openLogin() {
   try { window.webkit.messageHandlers.ds.postMessage({ t: 'chrome', show: false }); } catch (_) {}
   try { sessionStorage.setItem('ds-splashed', '1'); } catch (_) {}
   const T0 = performance.now();
-  const MIN_MS = 2500;                 /* snap burst -> vacuum -> draw -> pop */
+  const MIN_MS = 2900;                 /* readable burst -> vacuum -> retro pop */
   const MAX_MS = 7000;
   let riveOk = false, gone = false;
   function dismiss() {
