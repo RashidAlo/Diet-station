@@ -1632,7 +1632,7 @@ const EMBED = /[?&]embed=1/.test(location.search);
 let REAL_PAD = 34;
 if (EMBED) {
   const pr = document.createElement('div');
-  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 6px))';
+  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 1px))';
   document.body.appendChild(pr);
   REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
   pr.remove();
@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 78';
+const BUILD = 'build 2026-09-09 · 79';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2270,56 +2270,50 @@ setTimeout(() => {
 fit();
 </script>
 <script>
-/* Native glass chrome handshake v3 (2026-09-08): sheet-aware.
-   Overlay presentations (embed spring / hub sheet) settle BEFORE the first
-   report, rects are converted to screen coords through same-origin frame
-   ancestors, and the payload carries mode:sheet so the shell skips the
-   fullscreen top-line normalization for sheets.
-   In the shell we PRE-HIDE the web chrome immediately (a 1.6s fallback
-   restores it on shells that never render twins, e.g. iOS < 26), report
-   geometry as soon as the DOM settles, and re-report late for elements
-   that build async. The shell renders REAL Liquid Glass twins, confirms
-   via DSNativeChrome(ids), and routes taps back via DSChromeTap(id). */
+/* Native glass chrome handshake v4 (2026-09-09) — the HIG fix.
+   Apple's model (HIG Sheets / UISheetPresentationController): a sheet's
+   bar BELONGS TO the sheet's hierarchy and moves with it; it only reads
+   as pinned because the sheet itself docks. Four rounds of gluing static
+   native twins to this moving sheet failed, so the split is now by
+   MOTION STATE: the web nav stays INSIDE #sheet through every moving
+   phase (presentation, scroll-linked docking, day-turn reset, dismissal)
+   — no reparenting, no pinning — and the real Liquid Glass twins swap in
+   ONLY while the sheet is fully docked (scrollTop >= SHEET_GAP, i.e. the
+   bar is genuinely static at the top — Apple's scroll-edge treatment:
+   materials swap at rest). Undocking or dismissal clears the twins the
+   same frame and the web bar rides on. */
 (function () {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
   var FLOW = 'selector', SURFACE = 'light';
   var ELS = { close: '#closeBtn', dual: '.dual' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn' };
   var nativeConfirmed = false;
-  var EMBED = /[?&]embed=1/.test(location.search);
-  var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
-  /* fullscreen takeover, not a card sheet: the nav belongs on the
-     canonical top line, so keep mode 'page' and let the shell normalize */
+  /* fullscreen takeover: the docked bar sits on the canonical top line */
   var MODE = 'page';
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
-  /* pin the action bar OUT of the scroll-linked sheet and freeze its top
-     pad at the real safe-area value from frame one — the embed's dynamic
-     --top-pad (14px until the sheet docks) put the twins under the island */
-  function pinNav() {
-    var nav = document.querySelector('.nav');
-    var ph = document.getElementById('phone');
-    if (!nav || !ph) return;
-    if (nav.parentElement !== ph) ph.appendChild(nav);
-    var pr = document.createElement('div');
-    pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 1px))';
-    document.body.appendChild(pr);
-    var realPad = parseFloat(getComputedStyle(pr).paddingTop) || 28;
-    pr.remove();
-    nav.style.setProperty('--top-pad', realPad + 'px');
-  }
 
+  function unhide() {
+    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
+      el.classList.remove('ds-native-hidden');
+    });
+  }
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
   }
+  var restoreT = null;
   function report() {
-    prehide();   /* idempotent — catches async-built elements too */
-    /* overlay pages live in (possibly offset / sliding) iframes — convert
-       to SCREEN coords by walking same-origin frame ancestors */
+    if (!docked) return;   /* twins exist only in the docked, static state */
+    prehide();
+    /* iOS<26 shells never confirm — hand chrome back to the web bar */
+    clearTimeout(restoreT);
+    restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
+    /* overlay pages live in (possibly offset) iframes — convert to SCREEN
+       coords by walking same-origin frame ancestors */
     var off = { x: 0, y: 0 };
     try {
       var fe = window.frameElement;
@@ -2343,8 +2337,15 @@ fit();
         surface: SURFACE, mode: MODE, els: els });
     } catch (_) {}
   }
+  function clearChrome() {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: [] });
+    } catch (_) {}
+  }
   window.DSNativeChrome = function (ids) {
     nativeConfirmed = true;
+    if (!docked) return;   /* a late confirm must not re-hide the riding bar */
     (ids || []).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
@@ -2355,42 +2356,30 @@ fit();
     var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
-  /* iOS<26 shells never render twins — restore the web chrome */
-  setTimeout(function () {
-    if (nativeConfirmed) return;
-    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
-      el.classList.remove('ds-native-hidden');
-    });
-    window.DSNativeChrome = function () {};
-  }, 2600);   /* past the worst-case settle boot (1400 fallback + FLIP) */
   addEventListener('resize', function () { setTimeout(report, 350); });
-  /* Apple-sheet choreography (Rashid's device report, round 2): the nav
-     must RIDE the sheet during presentation and dismissal, never pre-exist
-     it. Entry: leave .nav inside the springing #sheet, pin only after the
-     entry transition ends (a FLIP glide absorbs the frozen-pad delta),
-     then report so twins swap in at the settled spot. Exit: the moment
-     the sheet starts its down-slide, clear the twins so no chrome floats
-     over the departing surface. */
-  function pinNavSmooth(then) {
-    var nav = document.querySelector('.nav');
-    if (!nav) { then(); return; }
-    var before = nav.getBoundingClientRect().top;
-    pinNav();
-    var d = before - nav.getBoundingClientRect().top;
-    if (Math.abs(d) < 1.5) { then(); return; }
-    nav.style.transition = 'none';
-    nav.style.transform = 'translateY(' + d + 'px)';
-    requestAnimationFrame(function () { requestAnimationFrame(function () {
-      nav.style.transition = 'transform .28s cubic-bezier(.2,.8,.3,1)';
-      nav.style.transform = 'translateY(0)';
-      setTimeout(function () { nav.style.transition = ''; then(); }, 320);
-    }); });
+
+  /* ---- dock watcher: the single source of chrome state ---- */
+  var docked = false, dockT = null;
+  function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
+  function setDocked(d) {
+    if (d === docked) return;
+    docked = d;
+    clearTimeout(dockT);
+    if (d) {
+      /* settle debounce so threshold flutter never flaps the swap */
+      dockT = setTimeout(function () { if (docked) report(); }, 160);
+    } else {
+      /* undock begins: web bar takes over THIS frame and rides the sheet */
+      clearChrome(); unhide();
+    }
   }
-  function releaseChrome() {
-    try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: MODE, els: [] });
-    } catch (_) {}
+  function watchDock() {
+    var sa = document.getElementById('scrollArea');
+    if (!sa) return;
+    sa.addEventListener('scroll', function () {
+      setDocked(sa.scrollTop >= gapNow() - 0.5);
+    }, { passive: true });
+    setDocked(sa.scrollTop >= gapNow() - 0.5);
   }
   function armDismissRelease() {
     var sh = document.getElementById('sheet');
@@ -2399,18 +2388,15 @@ fit();
       /* target check: descendant transitions (day-turn track) bubble here */
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionstart', h);
-      releaseChrome();
-    });
-  }
-  function settleBoot() {
-    pinNavSmooth(function () {
-      armDismissRelease();
-      report(); setTimeout(report, 1000); setTimeout(report, 2400);
+      docked = false; clearTimeout(dockT);
+      clearChrome(); unhide();
     });
   }
   function boot() {
+    /* arm only after the entry spring, so its own transition events don't
+       consume the dismissal listener */
     var sh = document.getElementById('sheet'), done = false;
-    function go() { if (done) return; done = true; setTimeout(settleBoot, 60); }
+    function go() { if (done) return; done = true; armDismissRelease(); watchDock(); }
     if (sh) sh.addEventListener('transitionend', function h(e) {
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionend', h); go();
