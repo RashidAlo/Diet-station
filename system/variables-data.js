@@ -649,3 +649,122 @@ full gradients/inverse stop 1 [C] L=→foundations/white ; D=→primary/800
 full gradients/inverse stop 2 [C] L=→primary/200 ; D=→primary/1100
 opacity gradient/10..90% [C] L=#4f5864 @ 10-90% ; D=#ffffff @ 10-90%
 opacity gradient inverse/10..90% [C] L=#ffffff @ 10-90% ; D=#4f5864 @ 10-90%`;
+
+/* Text styles (95) — dumped 2026-09-08 via getLocalTextStylesAsync().
+   fam/sty/size/lh/ps show the BOUND VARIABLE name when the property is bound,
+   or the raw hardcoded value when it is not (that's the audit signal). */
+window.DS_TEXTSTYLES = `Hero/light :: fam=font style/heading | sty=Extra Light | size=hero/text size | lh=hero/line height | ps=72
+Hero/regular :: fam=font style/heading | sty=Light | size=hero/text size | lh=hero/line height | ps=72
+Hero/medium :: fam=font style/heading | sty=Medium | size=hero/text size | lh=hero/line height | ps=72
+Hero/semibold :: fam=font style/heading | sty=Demi Bold | size=hero/text size | lh=hero/line height | ps=72
+Hero/bold :: fam=font style/heading | sty=Heavy | size=hero/text size | lh=hero/line height | ps=72
+H1/light :: fam=font style/heading | sty=font weight/100 | size=h1/text size | lh=h1/line height | ps=h1/paragraph spacing
+H1/regular :: fam=font style/heading | sty=font weight/200 | size=h1/text size | lh=h1/line height | ps=h1/paragraph spacing
+H1/medium :: fam=font style/heading | sty=font weight/400 | size=h1/text size | lh=h1/line height | ps=h1/paragraph spacing
+H1/semibold :: fam=font style/heading | sty=font weight/500 | size=h1/text size | lh=h1/line height | ps=h1/paragraph spacing
+H1/bold :: fam=font style/heading | sty=font weight/700 | size=h1/text size | lh=h1/line height | ps=h1/paragraph spacing
+H2/light :: fam=font style/heading | sty=font weight/100 | size=h2/text size | lh=h2/line height | ps=h2/paragraph spacing
+H2/regular :: fam=font style/heading | sty=font weight/200 | size=h2/text size | lh=h2/line height | ps=h2/paragraph spacing
+H2/medium :: fam=font style/heading | sty=font weight/400 | size=h2/text size | lh=h2/line height | ps=h2/paragraph spacing
+H2/semibold :: fam=font style/heading | sty=font weight/500 | size=h2/text size | lh=h2/line height | ps=h2/paragraph spacing
+H2/bold :: fam=font style/heading | sty=font weight/700 | size=h2/text size | lh=h2/line height | ps=h2/paragraph spacing
+H3/light :: fam=font style/heading | sty=font weight/100 | size=h3/text size | lh=h3/line height | ps=h3/paragraph spacing
+H3/regular :: fam=font style/heading | sty=font weight/200 | size=h3/text size | lh=h3/line height | ps=h3/paragraph spacing
+H3/medium :: fam=font style/heading | sty=font weight/400 | size=h3/text size | lh=h3/line height | ps=h3/paragraph spacing
+H3/semibold :: fam=font style/heading | sty=font weight/500 | size=h3/text size | lh=h3/line height | ps=h3/paragraph spacing
+H3/bold :: fam=font style/heading | sty=font weight/700 | size=h3/text size | lh=h3/line height | ps=h3/paragraph spacing
+H4/light :: fam=font style/heading | sty=font weight/100 | size=h4/text size | lh=h4/line height | ps=h4/paragraph spacing
+H4/regular :: fam=font style/heading | sty=font weight/200 | size=h4/text size | lh=h4/line height | ps=h4/paragraph spacing
+H4/medium :: fam=font style/heading | sty=font weight/400 | size=h4/text size | lh=h4/line height | ps=h4/paragraph spacing
+H4/semibold :: fam=font style/heading | sty=font weight/500 | size=h4/text size | lh=h4/line height | ps=h4/paragraph spacing
+H4/bold :: fam=font style/heading | sty=font weight/700 | size=h4/text size | lh=h4/line height | ps=h4/paragraph spacing
+H5/light :: fam=font style/heading | sty=font weight/100 | size=h5/text size | lh=h5/line height | ps=h5/paragraph spacing
+H5/regular :: fam=font style/heading | sty=font weight/200 | size=h5/text size | lh=h5/line height | ps=h5/paragraph spacing
+H5/medium :: fam=font style/heading | sty=font weight/400 | size=h5/text size | lh=h5/line height | ps=h5/paragraph spacing
+H5/semibold :: fam=font style/heading | sty=font weight/500 | size=h5/text size | lh=h5/line height | ps=h5/paragraph spacing
+H5/bold :: fam=font style/heading | sty=font weight/700 | size=h5/text size | lh=h5/line height | ps=h5/paragraph spacing
+H6/light :: fam=font style/heading | sty=font weight/100 | size=h6/text size | lh=h6/line height | ps=h6/paragraph spacing
+H6/regular :: fam=font style/heading | sty=font weight/200 | size=h6/text size | lh=h6/line height | ps=h6/paragraph spacing
+H6/medium :: fam=font style/heading | sty=font weight/400 | size=h6/text size | lh=h6/line height | ps=h6/paragraph spacing
+H6/semibold :: fam=font style/heading | sty=font weight/500 | size=h6/text size | lh=h6/line height | ps=h6/paragraph spacing
+H6/bold :: fam=font style/heading | sty=font weight/700 | size=h6/text size | lh=h6/line height | ps=h6/paragraph spacing
+H7/light :: fam=font style/heading | sty=font weight/100 | size=h7/text size | lh=paragraph lg/line height | ps=h6/paragraph spacing
+H7/regular :: fam=font style/heading | sty=font weight/200 | size=h7/text size | lh=paragraph lg/line height | ps=h6/paragraph spacing
+H7/medium :: fam=font style/heading | sty=font weight/400 | size=h7/text size | lh=paragraph lg/line height | ps=h6/paragraph spacing
+H7/semibold :: fam=font style/heading | sty=font weight/500 | size=h7/text size | lh=h7/line height | ps=h6/paragraph spacing
+H7/bold :: fam=font style/heading | sty=font weight/700 | size=h7/text size | lh=paragraph lg/line height | ps=h6/paragraph spacing
+Body-lg/light :: fam=font style/paragraph | sty=Light | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/light-link :: fam=font style/paragraph | sty=Light | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/regular :: fam=font style/paragraph | sty=Regular | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/regular-link :: fam=font style/paragraph | sty=Regular | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/medium :: fam=font style/paragraph | sty=font weight/400 | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/medium-link :: fam=font style/paragraph | sty=Regular | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/semibold :: fam=font style/paragraph | sty=font weight/500 | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/semibold-link :: fam=font style/paragraph | sty=Bold | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/bold :: fam=font style/paragraph | sty=Bold | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+Body-lg/bold-link :: fam=font style/paragraph | sty=Bold | size=paragraph lg/text size | lh=paragraph lg/line height | ps=paragraph lg/paragraph spacing
+body-md/light :: fam=font style/paragraph | sty=Light | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/light-link :: fam=font style/paragraph | sty=Light | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/regular :: fam=font style/paragraph | sty=Regular | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/regular-link :: fam=font style/paragraph | sty=Regular | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/medium :: fam=font style/paragraph | sty=font weight/400 | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/medium-link :: fam=font style/paragraph | sty=font weight/400 | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/semibold :: fam=font style/paragraph | sty=font weight/500 | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/semibold-link :: fam=font style/paragraph | sty=Bold | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/bold :: fam=font style/paragraph | sty=Bold | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-md/bold-link :: fam=font style/paragraph | sty=Bold | size=paragraph md/text size | lh=paragraph md/line height | ps=paragraph md/paragraph spacing
+body-sm/light :: fam=font style/paragraph | sty=Light | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/light-link :: fam=font style/paragraph | sty=Light | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/regular :: fam=font style/paragraph | sty=Regular | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/regular-link :: fam=font style/paragraph | sty=Regular | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/medium :: fam=font style/paragraph | sty=font weight/400 | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/medium-link :: fam=font style/paragraph | sty=font weight/400 | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/semibold :: fam=font style/paragraph | sty=font weight/500 | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/semiboldlink :: fam=font style/paragraph | sty=Bold | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/semibold-link :: fam=font style/paragraph | sty=Bold | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/bold :: fam=font style/paragraph | sty=Bold | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-sm/bold-link :: fam=font style/paragraph | sty=Bold | size=paragraph sm/text size | lh=paragraph sm/line height | ps=paragraph sm/paragraph spacing
+body-xsm/light :: fam=font style/paragraph | sty=Light | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/light-link :: fam=font style/paragraph | sty=Light | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/regular :: fam=font style/paragraph | sty=Regular | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/regular-link :: fam=font style/paragraph | sty=Regular | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/medium :: fam=font style/paragraph | sty=font weight/400 | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/medium-link :: fam=font style/paragraph | sty=font weight/400 | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/semibold :: fam=font style/paragraph | sty=font weight/500 | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/semibold-link :: fam=font style/paragraph | sty=Bold | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/bold :: fam=font style/paragraph | sty=Bold | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xsm/bold-link :: fam=font style/paragraph | sty=Bold | size=caption/text size | lh=caption/line height | ps=caption/paragraph spacing
+body-xxsm/light :: fam=font style/paragraph | sty=Light | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/light-link :: fam=font style/paragraph | sty=Light | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/regular :: fam=font style/paragraph | sty=Regular | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/regular-link :: fam=font style/paragraph | sty=Regular | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/medium :: fam=font style/paragraph | sty=font weight/400 | size=caption sm/text size | lh=caption sm/line height | ps=caption/paragraph spacing
+body-xxsm/medium-link :: fam=font style/paragraph | sty=font weight/400 | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/semibold :: fam=font style/paragraph | sty=font weight/500 | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/semibold-link :: fam=font style/paragraph | sty=Bold | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/bold :: fam=font style/paragraph | sty=Bold | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+body-xxsm/bold-link :: fam=font style/paragraph | sty=Bold | size=caption sm/text size | lh=caption xsm/line height | ps=caption/paragraph spacing
+Button/button-xl :: fam=font style/heading | sty=font weight/400 | size=paragraph lg/text size | lh=auto | ps=0
+Button/button-lg :: fam=font style/heading | sty=font weight/400 | size=paragraph md/text size | lh=auto | ps=0
+Button/button-md :: fam=font style/heading | sty=font weight/400 | size=paragraph sm/text size | lh=auto | ps=0
+Button/button-sm :: fam=font style/heading | sty=font weight/400 | size=caption/text size | lh=auto | ps=0`;
+
+/* Effect styles (12) — getLocalEffectStylesAsync(); colors hardcoded (not bound). */
+window.DS_EFFECTS = `xs :: 0 0 4px 0 rgba(56,64,74,.04)
+sm :: 0 0 4px 0 rgba(56,64,74,.06)
+md :: 0 0 8px -2px rgba(56,64,74,.08)
+lg :: 0 0 16px -4px rgba(56,64,74,.10)
+xl :: 0 0 24px -16px rgba(56,64,74,.12)
+hover/default :: 0 1px 3px rgba(37,43,51,.10), 0 0 0 1px rgba(37,43,51,.50), 0 1px 1px rgba(37,43,51,.20), 0 0 0 4px rgba(37,43,51,.20)
+hover/secondary :: 0 1px 3px rgba(200,208,218,.10), 0 0 0 1px rgba(200,208,218,.50), 0 1px 1px rgba(200,208,218,.20), 0 0 0 4px #FFF2F2
+hover/error :: 0 1px 3px rgba(201,64,64,.10), 0 0 0 1px rgba(201,64,64,.50), 0 1px 1px rgba(201,64,64,.20), 0 0 0 4px rgba(201,64,64,.20)
+hover/information :: 0 1px 3px rgba(19,70,162,.10), 0 0 0 1px rgba(19,70,162,.50), 0 1px 1px rgba(19,70,162,.20), 0 0 0 4px rgba(19,70,162,.20)
+hover/warning :: 0 1px 3px rgba(162,70,19,.10), 0 0 0 1px rgba(162,70,19,.50), 0 1px 1px rgba(162,70,19,.20), 0 0 0 4px rgba(162,70,19,.20)
+hover/success :: 0 1px 3px rgba(23,130,90,.10), 0 0 0 1px rgba(23,130,90,.50), 0 1px 1px rgba(23,130,90,.20), 0 0 0 4px rgba(23,130,90,.20)
+Energy :: 0 0 0 4px #DDEEAA, 0 0 0 2px #FFC52E`;
+
+/* Paint styles (28) — all gradient composites bound to the gradient variables.
+   Two families (Default, Inverse) x direction/shape + overlay variants. */
+window.DS_PAINTS = `Solid Gradient Default :: top, bottom, top right Corner, Radial, angular, diamond — stops: full gradients/default stop 1 + defualt stop 2 (top left Corner uses the SECONDARY stops)
+Solid Gradient Inverse :: top, bottom, corners, radial, angular, diamond — stops: inverse stop 1 + inverse stop 2
+Overlay variants :: gradient into opacity gradient/10% (Default) or opacity gradient inverse/10% (Inverse) — two are named "radiul"`;

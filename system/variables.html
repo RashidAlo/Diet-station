@@ -179,6 +179,41 @@
     flex: none; max-width: 60%; }
   .spbar .sv { font: 11px/1 ui-monospace, Menlo, monospace; color: var(--ink-soft); }
 
+  /* ---- text style audit ---- */
+  .ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+  .lad { background: var(--ground); border-radius: 12px; padding: 11px 12px; text-align: center; }
+  .lad .ln { font: 600 12.5px/1.3 'Urbane Rounded', sans-serif; }
+  .lad .lv { font: 10.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft); margin-top: 3px; }
+  .lad .lw { font-size: 11px; color: var(--ink-soft); }
+  @media (max-width: 600px) { .ladder { grid-template-columns: repeat(2, 1fr); } }
+  .auditsum { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .auditsum span { font: 600 11.5px/1 'Urbane Rounded', sans-serif; padding: 8px 12px;
+    border-radius: 999px; }
+  .as-ok { background: var(--ok-soft); color: var(--ok); }
+  .as-warn { background: var(--red-soft); color: var(--red); }
+  .as-note { background: var(--ground); color: var(--ink-soft); }
+  .auditlist { margin-top: 12px; max-height: 420px; overflow-y: auto; border-radius: 12px;
+    background: var(--ground); padding: 6px 10px; }
+  .arow { display: flex; align-items: baseline; gap: 10px; padding: 7px 4px;
+    border-bottom: 0.5px solid rgba(0,0,0,.05); flex-wrap: wrap; }
+  .arow:last-child { border-bottom: 0; }
+  .arow .an { flex: none; width: 168px; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+  .arow .props { flex: 1; min-width: 220px; display: flex; gap: 5px; flex-wrap: wrap; }
+  .prop { font: 10px/1 ui-monospace, Menlo, monospace; padding: 5px 8px; border-radius: 999px; }
+  .prop.ok { background: #EAF6EF; color: #14532D; }
+  .prop.warn { background: #FDE6E6; color: #A82222; }
+  .prop.dim { background: #ececef; color: #6e6e73; }
+  /* effects + gradients */
+  .fxstage { margin-top: 12px; padding: 24px 20px; border-radius: 16px; background: var(--ground);
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .fx { width: 84px; height: 56px; border-radius: 12px; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 600 11.5px/1 'Urbane Rounded', sans-serif; color: var(--ink-soft); }
+  .gradrow { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .grad { flex: 1; min-width: 140px; height: 64px; border-radius: 12px; position: relative; }
+  .grad span { position: absolute; left: 10px; bottom: 8px; font: 600 10.5px/1 'Urbane Rounded', sans-serif;
+    color: #fff; opacity: .9; }
+
   /* ---- review notes ---- */
   .note { display: flex; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--line); }
   .note:last-child { border-bottom: 0; }
@@ -340,6 +375,54 @@
   </section>
 
   <section class="card">
+    <h2>Text styles — where variables become type</h2>
+    <p class="desc">95 text styles compose the system: <b>family</b> and <b>weight</b> bind to
+      brand strings (so Arabic swaps the whole ramp to Avenir in one mode flip), and
+      <b>size / line height / paragraph spacing</b> bind to the responsive trio. Six
+      families: Hero, H1&ndash;H7 in five weights, five Body sizes in five weights plus link
+      variants, and four Button cuts.</p>
+
+    <h3>The weight ladder</h3>
+    <p class="desc" style="font-size:13.5px">Style names run one cut lighter than the raw
+      family names — &ldquo;regular&rdquo; wears the Light cut, &ldquo;bold&rdquo; wears
+      Heavy. 300 (regular) and 600 (bold) sit unused between them.</p>
+    <div class="ladder">
+      <div class="lad"><div class="ln">light</div><div class="lv">font weight/100</div><div class="lw">extra light</div></div>
+      <div class="lad"><div class="ln">regular</div><div class="lv">font weight/200</div><div class="lw">light</div></div>
+      <div class="lad"><div class="ln">medium</div><div class="lv">font weight/400</div><div class="lw">medium</div></div>
+      <div class="lad"><div class="ln">semibold</div><div class="lv">font weight/500</div><div class="lw">Semibold / demi</div></div>
+      <div class="lad"><div class="ln">bold</div><div class="lv">font weight/700</div><div class="lw">heavy</div></div>
+    </div>
+
+    <h3>Bindings audit — live from the dump</h3>
+    <p class="desc" style="font-size:13.5px">Green = bound to a variable, red = hardcoded
+      value that escapes the token system (an Arabic-mode or responsive change won&rsquo;t reach
+      it). Buttons&rsquo; auto line-height and zero spacing are intentional and shown grey.</p>
+    <div class="auditsum" id="auditSum"></div>
+    <div class="chiprow" id="auditTabs">
+      <button class="chipbtn on" data-f="all">All 95</button>
+      <button class="chipbtn" data-f="warn">Only unbound &#9888;</button>
+    </div>
+    <div class="auditlist" id="auditList"></div>
+
+    <h3>Effect styles — elevation &amp; hover rings</h3>
+    <p class="desc" style="font-size:13.5px">Five slate-tinted elevations (xs&ndash;xl, all
+      centered glows with negative spread), six 4-layer hover/focus rings tinted per role,
+      and the lime-on-yellow &ldquo;Energy&rdquo; double ring. All colors are hardcoded —
+      none bind to variables yet.</p>
+    <div class="fxstage" id="fxStage"></div>
+
+    <h3>Gradient paint styles</h3>
+    <p class="desc" style="font-size:13.5px">28 paint styles wrap the gradient variables:
+      Default and Inverse families across top / bottom / corners / radial / angular / diamond
+      plus overlay fades into the opacity ladders. Stops bind to variables, so they re-theme
+      with Light/Dark.</p>
+    <div class="gradrow" id="gradRow"></div>
+    <p class="meta">Rendered in Light mode: default = primary/800 &rarr; primary/1100,
+      secondary corner = warning/600 &rarr; secondary/600, inverse = white &rarr; primary/200.</p>
+  </section>
+
+  <section class="card">
     <h2>Review notes — to work through together</h2>
     <p class="desc">Things the dump surfaced that look like accidents or open questions.
       Nothing here is changed on the lab side — flag what you want fixed in Figma and I'll
@@ -366,6 +449,28 @@
       <div class="note"><span class="dot q"></span><div class="nb"><b>neutral light blends two
         ramps</b> (grey 100&ndash;800, slate 900&ndash;1200) while neutral dark is all grey —
         intentional warm-dark ink? It's a nice trick; worth writing down as a rule if so.</div></div>
+      <div class="note"><span class="dot b"></span><div class="nb"><b>Hero styles escape the
+        variable system:</b> all five Hero weights are hardcoded Urbane cut names (Extra
+        Light&hellip;Heavy) and paragraph spacing is a raw 72 — <code>hero/paragraph
+        spacing</code> exists but is unbound. Arabic mode can&rsquo;t reach Hero: Avenir has no
+        &ldquo;Demi Bold&rdquo; cut, so the style breaks instead of swapping.</div></div>
+      <div class="note"><span class="dot b"></span><div class="nb"><b>Body light / regular /
+        bold weights are hardcoded strings</b> (only medium + semibold bind to
+        <code>font weight/400·500</code>), and most <code>-link</code> styles carry the wrong
+        cut — <code>semibold-link</code> binds to hardcoded Bold everywhere,
+        <code>Body-lg/medium-link</code> to Regular. Same Arabic-mode break risk as Hero.</div></div>
+      <div class="note"><span class="dot b"></span><div class="nb"><b>H7 borrows its
+        neighbors:</b> four of five H7 styles take <code>paragraph lg/line height</code>
+        (only semibold uses <code>h7/line height</code>) and all take <code>h6/paragraph
+        spacing</code> though <code>h7/paragraph spacing</code> exists. body-xxsm mixes
+        <code>caption xsm</code> and <code>caption sm</code> line heights, and
+        <code>body-sm/semiboldlink</code> duplicates <code>semibold-link</code>.</div></div>
+      <div class="note"><span class="dot q"></span><div class="nb"><b>Effect ring colors sit
+        off-ramp:</b> hover/warning uses #A24613 and hover/success #17825A — neither exists
+        in the orange or emerald ramps — and no effect style binds to variables. Also
+        <code>Solid Gradient Default/top left Corner</code> uses the Secondary stops while the
+        other corners use Default (intent or slip?), and two overlay styles are spelled
+        &ldquo;radiul&rdquo;.</div></div>
       <div class="note"><span class="dot q"></span><div class="nb"><b>Lab &harr; Figma deltas
         to reconcile:</b> the lab's Foundations page documents the shipped prototypes
         (ink #1D1D1F, ground #F5F5F7, iOS green #34C759), while Figma maps text to slate
@@ -654,6 +759,85 @@
     });
   });
   renderResp();
+
+  /* ---------- text style audit ---------- */
+  const TS = window.DS_TEXTSTYLES.split('\n').map(line => {
+    const [name, rest] = line.split(' :: ');
+    const p = {};
+    for (const part of rest.split(' | ')) {
+      const i = part.indexOf('=');
+      p[part.slice(0, i)] = part.slice(i + 1);
+    }
+    return { name, ...p };
+  });
+  const isBound = v => v.includes('/');
+  const PROPL = { fam: 'family', sty: 'weight', size: 'size', lh: 'line height', ps: 'para spacing' };
+  const isButton = n => n.startsWith('Button/');
+  function auditRow(s) {
+    const row = document.createElement('div');
+    row.className = 'arow';
+    let warn = false;
+    const chips = ['fam','sty','size','lh','ps'].map(k => {
+      const v = s[k];
+      const intentional = isButton(s.name) && (k === 'lh' || k === 'ps');
+      const ok = isBound(v);
+      if (!ok && !intentional) warn = true;
+      const cls = ok ? 'ok' : (intentional ? 'dim' : 'warn');
+      const label = ok ? v : PROPL[k] + ' = ' + v + (intentional ? '' : ' ⚠');
+      return '<span class="prop ' + cls + '" title="' + PROPL[k] + '">' + label + '</span>';
+    }).join('');
+    row.innerHTML = '<span class="an">' + s.name + '</span><div class="props">' + chips + '</div>';
+    row.dataset.warn = warn ? '1' : '0';
+    return { row, warn };
+  }
+  const auditList = document.getElementById('auditList');
+  let warnCount = 0, fullyBound = 0;
+  const rows = TS.map(s => {
+    const { row, warn } = auditRow(s);
+    if (warn) warnCount++; else fullyBound++;
+    auditList.appendChild(row);
+    return row;
+  });
+  document.getElementById('auditSum').innerHTML =
+    '<span class="as-ok">' + fullyBound + ' fully bound</span>' +
+    '<span class="as-warn">' + warnCount + ' with hardcoded values</span>' +
+    '<span class="as-note">95 styles · 6 families</span>';
+  document.querySelectorAll('#auditTabs .chipbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#auditTabs .chipbtn').forEach(x => x.classList.toggle('on', x === b));
+      const warnOnly = b.dataset.f === 'warn';
+      rows.forEach(r => { r.style.display = (warnOnly && r.dataset.warn === '0') ? 'none' : ''; });
+    });
+  });
+
+  /* ---------- effect styles ---------- */
+  const fxStage = document.getElementById('fxStage');
+  for (const line of window.DS_EFFECTS.split('\n')) {
+    const [name, shadow] = line.split(' :: ');
+    const d = document.createElement('div');
+    d.className = 'fx';
+    d.style.boxShadow = shadow;
+    d.textContent = name.replace('hover/', 'hov ');
+    d.title = name + ' :: ' + shadow;
+    fxStage.appendChild(d);
+  }
+
+  /* ---------- gradient paints (Light mode resolution) ---------- */
+  const g = (a) => resolveAlias(a).hex;
+  const GRADS = [
+    ['Default', 'linear-gradient(180deg,' + g('primary/800') + ',' + g('primary/1100') + ')'],
+    ['Secondary corner', 'linear-gradient(135deg,' + g('warning/600') + ',' + g('secondary/600') + ')'],
+    ['Inverse', 'linear-gradient(180deg,#ffffff,' + g('primary/200') + ')'],
+    ['Overlay fade', 'linear-gradient(180deg, rgba(79,88,100,.1),' + g('primary/1100') + ')'],
+  ];
+  const gradRow = document.getElementById('gradRow');
+  for (const [n, css] of GRADS) {
+    const d = document.createElement('div');
+    d.className = 'grad';
+    d.style.background = css;
+    d.innerHTML = '<span' + (n === 'Inverse' ? ' style="color:#38404A"' : '') + '>' + n + '</span>';
+    gradRow.appendChild(d);
+  }
 
   /* ---------- css export ---------- */
   const cssName = n => '--ds-' + n.replace(/\//g, '-').replace(/\s+/g, '-').replace(/[()]/g, '').toLowerCase();
