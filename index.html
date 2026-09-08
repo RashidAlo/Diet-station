@@ -281,6 +281,22 @@
     align-items: center; justify-content: center; }
   .editbtn { display: flex; }
   body.native .editbtn { margin-left: 0; }
+  body.admin .editbtn { background: #ED1C24; color: #fff; }
+  .cardedit { display: none; }
+  body.admin .cardedit { display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(0,0,0,.14); background: #fff; border-radius: 999px;
+    padding: 7px 14px; cursor: pointer; margin-left: auto;
+    font: 600 12px/1 'Urbane Rounded', sans-serif; color: #1d1d1f; }
+  .card.editing .cardedit { display: none; }
+  .hiddentag { display: none; }
+  body.admin .card.is-hidden .hiddentag { display: inline-flex;
+    font: 700 10px/1 -apple-system, sans-serif; letter-spacing: .06em;
+    color: #fff; background: #1d1d1f; border-radius: 999px; padding: 5px 9px; }
+  .editactions { display: flex; gap: 8px; margin-left: auto; }
+  .editactions button { border: none; border-radius: 999px; padding: 9px 16px;
+    cursor: pointer; font: 600 12px/1 'Urbane Rounded', sans-serif; }
+  .editactions .savebtn { background: #ED1C24; color: #fff; }
+  .editactions .cancelbtn { background: #ececef; color: #1d1d1f; }
   .loginbox label { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif;
     color: #6e6e73; margin: 14px 0 6px; }
   .loginbox input { width: 100%; box-sizing: border-box; padding: 13px 14px;
@@ -289,10 +305,9 @@
   .loginbox .err { color: #ED1C24; font: 600 12px/16px -apple-system, sans-serif;
     margin-top: 10px; min-height: 16px; }
   .editbtn svg { width: 16px; height: 16px; }
-  body.editmode .editbtn { background: #ED1C24; color: #fff; }
   .card .adminrow { display: none; align-items: center; gap: 10px;
-    padding: 10px 0 0; }
-  body.editmode .card .adminrow { display: flex; }
+    padding: 10px 0 0; flex-wrap: wrap; }
+  .card.editing .adminrow { display: flex; }
   .adminrow .eyebtn { border: 1px solid rgba(0,0,0,.14); background: #fff;
     border-radius: 999px; padding: 7px 14px; cursor: pointer;
     font: 600 12px/1 'Urbane Rounded', sans-serif; color: #1d1d1f;
@@ -301,20 +316,10 @@
   .adminrow .draftdot { font: 600 11px/1 -apple-system, sans-serif; color: #ED1C24; }
   .card.is-hidden { opacity: .5; outline: 2px dashed rgba(237,28,36,.5);
     outline-offset: 4px; }
-  body.editmode .card h2[contenteditable="true"],
-  body.editmode .card .desc[contenteditable="true"] {
+  .card.editing h2[contenteditable="true"],
+  .card.editing .desc[contenteditable="true"] {
     outline: 1.5px dashed rgba(237,28,36,.35); outline-offset: 3px;
     border-radius: 6px; cursor: text; }
-  .publishbar { display: none; position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 260;
-    gap: 10px; padding: 10px; border-radius: 999px; background: #1d1d1f;
-    box-shadow: 0 14px 40px -12px rgba(0,0,0,.45); }
-  body.editmode .publishbar { display: flex; }
-  body.editmode.native .tabbar { display: none; }
-  .publishbar button { border: none; border-radius: 999px; padding: 11px 18px;
-    cursor: pointer; font: 600 13px/1 'Urbane Rounded', sans-serif; }
-  .publishbar .pub { background: #ED1C24; color: #fff; }
-  .publishbar .disc { background: rgba(255,255,255,.12); color: #fff; }
 
   /* settings primer sheet */
   .primer-veil { position: fixed; inset: 0; z-index: 200; background: rgba(11,14,18,.45);
@@ -355,8 +360,8 @@
   <div class="bar-inner">
     <img class="mark" src="logo.png" alt="DietStation">
     <div class="word" id="brandWord">DietStation <span>Design Lab</span></div>
-    <button class="editbtn" id="editBtn" aria-label="Edit lab" title="Edit lab">
-      <svg viewBox="0 0 16 16" fill="none"><path d="M11.1 2.2l2.7 2.7-8.2 8.2-3.2.5.5-3.2 8.2-8.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    <button class="editbtn" id="editBtn" aria-label="Sign in" title="Sign in">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.2" r="2.7" stroke="currentColor" stroke-width="1.5"/><path d="M2.8 13.6c.9-2.4 2.9-3.7 5.2-3.7s4.3 1.3 5.2 3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </button>
   </div>
 </header>
@@ -515,7 +520,6 @@ function openLogin() {
     const tok = await unlockToken(document.getElementById('liPass').value);
     try {
       localStorage.setItem('ds-admin', '1');
-      sessionStorage.setItem('ds-open-edit', '1');
       if (tok) sessionStorage.setItem('ds-pub-token', tok);
     } catch (_) {}
     location.href = location.pathname;   /* clean URL — no stale query flags */
@@ -610,7 +614,9 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
   for (const f of flows) {
     /* admin overrides: local drafts win over flows.json; hidden cards are
        for the admin's eyes only */
-    const o = OVR[f.id] || {};
+    /* a just-saved card may beat flows.json's CDN cache — honor the local
+       copy of a save for 15 minutes, then trust the network again */
+    const o = (OVR[f.id] && Date.now() - (OVR[f.id].ts || 0) < 900000) ? OVR[f.id] : {};
     f.title = o.title !== undefined ? o.title : f.title;
     f.description = o.description !== undefined ? o.description : f.description;
     const isHidden = o.hidden !== undefined ? o.hidden : !!f.hidden;
@@ -731,81 +737,22 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
   wireEditMode();
 });
 
-/* ================= edit mode (admin) ================= */
-function wireEditMode() {
-  if (!ADMIN) return;
-  document.querySelectorAll('#flows .card').forEach(card => {
-    const id = card.dataset.flow;
-    if (!id) return;
-    const row = document.createElement('div');
-    row.className = 'adminrow';
-    const hid = card.classList.contains('is-hidden');
-    row.innerHTML = '<button class="eyebtn' + (hid ? ' off' : '') + '">' +
-      (hid ? 'Hidden from viewers' : 'Visible to viewers') + '</button>' +
-      '<span class="draftdot">' + (OVR[id] ? 'draft' : '') + '</span>';
-    card.querySelector('.body').appendChild(row);
-    row.querySelector('.eyebtn').onclick = () => {
-      const o = OVR[id] = OVR[id] || {};
-      o.hidden = !card.classList.contains('is-hidden');
-      saveOvr();
-      card.classList.toggle('is-hidden', o.hidden);
-      const b = row.querySelector('.eyebtn');
-      b.classList.toggle('off', o.hidden);
-      b.textContent = o.hidden ? 'Hidden from viewers' : 'Visible to viewers';
-      row.querySelector('.draftdot').textContent = 'draft';
-      scheduleAutoPublish();
-    };
-    const h2 = card.querySelector('h2');
-    const desc = card.querySelector('.desc');
-    [['title', h2], ['description', desc]].forEach(([key, el]) => {
-      if (!el) return;
-      el.addEventListener('input', () => {
-        const o = OVR[id] = OVR[id] || {};
-        o[key] = el.textContent.trim();
-        saveOvr();
-        row.querySelector('.draftdot').textContent = 'draft';
-        scheduleAutoPublish();
-      });
-    });
-  });
-}
-function setEditMode(on) {
-  document.body.classList.toggle('editmode', on);
-  document.querySelectorAll('#flows .card h2, #flows .card .desc').forEach(el =>
-    el.setAttribute('contenteditable', on ? 'true' : 'false'));
-}
-document.getElementById('editBtn').addEventListener('click', () => {
-  if (!ADMIN) return openLogin();
-  setEditMode(!document.body.classList.contains('editmode'));
-});
-try {
-  if (ADMIN && sessionStorage.getItem('ds-open-edit')) {
-    sessionStorage.removeItem('ds-open-edit');
-    setTimeout(() => setEditMode(true), 400);
-  }
-} catch (_) {}
-const pubBar = document.createElement('div');
-pubBar.className = 'publishbar';
-pubBar.innerHTML = '<button class="disc">Discard drafts</button><button class="pub">Saved</button>';
-document.body.appendChild(pubBar);
-const pubBtn = pubBar.querySelector('.pub');
+/* ================= admin: per-card editing ================= */
+/* One global Login button (header). Signed in, every card grows an Edit
+   button; each card saves + publishes its own entry independently. */
 let pubTok = null;
 try { pubTok = sessionStorage.getItem('ds-pub-token'); } catch (_) {}
-let pubTimer = null, publishing = false;
+let publishing = false;
 
-async function publishNow() {
+async function publishCard(id, patch, dot) {
   if (!pubTok) {
-    /* not provisioned yet: fall back to the manual command */
-    const cmd = 'publish lab ' + JSON.stringify(OVR);
-    (navigator.clipboard ? navigator.clipboard.writeText(cmd) : Promise.reject())
-      .then(() => { pubBtn.textContent = 'Copied — paste it to Claude'; })
-      .catch(() => prompt('Copy this and paste it to Claude:', cmd));
-    setTimeout(() => { pubBtn.textContent = 'Publish'; }, 2600);
-    return;
+    /* session predates the sealed credential — a fresh sign-in unlocks it */
+    dot.textContent = 'Sign in again to publish';
+    setTimeout(openLogin, 600);
+    return false;
   }
-  if (publishing) return;
+  if (publishing) return false;
   publishing = true;
-  pubBtn.textContent = 'Publishing…';
   try {
     const api = 'https://api.github.com/repos/RashidAlo/Diet-station/contents/flows.json';
     const hdrs = { 'Authorization': 'Bearer ' + pubTok,
@@ -813,42 +760,113 @@ async function publishNow() {
     const cur = await fetch(api + '?ref=gh-pages', { headers: hdrs }).then(r => r.json());
     const json = JSON.parse(new TextDecoder().decode(
       Uint8Array.from(atob(cur.content.replace(/\n/g, '')), c => c.charCodeAt(0))));
-    for (const f of json.flows) {
-      const o = OVR[f.id];
-      if (!o) continue;
-      if (o.title !== undefined) f.title = o.title;
-      if (o.description !== undefined) f.description = o.description;
-      if (o.hidden !== undefined) f.hidden = o.hidden;
-    }
+    const f = json.flows.find(x => x.id === id);
+    if (!f) throw new Error('flow not found');
+    if (patch.title !== undefined) f.title = patch.title;
+    if (patch.description !== undefined) f.description = patch.description;
+    f.hidden = !!patch.hidden;
     const bytes = new TextEncoder().encode(JSON.stringify(json, null, 2));
     let bin = '';
     for (let i = 0; i < bytes.length; i += 8192)
       bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const res = await fetch(api, { method: 'PUT', headers: hdrs,
       body: JSON.stringify({
-        message: 'Lab admin edit (auto-published from the hub)',
+        message: 'Lab edit: ' + id + ' (published from the hub)',
         content: btoa(bin), sha: cur.sha, branch: 'gh-pages' }) });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    OVR = {}; saveOvr();
-    document.querySelectorAll('.draftdot').forEach(d => d.textContent = '');
-    pubBtn.textContent = 'Live ✓';
+    OVR[id] = Object.assign({}, patch, { ts: Date.now() });
+    saveOvr();
+    publishing = false;
+    return true;
   } catch (e) {
-    pubBtn.textContent = 'Publish failed — retry';
+    publishing = false;
+    return false;
   }
-  publishing = false;
-  setTimeout(() => { pubBtn.textContent = pubTok ? 'Saved' : 'Publish'; }, 3000);
 }
-function scheduleAutoPublish() {
-  if (!pubTok) return;
-  pubBtn.textContent = 'Saving…';
-  clearTimeout(pubTimer);
-  pubTimer = setTimeout(publishNow, 2000);
+
+function wireEditMode() {
+  if (!ADMIN) return;
+  document.querySelectorAll('#flows .card').forEach(card => {
+    const id = card.dataset.flow;
+    if (!id) return;
+    const h2 = card.querySelector('h2');
+    const desc = card.querySelector('.desc');
+    const tag = document.createElement('span');
+    tag.className = 'hiddentag';
+    tag.textContent = 'Hidden';
+    const eb = document.createElement('button');
+    eb.className = 'cardedit';
+    eb.textContent = 'Edit';
+    card.querySelector('.top').append(tag, eb);
+    const row = document.createElement('div');
+    row.className = 'adminrow';
+    row.innerHTML = '<button class="eyebtn"></button>' +
+      '<span class="draftdot"></span>' +
+      '<div class="editactions"><button class="cancelbtn">Cancel</button>' +
+      '<button class="savebtn">Save</button></div>';
+    card.querySelector('.body').appendChild(row);
+    const eye = row.querySelector('.eyebtn');
+    const dot = row.querySelector('.draftdot');
+    let snap = null, hidDraft = false;
+    const syncEye = () => {
+      eye.classList.toggle('off', hidDraft);
+      eye.textContent = hidDraft ? 'Hidden from viewers' : 'Visible to viewers';
+    };
+    const stop = () => {
+      card.classList.remove('editing');
+      h2.removeAttribute('contenteditable');
+      if (desc) desc.removeAttribute('contenteditable');
+    };
+    eb.onclick = () => {
+      snap = { title: h2.textContent, desc: desc ? desc.textContent : '',
+        hidden: card.classList.contains('is-hidden') };
+      hidDraft = snap.hidden;
+      syncEye();
+      dot.textContent = '';
+      card.classList.add('editing');
+      h2.setAttribute('contenteditable', 'true');
+      if (desc) desc.setAttribute('contenteditable', 'true');
+    };
+    eye.onclick = () => { hidDraft = !hidDraft; syncEye(); };
+    row.querySelector('.cancelbtn').onclick = () => {
+      h2.textContent = snap.title;
+      if (desc) desc.textContent = snap.desc;
+      card.classList.toggle('is-hidden', snap.hidden);
+      stop();
+    };
+    row.querySelector('.savebtn').onclick = async () => {
+      const patch = { title: h2.textContent.trim(), hidden: hidDraft };
+      if (desc) patch.description = desc.textContent.trim();
+      dot.textContent = 'Saving\u2026';
+      const ok = await publishCard(id, patch, dot);
+      if (ok) {
+        card.classList.toggle('is-hidden', hidDraft);
+        stop();
+        dot.textContent = 'Live \u2713';
+        setTimeout(() => { dot.textContent = ''; }, 2600);
+      } else if (pubTok) {
+        dot.textContent = 'Save failed \u2014 try again';
+      }
+    };
+  });
 }
-pubBtn.onclick = publishNow;
-if (!pubTok) pubBtn.textContent = 'Publish';
-pubBar.querySelector('.disc').onclick = () => {
-  OVR = {}; saveOvr(); location.reload();
-};
+
+/* header button: logged out = Login, logged in = sign out */
+const loginBtn = document.getElementById('editBtn');
+if (ADMIN) {
+  loginBtn.title = 'Signed in \u2014 tap to sign out';
+  loginBtn.setAttribute('aria-label', 'Sign out');
+}
+loginBtn.addEventListener('click', () => {
+  if (!ADMIN) return openLogin();
+  if (confirm('Sign out of admin?')) {
+    try {
+      localStorage.removeItem('ds-admin');
+      sessionStorage.removeItem('ds-pub-token');
+    } catch (_) {}
+    location.href = location.pathname;
+  }
+});
 
 function copyFeedback(btn, text, label) {
   (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
