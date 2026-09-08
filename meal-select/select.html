@@ -2039,7 +2039,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 75';
+const BUILD = 'build 2026-09-08 · 76';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2360,10 +2360,61 @@ fit();
       el.classList.remove('ds-native-hidden');
     });
     window.DSNativeChrome = function () {};
-  }, ((EMBED || FRAMED) ? 1900 : 1600));
+  }, 2600);   /* past the worst-case settle boot (1400 fallback + FLIP) */
   addEventListener('resize', function () { setTimeout(report, 350); });
-  function boot() { pinNav(); var t0 = (EMBED || FRAMED) ? 950 : 200;
-    setTimeout(report, t0); setTimeout(report, t0 + 1000); setTimeout(report, t0 + 2400); }
+  /* Apple-sheet choreography (Rashid's device report, round 2): the nav
+     must RIDE the sheet during presentation and dismissal, never pre-exist
+     it. Entry: leave .nav inside the springing #sheet, pin only after the
+     entry transition ends (a FLIP glide absorbs the frozen-pad delta),
+     then report so twins swap in at the settled spot. Exit: the moment
+     the sheet starts its down-slide, clear the twins so no chrome floats
+     over the departing surface. */
+  function pinNavSmooth(then) {
+    var nav = document.querySelector('.nav');
+    if (!nav) { then(); return; }
+    var before = nav.getBoundingClientRect().top;
+    pinNav();
+    var d = before - nav.getBoundingClientRect().top;
+    if (Math.abs(d) < 1.5) { then(); return; }
+    nav.style.transition = 'none';
+    nav.style.transform = 'translateY(' + d + 'px)';
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      nav.style.transition = 'transform .28s cubic-bezier(.2,.8,.3,1)';
+      nav.style.transform = 'translateY(0)';
+      setTimeout(function () { nav.style.transition = ''; then(); }, 320);
+    }); });
+  }
+  function releaseChrome() {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: [] });
+    } catch (_) {}
+  }
+  function armDismissRelease() {
+    var sh = document.getElementById('sheet');
+    if (!sh) return;
+    sh.addEventListener('transitionstart', function h(e) {
+      /* target check: descendant transitions (day-turn track) bubble here */
+      if (e.target !== sh || e.propertyName !== 'transform') return;
+      sh.removeEventListener('transitionstart', h);
+      releaseChrome();
+    });
+  }
+  function settleBoot() {
+    pinNavSmooth(function () {
+      armDismissRelease();
+      report(); setTimeout(report, 1000); setTimeout(report, 2400);
+    });
+  }
+  function boot() {
+    var sh = document.getElementById('sheet'), done = false;
+    function go() { if (done) return; done = true; setTimeout(settleBoot, 60); }
+    if (sh) sh.addEventListener('transitionend', function h(e) {
+      if (e.target !== sh || e.propertyName !== 'transform') return;
+      sh.removeEventListener('transitionend', h); go();
+    });
+    setTimeout(go, 1400);   /* reduced-motion / missed-transition fallback */
+  }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
