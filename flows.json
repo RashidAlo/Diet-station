@@ -659,7 +659,8 @@
       },
       "shots": [
         "plan-quiz/preview.png"
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "rewards",
