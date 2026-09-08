@@ -269,9 +269,9 @@
     transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
   .card.sel .sel-border { border-width: 3.5px; }
   .card.dim { opacity: .55; filter: saturate(.65); }
-  /* neon mode: the crisp border is replaced by a dense dot-matrix particle
-     ring drawn on a per-card canvas (see neon dots engine below) — the
-     breathe flow's dot-field language wrapped around the card */
+  /* neon mode: the crisp border is replaced by a double-stroke highlight
+     ring drawn on a per-card canvas (see neon ring engine below) — main
+     neon stroke + lighter halo, painted with a breathing rotating gradient */
   body.selc-neon .card .sel-border { opacity: 0; }
   .sel-dots { position: absolute; inset: -10px; width: calc(100% + 20px);
     height: calc(100% + 20px); pointer-events: none; z-index: 3;
@@ -1732,41 +1732,16 @@ function applySelc(v) {
   startNeonDots();
 }
 
-/* ================= neon dots engine =================
-   A dense dot-matrix ring for selected cards: dots sampled every ~6px
-   along the card's rounded border, with a traveling size wave marching
-   around the ring, per-dot shimmer, and a slow radial drift — plus a
-   clockwise sweep-in when a card is first selected. Decorative only,
-   so the rAF loop runs solely while neon mode is on. */
-const DOTS_M = 10, DOT_PITCH = 6, CARD_W = 183, CARD_H = 259, CARD_R = 24;
-const dotPath = (() => {
-  const inset = 1.75, w = CARD_W - inset * 2, h = CARD_H - inset * 2,
-    r = CARD_R - inset, sw = w - 2 * r, sh = h - 2 * r, arc = Math.PI * r / 2,
-    per = 2 * (sw + sh) + 4 * arc;
-  function at(s) {
-    let d = ((s % per) + per) % per;
-    if (d < sw) return { x: inset + r + d, y: inset };                     d -= sw;
-    if (d < arc) { const a = -Math.PI / 2 + d / r;
-      return { x: inset + w - r + Math.cos(a) * r, y: inset + r + Math.sin(a) * r }; } d -= arc;
-    if (d < sh) return { x: inset + w, y: inset + r + d };                 d -= sh;
-    if (d < arc) { const a = d / r;
-      return { x: inset + w - r + Math.cos(a) * r, y: inset + h - r + Math.sin(a) * r }; } d -= arc;
-    if (d < sw) return { x: inset + w - r - d, y: inset + h };             d -= sw;
-    if (d < arc) { const a = Math.PI / 2 + d / r;
-      return { x: inset + r + Math.cos(a) * r, y: inset + h - r + Math.sin(a) * r }; } d -= arc;
-    if (d < sh) return { x: inset, y: inset + h - r - d };                 d -= sh;
-    const a = Math.PI + d / r;
-    return { x: inset + r + Math.cos(a) * r, y: inset + r + Math.sin(a) * r };
-  }
-  const n = Math.round(per / DOT_PITCH), pts = [];
-  for (let i = 0; i < n; i++) {
-    const s = i / n * per, p = at(s), q = at(s + 0.5);
-    let nx = q.y - p.y, ny = -(q.x - p.x);
-    const l = Math.hypot(nx, ny) || 1;
-    pts.push({ x: p.x, y: p.y, nx: nx / l, ny: ny / l, s });
-  }
-  return { pts, per };
-})();
+/* ================= neon ring engine =================
+   Double-border highlight for selected cards: the main neon stroke on
+   the card edge plus a lighter-tint halo stroke floating just outside,
+   both painted with a slowly ROTATING two-pole gradient (lighter bands
+   sweep around the ring) that BREATHES — width, halo strength and the
+   light-band mix all swell and settle together. Sweep-in draws the
+   rings clockwise on selection. Decorative only, so the rAF loop runs
+   solely while neon mode is on. */
+const DOTS_M = 10, CARD_W = 183, CARD_H = 259, CARD_R = 24;
+const RING_PER = 2 * (CARD_W + CARD_H) - 8 * CARD_R + 2 * Math.PI * CARD_R;
 const dotRings = new Map();   /* card element -> {cv, ctx, born} */
 let dotsRAF = null, dotsColor = '#1BF07E';
 function neonOn() { return document.body.classList.contains('selc-neon'); }
@@ -1801,27 +1776,43 @@ function neonDotsFrame(now) {
     }
     const r = el.getBoundingClientRect();
     if (r.bottom < -40 || r.top > innerHeight + 40) return;  /* offscreen: skip draw */
-    drawDotRing(o, now);
+    drawNeonRing(o, now);
   });
   dotsRAF = requestAnimationFrame(neonDotsFrame);
 }
-function drawDotRing(o, now) {
+function drawNeonRing(o, now) {
   const g = o.ctx, t = now / 1000;
-  g.clearRect(0, 0, CARD_W + 2 * DOTS_M, CARD_H + 2 * DOTS_M);
-  g.fillStyle = dotsColor;
-  const entry = Math.min(1, (now - o.born) / 600);
-  dotPath.pts.forEach((p, i) => {
-    const reveal = Math.min(1, Math.max(0, (entry * 1.25 - p.s / dotPath.per) * 4));
-    if (reveal <= 0) return;
-    const wave = Math.sin(t * 2.4 - p.s * 0.05);       /* pulse marching the ring */
-    const tw = Math.sin(t * 1.7 + i * 2.3999);         /* per-dot shimmer */
-    const off = 1.8 * Math.sin(t * 1.1 + i * 1.51);    /* slow radial drift */
-    g.globalAlpha = (0.55 + 0.45 * tw * tw) * reveal;
-    g.beginPath();
-    g.arc(DOTS_M + p.x + p.nx * off, DOTS_M + p.y + p.ny * off,
-      (1.35 + 0.85 * (0.5 + 0.5 * wave)) * (0.4 + 0.6 * reveal), 0, 6.2832);
-    g.fill();
-  });
+  const W = CARD_W + 2 * DOTS_M, H = CARD_H + 2 * DOTS_M;
+  g.clearRect(0, 0, W, H);
+  const entry = Math.min(1, (now - o.born) / 550);
+  const ease = 1 - Math.pow(1 - entry, 3);
+  const breathe = 0.5 + 0.5 * Math.sin(t * 1.6);
+  /* rotating two-pole gradient: the lighter bands sweep around the ring */
+  const ang = t * 0.85, cx = W / 2, cy = H / 2, R = 190;
+  const grad = g.createLinearGradient(cx + Math.cos(ang) * R, cy + Math.sin(ang) * R,
+    cx - Math.cos(ang) * R, cy - Math.sin(ang) * R);
+  const lightA = 0.55 + 0.4 * breathe;
+  grad.addColorStop(0, 'rgba(200,255,226,' + lightA.toFixed(3) + ')');
+  grad.addColorStop(0.42, dotsColor);
+  grad.addColorStop(0.58, dotsColor);
+  grad.addColorStop(1, 'rgba(200,255,226,' + lightA.toFixed(3) + ')');
+  /* clockwise sweep-in while arriving */
+  if (ease < 1) { g.setLineDash([RING_PER]); g.lineDashOffset = RING_PER * (1 - ease); }
+  g.lineCap = 'round';
+  g.strokeStyle = grad;
+  /* outer halo: lighter, floats just outside the card edge */
+  g.beginPath();
+  roundRectPath(g, DOTS_M - 3.25, DOTS_M - 3.25, CARD_W + 6.5, CARD_H + 6.5, CARD_R + 3.25);
+  g.globalAlpha = (0.38 + 0.27 * breathe) * ease;
+  g.lineWidth = 2.25;
+  g.stroke();
+  /* main selected stroke on the card edge */
+  g.beginPath();
+  roundRectPath(g, DOTS_M + 1.75, DOTS_M + 1.75, CARD_W - 3.5, CARD_H - 3.5, CARD_R - 1.75);
+  g.globalAlpha = ease;
+  g.lineWidth = 3.5 + 0.6 * breathe;
+  g.stroke();
+  g.setLineDash([]);
   g.globalAlpha = 1;
 }
 document.querySelectorAll('#selcSeg button').forEach(b =>
@@ -1998,7 +1989,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 63';
+const BUILD = 'build 2026-09-08 · 64';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
