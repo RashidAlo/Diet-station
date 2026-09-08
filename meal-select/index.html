@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="DS Lab">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<title>DietStation — Meal Selector</title>
+<title>DietStation — Calendar</title>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -21,7 +21,7 @@
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
   #dvhProbe { position: fixed; left: 0; top: 0; width: 1px; height: 100vh;
     height: 100dvh; visibility: hidden; pointer-events: none; }
-  html, body { height: 100%; overflow: hidden; background: #ffffff; }
+  html, body { height: 100%; overflow: hidden; background: #ED1C24; }
   body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
     overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
   body.desktop { background: #f5f5f7; }
@@ -47,28 +47,16 @@
   .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ED1C24; }
   .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
   .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
-  .quota-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .quota-row .qname { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
-  .quota-ctl { display: flex; align-items: center; gap: 10px; }
-  .quota-ctl button { width: 24px; height: 24px; border: 1px solid rgba(0,0,0,.12);
-    border-radius: 8px; background: #fff; color: #1d1d1f; cursor: pointer;
-    font: 600 14px/1 'Urbane Rounded', sans-serif; }
-  .quota-ctl button:hover { background: #f0f0f2; }
-  .quota-ctl output { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ED1C24;
-    min-width: 12px; text-align: center; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
     padding: 10px 8px; background: #fff;
     font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: #6e6e73; }
-  .seg2 button.on { background: #1d1d1f; color: #fff;
-    border-color: #1d1d1f; }
+  .seg2 button.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
   .s-actions { display: flex; gap: 8px; margin-top: 4px; }
   .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
     padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
-  #sFill { background: #ED1C24; color: #fff; }
-  #sFill:hover { filter: brightness(1.08); }
-  #sReset, #sCopy { background: #ececef; color: #1d1d1f; }
-  #sReset:hover, #sCopy:hover { background: #e2e2e6; }
+  #sReset, #sCopy, #sFresh { background: #ececef; color: #1d1d1f; }
+  #sReset:hover, #sCopy:hover, #sFresh:hover { background: #e2e2e6; }
   .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08);
     font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
 
@@ -85,7 +73,8 @@
     box-shadow: 0 -70px 0 #111114; }
   body.desktop .device::after { content: ''; position: absolute; right: -7px; top: 240px;
     width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
-  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #ffffff; }
+  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #ED1C24;
+    --top-pad: 44px; }
   body:not(.desktop) .phone { width: 402px;
     height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1));
     --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px)); }
@@ -94,480 +83,144 @@
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
     pointer-events: none; }
   body.desktop .island { display: block; }
-
-  /* ================= full-page canvas ================= */
-  .phone { --top-pad: 44px; }
-  .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden; }
-  /* native sheet: the gap collapses 1:1 with the first pixels of scroll —
-     scroll-linked transform, no thresholds (HIG medium->large handoff) */
-  body.sheet-mode .sheet { will-change: transform;
-    border-radius: 44px 44px 0 0; }
-  body.sheet-enter .sheet { transform: translateY(103%); }
-  .sheet.springing { transition: transform .55s cubic-bezier(.32,.72,0,1); }
-  body.sheet-mode .phone { background: #0b0e12; }
   /* embedded in the app launcher: the hub behind provides the backdrop */
-  html.embed, html.embed body, html.embed #stage, html.embed .device,
-  html.embed .phone { background: transparent !important; }
-  html.embed .phone { --top-pad: 14px; }
-  /* auto-selected fallback badge (Figma 17179-77256): green pill straddling
-     the card's top edge — sparkle + "Auto Selected" */
-  .card .autobadge { position: absolute; top: -9px; left: 50%;
-    transform: translateX(-50%) scale(.6); height: 18px; display: flex;
-    align-items: center; gap: 5px; padding: 0 9px 0 7px; z-index: 6;
-    border-radius: 37px 37px 45px 45px; background: #26A659;
-    box-shadow: 0 1px 6px rgba(56,64,74,.18);
-    font: 700 11px/18px 'Proxima Nova', sans-serif; color: #f9f9f9;
-    white-space: nowrap; opacity: 0; pointer-events: none;
-    transition: opacity .3s ease, transform .35s cubic-bezier(.3,1.3,.4,1); }
-  .card.auto .autobadge { opacity: 1; transform: translateX(-50%) scale(1); }
-  .card .autobadge svg { width: 12px; height: 12px; }
-  /* day-turn arrival: a very soft stagger bounce across the grid */
-  .scroll.stagger .card { animation: cardArrive .6s cubic-bezier(.32,1.42,.42,1) both;
-    animation-delay: calc(var(--ci, 0) * 26ms); }
-  @keyframes cardArrive { from { transform: translateX(48px); opacity: 0; } }
-  /* Next tap: the dock folds into a circular loader before the day turns */
-  .dock .loader { width: 22px; height: 22px; border-radius: 50%;
-    border: 2.5px solid rgba(255,255,255,.28); border-top-color: #fff;
-    animation: dockspin .75s linear infinite; }
-  @keyframes dockspin { to { transform: rotate(360deg); } }
+  html.embed, html.embed body, html.embed #stage, html.embed .device { background: transparent !important; }
 
-  /* ---- nav row: content passes under an Apple-style progressive blur ---- */
-  .nav { position: absolute; left: 0; right: 0; top: 0; z-index: 30;
-    height: calc(var(--top-pad) + 58px);
-    display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
-  .nav > * { position: relative; z-index: 2; }
-  /* clean white nav bar: fades in on scroll, grows for the dock row */
-  .nav .nav-surface { position: absolute; left: 0; right: 0; top: 0; z-index: 0;
-    height: calc(var(--top-pad) + 58px); pointer-events: none;
-    background: #ffffff;
-    opacity: 0; transition: opacity .25s ease, height .28s cubic-bezier(.2,.8,.3,1); }
-  .nav.scrolled .nav-surface { opacity: 1; }
-  .nav.docked .nav-surface { opacity: 1; height: calc(var(--top-pad) + 92px); }
-  .cat-dock { position: absolute; left: 0; right: 0;
-    top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
-    overflow: hidden; pointer-events: none;
-    opacity: 0; transition: opacity .2s ease; }
-  .nav.docked .cat-dock { opacity: 1; }
-  .dock-row { height: 34px; display: flex; align-items: center;
-    justify-content: space-between; padding: 0 20px; }
-  .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
-  /* nav buttons: transparent frosted circles — content blurs through */
-  .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
-    border-radius: 50%; border: none; cursor: pointer; z-index: 31;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,.34);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-  .navbtn:active { transform: scale(.92); }
-  .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
-  .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease; }
-  .navbtn.on-dark, .dual.on-dark { background: rgba(72,72,78,.30); color: #ffffff; }
-  .dual.on-dark .sep { background: rgba(255,255,255,.3); }
-  .dual.on-dark .dcheck svg .ck-base { stroke: rgba(255,255,255,.55); }
-  .ttl { transition: color .35s ease, text-shadow .35s ease;
-    text-shadow: 0 1px 3px rgba(255,255,255,.35); }
-  .ttl.on-dark { color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.5); }
-  .gx { left: 24px; }
-  /* Apple dual action capsule: confirm | divider | clear */
-  .dual { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px); height: 44px;
-    display: flex; align-items: center; border-radius: 22px; overflow: hidden; z-index: 31;
-    background: rgba(255,255,255,.34);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22); }
-  .dual button { width: 50px; height: 44px; border: none; background: transparent; cursor: pointer;
-    color: inherit;               /* iOS UA would tint buttons blue otherwise */
-    display: flex; align-items: center; justify-content: center;
-    transition: background .3s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
-  .dual button:active { transform: scale(.9); }
-  .dual button svg { width: 18px; height: 18px; display: block; pointer-events: none; }
-  .dual .sep { width: 1px; height: 22px; background: rgba(11,14,18,.16); flex: none; }
-  .dual .dcheck { cursor: default; }
-  .dual .dcheck.on { cursor: pointer; }
-  .dual .dcheck svg .ck-base { stroke: #b9bcc2; }
-  .dual .dcheck svg .ck-fill { stroke: #ed1c24; stroke-dasharray: 1 1;
-    stroke-dashoffset: 1; opacity: 0;
-    transition: stroke-dashoffset .55s cubic-bezier(.3,.7,.3,1.08), opacity .05s; }
-  .dual .dcheck.on svg .ck-fill { stroke-dashoffset: 0; opacity: 1; }
-  /* iOS alert: clear confirmation */
-  .modal-veil { position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,.28);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: opacity .22s ease; }
-  .modal-veil.show { opacity: 1; pointer-events: auto; }
-  .alert { width: 270px; border-radius: 14px; overflow: hidden; text-align: center;
-    background: rgba(250,250,250,.85);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    transform: scale(1.1); transition: transform .25s cubic-bezier(.2,.9,.3,1.15); }
-  .modal-veil.show .alert { transform: scale(1); }
-  .alert h4 { font: 600 17px/22px -apple-system, 'Urbane Rounded', sans-serif;
-    color: #0b0e12; padding: 19px 16px 3px; }
-  .alert p { font: 400 13px/18px -apple-system, 'Proxima Nova', sans-serif;
-    color: rgba(60,60,67,.85); padding: 0 18px 17px; }
-  .alert .btns { display: flex; border-top: .5px solid rgba(60,60,67,.29); }
-  .alert .btns button { flex: 1; height: 44px; border: none; background: none; cursor: pointer;
-    font: 400 17px/22px -apple-system, 'Urbane Rounded', sans-serif; color: #1d1d1f; }
-  .alert .btns button:active { background: rgba(0,0,0,.06); }
-  .alert .btns .destructive { color: #ed1c24; font-weight: 600;
-    border-left: .5px solid rgba(60,60,67,.29); }
-  .nav .ttl { position: absolute; left: 50%; transform: translateX(-50%);
-    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
-    font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
-  .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
-    background: #f6bfc3; display: flex; align-items: center; justify-content: center; flex: none;
-    transition: background .35s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
-  .confirm:active { transform: scale(.92); }
-  .confirm svg { width: 18px; height: 18px; display: block; }
-  .confirm.on { background: #ed1c24; box-shadow: 0 6px 16px -6px rgba(237,28,36,.55); }
+  /* ================= calendar page (Figma 14994-86172) ================= */
+  .cal { position: absolute; inset: 0; display: flex; flex-direction: column;
+    background: #ED1C24; }
+  body.embed-enter .cal { transform: translateY(103%); }
+  .cal.springing { transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .cal.presenting { border-radius: 44px 44px 0 0; overflow: hidden; }
 
-  /* ---- scroll area ---- */
-  .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-    touch-action: pan-y; overscroll-behavior: contain;
-    padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
-  .scroll::-webkit-scrollbar { display: none; }
-  .cat-head { display: flex; align-items: baseline; justify-content: space-between;
-    padding: 16px 20px 12px; }
-  .grid { padding-bottom: 14px; }
-  .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
-  .of { transition: color .25s ease; }
-  .of.done { color: #26A659; display: inline-flex; align-items: center; gap: 5px; }
-  .of.done svg { width: 11px; height: 11px; display: block; flex: none; }
-  .of.pop { animation: ofdone .4s cubic-bezier(.3,1.5,.4,1); }
-  @keyframes ofdone { 40% { transform: scale(1.22); } }
-  .cat-head.nudge .of { animation: ofpulse .9s ease .15s 2; }
-  @keyframes ofpulse { 50% { transform: scale(1.3); } }
-  .grid { display: grid; grid-template-columns: 183px 183px; gap: 16px 12px;
+  /* painted status bar — desktop frame only (device shows the real one) */
+  .sbar { display: none; height: 62px; padding: 21px 16px 19px; align-items: center; }
+  body.desktop .sbar { display: flex; }
+  .sbar .t { flex: 1; text-align: center; padding-top: 2px;
+    font: 600 17px/22px -apple-system, 'SF Pro', sans-serif; color: #fff; }
+  .sbar .g { flex: 1; display: flex; gap: 7px; align-items: center; justify-content: center;
+    padding-top: 1px; }
+  .sbar .g img { display: block; }
+  body:not(.desktop) .hd { padding-top: calc(var(--top-pad) + 26px); }
+
+  .hd { display: flex; align-items: center; gap: 12px; padding: 18px 18px 20px; }
+  .hd-txt { flex: 1; min-width: 0; }
+  .hd-txt h1 { font: 600 20px/24px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
+  .hd-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9;
+    white-space: nowrap; }
+  .hd-sub b { font-weight: 700; margin-left: 4px; }
+  .pausebtn { width: 40px; height: 40px; border-radius: 999px; flex: none;
+    border: 1px solid #B22425; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 15px rgba(56,64,74,.1);
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .pausebtn:active { transform: scale(.88); }
+  .pausebtn img { width: 20px; height: 20px; display: block; }
+
+  /* ---- the white sheet ---- */
+  .sheetc { flex: 1; min-height: 0; background: #fff; border-radius: 38px 38px 0 0;
+    display: flex; flex-direction: column; }
+  .dow { display: grid; grid-template-columns: repeat(7, 1fr); justify-items: center;
+    padding: 16px 16px 2px; }
+  .dow span { font: 400 14px/30px 'Proxima Nova', sans-serif; color: #5e5e5e;
+    letter-spacing: .3px; }
+  .months { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch; padding: 6px 16px 0; }
+  .month { margin-bottom: 32px; }
+  .mtitle { font: 600 16px/30px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    text-align: center; height: 37px; margin-bottom: 8px; }
+  .mgrid { display: grid; grid-template-columns: repeat(7, 1fr); justify-items: center;
+    grid-auto-rows: 55px; row-gap: 20px; }
+
+  .day { position: relative; width: 44px; height: 55px; border: none; background: none;
+    padding: 0; font: inherit; }
+  .day .tile { width: 44px; height: 44px; border-radius: 12px; background: #fff;
+    border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center;
+    font: 500 15px/1 'Urbane Rounded', sans-serif; color: #0b0e12;
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .day .chip { position: absolute; top: 33px; left: calc(50% - 11px); width: 22px; height: 22px;
+    border-radius: 999px; background: #fff; border: 1px solid #e5e5e5; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .day .chip img { display: block; }
+  .day.tap { cursor: pointer; }
+  .day.tap:active .tile, .day.tap:active .chip { transform: scale(.9); }
+  .day.past .tile { color: #999; }
+  .day.past .chip { border-color: #d1d1d1; }
+  .day.today .tile { color: #ed1c24; }
+  .day .dot { position: absolute; top: -9px; left: calc(50% - 2px); width: 4px; height: 4px;
+    z-index: 2; }
+  /* deadline badge — yellow pill + down arrow above the day (Figma 4852-5580) */
+  .day .badge { position: absolute; top: -29px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; z-index: 5;
+    pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06)); }
+  .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
+    margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
+    text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
+  .day .badge .bt { width: 10px; height: 10px; display: flex; align-items: flex-end;
     justify-content: center; }
+  .day .badge .bt img { width: 7.2px; height: 6.5px; transform: rotate(180deg); display: block; }
+  /* wrong-tap nudge + selected pop */
+  @keyframes daynudge { 0%,100% { transform: translateX(0); }
+    30% { transform: translateX(-3px); } 60% { transform: translateX(3px); } }
+  .day.nudge { animation: daynudge .3s ease; }
+  @keyframes chippop { 0% { transform: scale(.4); } 62% { transform: scale(var(--pop, 1.18)); }
+    100% { transform: scale(1); } }
+  .day.justsel .chip { animation: chippop .5s cubic-bezier(.2,.8,.3,1.2); }
+  .day .ring { position: absolute; top: 44px; left: 50%; width: 22px; height: 22px;
+    margin: -11px 0 0 -11px; border-radius: 999px; border: 2px solid #26A659;
+    opacity: 0; pointer-events: none; z-index: 1; }
+  @keyframes ringout { 0% { opacity: .8; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.1); } }
+  .day.justsel .ring { animation: ringout .55s ease-out; }
 
-  /* ================= meal card (Figma 17179:76751) ================= */
-  .card { position: relative; width: 183px; height: 259px; border-radius: 24px;
-    cursor: pointer; transition: opacity .3s ease, filter .3s ease; }
-  .card .photo { position: absolute; inset: 0; border-radius: 24px; overflow: hidden;
-    background: #fff; }
-  .card .photo img { width: 100%; height: 100%; object-fit: cover; display: block;
-    pointer-events: none; }
-  .card .grad { position: absolute; left: 0; right: 0; bottom: 0; height: 114px;
-    border-radius: 0 0 24px 24px; pointer-events: none;
-    background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.41) 35.1%, rgba(0,0,0,.81)); }
-  /* selection border springs in — Figma track: 0 -> 3.5px, bezier(.633,2.581,.761,1.433) */
-  .card .sel-border { position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
-    border: 0 solid #26a659; z-index: 3;
-    transition: border-width .54s cubic-bezier(.633,1.9,.761,1.433); }
-  .card.sel .sel-border { border-width: 3.5px; }
-  .card.dim { opacity: .55; filter: saturate(.65); }
+  /* footer note at the end of the scroll */
+  .endnote { display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px; margin-top: 6px; }
+  .endnote img { width: 24px; height: 24px; display: block; }
+  .endnote p { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #0d0d0d; }
+  .endnote p b { color: #ed1c24; font-weight: 400; }
+  .endpad { height: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
-  .card .toprow { position: absolute; left: 14px; right: 10px; top: 10px; z-index: 4;
-    display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
-  .card .rating { display: flex; align-items: center; height: 28px;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); color: #f9f9f9; }
-  .card .rating .r-big { font: 600 20px/24px 'Urbane Rounded', sans-serif; }
-  .card .rating .r-dec { font: 600 11px/13px 'Proxima Nova', sans-serif;
-    align-self: flex-end; margin: 0 0 4px 1px; }
-  .card .rating svg { width: 11px; height: 11px; margin-left: 7px; }
-  /* kebab pops in on select — Figma: opacity .27s + y -23 spring; house glass */
-  .card .kebab { width: 28px; height: 28px; border-radius: 50%; border: none;
-    background: rgba(120,120,126,.32); color: #fff;
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
-    backdrop-filter: blur(10px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 0 0 .5px rgba(255,255,255,.32),
-      0 3px 10px -6px rgba(0,0,0,.25);
+  /* ---- bottom scroll-edge blur + floating glass tab bar ---- */
+  .scrollfade { position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+    pointer-events: none; z-index: 20;
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+    mask-image: linear-gradient(to bottom, transparent, black 72%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 72%); }
+  .tabbar { position: absolute; left: calc(50% - 157px); width: 314px; height: 65px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; }
+  .tb-bg { position: absolute; inset: 0; border-radius: 999px; overflow: hidden;
+    backdrop-filter: blur(14px) saturate(170%); -webkit-backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: 0 8px 40px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.5); }
+  .tb-bg i { position: absolute; inset: 0; display: block; }
+  .tb-bg .f1 { background: rgba(255,255,255,.65); }
+  .tb-bg .f2 { background: #ddd; mix-blend-mode: color-burn; }
+  .tb-bg .f3 { background: #f7f7f7; mix-blend-mode: darken; }
+  .tb-tabs { position: absolute; inset: 4px; display: flex; }
+  .tb-pill { position: absolute; top: 0; bottom: 0; width: 102px; border-radius: 999px;
+    background: #ededed; left: 102px;
+    transition: left .38s cubic-bezier(.3,.9,.3,1.05); }
+  .tb-tab { position: relative; flex: 1; border: none; background: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transform: translateY(-23px); pointer-events: none; }
-  .card.sel .kebab { opacity: 1; transform: translateY(0); pointer-events: auto;
-    transition: opacity .27s cubic-bezier(.5,0,.5,1),
-      transform .88s cubic-bezier(.26,1.36,.42,1); }
-  .card:not(.sel) .kebab { transition: opacity .2s ease, transform .2s ease; }
-  .card .kebab svg { width: 16px; height: 16px; }
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .tb-tab:active { transform: scale(.9); }
+  .tb-tab img { width: 24px; height: 24px; display: block; position: relative; }
+  .tb-tab .logo { width: 26px; height: 20px; }
 
-  .card .details { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
-    display: flex; flex-direction: column; align-items: flex-end; padding: 0 12px 12px;
-    pointer-events: none; }
-  /* QTY pill — pops (scale bezier .7,-.4,.4,1.4), expands 30<->75 (bezier .45,1.45,.8,1) */
-  .qty { position: relative; height: 30px; width: 30px; border-radius: 999px;
-    background: #26a659; overflow: hidden; flex: none; align-self: flex-end;
-    transform: scale(0); pointer-events: auto; cursor: pointer;
-    transition: transform .41s cubic-bezier(.7,-.4,.4,1.4),
-      width .41s cubic-bezier(.45,1.45,.8,1); }
-  .card.sel .qty { transform: scale(1); }
-  .card.expanded .qty { width: 75px; }
-  .qty .q-btn { position: absolute; top: 7px; width: 16px; height: 16px; border: none;
-    background: none; padding: 0; cursor: pointer; opacity: 0;
-    transition: opacity .3s cubic-bezier(.5,0,.5,1), transform .3s cubic-bezier(.5,0,.5,1); }
-  .qty .q-btn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
-  .qty .q-minus { left: 10px; transform: translateX(-8px); }
-  .qty .q-plus { left: 49px; transform: translateX(-8px); }
-  .card.expanded .q-minus, .card.expanded .q-plus { opacity: 1; transform: translateX(0);
-    transition-delay: .08s; }
-  .qty .q-count { position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
-    font: 500 12px/15px 'Urbane Rounded', sans-serif; color: #f9f9f9; opacity: 0;
-    transition: opacity .3s cubic-bezier(.5,0,.5,1); }
-  .card.counted .q-count { opacity: 1; }
-  .qty.pulse { animation: qpulse .3s cubic-bezier(.3,.8,.3,1); }
-  @keyframes qpulse { 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
-  /* the check draws itself (pathLength 1, bezier .5,0,.5,1) then un-draws */
-  .qty .q-check { position: absolute; left: 50%; top: 9px; transform: translateX(-50%);
-    width: 15.5px; height: 11.5px; pointer-events: none; }
-  /* round linecaps paint a dot even at zero dash length — keep the path
-     invisible until the draw actually starts */
-  .qty .q-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
-    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1), opacity .05s; }
-  .qty .q-check.draw path { stroke-dashoffset: 0; opacity: 1; }
-  .qty .q-check.undraw path { stroke-dashoffset: -1; opacity: 0;
-    transition: stroke-dashoffset .455s cubic-bezier(.5,0,.5,1), opacity .1s .35s; }
-
-  .card .name { align-self: stretch; padding: 6px 0;
-    font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
-  .card .macros { align-self: stretch; display: flex; align-items: center; gap: 8px;
-    color: #f9f9f9; }
-  .card .macros .kv { display: flex; align-items: flex-start; }
-  .card .macros .kv b { font: 600 12px/16px 'Urbane Rounded', sans-serif; font-weight: 600; }
-  .card .macros .kv i { font: 300 6.45px/13px 'Urbane Rounded', sans-serif; font-style: normal;
-    align-self: center; width: 14px; }
-  .card .macros .pair { display: flex; align-items: center; gap: 2px; }
-  .card .macros .pair b { font: 600 10px/12px 'Urbane Rounded', sans-serif; }
-  .card .macros .pair span { font: 500 10px/14px 'Urbane Rounded', sans-serif; }
-  .card .macros .pair i { font: 300 6.45px/12px 'Urbane Rounded', sans-serif; font-style: normal; }
-
-  /* ================= navigator (Figma: Meal Selection Navigator 2.0) ============ */
-  .navigator { position: absolute; left: calc(50% - 179px); width: 358px; height: 69px; z-index: 35;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
-  .navigator .glassbase { position: absolute; inset: 0; border-radius: 296px; overflow: hidden;
-    -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.4), inset 0 0 0 .6px rgba(255,255,255,.35),
-      inset 0 -1px 1.5px rgba(0,0,0,.08); }
-  .navigator .glassbase::before { content: ''; position: absolute; inset: 0;
-    background: rgba(255,255,255,.14); }
-  /* the gauge: a transparent canvas ON the glass — spring fill, rippling
-     leading edge, breathing tip glow. The glass itself is a plain
-     backdrop-filter container blurring the live thumbnails beneath. */
-  #gaugeCanvas { position: absolute; inset: 0; width: 100%; height: 100%;
-    border-radius: 296px; pointer-events: none; }
-  .navigator .content { transition: opacity .2s ease; }
-  .navigator.celebrating .content { opacity: 0; }
-  .done-center { position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    display: flex; align-items: center; justify-content: center; gap: 9px;
-    color: #fff; opacity: 0; transform: scale(.92);
-    transition: opacity .25s ease, transform .5s cubic-bezier(.26,1.36,.42,1); }
-  .navigator.celebrating .done-center { opacity: 1; transform: scale(1); }
-  .done-center span { font: 600 17px/22px 'Urbane Rounded', sans-serif;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
-  .done-center svg { width: 18px; height: 14px; display: block;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
-  .done-center svg path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
-    transition: stroke-dashoffset .38s cubic-bezier(.3,.7,.3,1.15) .12s, opacity .05s .12s; }
-  .navigator.celebrating .done-center svg path { stroke-dashoffset: 0; opacity: 1; }
-  .navigator.warn .content { opacity: 0; }
-  .navigator .warnmsg { position: absolute; inset: 0; display: flex; align-items: center;
-    justify-content: center; padding: 0 20px; text-align: center;
-    font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #ed1c24;
-    opacity: 0; pointer-events: none; transition: opacity .2s ease; }
-  .navigator.warn .warnmsg { opacity: 1; }
-  .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
-    gap: 8px; padding: 0 28px 0 22px; color: #f9f9f9; }
-  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); width: 78px; flex: none;
-    white-space: nowrap; }
-  .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
-    margin-bottom: -1px; }
-  .navigator .kcal .val { display: flex; align-items: flex-end; }
-  .navigator .kcal .big { font: 600 19px/25px 'Urbane Rounded', sans-serif; }
-  .navigator .kcal .cap { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46;
-    margin: 0 0 3px 1px; }
-  .navigator .mpairs { display: flex; gap: 3px; padding-bottom: 4px; }
-  .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
-    white-space: nowrap; }
-  .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
-    margin-bottom: -1px; }
-  .navigator .mpair .v { font: 600 14px/18px 'Urbane Rounded', sans-serif;
-    display: inline-block; min-width: 21px; }
-  .navigator .mpair .g { font: 400 10px/13px 'Proxima Nova', sans-serif; }
-  .navigator .mpair.p { min-width: 38px; } .navigator .mpair.c { min-width: 32px; }
-  .navigator .mpair.f { min-width: 28px; }
-
-  /* Saved / Next dock */
-  .dock { position: absolute; right: 8px; top: 8px; width: 53px; height: 53px;
-    border-radius: 47.6px; border: none; cursor: pointer; overflow: hidden;
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    color: #f9f9f9; font: 500 14px/1 'Urbane Rounded', sans-serif;
-    opacity: 0; transform: scale(.6) translateY(10px); pointer-events: none;
-    background: rgba(229,229,229,.08);
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.35), inset 0 0 0 .6px rgba(255,255,255,.3);
-    transition: opacity .27s cubic-bezier(.5,0,.5,1),
-      transform .7s cubic-bezier(.26,1.36,.42,1),
-      width .45s cubic-bezier(.45,1.45,.8,1); }
-  .dock.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
-  .dock.wide { width: 92px; }
-  .dock .d-label { white-space: nowrap; opacity: 0; transition: opacity .25s ease .1s; }
-  .dock.wide .d-label { opacity: 1; }
-  .dock:active { transform: scale(.94); }
-  .dock svg { width: 16px; height: 16px; display: block; }
-  .dock .d-check { width: 19px; height: 14px; }
-  .dock .d-check { transition: opacity .18s ease; }
-  .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
-    transition: stroke-dashoffset .32s cubic-bezier(.3,.7,.3,1.2) .12s, opacity .05s .12s; }
-  .dock.show .d-check path { stroke-dashoffset: 0; opacity: 1; }
-  .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 40; }
-  .burst-ring { position: absolute; border: 2.5px solid rgba(255,255,255,.95);
-    border-radius: 50%; pointer-events: none; z-index: 41; }
-
-  /* ================= meal details overlay (Figma 14934-94030) ============ */
-  .mo-veil { position: absolute; inset: 0; z-index: 44; background: rgba(11,14,18,.42);
-    opacity: 0; pointer-events: none; transition: opacity .38s ease; }
-  .mo-veil.show { opacity: 1; pointer-events: auto; }
-  .meal-ov { position: absolute; left: 0; right: 0; bottom: 0;
-    top: calc(var(--top-pad) - 18px); z-index: 45; background: #fff;
-    border-radius: 44px 44px 0 0; overflow: hidden;
-    box-shadow: 0 -14px 44px rgba(0,0,0,.24);
-    transform: translateY(103%); pointer-events: none;
-    transition: transform .52s cubic-bezier(.3,1,.32,1); }
-  .meal-ov.open { transform: none; pointer-events: auto; }
-  html.embed .meal-ov { top: calc(env(safe-area-inset-top, 34px) + 4px); }
-  body.desktop .meal-ov { top: 56px; }   /* clear the frame's island */
-  .meal-ov.drag { transition: none; }
-  .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 62%;
-    overflow: hidden; z-index: 1; }
-  .mo-img img { width: 100%; height: 100%; object-fit: cover;
-    object-position: 50% 45%; display: block; }
-  .mo-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4;
-    height: 74px; display: flex; align-items: center;
-    justify-content: flex-end; padding: 14px 16px 0 20px;
-    background: linear-gradient(to bottom, rgba(0,0,0,.22), rgba(0,0,0,0));
-    pointer-events: none; }
-  .mo-close { width: 44px; height: 44px; border-radius: 50%; border: none;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    pointer-events: auto; color: #ffffff; background: rgba(72,72,78,.30);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-  .mo-close:active { transform: scale(.92); }
-  .mo-close svg { pointer-events: none; }
-  /* ONE scroller drives everything: collapse, list, and the drag-to-close
-     all chain inside a single gesture. Layers are JS-positioned off its
-     scrollTop; the row list is clipped at the header's bottom edge. */
-  .mo-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-    touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: none;
-    z-index: 3; }
-  .mo-scroll::-webkit-scrollbar { display: none; }
-  .mo-spacer { pointer-events: none; }
-  #moIngList { padding: 0 24px 130px; }
-  .mo-sheetbg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-    background: #fff; border-radius: 44px 44px 0 0; }
-  .mo-headblock { position: absolute; left: 0; right: 0; z-index: 4;
-    background: #fff; border-radius: 44px 44px 0 0; padding: 32px 24px 0;
-    pointer-events: none; }
-  .mo-action-row { position: absolute; left: 0; right: 0; z-index: 5;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 14px; height: 40px; }
-  .mo-stars { display: flex; gap: 4px; align-items: center;
-    filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
-    transition: opacity .25s ease; }
-  .mo-stars svg { width: 22px; height: 22px; }
-  .mo-badge { position: absolute; left: 14px; bottom: 0; display: none;
-    align-items: center; gap: 5px; height: 34px; padding: 0 12px;
-    border-radius: 999px; background: rgba(20,16,10,.45);
-    font: 600 14px/1 'Urbane Rounded', sans-serif; color: #f9f9f9;
-    opacity: 0; transition: opacity .25s ease; display: flex; }
-  .mo-badge svg { width: 15px; height: 15px; }
-  .meal-ov.compact .mo-stars { opacity: 0; }
-  .meal-ov.compact .mo-badge { opacity: 1; }
-  .mo-select { border: none; cursor: pointer; height: 40px; padding: 0 22px;
-    border-radius: 999px; background: #fff; display: flex; align-items: center;
-    gap: 6px; font: 500 14px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
-    box-shadow: 0 4px 14px rgba(0,0,0,.16);
-    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
-  .mo-select:active { transform: scale(.94); }
-  .mo-select.sel { color: #0b0e12; }
-  .mo-select .msc { width: 16px; height: 16px; border-radius: 50%;
-    background: #26A659; display: none; align-items: center; justify-content: center; }
-  .mo-select.sel .msc { display: flex; }
-  .mo-select .msc svg { width: 9px; height: 7px; }
-  .mo-select.deny { animation: deny .4s ease; }
-  @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
-
-  .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24;
-    margin-bottom: 8px; }
-  .mo-title { font: 600 22px/28px 'Urbane Rounded', sans-serif; color: #0b0e12;
-    margin-bottom: 12px; }
-  .mo-heat { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .mo-heat .hc { flex: 1; display: flex; align-items: center; gap: 9px;
-    border: 1px solid #EDEDED; border-radius: 14px; padding: 11px 14px;
-    background: #fff; }
-  .mo-heat .hc .he { font-size: 17px; }
-  .mo-heat .hc b { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif;
-    color: #0b0e12; }
-  .mo-heat .hc span { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
-  .mo-heat .or { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #999; }
-  .mo-ing-h { font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #0b0e12;
-    margin-bottom: 6px; }
-  .mo-row { display: flex; align-items: center; justify-content: space-between;
-    min-height: 24px; padding: 10px 2px 10px 0; position: relative;
-    border-bottom: 1px solid #F0F0F0; cursor: pointer; }
-  .mo-row:last-child { border-bottom: none; }
-  .mo-row .lab { font: 400 15px/22px 'Proxima Nova', sans-serif; color: #252B33;
-    transition: opacity .25s ease; position: relative; }
-  .mo-row .lab::after { content: ''; position: absolute; left: 0; right: 0;
-    top: calc(50% + 1px); height: 1.5px; background: #252B33; border-radius: 1px;
-    transform: scaleX(0); transform-origin: left center;
-    transition: transform .3s cubic-bezier(.3,.8,.3,1); }
-  .mo-row.off .lab { opacity: .35; }
-  .mo-row.off .lab::after { transform: scaleX(1); }
-  .mo-fb { position: absolute; right: 0; top: 50%; transform: translateY(-50%) scale(.75);
-    display: flex; align-items: center; gap: 5px;
-    font: 600 12.5px/16px 'Urbane Rounded', sans-serif;
-    opacity: 0; transition: opacity .2s ease, transform .25s cubic-bezier(.3,.9,.3,1.25);
-    pointer-events: none; }
-  .mo-fb.add { color: #26A659; }
-  .mo-fb.rem { color: #ED1C24; }
-  .mo-fb .sc { width: 14px; height: 14px; border-radius: 50%; background: #26A659;
-    display: flex; align-items: center; justify-content: center; }
-  .mo-fb .sc svg { width: 7px; height: 6px; }
-  .mo-fb svg.tr { width: 13px; height: 14px; }
-  .mo-row.fb .mo-fb { opacity: 1; transform: translateY(-50%) scale(1); }
-  .mo-sw { transition: background .25s ease, border-color .25s ease,
-    opacity .18s ease, transform .22s cubic-bezier(.3,.9,.3,1); }
-  .mo-row.fb .mo-sw { opacity: 0; transform: scale(.55); }
-  /* Figma small switch: 30x18, p3, knob 12 */
-  .mo-sw { width: 30px; height: 18px; border-radius: 50px; flex: none;
-    border: 1px solid #26A659; background: #26A659; padding: 2px;
-    display: flex; justify-content: flex-end; align-items: center; }
-  .mo-row.off .mo-sw { background: #f5f5f5; border-color: #e5e5e5;
-    justify-content: flex-start; }
-  .mo-sw .knob { width: 12px; height: 12px; border-radius: 50%; background: #f5f5f5;
-    box-shadow: 0 0 3px 2px rgba(0,0,0,.08);
-    transition: transform .25s cubic-bezier(.3,.8,.3,1.2); }
-  .mo-row.off .mo-sw .knob { background: #fff; }
-  .mo-macros { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
-    background: #fff; border-top: 1px solid #EDEDED;
-    padding: 14px 32px calc(20px + env(safe-area-inset-bottom, 0px));
-    display: flex; align-items: center; justify-content: space-between; }
-  .mo-macros .mk small { display: block; font: 500 10.5px/14px 'Urbane Rounded', sans-serif;
-    color: #999; }
-  .mo-macros .mk b { font: 500 24px/26px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .mo-macros .mk i { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e;
-    font-style: normal; margin-left: 3px; }
-  .mo-macros .mp { display: flex; gap: 14px; }
-  .mo-macros .mp div small { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif;
-    color: #999; }
-  .mo-macros .mp div b { font: 500 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-
-  /* TestFlight app: no lab views — settings only */
-  html.ds-native .menu-views { display: none !important; }
+  /* ---- meal-selection overlay (select.html embedded) ---- */
+  .ov-veil { position: absolute; inset: 0; background: rgba(0,0,0,.42); opacity: 0;
+    pointer-events: none; transition: opacity .32s ease; z-index: 80; }
+  .ov-veil.show { opacity: 1; pointer-events: auto; }
+  .ov-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+    background: transparent; z-index: 81; }
 
   /* ---- mobile: lab controls live in a hidden sheet (triple-tap & hold) -- */
   body.lab-mobile .lab-chip { display: none !important; }
   body.lab-mobile .lab-tabbar { display: none !important; }
   body.lab-mobile:has(#labUserflow.on) .lab-tabbar,
   body.lab-mobile:has(#labHandoff.on) .lab-tabbar { display: flex !important; }
+  html.ds-native .menu-views { display: none !important; }
   .menu-views { display: none; gap: 8px; margin-bottom: 22px; }
   body.labmenu-open:not(.desktop) .menu-views { display: flex; }
   .menu-views button { flex: 1; border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
@@ -600,47 +253,44 @@
     <button id="mvFlow">User flow</button>
     <button id="mvHandoff">Dev handoff</button>
   </div>
-  <h2>Meal Selector — Build Your Week</h2>
-  <p class="s-desc">Figma-faithful meal picker. Five categories, each with a quota from your
-    subscription. Tap a thumbnail to claim it — the green border springs in, a check draws
-    itself, then the pill unfolds into a − 1 + stepper and later settles into a quiet count.
-    The bottom navigator fills with the brand gradient as your plate builds; complete it for
-    the Saved moment and the Next button.</p>
+  <h2>Calendar — Your Subscription Days</h2>
+  <p class="s-desc">The meal flow now opens on the calendar: every subscription day carries a
+    status chip — green plus means ready to pick, green check is selected, the truck is out for
+    delivery, the yellow star wants a rating, OFF and pause are rest days. Tap any green-plus day
+    and the meal selector rises over the calendar; confirm your plate and the day pops into a
+    check.</p>
 
   <div class="s-sec">
-    <div class="s-label">Category quotas</div>
-    <div class="s-note">Meals allowed per category — the "x of y" counters. Total is your
-      subscription size.</div>
-    <div id="quotaRows"></div>
+    <div class="s-label">Deadlines</div>
+    <div class="s-note">The countdowns in the header, on the badged day, and in the footer.</div>
+    <div class="mod">
+      <div class="mod-head"><label>Next-day deadline</label><output id="vDead">3h 26m</output></div>
+      <input type="range" id="mDead" min="15" max="600" step="1" value="206">
+      <div class="mod-desc">Time left to pick meals for the badged day (Mar 13).</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Selection window</label><output id="vWin">5h 39m</output></div>
+      <input type="range" id="mWin" min="30" max="720" step="1" value="339">
+      <div class="mod-desc">The footer's "hrs left for selection to end".</div>
+    </div>
   </div>
 
   <div class="s-sec">
-    <div class="s-label">Selection feel</div>
+    <div class="s-label">Feel</div>
     <div class="mod">
-      <div class="mod-head"><label>Collapse after</label><output id="vIdle">2.0s</output></div>
-      <input type="range" id="mIdle" min="0.8" max="5" step="0.1" value="2">
-      <div class="mod-desc">Idle time before the stepper folds into a number-only badge.</div>
+      <div class="mod-head"><label>Select pop</label><output id="vPop">1.18&times;</output></div>
+      <input type="range" id="mPop" min="1" max="1.5" step="0.02" value="1.18">
+      <div class="mod-desc">Overshoot of the check chip when a day completes.</div>
     </div>
-    <div class="mod">
-      <div class="mod-head"><label>Kcal target</label><output id="vTarget">1860</output></div>
-      <input type="range" id="mTarget" min="1200" max="2600" step="20" value="1860">
-      <div class="mod-desc">The /target in the navigator's calorie counter.</div>
-    </div>
-    <div class="mod">
-      <div class="mod-head"><label>Confetti</label><output id="vConfetti">14</output></div>
-      <input type="range" id="mConfetti" min="0" max="30" step="1" value="14">
-      <div class="mod-desc">Celebration particles when the plate completes.</div>
-    </div>
-    <div class="s-note" style="margin-top:14px">Thumbnail tap behavior</div>
-    <div class="seg2" id="tapMode">
-      <button data-mode="add" class="on">Tap adds +1</button>
-      <button data-mode="select">Tap selects only</button>
+    <div class="s-note" style="margin-top:14px">Haptics</div>
+    <div class="seg2" id="hapSeg">
+      <button data-v="on" class="on">On</button>
+      <button data-v="off">Off</button>
     </div>
   </div>
 
   <div class="s-actions">
-    <button id="sFill">Auto-fill</button>
-    <button id="sReset">Reset</button>
+    <button id="sReset">Reset days</button>
     <button id="sCopy">Copy values</button>
   </div>
 
@@ -648,107 +298,59 @@
     <div class="s-label">Build</div>
     <div class="s-note" id="buildInfo">&mdash;</div>
     <div class="s-actions">
-      <button id="sFresh" style="background:#ececef;color:#1d1d1f">Reload fresh (clear cache)</button>
+      <button id="sFresh">Reload fresh (clear cache)</button>
     </div>
   </div>
 
-  <div class="s-foot">Figma: Diet Station 4.0 &middot; node 17179-75872. Motion curves lifted
-    from the Figma timeline (border spring, pill overshoot, check path-trim). Copy values puts
-    this recipe on the clipboard.</div>
+  <div class="s-foot">Figma: Diet Station 4.0 &middot; node 14994-86172 (Calendar Main). The meal
+    selector itself lives in select.html and mounts over this page as the embedded overlay.</div>
 </aside>
 
 <div id="stage">
   <div class="device" id="device">
     <div class="phone" id="phone">
-      <div class="sheet" id="sheet">
-        <div class="scroll" id="scrollArea"></div>
-        <div class="nav">
-          <div class="nav-surface"></div>
-          <div class="cat-dock" id="catDock"><div id="dockTrack">
-            <div class="dock-row"><h3 id="dockTitle"></h3><span class="of" id="dockOf"></span></div>
-            <div class="dock-row"><h3 id="dockTitle2"></h3><span class="of" id="dockOf2"></span></div>
-          </div></div>
-          <button class="navbtn gx" id="closeBtn" aria-label="Close">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <div class="cal" id="calPage">
+        <div class="sbar">
+          <div class="t">9:41</div>
+          <div class="g">
+            <img src="cal-sbcell.svg" width="19" height="12" alt="">
+            <img src="cal-sbwifi.svg" width="17" height="12" alt="">
+            <img src="cal-sbbatt.svg" width="27" height="13" alt="">
+          </div>
+        </div>
+        <div class="hd">
+          <div class="hd-txt">
+            <h1>Calendar</h1>
+            <div class="hd-sub">Time left for Fri 13 Mar meal selection<b id="hdCount">03:26</b></div>
+          </div>
+          <button class="pausebtn" id="pauseBtn" aria-label="Pause subscription">
+            <img src="cal-pause.svg" alt="">
           </button>
-          <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span></div>
-          <div class="dual">
-            <button class="dclear" id="clearBtn" aria-label="Clear all">
-              <svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg>
+        </div>
+        <div class="sheetc">
+          <div class="dow">
+            <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span>
+            <span>THU</span><span>FRI</span><span>SAT</span>
+          </div>
+          <div class="months" id="months"></div>
+        </div>
+        <div class="scrollfade"></div>
+        <div class="tabbar">
+          <div class="tb-bg"><i class="f1"></i><i class="f2"></i><i class="f3"></i></div>
+          <div class="tb-tabs">
+            <div class="tb-pill"></div>
+            <button class="tb-tab" id="tabHome" aria-label="Home">
+              <img class="logo" src="cal-tablogo.svg" alt="">
             </button>
-            <span class="sep"></span>
-            <button class="dcheck" id="confirmBtn" aria-label="Confirm">
-              <svg viewBox="0 0 15.5 11.5" fill="none">
-                <path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <button class="tb-tab" aria-label="Calendar">
+              <img src="cal-tabcal.svg" alt="">
+            </button>
+            <button class="tb-tab" id="tabPerson" aria-label="Profile">
+              <img src="cal-tabperson.svg" alt="">
             </button>
           </div>
         </div>
-        <div class="modal-veil" id="clearModal">
-          <div class="alert">
-            <h4>Clear selection?</h4>
-            <p>This removes every meal you’ve picked for this day.</p>
-            <div class="btns">
-              <button id="clearCancel">Cancel</button>
-              <button class="destructive" id="clearConfirm">Clear</button>
-            </div>
-          </div>
-        </div>
-        <div class="navigator" id="navigator">
-          <div class="glassbase"></div>
-          <canvas id="gaugeCanvas"></canvas>
-          <div class="content">
-            <div class="kcal">
-              <span class="lbl">Kcal</span>
-              <span class="val"><span class="big" id="kcalNow">0</span><span class="cap" id="kcalCap">/1860</span></span>
-            </div>
-            <div class="mpairs">
-              <div class="mpair p"><span class="lbl">Protein</span><span class="v" id="mP">0</span><span class="g">g</span></div>
-              <div class="mpair c"><span class="lbl">Carbs</span><span class="v" id="mC">0</span><span class="g">g</span></div>
-              <div class="mpair f"><span class="lbl">Fat</span><span class="v" id="mF">0</span><span class="g">g</span></div>
-            </div>
-          </div>
-          <div class="done-center"><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Done</span></div>
-          <div class="warnmsg" id="warnMsg"></div>
-          <button class="dock" id="dock"></button>
-        </div>
-        <div class="mo-veil" id="moVeil"></div>
-        <div class="meal-ov" id="mealOv">
-          <div class="mo-img"><img id="moImg" src="" alt=""></div>
-          <div class="mo-top">
-            <button class="mo-close" id="moClose" aria-label="Close">
-              <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-            </button>
-          </div>
-          <div class="mo-sheetbg" id="moSheetBg"></div>
-          <div class="mo-headblock" id="moHeadBlock">
-            <div class="mo-cat" id="moCat"></div>
-            <div class="mo-title" id="moTitle"></div>
-            <div class="mo-heat" id="moHeat"></div>
-            <div class="mo-ing-h">Ingredients:</div>
-          </div>
-          <div class="mo-action-row" id="moActionRow">
-            <div class="mo-stars" id="moStars"></div>
-            <div class="mo-badge" id="moBadge"></div>
-            <button class="mo-select" id="moSelect">
-              <span class="msc"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.4L3.4 5.8 8 1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-              <span id="moSelTxt">Select</span>
-            </button>
-          </div>
-          <div class="mo-scroll" id="moScroll">
-            <div class="mo-spacer" id="moSpacer"></div>
-            <div id="moIngList"></div>
-          </div>
-          <div class="mo-macros">
-            <div class="mk"><small>Meal&rsquo;s Macros</small><b id="moKcal">0</b><i>Kcal</i></div>
-            <div class="mp">
-              <div><small>Protein</small><b id="moP">0g</b></div>
-              <div><small>Carbs</small><b id="moC">0g</b></div>
-              <div><small>Fat</small><b id="moF">0g</b></div>
-            </div>
-          </div>
-        </div>
+        <div class="ov-veil" id="ovVeil"></div>
       </div>
       <div class="island"></div>
     </div>
@@ -761,915 +363,201 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-/* ================= data ================= */
-const DISHES = {
-  breakfast: [
-    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg', ing: ['🧀 Cheese', '🌾 Almond flour', '🧈 Butter', '🥚 Egg', '🫓 Sesame seeds', '🌿 Za\u2019atar', '🥛 Greek yogurt', '🧂 Salt'] },
-    { n: 'Oatmeal with Chocolate Chips', kcal: 410, p: 12, c: 58, f: 14, r: '4.3', img: 'm-oatmeal.jpg', ing: ['🌾 Oats', '🍫 Chocolate chips', '🥛 Milk', '🍌 Banana', '🥜 Peanut butter', 'Cinnamon', '🍯 Honey', '🧂 Salt'] },
-    { n: 'Keto Olive Cheese Sandwich', kcal: 360, p: 18, c: 10, f: 27, r: '4.3', img: 'm-olivesand.jpg', ing: ['🫒 Olives', '🧀 Cheese', '🍞 Keto bread', '🥬 Lettuce', '🥒 Cucumber', '🧀 Cream cheese', '🌿 Oregano', '🍅 Sundried tomato'] },
-    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg', ing: ['🍫 Cacao', '🥛 Milk', '🌰 Chia seeds', '🍦 Whipped cream', '🫐 Berries', '🍫 Chocolate shavings', '🍯 Honey'] },
-  ],
-  lunch: [
-    { n: 'Baked Chicken Fingers with Wedges', kcal: 480, p: 30, c: 22, f: 12, r: '4.3', img: 'm-fingers.jpg', ing: ['🍗 Chicken breast', '🌾 Panko crumbs', '🥔 Potato wedges', '🌶️ Spicy mayo', '🍅 Ketchup dip', 'Paprika', '🧄 Garlic powder', '🧂 Salt'] },
-    { n: 'Chicken Machbous with tomato sauce', kcal: 465, p: 32, c: 48, f: 14, r: '4.3', img: 'm-machbous.jpg', ing: ['🍗 Chicken', '🍚 Rice', '🍅 Tomato sauce', '🌶️ Spicy', '🧅 Onion', '🧄 Garlic', '🍋 Dried lime', 'Cardamom', 'Cinnamon'] },
-    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg', ing: ['🍗 Chicken', '🥔 Cube potato', '🥥 Coconut milk', '🍛 Curry paste', '🌶️ Spicy', '🌿 Thai basil', '🍃 Lime leaves', '🐟 Fish sauce', '🍚 Rice'] },
-    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg', ing: ['🍗 Grilled chicken', '🍝 Garfelo pasta', '🍅 Tomato sauce', '🧀 Parmesan', '🍄 Mushrooms', '🫒 Olive oil', 'Black pepper', '🌿 Basil'] },
-    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg', ing: ['🍗 Chicken', '🍝 Pasta', '🥬 Rocca', '🫒 Olives', '🍅 Cherry tomato', '🧀 Feta', '🌽 Sweet corn', '🍋 Lemon dressing'] },
-    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg', ing: ['🍗 Chicken', '🥛 Yogurt sauce', '🥒 Cucumber', '🧄 Garlic', '🥬 Lettuce', '🌰 Walnuts', '🌿 Mint', '🌿 Dill'] },
-  ],
-  dinner: [
-    { n: 'Yogurt Chicken Salad', kcal: 420, p: 34, c: 21, f: 20, r: '4.3', img: 'm-yogurtchicken.jpg', ing: ['🍗 Chicken', '🥛 Yogurt sauce', '🥒 Cucumber', '🧄 Garlic', '🥬 Lettuce', '🌰 Walnuts', '🌿 Mint', '🌿 Dill'] },
-    { n: 'Shrimp Salad with Dill', kcal: 380, p: 31, c: 14, f: 19, r: '4.3', img: 'm-shrimpdill.jpg', ing: ['🦐 Shrimp', '🥬 Lettuce', '🌿 Dill', '🫒 Olives', '🥑 Avocado', '🍅 Cherry tomato', '🥛 Yogurt dressing', '🍋 Lemon'] },
-    { n: 'Chicken Pasta Salad', kcal: 445, p: 29, c: 42, f: 15, r: '4.3', img: 'm-pastasalad.jpg', ing: ['🍗 Chicken', '🍝 Pasta', '🥬 Rocca', '🫒 Olives', '🍅 Cherry tomato', '🧀 Feta', '🌽 Sweet corn', '🍋 Lemon dressing'] },
-    { n: 'Thai Chicken Curry with Cube Potato', kcal: 440, p: 28, c: 41, f: 16, r: '4.3', img: 'm-thaicurry.jpg', ing: ['🍗 Chicken', '🥔 Cube potato', '🥥 Coconut milk', '🍛 Curry paste', '🌶️ Spicy', '🌿 Thai basil', '🍃 Lime leaves', '🐟 Fish sauce', '🍚 Rice'] },
-    { n: 'Grilled Chicken with Garfelo Pasta', kcal: 452, p: 35, c: 44, f: 12, r: '4.3', img: 'm-garfelo.jpg', ing: ['🍗 Grilled chicken', '🍝 Garfelo pasta', '🍅 Tomato sauce', '🧀 Parmesan', '🍄 Mushrooms', '🫒 Olive oil', 'Black pepper', '🌿 Basil'] },
-  ],
-  snacks: [
-    { n: 'Strawberry Rocca Salad with Feta', kcal: 210, p: 7, c: 16, f: 13, r: '4.3', img: 'm-rocca.jpg', ing: ['🥬 Rocca', '🍓 Strawberry', '🧀 Feta', '🌰 Walnuts', '🧅 Red onion', 'Balsamic glaze', '🌿 Mint', '🍯 Honey vinaigrette'] },
-    { n: 'Keto Zoodles Salad', kcal: 180, p: 6, c: 9, f: 14, r: '4.3', img: 'm-zoodles.jpg', ing: ['🥒 Zucchini noodles', '🍅 Cherry tomato', '🫒 Olive oil', '🧄 Garlic', '🧀 Parmesan', '🌿 Basil pesto', '🌰 Pine nuts', '🌶️ Chili flakes'] },
-    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg', ing: ['🍍 Pineapple', '🍫 Dark chocolate', '🥥 Coconut flakes', '🌰 Almond crumbs', '🧂 Sea salt', '🌿 Mint'] },
-    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg', ing: ['🍩 Keto dough', '🍫 Dark chocolate glaze', '🌰 Almond flour', '🥚 Egg', '🍫 Cacao nibs', 'Vanilla', '✨ Sprinkles'] },
-    { n: 'Keto Cheese Pastry', kcal: 380, p: 16, c: 12, f: 29, r: '4.3', img: 'm-cheesepastry.jpg', ing: ['🧀 Cheese', '🌾 Almond flour', '🧈 Butter', '🥚 Egg', '🫓 Sesame seeds', '🌿 Za\u2019atar', '🥛 Greek yogurt', '🧂 Salt'] },
-  ],
-  dessert: [
-    { n: 'Chocolate Raspberry', kcal: 230, p: 5, c: 26, f: 12, r: '4.3', img: 'm-chocraspberry.jpg', ing: ['🍫 Dark chocolate', '🍓 Raspberry', '🥛 Cream', '🥥 Coconut flakes', '🌰 Pistachio', '🍯 Honey'] },
-    { n: 'Chocolate Pudding', kcal: 240, p: 6, c: 30, f: 11, r: '4.3', img: 'm-chocpudding.jpg', ing: ['🍫 Cacao', '🥛 Milk', '🌰 Chia seeds', '🍦 Whipped cream', '🫐 Berries', '🍫 Chocolate shavings', '🍯 Honey'] },
-    { n: 'Dark Chocolate Donut', kcal: 280, p: 6, c: 34, f: 14, r: '4.3', img: 'm-donut.jpg', ing: ['🍩 Keto dough', '🍫 Dark chocolate glaze', '🌰 Almond flour', '🥚 Egg', '🍫 Cacao nibs', 'Vanilla', '✨ Sprinkles'] },
-    { n: 'Chocolate Dipped Pineapple', kcal: 190, p: 3, c: 32, f: 6, r: '4.3', img: 'm-chocpineapple.jpg', ing: ['🍍 Pineapple', '🍫 Dark chocolate', '🥥 Coconut flakes', '🌰 Almond crumbs', '🧂 Sea salt', '🌿 Mint'] },
-  ],
-};
-const CATS = [
-  { id: 'breakfast', title: 'Breakfast', quota: 1 },
-  { id: 'lunch', title: 'Lunch', quota: 2 },
-  { id: 'dinner', title: 'Dinner', quota: 1 },
-  { id: 'snacks', title: 'Snacks', quota: 1 },
-  { id: 'dessert', title: 'Dessert', quota: 0 },
+const BUILD = 'calendar 2026-09-08 · 1';
+function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
+
+/* ================= modifiers ================= */
+const MODS = { dead: 206, win: 339, pop: 1.18, haptics: true };
+
+/* ================= calendar data (statuses per Figma 14994-86172) =================
+   add   green plus — ready to pick (opens the meal selector)
+   soon  green plus + yellow deadline badge
+   sel   green check — meals chosen
+   truck out for delivery (past days: delivered)
+   rate  yellow star — delivered, waiting on a rating
+   today red date + dot, star chip
+   off   subscription off-day
+   pause paused day */
+const MONTHS = [
+  { name: 'March', ab: 'Mar', startCol: 7, first: 7, last: 31,
+    st: { 7: 'truck', 8: 'rate', 9: 'truck', 10: 'rate', 11: 'today', 12: 'rate',
+          13: 'soon', 14: 'sel', 15: 'sel', 16: 'sel', 17: 'sel', 20: 'off', 27: 'off' },
+    past: [7, 8, 9, 10] },
+  { name: 'April', ab: 'Apr', startCol: 1, first: 1, last: 30,
+    st: { 4: 'pause', 6: 'off', 13: 'off', 20: 'off', 27: 'off' }, past: [] },
 ];
-const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
-/* primer settings from the app launcher (hub Settings sheet) */
-try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}')); } catch (_) {}
-const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
+const sessionSel = {};   /* 'Mar:18' -> true — days completed this session */
 
-const ICON = {
-  star: '<svg viewBox="0 0 16 16" fill="none"><path d="M8 11.68l2.767 1.673c.506.307 1.126-.146.993-.72l-.733-3.146 2.446-2.12c.447-.387.207-1.12-.38-1.167l-3.22-.273-1.26-2.973c-.227-.54-1-.54-1.227 0L6.127 5.92l-3.22.273c-.587.047-.827.78-.38 1.167L4.973 9.48l-.733 3.146c-.133.574.487 1.027.993.72L8 11.68z" fill="#FFC52E"/></svg>',
-  kebab: '<svg viewBox="0 0 16 16" fill="none"><path d="M8 5.33c.733 0 1.333-.6 1.333-1.33S8.733 2.67 8 2.67 6.667 3.27 6.667 4 7.267 5.33 8 5.33zm0 1.34C7.267 6.67 6.667 7.27 6.667 8S7.267 9.33 8 9.33 9.333 8.73 9.333 8 8.733 6.67 8 6.67zm0 4C7.267 10.67 6.667 11.27 6.667 12s.6 1.33 1.333 1.33S9.333 12.73 9.333 12 8.733 10.67 8 10.67z" fill="#F9F9F9"/></svg>',
-  minus: '<svg viewBox="0 0 16 16" fill="none"><path d="M12 8.67H4a.67.67 0 010-1.34h8a.67.67 0 010 1.34z" fill="#F9F9F9"/></svg>',
-  plus: '<svg viewBox="0 0 16 16" fill="none"><path d="M12 8.67H8.67V12a.67.67 0 01-1.34 0V8.67H4a.67.67 0 010-1.34h3.33V4a.67.67 0 011.34 0v3.33H12a.67.67 0 010 1.34z" fill="#F9F9F9"/></svg>',
-  check: '<svg class="q-check" viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  arrow: '<svg viewBox="0 0 16 16" fill="none"><path d="M3.47 8.67h7.45l-3.25 3.25a.68.68 0 00.94.95l4.39-4.4a.66.66 0 000-.94L8.61 3.13a.66.66 0 10-.94.94l3.25 3.26H3.47a.67.67 0 000 1.34z" fill="#F9F9F9"/></svg>',
+const CHIP = {
+  add:   '<img src="cal-add.svg" width="20" height="20" alt="">',
+  soon:  '<img src="cal-add.svg" width="20" height="20" alt="">',
+  sel:   '<img src="cal-check.svg" width="16" height="16" alt="">',
+  truck: '<img src="cal-truck.svg" width="16" height="16" alt="">',
+  rate:  '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
+  today: '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
+  off:   '<img src="cal-off.svg" width="14" height="6" alt="">',
+  pause: '<img src="cal-pausecircle.svg" width="20" height="20" alt="">',
 };
 
-/* ================= state ================= */
-const sel = {};          /* cardKey -> qty */
-const cardEls = {};      /* cardKey -> element */
-const collapseTimers = {};
-let completed = false;
-const autoSet = new Set();     /* fallback picks awaiting confirmation */
-const dayStates = {};          /* dayIdx -> saved selections */
-let userActed = false;         /* gates the celebration (auto picks don't) */
+function fmtHM(mins) { return Math.floor(mins / 60) + ':' + String(mins % 60).padStart(2, '0'); }
+function fmtHMlong(mins) { return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm'; }
 
-function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
-
-/* ================= meal details overlay (Figma 14934-94030) ================= */
-const mealOv = document.getElementById('mealOv');
-const moScroll = document.getElementById('moScroll');
-const moImg = document.getElementById('moImg');
-const moSelect = document.getElementById('moSelect');
-let moKey = null;
-
-function moStarSVG(fill) {
-  return '<svg viewBox="0 0 16 16" fill="none"><path d="M8 11.68l2.767 1.673c.506.307 1.126-.146.993-.72l-.733-3.146 2.446-2.12c.447-.387.207-1.12-.38-1.167l-3.22-.273-1.26-2.973c-.227-.54-1-.54-1.227 0L6.127 5.92l-3.22.273c-.587.047-.827.78-.38 1.167L4.973 9.48l-.733 3.146c-.133.574.487 1.027.993.72L8 11.68z" fill="' + fill + '"/></svg>';
+function dayState(m, d) {
+  if (sessionSel[m.ab + ':' + d]) return 'sel';
+  return m.st[d] || 'add';
 }
 
-function moDish(key) {
-  const parts = key.split(':');
-  return { cat: CATS.find(c => c.id === parts[0]), d: DISHES[parts[0]][+parts[1]] };
-}
-
-function openMealOv(key) {
-  moKey = key;
-  const { cat, d } = moDish(key);
-  moImg.src = d.img;
-  document.getElementById('moCat').textContent = cat.title;
-  document.getElementById('moTitle').textContent = d.n;
-  document.getElementById('moKcal').textContent = d.kcal;
-  document.getElementById('moP').textContent = d.p + 'g';
-  document.getElementById('moC').textContent = d.c + 'g';
-  document.getElementById('moF').textContent = d.f + 'g';
-  /* stars: rounded rating out of 5 + the compact scrolled badge */
-  const full = Math.round(parseFloat(d.r));
-  document.getElementById('moStars').innerHTML =
-    Array.from({ length: 5 }, (_, i) => moStarSVG(i < full ? '#FFC52E' : 'rgba(255,255,255,.55)')).join('');
-  document.getElementById('moBadge').innerHTML = d.r + ' ' + moStarSVG('#FFC52E');
-  /* heat chips: hot mains get both, cold plates just the cold one */
-  const hot = ['breakfast', 'lunch', 'dinner'].includes(cat.id) && !/salad|pudding|pineapple/i.test(d.n);
-  document.getElementById('moHeat').innerHTML = hot
-    ? '<div class="hc"><span class="he">&#x1F525;</span><div><b>Microwave it</b><span style="color:#ED1C24">2-3 minutes</span></div></div>' +
-      '<span class="or">or</span>' +
-      '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Enjoy it</b><span style="color:#3B82D0">cold!</span></div></div>'
-    : '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Served chilled</b><span style="color:#3B82D0">enjoy it cold!</span></div></div>';
-  buildIngRows(d);
-  syncMoSelect();
-  moScroll.scrollTop = 0;
-  mealOv.classList.remove('compact');
-  mealOv.style.transform = '';
-  document.getElementById('moVeil').classList.add('show');
-  mealOv.classList.add('open');
-  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
-    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
-    syncSheet();
-  }
-  setTimeout(() => {
-    const H = mealOv.offsetHeight;
-    moBaseImgH = H * 0.62;
-    moHeadH = document.getElementById('moHeadBlock').offsetHeight;
-    document.getElementById('moSpacer').style.height =
-      (moBaseImgH + moHeadH) + 'px';
-    syncDetails();
-  }, 40);
-  vibrate(8);
-}
-
-function closeMealOv() {
-  mealOv.classList.remove('open', 'drag');
-  mealOv.style.transform = '';
-  document.getElementById('moVeil').classList.remove('show');
-  vibrate(8);
-}
-
-const FB_CHECK = '<span class="sc"><svg viewBox="0 0 7 6" fill="none"><path d="M1 2.9L2.8 4.7 6 1.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-const FB_TRASH = '<svg class="tr" viewBox="0 0 13 14" fill="none"><path d="M1.5 3.5h10M4.8 3.5V2.2c0-.4.3-.7.7-.7h2c.4 0 .7.3.7.7v1.3M3 3.5l.6 8.1c0 .5.4.9.9.9h4c.5 0 .9-.4.9-.9l.6-8.1M5.3 6v4M7.7 6v4" stroke="#ED1C24" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
-function buildIngRows(d) {
-  if (!d.off) d.off = new Set();
-  const list = document.getElementById('moIngList');
-  list.innerHTML = '';
-  d.ing.forEach((label, i) => {
-    const row = document.createElement('div');
-    row.className = 'mo-row' + (d.off.has(i) ? ' off' : '');
-    row.innerHTML =
-      '<span class="lab">' + label + '</span>' +
-      '<span class="mo-fb"></span>' +
-      '<span class="mo-sw"><span class="knob"></span></span>';
-    row.addEventListener('click', () => {
-      /* auto-apply, no modal — the switch itself morphs into the verdict:
-         on -> "Added" + green check, off -> "Removed" + red trash, then returns */
-      if (d.off.has(i)) d.off.delete(i); else d.off.add(i);
-      const nowOff = d.off.has(i);
-      row.classList.toggle('off', nowOff);
-      vibrate(8);
-      const fb = row.querySelector('.mo-fb');
-      fb.className = 'mo-fb ' + (nowOff ? 'rem' : 'add');
-      fb.innerHTML = nowOff ? FB_TRASH + 'Removed' : FB_CHECK + 'Added';
-      clearTimeout(row._fbT);
-      row.classList.remove('fb');
-      void row.offsetWidth;
-      row.classList.add('fb');
-      row._fbT = setTimeout(() => row.classList.remove('fb'), 1050);
-    });
-    list.appendChild(row);
-  });
-}
-
-function syncMoSelect() {
-  const on = !!sel[moKey];
-  moSelect.classList.toggle('sel', on);
-  document.getElementById('moSelTxt').textContent = on ? 'Selected' : 'Select';
-}
-
-moSelect.addEventListener('click', () => {
-  const catId = moKey.split(':')[0];
-  const el = cardEls[moKey];
-  if (sel[moKey]) {
-    delete sel[moKey];
-    deselect(el);
-    vibrate(8);
-  } else {
-    if (catCount(catId) >= quotaOf(catId)) {
-      moSelect.classList.remove('deny'); void moSelect.offsetWidth;
-      moSelect.classList.add('deny');
-      vibrate([12, 40, 12]);
-      return;
-    }
-    sel[moKey] = 1;
-    selectSeq(el);
-    vibrate(8);
-    updateAll();
-  }
-  syncMoSelect();
-});
-
-document.getElementById('moClose').addEventListener('click', closeMealOv);
-document.getElementById('moVeil').addEventListener('click', closeMealOv);
-
-/* one continuous scroll: phase 1 collapses the image to its 40% floor,
-   then the same gesture keeps scrolling the ingredient list under the
-   pinned header; scrolling back grows the image again and pulling past
-   the top drags the whole page closed — one big swoop each way */
-const moImgBox = document.querySelector('.mo-img');
-let moBaseImgH = 0, moHeadH = 120, moLastSt = 0;
-function syncDetails() {
-  if (!moBaseImgH) return;
-  const st = moScroll.scrollTop;
-  /* a fast downward fling that lands on the top edge closes the page */
-  if (st <= 0 && moLastSt - st > 34 && mealOv.classList.contains('open')) {
-    moLastSt = st;
-    closeMealOv();
-    return;
-  }
-  moLastSt = st;
-  const H = mealOv.offsetHeight;
-  const imgH = Math.max(H * 0.34, moBaseImgH - Math.max(0, st));
-  moImgBox.style.height = (imgH + 46) + 'px';   /* peeks through the corner notches */
-  const bg = document.getElementById('moSheetBg');
-  const head = document.getElementById('moHeadBlock');
-  bg.style.top = imgH + 'px';
-  head.style.top = imgH + 'px';
-  document.getElementById('moActionRow').style.top = (imgH - 50) + 'px';
-  /* rows disappear under the header's bottom edge */
-  const spacerH = moBaseImgH + moHeadH;
-  const cut = Math.max(0, imgH + moHeadH + st - spacerH);
-  document.getElementById('moIngList').style.clipPath =
-    'inset(' + cut + 'px 0 0 0)';
-  mealOv.classList.toggle('compact', imgH < H * 0.38);
-}
-moScroll.addEventListener('scroll', syncDetails, { passive: true });
-
-/* sheet gesture: pull down from the top to dismiss, iOS style */
-let moDragY = null, moDragDy = 0;
-moScroll.addEventListener('touchstart', e => {
-  moDragY = moScroll.scrollTop <= 0 ? e.touches[0].clientY : null;
-  moDragDy = 0;
-}, { passive: true });
-moScroll.addEventListener('touchmove', e => {
-  if (moDragY === null) return;
-  const dy = e.touches[0].clientY - moDragY;
-  if (dy > 0 && moScroll.scrollTop <= 0) {
-    e.preventDefault();
-    moDragDy = dy;
-    mealOv.classList.add('drag');
-    mealOv.style.transform = 'translateY(' + (dy * 0.42).toFixed(1) + 'px)';
-  }
-}, { passive: false });
-moScroll.addEventListener('touchend', () => {
-  if (moDragY === null) return;
-  mealOv.classList.remove('drag');
-  if (moDragDy > 195) closeMealOv();
-  else mealOv.style.transform = '';
-  moDragY = null; moDragDy = 0;
-});
-
-/* ================= build the screen ================= */
-const scrollArea = document.getElementById('scrollArea');
-let cardSeq = 0;
-function buildScreen() {
-  scrollArea.innerHTML = '';
-  cardSeq = 0;
-  CATS.forEach(cat => {
-    if (cat.quota === 0 && !MODS.showEmpty) return;
+function renderMonths() {
+  const root = document.getElementById('months');
+  root.innerHTML = '';
+  MONTHS.forEach(m => {
     const sec = document.createElement('section');
-    const head = document.createElement('div');
-    head.className = 'cat-head';
-    head.innerHTML = '<h3>' + cat.title + '</h3><span class="of" data-of="' + cat.id + '"></span>';
-    sec.appendChild(head);
+    sec.className = 'month';
+    sec.innerHTML = '<h3 class="mtitle">' + m.name + '</h3>';
     const grid = document.createElement('div');
-    grid.className = 'grid';
-    DISHES[cat.id].forEach((d, i) => grid.appendChild(makeCard(cat, d, i)));
+    grid.className = 'mgrid';
+    for (let d = m.first; d <= m.last; d++) {
+      const st = dayState(m, d);
+      const el = document.createElement('button');
+      el.className = 'day ' + st + (m.past.includes(d) ? ' past' : '');
+      el.dataset.mon = m.ab; el.dataset.day = d;
+      if (d === m.first) el.style.gridColumn = m.startCol;
+      let inner = '<span class="tile">' + d + '</span>' +
+        '<span class="chip">' + CHIP[st] + '</span><span class="ring"></span>';
+      if (st === 'today') inner += '<img class="dot" src="cal-dot.svg" width="4" height="4" alt="">';
+      if (st === 'soon') inner += '<span class="badge"><span class="bb">' +
+        Math.floor(MODS.dead / 60) + ':00</span><span class="bt">' +
+        '<img src="cal-tri.svg" alt=""></span></span>';
+      el.innerHTML = inner;
+      if (st === 'add' || st === 'soon') {
+        el.classList.add('tap');
+        el.onclick = () => openDay(m.ab, d);
+      } else {
+        el.onclick = () => { vibrate(6); el.classList.remove('nudge');
+          void el.offsetWidth; el.classList.add('nudge'); };
+      }
+      grid.appendChild(el);
+    }
     sec.appendChild(grid);
-    scrollArea.appendChild(sec);
+    root.appendChild(sec);
   });
-  updateAll(true);
-  requestAnimationFrame(() => { if (typeof updateCatDock === 'function') { updateCatDock(); } });
+  const note = document.createElement('div');
+  note.className = 'endnote';
+  note.innerHTML = '<img src="cal-clock.svg" alt=""><p><b id="winTxt">' +
+    fmtHM(MODS.win) + ' hrs left</b> for selection to end</p>';
+  root.appendChild(note);
+  const pad = document.createElement('div');
+  pad.className = 'endpad';
+  root.appendChild(pad);
 }
 
-function makeCard(cat, d, i) {
-  const key = cat.id + ':' + i;
-  const el = document.createElement('div');
-  el.className = 'card';
-  el.dataset.key = key; el.dataset.cat = cat.id;
-  el.innerHTML =
-    '<div class="photo"><img src="' + d.img + '" alt=""></div>' +
-    '<div class="grad"></div>' +
-    '<div class="sel-border"></div>' +
-    '<div class="toprow">' +
-      '<div class="rating"><span class="r-big">' + d.r.split('.')[0] + '</span>' +
-      '<span class="r-dec">.' + d.r.split('.')[1] + '</span>' + ICON.star + '</div>' +
-      '<button class="kebab" aria-label="More">' + ICON.kebab + '</button>' +
-    '</div>' +
-    '<div class="autobadge"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.3 3.3 1.2-3.3 1.2L8 10.5 6.8 7.2 3.5 6l3.3-1.2L8 1.5zM12.6 10l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7.7-1.7z" fill="#fff"/></svg>Auto Selected</div>' +
-    '<div class="details">' +
-      '<div class="qty">' +
-        '<button class="q-btn q-minus" aria-label="Less">' + ICON.minus + '</button>' +
-        '<span class="q-count">1</span>' +
-        '<button class="q-btn q-plus" aria-label="More">' + ICON.plus + '</button>' +
-        ICON.check +
-      '</div>' +
-      '<div class="name">' + d.n + '</div>' +
-      '<div class="macros">' +
-        '<div class="kv"><b>' + d.kcal + '</b><i>Kcal</i></div>' +
-        '<div class="pair"><b>P</b><span>' + d.p + '</span><i>g</i></div>' +
-        '<div class="pair"><b>C</b><span>' + d.c + '</span><i>g</i></div>' +
-        '<div class="pair"><b>F</b><span>' + d.f + '</span><i>g</i></div>' +
-      '</div>' +
-    '</div>';
-  cardEls[key] = el;
-  el.style.setProperty('--ci', String(cardSeq++));
-  el.addEventListener('click', e => {
-    if (e.target.closest('.q-minus')) return step(key, -1);
-    if (e.target.closest('.q-plus')) return step(key, +1);
-    if (e.target.closest('.kebab')) return openMealOv(key);
-    if (e.target.closest('.qty')) return expand(key);   /* collapsed pill tap re-opens */
-    cardTap(key);
-  });
-  return el;
+/* ================= header countdown (ticks a real minute) ================= */
+function syncCountdown() {
+  document.getElementById('hdCount').textContent =
+    String(Math.floor(MODS.dead / 60)).padStart(2, '0') + ':' +
+    String(MODS.dead % 60).padStart(2, '0');
+  const w = document.getElementById('winTxt');
+  if (w) w.firstChild.textContent = fmtHM(MODS.win) + ' hrs left';
+  const bb = document.querySelector('.day.soon .bb');
+  if (bb) bb.textContent = Math.floor(MODS.dead / 60) + ':00';
 }
+setInterval(() => { if (MODS.dead > 0) { MODS.dead--; syncCountdown(); } }, 60000);
 
-/* ================= selection choreography (curves from the Figma timeline) ==== */
-function catCount(catId) {
-  return Object.keys(sel).reduce((s, k) =>
-    s + (k.startsWith(catId + ':') ? sel[k] : 0), 0);
+/* ================= meal-selection overlay ================= */
+const ovVeil = document.getElementById('ovVeil');
+let ovFrame = null;
+function openDay(mon, day) {
+  if (ovFrame) return;
+  vibrate(8);
+  ovVeil.classList.add('show');
+  ovFrame = document.createElement('iframe');
+  ovFrame.className = 'ov-frame';
+  ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day;
+  document.getElementById('phone').appendChild(ovFrame);
 }
-function quotaOf(catId) { return CATS.find(c => c.id === catId).quota; }
-
-function autoVictim(catId) {
-  for (const k of autoSet) if (k.startsWith(catId + ':')) return k;
-  return null;
+function closeOverlay() {
+  if (!ovFrame) return;
+  ovVeil.classList.remove('show');
+  const fr = ovFrame; ovFrame = null;
+  setTimeout(() => fr.remove(), 420);
 }
-function dropAuto(key) {
-  /* silently release a fallback pick to make room for the user's choice */
-  delete sel[key];
-  autoSet.delete(key);
-  const el = cardEls[key];
-  clearTimeout(collapseTimers[key]);
-  el.classList.remove('sel', 'expanded', 'counted', 'auto');
-  const check = el.querySelector('.q-check');
-  check.classList.remove('draw', 'undraw');
-  el.querySelector('.q-count').textContent = '1';
-}
-function confirmAuto(key) {
-  if (autoSet.has(key)) {
-    autoSet.delete(key);
-    cardEls[key].classList.remove('auto');
+addEventListener('message', e => {
+  const d = e.data;
+  if (!d || !d.t) return;
+  if (d.t === 'ds-close') closeOverlay();
+  if (d.t === 'ds-done') {
+    closeOverlay();
+    markSelected(d.mon, d.day);
   }
-}
-
-function cardTap(key) {
-  const catId = key.split(':')[0];
-  const el = cardEls[key];
-  userActed = true;
-  if (sel[key]) confirmAuto(key);
-  if (!sel[key]) {
-    if (catCount(catId) >= quotaOf(catId)) {
-      const v = autoVictim(catId);
-      if (v) dropAuto(v); else return denied(catId);
-    }
-    sel[key] = 1;
-    selectSeq(el);
-    vibrate(8);
-  } else if (!el.classList.contains('expanded')) {
-    return expand(key);          /* collapsed badge: reopen the stepper first */
-  } else if (MODS.tapMode === 'add') {
-    return step(key, +1);
-  } else {
-    armCollapse(key);
-  }
-  updateAll();
-}
-
-function selectSeq(el) {
-  /* 1. border springs + pill pops with the check drawing (Figma 0-0.68s) */
-  el.classList.add('sel');
-  const check = el.querySelector('.q-check');
-  check.classList.remove('undraw');
-  setTimeout(() => check.classList.add('draw'), 200);
-  /* 2. check un-draws, pill unfolds into the stepper (Figma 1.41-1.82s) */
-  setTimeout(() => { check.classList.add('undraw'); }, 850);
-  setTimeout(() => {
-    el.classList.add('expanded', 'counted');
-    armCollapse(el.dataset.key);
-  }, 1050);
-}
-
-function step(key, d) {
-  const el = cardEls[key];
-  const catId = key.split(':')[0];
-  userActed = true;
-  confirmAuto(key);
-  if (d > 0) {
-    if (catCount(catId) >= quotaOf(catId)) {
-      const v = autoVictim(catId);
-      if (v && v !== key) dropAuto(v); else return denied(catId);
-    }
-    sel[key] += 1;
-    pulse(el); vibrate(8);
-    if (!el.classList.contains('expanded')) expand(key);
-  } else {
-    sel[key] -= 1;
-    vibrate(8);
-    if (sel[key] <= 0) { delete sel[key]; return deselect(el); }
-    pulse(el);
-  }
-  el.querySelector('.q-count').textContent = sel[key];
-  armCollapse(key);
-  updateAll();
-}
-
-function expand(key) {
-  const el = cardEls[key];
-  el.classList.add('expanded', 'counted');
-  armCollapse(key);
-}
-
-function armCollapse(key) {
-  clearTimeout(collapseTimers[key]);
-  collapseTimers[key] = setTimeout(() => {
-    cardEls[key] && cardEls[key].classList.remove('expanded');
-  }, MODS.idle * 1000);
-}
-
-function deselect(el) {
-  const key = el.dataset.key;
-  clearTimeout(collapseTimers[key]);
-  el.classList.remove('sel', 'expanded', 'counted');
-  const check = el.querySelector('.q-check');
-  check.classList.remove('draw', 'undraw');
-  updateAll();
-}
-
-/* over-quota: the navigator carries the error — shake, hide the filler,
-   say which category to free up (the thumbnail itself stays calm) */
-let warnTimer = null;
-function denied(catId) {
-  const cat = CATS.find(c => c.id === catId);
-  const nav = document.getElementById('navigator');
-  document.getElementById('warnMsg').textContent =
-    cat.title + ' is full — deselect a meal there to swap';
-  clearTimeout(warnTimer);
-  nav.classList.remove('warn'); void nav.offsetWidth; nav.classList.add('warn');
-  gaugeFx.alphaTarget = 0;
-  vibrate(35);
-  warnTimer = setTimeout(() => {
-    nav.classList.remove('warn');
-    gaugeFx.alphaTarget = 1;
-  }, 1900);
-}
-
-function pulse(el) {
-  const q = el.querySelector('.qty');
-  q.classList.remove('pulse'); void q.offsetWidth; q.classList.add('pulse');
-}
-
-/* ================= totals + navigator ================= */
-const kcalNow = document.getElementById('kcalNow');
-const dock = document.getElementById('dock');
-const confirmBtn = document.getElementById('confirmBtn');
-let shownKcal = 0, kcalAnim = null;
-
-function totals() {
-  let kcal = 0, p = 0, c = 0, f = 0, count = 0;
-  Object.keys(sel).forEach(k => {
-    const [catId, i] = k.split(':');
-    const d = DISHES[catId][+i], q = sel[k];
-    kcal += d.kcal * q; p += d.p * q; c += d.c * q; f += d.f * q; count += q;
-  });
-  return { kcal, p, c, f, count };
-}
-
-const OF_CHECK = '<svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#26A659" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function renderOf(el, count, quota) {
-  if (!el) return;
-  const done = quota > 0 && count >= quota;
-  const was = el.dataset.done === '1';
-  el.dataset.done = done ? '1' : '0';
-  el.classList.toggle('done', done);
-  el.textContent = count + ' of ' + quota;
-  if (done && !was) {
-    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-  }
-}
-const catFullState = {};
-function updateAll(instant) {
-  const t = totals();
-  const quotaTotal = CATS.reduce((s, c) => s + c.quota, 0);
-  /* category counters + dimming when a quota is full + advance the scroll */
-  CATS.forEach(cat => {
-    renderOf(document.querySelector('[data-of="' + cat.id + '"]'),
-      catCount(cat.id), cat.quota);
-    const full = cat.quota > 0 && catCount(cat.id) >= cat.quota;
-    if (full && !catFullState[cat.id] && !instant) scrollToNextCat(cat.id);
-    catFullState[cat.id] = full;
-    DISHES[cat.id].forEach((d, i) => {
-      const el = cardEls[cat.id + ':' + i];
-      if (el) el.classList.remove('dim');
-    });
-  });
-  if (typeof syncDockCounter === 'function') syncDockCounter();
-  /* macros + counting kcal */
-  document.getElementById('mP').textContent = t.p;
-  document.getElementById('mC').textContent = t.c;
-  document.getElementById('mF').textContent = t.f;
-  animateKcal(t.kcal, instant);
-  /* gauge fill: Figma base 24.73% at zero -> 100% at full quota */
-  const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
-  gaugeFx.target = frac;
-  /* completion: Saved moment -> Next */
-  const done = quotaTotal > 0 && t.count >= quotaTotal;
-  if (done && !completed) {
-    completed = true;
-    if (userActed) celebrate(); else armNextDock();
-  }
-  if (!done && completed) { completed = false; hideDock(); }
-  if (confirmBtn) confirmBtn.classList.toggle('on', done);
-}
-
-function animateKcal(target, instant) {
-  cancelAnimationFrame(kcalAnim);
-  if (instant) { shownKcal = target; kcalNow.textContent = target; return; }
-  const from = shownKcal, t0 = performance.now(), dur = 950;
-  const tick = now => {
-    const x = Math.min(1, (now - t0) / dur),
-      e = x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-    shownKcal = Math.round(from + (target - from) * e);
-    kcalNow.textContent = shownKcal;
-    if (x < 1) kcalAnim = requestAnimationFrame(tick);
-  };
-  kcalAnim = requestAnimationFrame(tick);
-}
-
-function celebrate() {
-  /* choreographed, not simultaneous: the bar finishes filling first, the
-     cap sheen sweeps, THEN the centered Done plays, then the counter
-     returns with Next */
-  const nav = document.getElementById('navigator');
-  const t0 = performance.now();
-  const iv = setInterval(() => {
-    if (!completed) { clearInterval(iv); return; }
-    if (gaugeFx.frac >= .985 || performance.now() - t0 > 2500) {
-      clearInterval(iv);
-      setTimeout(() => {                       /* let the sheen finish */
-        if (!completed) return;
-        nav.classList.add('celebrating');
-        burst();
-        confetti();
-        vibrate([14, 40, 22]);
-        setTimeout(() => {
-          if (!completed) return;
-          nav.classList.remove('celebrating');
-          dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
-          dock.onclick = nextTapped;
-          dock.classList.add('show', 'wide');
-        }, 1500);
-      }, 320);
-    }
-  }, 50);
-}
-
-function armNextDock() {
-  dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
-  dock.onclick = nextTapped;
-  dock.classList.add('show', 'wide');
-}
-
-function burst() {
-  const nav = document.getElementById('navigator');
-  const ring = document.createElement('div');
-  ring.className = 'burst-ring';
-  ring.style.cssText = 'left:' + (nav.offsetWidth / 2 - 27) + 'px;top:7px;width:54px;height:54px';
-  nav.appendChild(ring);
-  ring.animate([
-    { transform: 'scale(.45)', opacity: 1 },
-    { transform: 'scale(1.7)', opacity: 0 }
-  ], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
-}
-
-function hideDock() {
-  dock.classList.remove('show', 'wide');
-  dock.onclick = null;
-  document.getElementById('navigator').classList.remove('celebrating');
-}
-
-function confetti() {
-  const nav = document.getElementById('navigator');
-  const rect = { x: nav.offsetWidth / 2, y: 14 };
-  const colors = ['#fff', '#FDD702', '#FF8A3C', '#FF3848'];
-  for (let i = 0; i < MODS.confetti; i++) {
-    const s = document.createElement('div');
-    s.className = 'spark';
-    const sz = 3 + Math.random() * 4;
-    s.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;background:' +
-      colors[i % colors.length] + ';left:' + rect.x + 'px;top:' + rect.y + 'px';
-    nav.appendChild(s);
-    const a = -Math.PI / 2 + (Math.random() - .5) * 2.2,
-      v = 60 + Math.random() * 110;
-    s.animate([
-      { transform: 'translate(0,0) scale(1)', opacity: 1 },
-      { transform: 'translate(' + Math.cos(a) * v + 'px,' + (Math.sin(a) * v + 70) +
-        'px) scale(.4)', opacity: 0 }
-    ], { duration: 700 + Math.random() * 400, easing: 'cubic-bezier(.2,.6,.4,1)' })
-      .onfinish = () => s.remove();
-  }
-}
-
-/* a completed category glides the list to whichever category still needs
-   picks — the next one below first, wrapping back up to a skipped one at the
-   end. Self-verifying: if the smooth scroll gets canceled (iOS momentum,
-   background throttling) it retries, then snaps. */
-let glideRaf = null, glideCanceled = false;
-function glideTo(target) {
-  const from = scrollArea.scrollTop, dist = target - from;
-  if (Math.abs(dist) < 2) return;
-  const dur = Math.min(950, 380 + Math.abs(dist) * 0.3);
-  const t0 = performance.now();
-  glideCanceled = false;
-  cancelAnimationFrame(glideRaf);
-  const tick = now => {
-    if (glideCanceled) return;
-    const x = Math.min(1, (now - t0) / dur);
-    const e = 1 - Math.pow(1 - x, 3);
-    scrollArea.scrollTop = from + dist * e;
-    if (x < 1) glideRaf = requestAnimationFrame(tick);
-  };
-  glideRaf = requestAnimationFrame(tick);
-}
-
-/* the tracker owns a scroll INTENT and pursues it: attempt the glide, verify,
-   and snap directly if the browser swallowed it — user touch always wins */
-let scrollIntent = null;
-scrollArea.addEventListener('touchstart', () => { scrollIntent = null; glideCanceled = true; }, { passive: true });
-scrollArea.addEventListener('wheel', () => { scrollIntent = null; glideCanceled = true; }, { passive: true });
-
-function pursueIntent() {
-  if (!scrollIntent) return;
-  const head = scrollIntent.head;
-  /* land with the first thumbnail row fully clear of the docked nav.
-     NOTE: --top-pad is an env() expression on device — read the RESOLVED
-     scroll padding (top-pad + 66) instead of the raw custom property. */
-  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
-  const target = Math.max(0, Math.min(
-    head.offsetTop + head.offsetHeight - (tp + 92) - 12,
-    scrollArea.scrollHeight - scrollArea.clientHeight));
-  if (Math.abs(scrollArea.scrollTop - target) < 8) {
-    head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
-    setTimeout(() => head.classList.remove('nudge'), 2400);
-    scrollIntent = null;
-    return;
-  }
-  scrollIntent.tries++;
-  if (scrollIntent.tries === 1) glideTo(target);
-  else scrollArea.scrollTop = target;
-  if (scrollIntent.tries < 5) setTimeout(pursueIntent, 550);
-  else scrollIntent = null;
-}
-
-function scrollToNextCat(fromCatId) {
-  const visible = CATS.filter(c => c.quota > 0);
-  const isOpen = c => catCount(c.id) < c.quota;
-  const idx = visible.findIndex(c => c.id === fromCatId);
-  const open = visible.slice(idx + 1).find(isOpen) || visible.find(isOpen);
-  if (!open) return;
-  const of = document.querySelector('[data-of="' + open.id + '"]');
-  const head = of && of.closest('.cat-head');
-  if (!head) return;
-  scrollIntent = { head: head, tries: 0 };
-  setTimeout(pursueIntent, 700);
-}
-
-const DAY_START = 15;
-let dayIdx = 0;
-
-/* every day opens with deterministic fallback picks the user can just keep */
-function seedAutoDay(idx) {
-  const st = { sel: {}, auto: [] };
-  CATS.forEach((cat, c) => {
-    const n = DISHES[cat.id].length;
-    for (let k = 0; k < cat.quota; k++) {
-      const key = cat.id + ':' + ((idx * 2 + c + k * 3) % n);
-      if (!st.sel[key]) { st.sel[key] = 1; st.auto.push(key); }
-      else st.sel[key] += 1;
-    }
-  });
-  return st;
-}
-
-function saveDay() {
-  dayStates[dayIdx] = { sel: { ...sel }, auto: [...autoSet] };
-}
-
-function applyDay(idx) {
-  const st = dayStates[idx] || seedAutoDay(idx);
-  resetAll(true);
-  userActed = false;
-  Object.entries(st.sel).forEach(([key, q]) => {
-    sel[key] = q;
-    const el = cardEls[key];
-    if (!el) return;
-    el.classList.add('sel', 'counted');
-    el.querySelector('.q-count').textContent = q;
-  });
-  st.auto.forEach(key => {
-    autoSet.add(key);
-    if (cardEls[key]) cardEls[key].classList.add('auto');
-  });
-  updateAll(true);
-}
-function ordinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-let turning = false;
-function turnDay(dir) {
-  /* page turn either direction: current day exits, the target day rides in
-     from the opposite side, at the top, with a soft stagger bounce */
-  if (turning) return;
-  if (dir < 0 && dayIdx === 0) return;
-  turning = true;
-  const wasFull = scrollArea.scrollTop >= SHEET_GAP - 1;
-  vibrate(25);
-  dock.onclick = null;
-  glideCanceled = true; scrollIntent = null;
-  saveDay();
-  scrollArea.style.transition = 'transform .3s cubic-bezier(.55,0,.85,.6), opacity .26s ease';
-  scrollArea.style.transform = 'translateX(' + (-44 * dir) + '%)';
-  scrollArea.style.opacity = '0';
-  setTimeout(() => {
-    dayIdx += dir;
-    const lbl = document.getElementById('dayLabel');
-    lbl.style.transition = 'transform .26s ease, opacity .22s ease';
-    lbl.style.transform = 'translateX(' + (-28 * dir) + 'px)'; lbl.style.opacity = '0';
-    setTimeout(() => {
-      lbl.textContent = 'Mar ' + ordinal(DAY_START + dayIdx);
-      lbl.style.transition = 'none';
-      lbl.style.transform = 'translateX(' + (28 * dir) + 'px)';
-      setTimeout(() => {
-        lbl.style.transition = 'transform .32s cubic-bezier(.2,.8,.3,1.18), opacity .25s ease';
-        lbl.style.transform = 'translateX(0)'; lbl.style.opacity = '1';
-      }, 30);
-    }, 260);
-    /* park off the far side, apply the target day, spring in staggered */
-    scrollArea.style.transition = 'none';
-    scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
-    applyDay(dayIdx);
-    scrollArea.scrollTop = wasFull ? SHEET_GAP : 0;
-    syncSheet();
-    void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
-    scrollArea.classList.add('stagger');
-    setTimeout(() => {
-      scrollArea.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1), opacity .3s ease';
-      scrollArea.style.transform = 'translateX(0)';
-      scrollArea.style.opacity = '1';
-      setTimeout(() => {
-        scrollArea.style.transition = ''; scrollArea.style.transform = '';
-        scrollArea.classList.remove('stagger');
-        turning = false;
-      }, 760);
-    }, 30);
-  }, 340);
-}
-function nextTapped() {
-  if (turning) return;
-  dock.onclick = null;
-  vibrate(10);
-  dock.classList.remove('wide');
-  dock.innerHTML = '<span class="loader"></span>';
-  setTimeout(() => turnDay(1), 2000);
-}
-
-/* horizontal swipe switches days back and forth */
-let swX = null, swY = null, swDone = false;
-scrollArea.addEventListener('touchstart', e => {
-  swX = e.touches[0].clientX; swY = e.touches[0].clientY; swDone = false;
-}, { passive: true });
-scrollArea.addEventListener('touchmove', e => {
-  if (swX === null || swDone) return;
-  const dx = e.touches[0].clientX - swX, dy = e.touches[0].clientY - swY;
-  if (Math.abs(dx) > 64 && Math.abs(dx) > 1.7 * Math.abs(dy)) {
-    swDone = true;
-    turnDay(dx < 0 ? 1 : -1);
-  }
-}, { passive: true });
-
-/* ================= nav actions ================= */
-const EMBED = /[?&]embed=1/.test(location.search);
-let REAL_PAD = 34;
-if (EMBED) {
-  const pr = document.createElement('div');
-  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 6px))';
-  document.body.appendChild(pr);
-  REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
-  pr.remove();
-  document.getElementById('phone').style.setProperty('--real-pad', REAL_PAD + 'px');
-  document.documentElement.classList.add('embed');
-  document.body.classList.add('embed');
-}
-document.getElementById('closeBtn').onclick = () => {
-  if (EMBED) {
-    /* slide the sheet away, then let the launcher dismiss the overlay */
-    sheetEl.classList.add('springing');
-    sheetEl.style.transform = 'translateY(103%)';
-    setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 380);
-  } else {
-    location.href = '../';
-  }
-};
-confirmBtn.onclick = () => { if (completed) nextTapped(); };
-const clearModal = document.getElementById('clearModal');
-document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
-document.getElementById('clearCancel').onclick = () => clearModal.classList.remove('show');
-document.getElementById('clearConfirm').onclick = () => {
-  clearModal.classList.remove('show');
-  vibrate(15);
-  resetAll();
-};
-clearModal.addEventListener('click', e => {
-  if (e.target === clearModal) clearModal.classList.remove('show');
 });
-
-function resetAll(silent) {
-  Object.keys(sel).forEach(k => delete sel[k]);
-  Object.keys(collapseTimers).forEach(k => clearTimeout(collapseTimers[k]));
-  autoSet.clear();
-  completed = false; hideDock();
-  Object.values(cardEls).forEach(el => {
-    el.classList.remove('sel', 'expanded', 'counted', 'dim', 'auto');
-    const check = el.querySelector('.q-check');
-    check.classList.remove('draw', 'undraw');
-    el.querySelector('.q-count').textContent = '1';
-  });
-  updateAll(silent);
+function markSelected(mon, day) {
+  sessionSel[mon + ':' + day] = true;
+  const el = document.querySelector('.day[data-mon="' + mon + '"][data-day="' + day + '"]');
+  if (!el) return;
+  setTimeout(() => {
+    el.className = 'day sel justsel';
+    el.style.setProperty('--pop', MODS.pop);
+    el.querySelector('.chip').innerHTML = CHIP.sel;
+    const b = el.querySelector('.badge'); if (b) b.remove();
+    el.onclick = () => { vibrate(6); el.classList.remove('nudge');
+      void el.offsetWidth; el.classList.add('nudge'); };
+    vibrate([10, 40, 18]);
+    setTimeout(() => el.classList.remove('justsel'), 650);
+  }, 260);
 }
 
-/* auto-fill: staggered picks so the whole choreography plays hands-free */
-function autoFill() {
-  resetAll(true);
-  let delay = 120;
-  CATS.forEach(cat => {
-    for (let n = 0; n < cat.quota; n++) {
-      const idx = n % DISHES[cat.id].length;
-      setTimeout(() => cardTap(cat.id + ':' + idx), delay);
-      delay += 480;
-    }
-  });
-}
+/* ================= decorative chrome ================= */
+document.getElementById('pauseBtn').onclick = () => vibrate(8);
+document.getElementById('tabHome').onclick = () => {
+  vibrate(8);
+  if (EMBED) parent.postMessage({ t: 'ds-close' }, '*');
+  else location.href = '../';
+};
+document.getElementById('tabPerson').onclick = () => vibrate(6);
 
 /* ================= sidebar wiring ================= */
-function buildQuotaRows() {
-  const root = document.getElementById('quotaRows');
-  root.innerHTML = '';
-  CATS.forEach(cat => {
-    const row = document.createElement('div');
-    row.className = 'quota-row';
-    row.innerHTML = '<span class="qname">' + cat.title + '</span>' +
-      '<span class="quota-ctl"><button data-d="-1">−</button><output>' + cat.quota +
-      '</output><button data-d="1">+</button></span>';
-    row.querySelectorAll('button').forEach(b => b.onclick = () => {
-      cat.quota = Math.max(0, Math.min(3, cat.quota + (+b.dataset.d)));
-      row.querySelector('output').textContent = cat.quota;
-      resetAll(true); buildScreen();
-    });
-    root.appendChild(row);
-  });
-}
-function bindMod(id, out, key, fmt) {
+function bindMod(id, out, key, fmt, after) {
   const inp = document.getElementById(id), o = document.getElementById(out);
   inp.addEventListener('input', () => {
     MODS[key] = +inp.value; o.textContent = fmt(inp.value);
-    if (key === 'target') {
-      document.getElementById('kcalCap').textContent = '/' + MODS.target;
-    }
+    if (after) after();
   });
 }
-bindMod('mIdle', 'vIdle', 'idle', v => (+v).toFixed(1) + 's');
-bindMod('mTarget', 'vTarget', 'target', v => v);
-bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
-/* reflect primer values in the sidebar + gauge cap */
-(function () {
-  const set = (i, o, val, txt) => { const a = document.getElementById(i), b = document.getElementById(o);
-    if (a) a.value = val; if (b) b.textContent = txt; };
-  set('mIdle', 'vIdle', MODS.idle, (+MODS.idle).toFixed(1) + 's');
-  set('mTarget', 'vTarget', MODS.target, MODS.target);
-  set('mConfetti', 'vConfetti', MODS.confetti, MODS.confetti);
-  document.getElementById('kcalCap').textContent = '/' + MODS.target;
-  document.querySelectorAll('#tapMode button').forEach(x =>
-    x.classList.toggle('on', x.dataset.mode === MODS.tapMode));
-})();
-document.getElementById('tapMode').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  MODS.tapMode = b.dataset.mode;
-  document.querySelectorAll('#tapMode button').forEach(x =>
+bindMod('mDead', 'vDead', 'dead', v => fmtHMlong(+v), syncCountdown);
+bindMod('mWin', 'vWin', 'win', v => fmtHMlong(+v), syncCountdown);
+bindMod('mPop', 'vPop', 'pop', v => (+v).toFixed(2) + '×');
+document.querySelectorAll('#hapSeg button').forEach(b => b.onclick = () => {
+  MODS.haptics = b.dataset.v === 'on';
+  document.querySelectorAll('#hapSeg button').forEach(x =>
     x.classList.toggle('on', x === b));
 });
-document.getElementById('sFill').onclick = autoFill;
-document.getElementById('sReset').onclick = () => resetAll();
-document.getElementById('sCopy').onclick = () => {
-  const spec = 'meal-select playground: quotas ' +
-    CATS.map(c => c.title + ' ' + c.quota).join(', ') +
-    ' · collapse ' + MODS.idle + 's · target ' + MODS.target +
-    ' kcal · confetti ' + MODS.confetti + ' · tap mode ' + MODS.tapMode;
-  const b = document.getElementById('sCopy');
-  navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
-    b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
-  }).catch(() => {});
+document.getElementById('sReset').onclick = () => {
+  Object.keys(sessionSel).forEach(k => delete sessionSel[k]);
+  MODS.dead = +document.getElementById('mDead').value;
+  renderMonths(); syncCountdown();
 };
+document.getElementById('sCopy').onclick = () => {
+  const s = 'calendar · deadline ' + fmtHMlong(MODS.dead) + ' · window ' +
+    fmtHMlong(MODS.win) + ' · pop ' + (+MODS.pop).toFixed(2) +
+    ' · haptics ' + (MODS.haptics ? 'on' : 'off');
+  try { navigator.clipboard.writeText(s); } catch (_) {}
+};
+
+/* ================= embed mode (opened from the hub launcher) ================= */
+const EMBED = /[?&]embed=1/.test(location.search);
+const calPage = document.getElementById('calPage');
+if (EMBED) {
+  document.documentElement.classList.add('embed');
+  document.body.classList.add('embed', 'embed-enter');
+  calPage.classList.add('presenting');
+  setTimeout(() => {
+    calPage.classList.add('springing');
+    document.body.classList.remove('embed-enter');
+    setTimeout(() => {
+      calPage.classList.remove('springing', 'presenting');
+    }, 600);
+  }, 60);
+}
 
 /* ================= stage scaling: desktop playground vs mobile fullscreen ==== */
 const phone = document.getElementById('phone');
@@ -1680,9 +568,6 @@ function fit() {
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   if (mobile) {
     document.body.classList.remove('desktop');
-    /* Figma-proportional scaling from the LAYOUT viewport itself —
-       documentElement.client* is what CSS lays out against: synchronous,
-       chrome-free, and correct in standalone by definition. */
     const de = document.documentElement;
     const vw = de.clientWidth;
     const cands = [de.clientHeight, innerHeight,
@@ -1709,111 +594,7 @@ function fit() {
 addEventListener('resize', fit);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 addEventListener('orientationchange', () => setTimeout(fit, 250));
-/* standalone launches settle late — re-fit a few times after load */
 [300, 900, 2000].forEach(ms => setTimeout(fit, ms));
-
-
-/* =================================================================
-   The living gauge: a small transparent canvas on the glass container.
-   Under-damped spring fill, velocity-reactive rippling edge, breathing
-   tip glow. The glass base is a plain backdrop-filter — the browser
-   blurs the live thumbnails beneath, no duplicated content anywhere.
-   ================================================================= */
-const gaugeFx = { frac: 0, speed: 0, target: 0, alpha: 1, alphaTarget: 1,
-  phase: 0, tick: 0, capFlash: 0, capped: false };
-const gaugeCanvas = document.getElementById('gaugeCanvas');
-const gctx = gaugeCanvas.getContext('2d');
-(function initGauge() {
-  const d = Math.min(2, window.devicePixelRatio || 1);
-  gaugeCanvas.width = 358 * d; gaugeCanvas.height = 69 * d;
-  gctx.scale(d, d);
-  requestAnimationFrame(gaugeTick);
-})();
-
-function roundRectPath(g, x, y, w, h, r) {
-  g.moveTo(x + r, y);
-  g.arcTo(x + w, y, x + w, y + h, r);
-  g.arcTo(x + w, y + h, x, y + h, r);
-  g.arcTo(x, y + h, x, y, r);
-  g.arcTo(x, y, x + w, y, r);
-  g.closePath();
-}
-
-function gaugeTick(now) {
-  const fx = gaugeFx;
-  /* critically damped glide — approaches the target, never bounces */
-  const step = (fx.target - fx.frac) * 0.085;
-  fx.frac += step;
-  fx.speed = fx.speed * 0.88 + Math.abs(step) * 0.12;
-  fx.alpha += (fx.alphaTarget - fx.alpha) * 0.16;
-  fx.phase = now / 1000;
-  if (fx.target >= 1 && fx.frac > .99 && !fx.capped) {
-    fx.capped = true;
-    fx.capFlash = now;               /* one soft sheen when the bar caps */
-  }
-  if (fx.target < 1) fx.capped = false;
-  const moving = Math.abs(fx.target - fx.frac) > .0015 || fx.speed > .0004 ||
-    (now - fx.capFlash) < 500;
-  if (moving) paintGauge();
-  else if ((fx.tick & 3) === 0) paintGauge();
-  fx.tick++;
-  requestAnimationFrame(gaugeTick);
-}
-
-function paintGauge() {
-  const fx = gaugeFx, g = gctx;
-  g.clearRect(0, 0, 358, 69);
-  if (fx.alpha < .02) return;
-  const gy = 0.5, gh = 68, rad = 34;
-  const fillW = (GAUGE_BASE + Math.max(0, Math.min(1, fx.frac)) * (1 - GAUGE_BASE)) * 358;
-  if (fillW < 8) return;
-  g.save();
-  g.globalAlpha = Math.max(0, Math.min(1, fx.alpha));
-  g.beginPath();
-  roundRectPath(g, 0, gy, 358, gh, rad);
-  g.clip();
-  /* one soft bar: gradient fill with a wide blurred leading edge */
-  g.beginPath();
-  g.rect(0, gy, fillW, gh);
-  /* one tri-tone gradient spanning the fill; while moving, the warm stops
-     slide forward slightly so the tip glows — same single layer */
-  const shift = Math.min(.14, fx.speed * 260);
-  const grad = g.createLinearGradient(0, 0, fillW, 0);
-  grad.addColorStop(0, 'rgba(238,32,35,.94)');
-  grad.addColorStop(Math.max(.3, .62 - shift), 'rgba(245,120,19,.94)');
-  grad.addColorStop(Math.max(.6, .96 - shift), 'rgba(253,215,2,.94)');
-  grad.addColorStop(1, 'rgba(253,222,60,.94)');
-  g.fillStyle = grad;
-  g.fill();
-  /* the feather compresses continuously toward the cap — no snap */
-  const featherScale = Math.max(0, Math.min(1, (1 - fx.frac) / 0.12));
-  if (featherScale > .02) {
-    const soft = (46 + Math.min(74, fx.speed * 16000)) * featherScale + 2;
-    g.globalCompositeOperation = 'destination-out';
-    const f = g.createLinearGradient(fillW - soft, 0, fillW, 0);
-    f.addColorStop(0, 'rgba(0,0,0,0)');
-    f.addColorStop(.55, 'rgba(0,0,0,' + (.45 * featherScale) + ')');
-    f.addColorStop(1, 'rgba(0,0,0,' + featherScale + ')');
-    g.fillStyle = f;
-    g.fillRect(fillW - soft, gy, soft + 1, gh);
-    g.globalCompositeOperation = 'source-over';
-  }
-  /* cap sheen: one gentle light sweep when the bar completes */
-  const ft = performance.now() - fx.capFlash;
-  if (fx.capFlash && ft < 450) {
-    const a = Math.sin((ft / 450) * Math.PI) * .32;
-    const sx = (ft / 450) * (fillW + 120) - 60;
-    const sheen = g.createLinearGradient(sx - 70, 0, sx + 70, 0);
-    sheen.addColorStop(0, 'rgba(255,255,255,0)');
-    sheen.addColorStop(.5, 'rgba(255,255,255,' + a + ')');
-    sheen.addColorStop(1, 'rgba(255,255,255,0)');
-    g.globalCompositeOperation = 'lighter';
-    g.fillStyle = sheen;
-    g.fillRect(0, gy, fillW, gh);
-    g.globalCompositeOperation = 'source-over';
-  }
-  g.restore();
-}
 
 /* ---- mobile lab menu: triple-tap & hold anywhere opens the controls ---- */
 const labVeil = document.getElementById('labVeil');
@@ -1823,15 +604,10 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-08 · 58';
 function refreshBuildInfo() {
-  const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
   document.getElementById('buildInfo').textContent = BUILD +
     ' · doc ' + de.clientWidth + 'x' + de.clientHeight +
-    ' · vp ' + innerWidth + 'x' + innerHeight +
-    ' · dvh ' + probeH +
-    ' · scr ' + screen.width + 'x' + screen.height +
     ' · s ' + (+stageScale.toFixed(3)) +
     (navigator.standalone === true ? ' · standalone' : ' · browser');
 }
@@ -1839,7 +615,6 @@ document.getElementById('sFresh').onclick = () => {
   location.href = location.pathname + '?fresh=' + Date.now();
 };
 labVeil.addEventListener('click', closeLabMenu);
-/* hub Settings button deep link */
 if (location.hash === '#labmenu' && !document.body.classList.contains('desktop')) {
   history.replaceState(null, '', location.pathname);
   setTimeout(openLabMenu, 400);
@@ -1852,7 +627,6 @@ function openLabView(tab) {
 }
 document.getElementById('mvFlow').onclick = () => openLabView('userflow');
 document.getElementById('mvHandoff').onclick = () => openLabView('handoff');
-/* suppress the lab-shell tab bar's arrival hello — the menu owns entry */
 setTimeout(() => {
   const bar = document.querySelector('.lab-tabbar');
   if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
@@ -1877,158 +651,17 @@ setTimeout(() => {
   phone.addEventListener('touchmove', e => {
     if (!holdTimer) return;
     const t = e.touches[0];
-    if (Math.hypot(t.clientX - sx, t.clientY - sy) > 12) {
+    if (Math.abs(t.clientX - sx) > 14 || Math.abs(t.clientY - sy) > 14) {
       clearTimeout(holdTimer); holdTimer = null;
     }
   }, { passive: true });
   phone.addEventListener('touchend', () => {
-    clearTimeout(holdTimer); holdTimer = null;
+    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }, { passive: true });
 })();
 
-/* ---- HIG adaptive nav: sample the pixels under each glass control and
-   flip its content light/dark (photos scroll beneath) ---- */
-const lumCanvas = document.createElement('canvas');
-lumCanvas.width = lumCanvas.height = 12;
-const lumCtx = lumCanvas.getContext('2d', { willReadFrequently: true });
-function lumAt(cx, cy) {
-  const els = document.elementsFromPoint(cx, cy);
-  const card = els.find(el => el.classList && el.classList.contains('card'));
-  if (!card) return .97;                                   /* white sheet */
-  const img = card.querySelector('.photo img');
-  if (!img || !img.complete || !img.naturalWidth) return .4;
-  const r = img.getBoundingClientRect();
-  const fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  const sc = Math.max(r.width / iw, r.height / ih);
-  const sw = r.width / sc, sh = r.height / sc;
-  try {
-    lumCtx.drawImage(img,
-      (iw - sw) / 2 + fx * sw - sw * .07, (ih - sh) / 2 + fy * sh - sh * .07,
-      sw * .14, sh * .14, 0, 0, 12, 12);
-    const d = lumCtx.getImageData(0, 0, 12, 12).data;
-    let l = 0, n = 0;
-    for (let i = 0; i < d.length; i += 4) {
-      l += (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255; n++;
-    }
-    let v = l / n;
-    if (fy > .55) v *= 1 - Math.min(.8, (fy - .55) * 1.8);  /* card scrim */
-    return v;
-  } catch (e) { return .5; }
-}
-function adaptNav() {
-  const navEl = document.querySelector('.nav');
-  const docked = navEl.classList.contains('docked') || navEl.classList.contains('scrolled');
-  ['.gx', '.dual', '.ttl'].forEach(sel => {
-    if (docked) {
-      const el = document.querySelector(sel);
-      if (el) el.classList.remove('on-dark');
-      return;
-    }
-    const el = document.querySelector(sel);
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (!r.width) return;
-    const v = lumAt(r.left + r.width / 2, r.top + r.height / 2 + 4);
-    el.classList.toggle('on-dark', v < .52);
-  });
-}
-/* the active category docks INTO the nav bar; the handoff is scroll-linked:
-   the incoming section's header pushes the docked title out as it arrives */
-let dockedCatId = null;
-function updateCatDock() {
-  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
-  const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
-  const secs = Array.from(scrollArea.querySelectorAll('section'));
-  let ai = -1;
-  secs.forEach((sec, i) => { if (sec.offsetTop <= line) ai = i; });
-  const nav = document.querySelector('.nav');
-  nav.classList.toggle('scrolled', scrollArea.scrollTop > 8);
-  if (ai < 0) {
-    nav.classList.remove('docked');
-    dockedCatId = null;
-    secs.forEach(sec => {
-      const h = sec.querySelector('.cat-head');
-      if (h) h.style.visibility = '';
-    });
-    return;
-  }
-  nav.classList.add('docked');
-  /* the docked title IS the category title — never show both */
-  secs.forEach((sec, i) => {
-    const h = sec.querySelector('.cat-head');
-    if (h) h.style.visibility =
-      (i <= ai || sec.offsetTop < line + 44) ? 'hidden' : '';
-  });
-  const A = secs[ai], B = secs[ai + 1];
-  const catA = CATS.find(c => c.id === A.querySelector('[data-of]').dataset.of);
-  dockedCatId = catA.id;
-  document.getElementById('dockTitle').textContent = catA.title;
-  renderOf(document.getElementById('dockOf'), catCount(catA.id), catA.quota);
-  let p = 0;
-  if (B) {
-    p = Math.max(0, Math.min(1, (line + 34 - B.offsetTop) / 34));
-    const catB = CATS.find(c => c.id === B.querySelector('[data-of]').dataset.of);
-    document.getElementById('dockTitle2').textContent = catB.title;
-    renderOf(document.getElementById('dockOf2'), catCount(catB.id), catB.quota);
-  }
-  document.getElementById('dockTrack').style.transform =
-    p > 0 ? 'translateY(' + (-p * 34) + 'px)' : '';
-}
-function syncDockCounter() {
-  if (dockedCatId) updateCatDock();
-}
-let adaptPend = false;
-scrollArea.addEventListener('scroll', () => {
-  syncSheet();      /* scroll-linked sheet: synchronous, never behind the rAF gate */
-  if (adaptPend) return;
-  adaptPend = true;
-  requestAnimationFrame(() => {
-    adaptPend = false; updateCatDock(); adaptNav();
-  });
-}, { passive: true });
-setInterval(adaptNav, 900);
-setTimeout(adaptNav, 500);
-
-buildQuotaRows();
-buildScreen();
-applyDay(0);
-
-/* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
-const sheetEl = document.getElementById('sheet');
-const navigatorEl = document.getElementById('navigator');
-let sheetLive = false;
-let SHEET_GAP = 22;
-function sheetGap() { return SHEET_GAP; }
-function syncSheet() {
-  if (!sheetLive) return;
-  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
-  sheetEl.style.transform = 'translateY(' + y + 'px)';
-  const r = Math.min(44, Math.max(0, y + 8));
-  sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
-  /* the calorie bar stays pinned to the SCREEN bottom whatever the sheet does */
-  navigatorEl.style.bottom = 'calc(' + (10 + y) + 'px + env(safe-area-inset-bottom, 0px))';
-  if (EMBED) {
-    /* nav chrome pad rides the gap continuously — no snap, no overshoot */
-    const p = 1 - Math.min(1, y / SHEET_GAP);
-    document.getElementById('phone').style.setProperty(
-      '--top-pad', (14 + (REAL_PAD - 14) * p).toFixed(1) + 'px');
-  }
-}
-document.body.classList.add('sheet-mode', 'sheet-enter');
-SHEET_GAP = EMBED ? REAL_PAD + 16
-  : document.body.classList.contains('desktop') ? 56
-  : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
-setTimeout(() => {
-  sheetEl.classList.add('springing');
-  document.body.classList.remove('sheet-enter');
-  sheetEl.style.transform = 'translateY(' + sheetGap() + 'px)';
-  setTimeout(() => {
-    sheetEl.classList.remove('springing');
-    sheetLive = true;
-    syncSheet();
-  }, 600);
-}, 60);
+renderMonths();
+syncCountdown();
 fit();
 </script>
 <script src="../lab-shell.js" data-flow="meal-select" defer></script>
