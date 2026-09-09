@@ -300,8 +300,11 @@ struct HomeScreenNative: View {
                 .presentationBackground(Color.black.opacity(0.42))
         }
         .fullScreenCover(isPresented: $state.calendarOpen) {
-            FlowOverlay(path: "meal-select") { instant { state.calendarOpen = false } }
-                .presentationBackground(Color.black.opacity(0.42))
+            FlowOverlay(path: "meal-select") {
+                instant { state.calendarOpen = false }
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
+            }
+            .presentationBackground(Color.black.opacity(0.42))
         }
         .animation(.spring(duration: 0.45), value: state.showPromo)
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
@@ -421,44 +424,18 @@ struct HomeScreenNative: View {
         withTransaction(t, change)
     }
 
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            // universal rule (Rashid): the ACTIVE tab's icon is red on the
-            // white pill; every inactive icon is neutral ink
-            tabItem(selected: true) {
-                DSLogoMark()
-                    .fill(DS.red)
-                    .frame(width: 26, height: 20)
-            } action: { }
-            tabItem {
-                DSTabCalendarIcon()
-                    .fill(Color(white: 0.12).opacity(0.85))
-                    .frame(width: 24, height: 24)
-            } action: { instant { state.calendarOpen = true } }
-            tabItem {
-                DSTabPersonIcon()
-                    .fill(Color(white: 0.12).opacity(0.85))
-                    .frame(width: 24, height: 24)
-            } action: { }
-        }
-        .padding(4)
-        .frame(width: 314, height: 58)
-        .glassEffect(.regular, in: .capsule)
-    }
+    @State private var tabSel: DSTabId = .home
 
-    private func tabItem<C: View>(selected: Bool = false,
-                                  @ViewBuilder _ content: () -> C,
-                                  action: @escaping () -> Void) -> some View {
-        content()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                if selected {
-                    Capsule().fill(.white.opacity(0.85))
-                        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
+    private var tabBar: some View {
+        DSTabBar(selected: tabSel) { tab in
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
+            if tab == .calendar {
+                // Apple's beat: the pill lands first, then the page presents
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                    instant { state.calendarOpen = true }
                 }
             }
-            .contentShape(Capsule())
-            .onTapGesture(perform: action)
+        }
     }
 
     private func dock<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -715,10 +692,10 @@ struct HomeScreenNative: View {
             if state.discountsEmpty {
                 // no coupons: keep the bag, drop the currency — slightly
                 // smaller type so the whole title shows (Rashid)
+                // fixedSize: the row's stacked gaps were scale-shrinking it
+                // to ~10pt (Rashid: match the Booked title size)
                 Text("Coupons").font(DS.urbane(13, .semibold)).foregroundStyle(DS.onColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .layoutPriority(1)
+                    .fixedSize()
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("KD 32").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
@@ -1118,6 +1095,79 @@ private struct DaysContent: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(EdgeInsets(top: pad, leading: pad, bottom: pad, trailing: pad))
         .animation(.spring(duration: 0.35), value: state.daysLeft)
+    }
+}
+
+// MARK: - THE DS tab bar — one component for every prototype surface
+// (Rashid: unified placement, interaction, motion). Apple-style: the white
+// pill slides on a spring between tabs, the ACTIVE icon is brand red,
+// resting icons neutral ink; hosts place it at bottom = safeArea + 12.
+
+enum DSTabId { case home, calendar, person }
+
+@available(iOS 26.0, *)
+struct DSTabBar: View {
+    var selected: DSTabId
+    var onSelect: (DSTabId) -> Void
+    @Namespace private var pillNS
+
+    var body: some View {
+        HStack(spacing: 0) {
+            item(.home) { sel in
+                DSLogoMark()
+                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .frame(width: 26, height: 20)
+            }
+            item(.calendar) { sel in
+                DSTabCalendarIcon()
+                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .frame(width: 24, height: 24)
+            }
+            item(.person) { sel in
+                DSTabPersonIcon()
+                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .frame(width: 24, height: 24)
+            }
+        }
+        .padding(4)
+        .frame(width: 314, height: 58)
+        .glassEffect(.regular, in: .capsule)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: selected)
+    }
+
+    private func item<C: View>(_ tab: DSTabId,
+                               @ViewBuilder _ content: @escaping (Bool) -> C) -> some View {
+        content(selected == tab)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                if selected == tab {
+                    Capsule().fill(.white.opacity(0.85))
+                        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
+                        .matchedGeometryEffect(id: "pill", in: pillNS)
+                }
+            }
+            .contentShape(Capsule())
+            .onTapGesture {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onSelect(tab)
+            }
+    }
+}
+
+/// Self-stated wrapper for hosts without their own selection state (e.g.
+/// the calendar overlay): the pill animates locally, taps bubble out.
+@available(iOS 26.0, *)
+struct DSTabBarHost: View {
+    var initial: DSTabId
+    var onSelect: (DSTabId) -> Void
+    @State private var sel: DSTabId = .home
+
+    var body: some View {
+        DSTabBar(selected: sel) { tab in
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { sel = tab }
+            onSelect(tab)
+        }
+        .onAppear { sel = initial }
     }
 }
 
@@ -1643,10 +1693,15 @@ struct FlowOverlay: View {
                 .transition(.opacity)
             }
             if chrome.bar == "calendar" {
-                // home tab from a flow the native pilot summoned = back to the pilot
-                CalendarGlassTabBar(onHome: onClose)
-                    .padding(.bottom, 12)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                // THE unified DS tab bar; home tap animates the pill, then
+                // returns to the pilot (Apple's beat)
+                DSTabBarHost(initial: .calendar) { tab in
+                    if tab == .home {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { onClose() }
+                    }
+                }
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }

@@ -374,7 +374,7 @@
   /* will-change keeps the spring on the compositor: the first pick also
      fires the check draw + glow engine + auto-scroll on the main thread,
      which was eating the entrance frames (bar seemed to appear late) */
-  #navigator { transition: opacity .18s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
+  #navigator { transition: opacity .18s ease, transform .38s cubic-bezier(.34,1.56,.64,1);
     will-change: transform, opacity; }
   #navigator.bar-hidden { transform: translateY(calc(100% + 80px)) scale(.9); opacity: 0;
     pointer-events: none;
@@ -436,6 +436,10 @@
     font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #ed1c24;
     opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   .navigator.warn .warnmsg { opacity: 1; }
+  /* the error must sit on FROST, not on see-through glass (Rashid) */
+  .navigator.warn .glassbase { -webkit-backdrop-filter: blur(26px) saturate(180%);
+    backdrop-filter: blur(26px) saturate(180%); }
+  .navigator.warn .glassbase::before { background: rgba(255,255,255,.78); }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 8px; padding: 0 28px 0 22px; color: #f9f9f9; }
   /* min-width fits four digits ("2025/1860") without breaking the row */
@@ -1386,7 +1390,17 @@ function syncBarPresence(has, instant) {
     return;
   }
   nav.classList.toggle('bar-hidden', !has);
-  if (has) vibrate(8);
+  if (has) { vibrate(8); barEnterAt = Date.now(); }
+}
+let barEnterAt = 0;
+/* the entrance owns the first beat: the category auto-advance waits for it */
+{
+  const _stn = scrollToNextCat;
+  window.scrollToNextCat = function (fromCatId) {
+    const wait = 420 - (Date.now() - barEnterAt);
+    if (wait > 0) setTimeout(() => _stn(fromCatId), wait);
+    else _stn(fromCatId);
+  };
 }
 
 function animateKcal(target, instant) {
@@ -2075,7 +2089,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 85';
+const BUILD = 'build 2026-09-09 · 86';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2326,10 +2340,13 @@ fit();
   var ELS = { close: '#closeBtn', dual: '.dual' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
   var nativeConfirmed = false;
-  /* fullscreen takeover: the docked bar sits on the canonical top line */
-  var MODE = 'page';
+  /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
+     mode 'page' (canonical top line), undocked-rest as 'sheet' (verbatim
+     rects riding the parked sheet). Web chrome shows only mid-motion. */
+  function currentMode() { return docked ? 'page' : 'sheet'; }
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
+    'html.ds-gauge #navigator .dock { opacity: 0 !important; pointer-events: none !important; transition: none !important; } ' +
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
     '';
@@ -2362,7 +2379,7 @@ fit();
   }
   var restoreT = null;
   function report() {
-    if (!docked) return;   /* twins exist only in the docked, static state */
+    if (moving) return;    /* twins exist only while the bar is at rest */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
@@ -2383,13 +2400,13 @@ fit();
     });
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: MODE, els: els });
+        surface: SURFACE, mode: currentMode(), els: els });
     } catch (_) {}
   }
   function clearChrome() {
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: MODE, els: [] });
+        surface: SURFACE, mode: currentMode(), els: [] });
     } catch (_) {}
   }
   window.DSNativeChrome = function (ids) {
@@ -2401,6 +2418,11 @@ fit();
     });
   };
   window.DSChromeTap = function (id) {
+    if (id === 'gauge-next') {
+      /* hand the bar back to the web so the dock's circle-loader morph and
+         the day-turn choreography play; the twin returns at the next rest */
+      clearGauge();
+    }
     var sel = TAPS[id] || ELS[id];
     var el = sel && document.querySelector(sel);
     if (el) el.click();
@@ -2440,11 +2462,17 @@ fit();
   }
   function clearGauge() {
     gaugeOn = false;
+    document.documentElement.classList.remove('ds-gauge');
     try { webkit.messageHandlers.ds.postMessage({ t: 'macrogauge', flow: FLOW, clear: true }); } catch (_) {}
     document.getElementById('navigator').classList.remove('ds-native-hidden');
   }
   window.DSNativeGauge = function (on) {
-    if (on && gaugeOn) document.getElementById('navigator').classList.add('ds-native-hidden');
+    if (on && gaugeOn) {
+      document.getElementById('navigator').classList.add('ds-native-hidden');
+      /* while the twin owns the bar, the web dock must never flash its own
+         Next — the glass one is the only Next (Rashid: no style morphing) */
+      document.documentElement.classList.add('ds-gauge');
+    }
   };
   /* every totals change flows through updateAll — wrap it for state posts */
   var lastDualOn = null;
@@ -2463,38 +2491,40 @@ fit();
   }
   /* warn / celebrating are class-driven: watch the class list and hand
      the bar back to the web for those moments, retake it after */
+  var lastNavHidden = true;
   new MutationObserver(function () {
     var nav = document.getElementById('navigator');
     var busy = nav.classList.contains('warn') || nav.classList.contains('celebrating') ||
       nav.classList.contains('bar-hidden');
     clearTimeout(gaugeReT);
     if (busy) { if (gaugeOn) clearGauge(); }
-    /* 700ms: past the .55s entrance spring, so rects are at rest */
-    else gaugeReT = setTimeout(postGauge, 700);
+    else {
+      /* after the entrance spring wait it out; after warn/celebrate the bar
+         is already at rest — retake fast so Next never shows as web */
+      var wasEnter = lastNavHidden && !nav.classList.contains('bar-hidden');
+      gaugeReT = setTimeout(postGauge, wasEnter ? 640 : 220);
+    }
+    lastNavHidden = nav.classList.contains('bar-hidden');
   }).observe(document.getElementById('navigator'), { attributes: true, attributeFilter: ['class'] });
 
-  /* ---- dock watcher: the single source of chrome state ---- */
-  var docked = false, dockT = null;
+  /* ---- rest watcher: chrome state follows MOTION, not the dock ---- */
+  var docked = false, moving = false, restT = null;
   function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
-  function setDocked(d) {
-    if (d === docked) return;
-    docked = d;
-    clearTimeout(dockT);
-    if (d) {
-      /* settle debounce so threshold flutter never flaps the swap */
-      dockT = setTimeout(function () { if (docked) report(); }, 160);
-    } else {
-      /* undock begins: web bar takes over THIS frame and rides the sheet */
-      clearChrome(); unhide();
-    }
-  }
   function watchDock() {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
     sa.addEventListener('scroll', function () {
-      setDocked(sa.scrollTop >= gapNow() - 0.5);
+      docked = sa.scrollTop >= gapNow() - 0.5;
+      if (!moving) {
+        /* motion begins: web bar takes over THIS frame and rides */
+        moving = true;
+        clearChrome(); unhide();
+      }
+      clearTimeout(restT);
+      restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
-    setDocked(sa.scrollTop >= gapNow() - 0.5);
+    docked = sa.scrollTop >= gapNow() - 0.5;
+    report();
   }
   function armDismissRelease() {
     var sh = document.getElementById('sheet');
