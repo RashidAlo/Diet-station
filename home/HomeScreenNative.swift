@@ -32,6 +32,16 @@ import WebKit
 @available(iOS 26.0, *)
 private enum DS {
     static let red = Color(red: 237/255, green: 28/255, blue: 36/255)
+    /// One radius law for every widget size (Rashid: small tiles were far
+    /// too round vs the big cards). Apple-style size-proportional corners:
+    /// linear in the tile's minor side, capped at the approved xlarge 26.
+    ///   60pt tile -> 12   72 banner -> 14   136 days -> 20   191+ card -> 26
+    static func radius(_ minSide: CGFloat) -> CGFloat {
+        min(26, (6 + 0.105 * minSide).rounded())
+    }
+    /// One gap everywhere in the red zone — grid gutters, column stacks,
+    /// action-bar-to-banner, banner-to-grid (Rashid: cohesive spacing).
+    static let gap: CGFloat = 16
     static let onColor = Color(red: 249/255, green: 249/255, blue: 249/255)
     static let ink = Color(red: 11/255, green: 14/255, blue: 18/255)
     static let caption = Color(red: 94/255, green: 94/255, blue: 94/255)
@@ -159,7 +169,7 @@ struct HomeScreenNative: View {
         ZStack(alignment: .bottom) {
             DS.red.ignoresSafeArea()
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 12) {
+                VStack(spacing: DS.gap) {
                     arrival(topRow, 0)
                     if state.showPromo { arrival(promoBanner, 1) }
                     widgetGrid
@@ -331,7 +341,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: 23))   // Figma rounded square
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: DS.radius(68)))
     }
 
     // MARK: promo banner
@@ -349,7 +359,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: 26))   // rounded square per Rashid
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(72)))
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
@@ -377,15 +387,17 @@ struct HomeScreenNative: View {
     // MARK: widget grid — the modular system
 
     private var widgetGrid: some View {
-        GlassEffectContainer(spacing: 16) {
-            HStack(alignment: .top, spacing: 20) {
-                planWidget.frame(width: 191)
-                VStack(spacing: 16) {
+        GlassEffectContainer(spacing: DS.gap) {
+            // 362pt content width = 193 + DS.gap + 153 — columns absorb the
+            // gutter change so every gap in the zone is the same 16
+            HStack(alignment: .top, spacing: DS.gap) {
+                planWidget.frame(width: 193)
+                VStack(spacing: DS.gap) {
                     daysWidget
                     if state.showDiscounts { discountsWidget }
                     if state.showConsult { consultWidget }
                 }
-                .frame(width: 151)
+                .frame(width: 153)
             }
             /* fixed height: removing the promo banner shifts everything UP —
                it must never elongate the widgets (Rashid) */
@@ -425,9 +437,18 @@ struct HomeScreenNative: View {
         .frame(maxHeight: .infinity)
         // clip the CONTENT (gradient) before the glass so it can never bleed
         // past the rounded bottom edges; both shapes are the same fixed 26
-        .clipShape(RoundedRectangle(cornerRadius: 26))
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: 26))
+        .clipShape(RoundedRectangle(cornerRadius: DS.radius(193)))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(193)))
         .glassEffectID("plan", in: glassNS)
+    }
+
+    /// the height the column composition hands the days widget — drives
+    /// its shape, its radius, and its responsive insets
+    private var daysHeight: CGFloat {
+        var h: CGFloat = 288
+        if state.showDiscounts { h -= 60 + DS.gap }
+        if state.showConsult { h -= (state.showDiscounts ? 60 : 110) + DS.gap }
+        return h
     }
 
     // days-left: re-shapes with the height it is given (tall / wide / slim)
@@ -435,10 +456,12 @@ struct HomeScreenNative: View {
         GeometryReader { geo in
             let h = geo.size.height
             let shape: DaysShape = h >= 168 ? .tall : (h < 82 ? .slim : .wide)
-            DaysContent(state: state, shape: shape, number: dialNumber, frac: dialFrac)
+            DaysContent(state: state, shape: shape, number: dialNumber, frac: dialFrac,
+                        height: h)
         }
         .frame(maxHeight: .infinity)
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)),
+                     in: .rect(cornerRadius: DS.radius(daysHeight)))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -458,9 +481,10 @@ struct HomeScreenNative: View {
         .padding(.horizontal, 19)
         .frame(maxWidth: .infinity)
         .frame(height: 60)   // twin of consult — slimmer so days-left breathes
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
+                     in: .rect(cornerRadius: DS.radius(60)))
         .glassEffectID("disc", in: glassNS)
-        .contentShape(RoundedRectangle(cornerRadius: 26))
+        .contentShape(RoundedRectangle(cornerRadius: DS.radius(60)))
         .onTapGesture { instant { state.couponsOpen = true } }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -477,7 +501,8 @@ struct HomeScreenNative: View {
         // when Discounts is away, Consultation grows +50 so the sparse column
         // doesn't gape between it and the days widget (Rashid)
         .frame(height: state.showDiscounts ? 60 : 110)
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(corners: .concentric(minimum: .fixed(26)), isUniform: true))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
+                     in: .rect(cornerRadius: DS.radius(state.showDiscounts ? 60 : 110)))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -689,6 +714,7 @@ private struct DaysContent: View {
     let shape: DaysShape
     var number: Int          /* display value — the intro counts 30 down to daysLeft */
     var frac: Double
+    var height: CGFloat = 136
 
     var expired: Bool { state.daysLeft == 0 }
 
@@ -741,6 +767,11 @@ private struct DaysContent: View {
         .font(DS.urbane(12, expired ? .semibold : .medium))
     }
 
+    /// responsive inset: scales with the widget's given height, identical on
+    /// every side (Rashid: Renew was drifting off the bottom — the old
+    /// insets were 18/16 top vs 14 bottom AND unfilled height pooled there)
+    private var pad: CGFloat { min(20, max(12, height * 0.11)) }
+
     var body: some View {
         Group {
             switch shape {
@@ -749,6 +780,7 @@ private struct DaysContent: View {
             case .wide:
                 VStack(spacing: 8) {
                     HStack(spacing: 8) { ring; texts; Spacer(minLength: 0) }
+                    Spacer(minLength: 6)
                     renew
                 }
             case .tall:
@@ -761,7 +793,8 @@ private struct DaysContent: View {
                 }
             }
         }
-        .padding(EdgeInsets(top: shape == .tall ? 18 : 16, leading: 16, bottom: 14, trailing: 14))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(EdgeInsets(top: pad, leading: pad, bottom: pad, trailing: pad))
         .animation(.spring(duration: 0.35), value: state.daysLeft)
     }
 }
