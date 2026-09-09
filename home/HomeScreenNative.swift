@@ -239,6 +239,9 @@ struct HomeScreenNative: View {
     var onClose: (() -> Void)? = nil
     /* entrance choreography: widgets arrive staggered, then the days dial
        sweeps to its value while the number counts down from 30 */
+    /// chrome layers: true while the calendar's meal selector owns the whole
+    /// screen — the persistent bar slides away for it (topmost surface only)
+    @State private var selectorUp = false
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
                                           // the persistent bar never blinks
@@ -270,8 +273,10 @@ struct HomeScreenNative: View {
                 // the calendar lives UNDER the persistent bar — no cover, no
                 // second bar, no position shift; the web sheet spring is the
                 // only transition (Rashid: same bar, same place, seamless)
-                FlowOverlay(path: "meal-select", ownsTabBar: false) {
+                FlowOverlay(path: "meal-select", ownsTabBar: false,
+                            onSelector: { selectorUp = $0 }) {
                     state.calendarOpen = false
+                    selectorUp = false
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
                     replayHomeIntro()
                 }
@@ -286,6 +291,12 @@ struct HomeScreenNative: View {
             }
             arrival(tabBar, 5)
                 .padding(.bottom, 12)   // THE placement rule: safe.bottom + 12
+                // chrome layers: while the meal selector owns the screen the
+                // ONE bar yields — slides out under the rising sheet and
+                // returns as it departs; it never unmounts, so no reflow
+                .opacity(state.calendarOpen && selectorUp ? 0 : 1)
+                .offset(y: state.calendarOpen && selectorUp ? 90 : 0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: selectorUp)
                 .zIndex(3)
         }
         /* THE lab house gesture (Rashid 2026-09-09, clarified): THREE-FINGER
@@ -459,6 +470,7 @@ struct HomeScreenNative: View {
             // Apple's beat: the pill lands first, then the page moves under
             // the stationary bar
             if tab == .calendar, !state.calendarOpen {
+                selectorUp = false   // stale layer state never hides the bar
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
                     state.calendarOpen = true
                 }
@@ -1286,6 +1298,18 @@ final class FlowPreloader {
                 }
                 return
             }
+            if t == "selector" {
+                // chrome layers: the calendar posts this from its selector
+                // open/close choke points — the pilot's persistent bar
+                // yields the screen while the selector sheet owns it
+                let up = (body["up"] as? Bool) ?? false
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                        self.chrome.selectorUp = up
+                    }
+                }
+                return
+            }
             if t == "macrogauge" {
                 // the selector's macros gauge: a persistent Liquid Glass twin
                 // (static-state furniture per the motion-state doctrine); the
@@ -1678,6 +1702,10 @@ final class OverlayChrome: ObservableObject {
     @Published var surface: String?
     @Published var mode: String?
     @Published var gauge: DSGaugeModel?
+    /// chrome layers: true while a higher surface (the calendar's meal
+    /// selector) owns the whole screen — hosts with a persistent DS bar
+    /// drop it for the duration
+    @Published var selectorUp = false
     weak var webView: WKWebView?
     var frame: WKFrameInfo?
 
@@ -1693,6 +1721,7 @@ final class OverlayChrome: ObservableObject {
         mode = nil
         gauge = nil
         frame = nil
+        selectorUp = false
     }
 }
 
@@ -1706,13 +1735,19 @@ struct FlowOverlay: View {
     /// false when the HOST keeps a persistent DS bar above this overlay
     /// (the pilot's one-bar architecture) — the internal bar stays off
     var ownsTabBar: Bool = true
+    /// chrome layers: fires when a higher surface inside the flow (the
+    /// calendar's meal selector) takes or releases the whole screen, so a
+    /// persistent-bar host can drop its bar for the duration
+    var onSelector: ((Bool) -> Void)? = nil
     let onClose: () -> Void
     @ObservedObject private var chrome: OverlayChrome
 
     @MainActor
-    init(path: String, ownsTabBar: Bool = true, onClose: @escaping () -> Void) {
+    init(path: String, ownsTabBar: Bool = true,
+         onSelector: ((Bool) -> Void)? = nil, onClose: @escaping () -> Void) {
         self.path = path
         self.ownsTabBar = ownsTabBar
+        self.onSelector = onSelector
         self.onClose = onClose
         _chrome = ObservedObject(wrappedValue: FlowPreloader.shared.entry(path).relay.chrome)
     }
@@ -1751,6 +1786,7 @@ struct FlowOverlay: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .onChange(of: chrome.selectorUp) { _, up in onSelector?(up) }
     }
 }
 

@@ -940,6 +940,7 @@ function moDish(key) {
 }
 
 function openMealOv(key) {
+  window.DSLayer && DSLayer('meal', true);
   moKey = key;
   const { cat, d } = moDish(key);
   moImg.src = d.img;
@@ -984,6 +985,7 @@ function openMealOv(key) {
 }
 
 function closeMealOv() {
+  window.DSLayer && DSLayer('meal', false);
   mealOv.classList.remove('open', 'drag');
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.remove('show');
@@ -2089,7 +2091,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 86';
+const BUILD = 'build 2026-09-09 · 87';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2377,9 +2379,29 @@ fit();
     } catch (_) {}
     return off;
   }
+  /* ---- chrome layers ----
+     Native chrome mirrors the TOPMOST surface only. When a higher layer
+     rises (the meal-details sheet), the base layer's twins + gauge clear
+     atomically and web chrome stays put underneath; the base retakes at
+     the layer's close-rest. Pages announce layers from their open/close
+     choke points via DSLayer(name, up) — the reporter never special-cases
+     individual overlays. A layer that declares no twins of its own simply
+     keeps its web chrome (the details sheet's blurred X). */
+  var layerUp = false;
+  window.DSLayer = function (name, up) {
+    if (up) {
+      layerUp = true;
+      clearChrome(); unhide(); clearGauge();
+    } else if (layerUp) {
+      layerUp = false;
+      /* the sheet slides away .52s — web chrome rides the reveal, glass
+         retakes once the base surface is at rest again */
+      setTimeout(function () { if (!layerUp && !moving) { report(); postGauge(); } }, 620);
+    }
+  };
   var restoreT = null;
   function report() {
-    if (moving) return;    /* twins exist only while the bar is at rest */
+    if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
@@ -2452,7 +2474,7 @@ fit();
       next: dock.classList.contains('show') };
   }
   function postGauge() {
-    if (!gaugeArmed) return;
+    if (!gaugeArmed || layerUp) return;   /* the gauge belongs to the base layer */
     var nav = document.getElementById('navigator');
     if (nav.classList.contains('warn') || nav.classList.contains('celebrating')) return;
     /* no twin while the bar is absent or mid-entrance — the playful

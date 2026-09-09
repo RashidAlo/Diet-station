@@ -370,7 +370,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-09 · 19';
+const BUILD = 'calendar 2026-09-09 · 20';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -986,8 +986,18 @@ if (/[?&]qaopen=1/.test(location.search)) {
   };
 
   var _open = window.openDay, _close = window.closeOverlay;
-  window.openDay = function () { overlayUp = true; clearChrome(); return _open.apply(this, arguments); };
+  /* chrome layers: the selector iframe is a HIGHER surface — beyond our
+     own twins, hosts with a persistent DS bar (the native pilot) must
+     drop it while the selector owns the screen */
+  function postSelector(up) {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'selector', up: up }); } catch (_) {}
+  }
+  window.openDay = function () {
+    if (!overlayUp) postSelector(true);
+    overlayUp = true; clearChrome(); return _open.apply(this, arguments);
+  };
   window.closeOverlay = function () {
+    if (overlayUp) postSelector(false);
     overlayUp = false;
     var r = _close.apply(this, arguments);
     setTimeout(report, 600);
