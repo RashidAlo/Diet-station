@@ -15,6 +15,10 @@
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
   @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+  /* Rashid's licensed Arabic faces — same hosted files the native pilot loads */
+  @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Medium.otf'); font-weight: 500; }
+  @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Demi.otf'); font-weight: 600; }
+  @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Bold.otf'); font-weight: 700; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
@@ -99,7 +103,7 @@
     -webkit-overflow-scrolling: touch; }
   .scroller::-webkit-scrollbar { display: none; }
   /* --- the red zone is a flex column: hide a widget and the rest fill in --- */
-  .redzone { display: flex; flex-direction: column; gap: 12px;
+  .redzone { display: flex; flex-direction: column; gap: 16px;   /* DS.gap */
     padding: calc(var(--top-pad) + 10px) 20px 20px; }
 
   .toprow { flex: none; height: 68px; display: flex; align-items: center;
@@ -108,9 +112,10 @@
     padding: 0 4px; cursor: pointer; text-align: left; }
   .stories img.av { width: 48px; height: 48px; border-radius: 50%; display: block; }
   .st-hello { font: 400 12px/16px 'Proxima Nova', -apple-system, sans-serif; color: #f9f9f9; }
+  .st-hello .ar { font-family: 'Avenir Next World', 'Proxima Nova', sans-serif; font-weight: 500; }
   .st-name { font: 500 14px/18px 'Urbane Rounded', sans-serif; color: #fff; }
   .topdocks { display: flex; gap: 12px; height: 68px; }
-  .dockbtn { position: relative; width: 69px; height: 68px; border-radius: 23px;
+  .dockbtn { position: relative; width: 69px; height: 68px; border-radius: 24px;   /* DS.tile(68) */
     border: none; background: none; cursor: pointer;
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
   .dockbtn:active { transform: scale(.92); }
@@ -120,7 +125,7 @@
     z-index: 3; }
 
   /* promo banner */
-  .promo { flex: none; height: 72px; border-radius: 23px; position: relative;
+  .promo { flex: none; height: 72px; border-radius: 34px; position: relative;   /* cradle(18,16) */
     display: flex; align-items: center; gap: 12px; padding: 0 16px; }
   .promo.off { display: none; }
   .promo .z { position: relative; z-index: 3; }
@@ -140,10 +145,11 @@
   .pillbtn.urgent::after { display: none; }
 
   /* widget grid */
-  .widgets { flex: none; height: 288px; display: flex; gap: 20px; }
+  .widgets { flex: none; height: 288px; display: flex; gap: 16px; }
+  .widgets.urgent { height: 274px; }   /* the urgent banner's padding is paid here */
   /* the plan widget is the SAME glass, with its theme gradient layered on top
      of the shared base (below the milk + rim), so all widgets finish alike */
-  .planw { flex: none; width: 191px; border-radius: 30px;
+  .planw { flex: none; width: 193px; border-radius: 40.5px;   /* DS.platter */
     display: flex; flex-direction: column;
     justify-content: space-between; padding: 28px 20px 22px; cursor: pointer; }
   .planw .grad { position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
@@ -210,8 +216,55 @@
   .daysw.slim .dw-ring .num { font-size: 16px; }
   .daysw.slim .dw-renew { display: none; }
   .daysw.slim .dw-main { flex: 1; }
+  /* compact (Figma 4798-19569): ring + renew on one row, texts below */
+  .daysw.compact { display: grid; grid-template-columns: auto 1fr;
+    align-items: center; column-gap: 8px; }
+  .daysw.compact .dw-main { display: contents; }
+  .daysw.compact .dw-ring { grid-column: 1; grid-row: 1; }
+  .daysw.compact .dw-renew { grid-column: 2; grid-row: 1; }
+  .daysw.compact .dw-texts { grid-column: 1 / -1; grid-row: 2; align-self: end; }
+  /* coupons grown for the urgent grid: mid-class 34 + curvature inset */
+  .discw.expanded { flex: 1; height: auto; border-radius: 34px !important;
+    padding: 17px; flex-direction: column; align-items: flex-start;
+    justify-content: flex-end; }
+  .discw.expanded .ic { position: absolute; top: 17px; right: 17px;
+    width: 46px; height: 43px; z-index: 3; }
+  .di-kd .off2 { font-size: 10px; opacity: .8; }
+  /* consultation Booked state (Figma 16367-78807) */
+  .co-b1 { display: flex; gap: 4px; align-items: center;
+    font: 600 13px/16px 'Urbane Rounded', sans-serif; color: #fff; }
+  .co-b1 svg { display: block; }
+  .co-date { display: block; font: 400 11px/14px 'Proxima Nova', sans-serif;
+    color: rgba(249,249,249,.75); }
+  /* urgent renewal banner (Figma 16828-83478) — days merged with the offer */
+  .ubwrap { position: relative; padding-top: 10px; flex: none; }
+  .ubwrap.off { display: none; }
+  .ub-chip { position: absolute; top: 0; left: 16px; z-index: 6; height: 20px;
+    padding: 0 10px; border-radius: 999px; background: #FFC52E;
+    font: 600 10px/20px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .urgentb { display: flex; align-items: center; gap: 14px;
+    padding: 20px 22px 16px 16px; }
+  .ub-ring { position: relative; flex: none; width: 64px; height: 64px; }
+  .ub-ring svg { display: block; width: 100%; height: 100%;
+    transform: rotate(-90deg) scaleX(-1); }
+  .ub-ring .ub-n { position: absolute; inset: 0; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+  .ub-ring .ub-n b { font: 600 22px/24px 'Urbane Rounded', sans-serif; }
+  .ub-ring .ub-n i { font: 400 9px/11px 'Proxima Nova', sans-serif;
+    font-style: normal; color: #f9f9f9; }
+  .ub-col { flex: 1; min-width: 0; }
+  .ub-title { font: 600 15px/20px 'Urbane Rounded', sans-serif; color: #fff;
+    white-space: nowrap; }
+  .ub-sub { font: 400 10px/14px 'Proxima Nova', sans-serif; color: rgba(249,249,249,.85); }
+  .ub-sub .kd { font-size: 7px; }
+  .ub-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 5px; }
+  .ub-before { font: 400 8px/10px 'Proxima Nova', sans-serif; color: rgba(249,249,249,.7); }
+  .ub-before s { font: 500 11px/13px 'Urbane Rounded', sans-serif; }
+  .ub-price { font: 600 18px/20px 'Urbane Rounded', sans-serif; color: #fff; }
+  .ub-price .kd2 { font-size: 10px; }
+  .ub-row .pillbtn { margin-left: auto; }
 
-  .discw { flex: none; height: 60px; border-radius: 20px; padding: 8px 19px;
+  .discw { flex: none; height: 60px; border-radius: 22px; padding: 8px 19px;   /* DS.tile(60) */
     display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .discw.off { display: none; }
   .di-texts { flex: 1; min-width: 0; }
@@ -257,7 +310,10 @@
   .sh-today b { display: block; font: 600 15px/18px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .sh-today span { display: block; font: 400 11px/13px 'Proxima Nova', sans-serif;
     color: #5e5e5e; margin-top: 1px; }
-  .sh-kcal { height: 44px; border-radius: 14px; background: #fff; flex: none;
+  .sh-kcal { height: 44px; border-radius: 14px; flex: none;
+    background: rgba(255,255,255,.66);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
     border: none; cursor: pointer;
     display: flex; gap: 3px; padding: 0 12px; align-items: center;
     filter: drop-shadow(0 0 6.65px rgba(56,64,74,.08)); }
@@ -408,9 +464,10 @@
     <div class="s-label">Days left</div>
     <div class="s-note">The budget widget's state — it re-shapes with space and urgency
       (Design System 4798-19569).</div>
-    <div class="seg2 seg3" id="daysSeg">
+    <div class="seg2" id="daysSeg">
       <button data-v="19" class="on">19 days</button>
       <button data-v="5">5 days</button>
+      <button data-v="3">3 &middot; urgent</button>
       <button data-v="0">Expired</button>
     </div>
   </div>
@@ -423,6 +480,28 @@
       <button data-v="promo" class="on">Promo</button>
       <button data-v="disc" class="on">Discounts</button>
       <button data-v="consult" class="on">Consult</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Widget states</div>
+    <div class="s-note">Per-widget content states — coupons empty, consultation booked
+      (Figma 16367-78807).</div>
+    <div class="seg2" id="stateSeg">
+      <button data-v="discEmpty">No coupons</button>
+      <button data-v="consultBooked">Booked</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Days shape</div>
+    <div class="s-note">Force an arrangement (Figma 4798-19569) or let the column decide.</div>
+    <div class="seg2 seg3" id="shapeSeg">
+      <button data-v="auto" class="on">Auto</button>
+      <button data-v="tall">Tall</button>
+      <button data-v="wide">Wide</button>
+      <button data-v="compact">Compact</button>
+      <button data-v="slim">Slim</button>
     </div>
   </div>
 
@@ -463,12 +542,12 @@
             <button class="stories" id="storiesBtn">
               <img class="av" src="avatar.png" alt="">
               <span>
-                <span class="st-hello" dir="auto">&#9728;&#xFE0E; صبحك الله بالخير</span><br>
+                <span class="st-hello" dir="auto">☀️ <span class="ar">صبحك الله بالخير</span></span><br>
                 <span class="st-name">Abdulrahman</span>
               </span>
             </button>
             <div class="topdocks">
-              <button class="dockbtn gwrap" id="gStar" style="border-radius:23px" aria-label="Rewards">
+              <button class="dockbtn gwrap" id="gStar" style="border-radius:24px" aria-label="Rewards">
                                 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="star" clip-path="url(#clip0_0_1070)">
 <foreignObject x="0.390724" y="2.89612" width="31.2185" height="30.2078"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_1070_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_1070)" data-figma-bg-blur-radius="5.3">
@@ -494,7 +573,7 @@
 </defs>
 </svg>
               </button>
-              <button class="dockbtn gwrap" id="gBell" style="border-radius:23px" aria-label="Notifications">
+              <button class="dockbtn gwrap" id="gBell" style="border-radius:24px" aria-label="Notifications">
                                 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="notifications" clip-path="url(#clip0_0_869)">
 <foreignObject x="1.68634" y="0.8" width="28.6273" height="34.4"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_869_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_869)" data-figma-bg-blur-radius="5.3">
@@ -526,7 +605,7 @@
             </div>
           </div>
 
-          <div class="promo gwrap" id="gPromo" style="border-radius:26px">
+          <div class="promo gwrap" id="gPromo" style="border-radius:34px">
                         <div class="p-texts z">
               <div class="p-title"><span class="kd">KD</span>109 Discount Expiring</div>
               <div class="p-sub">Rewnew before you lose the benefit</div>
@@ -534,8 +613,31 @@
             <button class="pillbtn z" id="promoRenew">Renew</button>
           </div>
 
+          <div class="ubwrap off" id="gUrgent">
+            <div class="ub-chip" id="ubChip">Expires in 00:20:11</div>
+            <div class="urgentb gwrap" style="border-radius:34px">
+              <div class="ub-ring z">
+                <svg viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28.75" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3.5"/>
+                  <circle id="ubArc" cx="32" cy="32" r="28.75" fill="none" stroke="#fff" stroke-width="3.5"
+                    stroke-linecap="round" stroke-dasharray="180.6" stroke-dashoffset="158.9"/>
+                </svg>
+                <span class="ub-n"><b id="ubNum">3</b><i id="ubCap">Days left</i></span>
+              </div>
+              <div class="ub-col z">
+                <div class="ub-title" id="ubTitle">Renew early &amp; Save 😱</div>
+                <div class="ub-sub" id="ubSub">starting price will change to <span class="kd">KD</span>109</div>
+                <div class="ub-row">
+                  <span class="ub-before">Before<br><s>KD139</s></span>
+                  <span class="ub-price"><span class="kd2">KD</span>99</span>
+                  <button class="pillbtn" id="ubRenew">Renew</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="widgets">
-            <div class="planw gwrap" id="planW" style="border-radius:26px">
+            <div class="planw gwrap" id="planW" style="border-radius:40.5px">
               <div class="grad" id="planGrad"></div>
               <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24.0932" height="23.0765" viewBox="0 0 24.0932 23.0765" fill="none" xmlns="http://www.w3.org/2000/svg" class="deco d1">
 <path id="Vector" d="M12.7168 2.98845L17.8892 0.177813C18.9654 -0.400375 20.2344 0.51509 20.0095 1.71965L18.9333 7.50153C18.8369 7.98335 18.9975 8.48123 19.367 8.81851L23.6398 12.8658C24.5233 13.701 24.0414 15.1946 22.8366 15.3552L17.0057 16.1101C16.5238 16.1743 16.0901 16.4795 15.8813 16.9292L13.3593 22.2453C12.8292 23.3535 11.2711 23.3535 10.741 22.2453L8.2191 16.9292C8.01028 16.4795 7.59264 16.1743 7.09468 16.1101L1.26373 15.3552C0.0589927 15.1946 -0.438967 13.701 0.460573 12.8658L4.73339 8.81851C5.08678 8.48123 5.24741 7.98335 5.16709 7.50153L4.09086 1.71965C3.86597 0.51509 5.13497 -0.400375 6.2112 0.177813L11.3675 2.98845C11.8012 3.22936 12.3152 3.22936 12.7489 2.98845" fill="#FFB800"/>
@@ -556,7 +658,7 @@
               </div>
             </div>
             <div class="rightcol" id="rightcol">
-              <div class="daysw gwrap" id="gDays" style="border-radius:26px">
+              <div class="daysw gwrap" id="gDays">
                                                 <div class="dw-main z">
                   <div class="dw-ring">
                     <svg viewBox="0 0 50 50">
@@ -573,10 +675,10 @@
                 </div>
                 <div class="dw-renew z"><button class="pillbtn" id="dwRenew">Renew</button></div>
               </div>
-              <div class="discw gwrap" id="gDisc" style="border-radius:26px">
+              <div class="discw gwrap" id="gDisc" style="border-radius:22px">
                                                 <div class="di-texts z">
-                  <div class="di-kd">KD 32</div>
-                  <div class="di-cap">Discounts</div>
+                  <div class="di-kd" id="diKd">KD 32</div>
+                  <div class="di-cap" id="diCap">Discounts</div>
                 </div>
                 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="37.9973" height="35.4995" viewBox="0 0 37.9973 35.4995" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic z">
 <g id="Icons">
@@ -613,7 +715,7 @@
 </clipPath></defs>
 </svg>
               </div>
-              <div class="consw gwrap" id="gConsult" style="border-radius:26px">
+              <div class="consw gwrap" id="gConsult" style="border-radius:22px">
                                                 <div class="row z">
                   <div class="calico">
                     <span class="plate"></span>
@@ -637,7 +739,7 @@
 </svg>
                     <span class="post p1"></span><span class="post p2"></span>
                   </div>
-                  <div class="co-txt">Book Consultation</div>
+                  <div class="co-txt" id="coTxt">Book Consultation</div>
                 </div>
               </div>
             </div>
@@ -680,11 +782,11 @@
         <div class="tabbar">
           
             <button class="tb-tab on" aria-label="Home"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30.936" height="24" viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
-<path id="Vector" d="M15.5627 24C8.55971 24 2.81792 18.4611 2.43079 11.5046C2.40837 11.0984 2.73438 10.7558 3.13781 10.7558H3.39658C3.76945 10.7558 4.07916 11.0491 4.09953 11.4246C4.44592 17.4887 9.45419 22.3158 15.5607 22.3158C21.6672 22.3158 26.6775 17.4887 27.0239 11.4246C27.0463 11.0491 27.354 10.7558 27.7269 10.7558H27.9856C28.3911 10.7558 28.7171 11.0984 28.6927 11.5046C28.3055 18.459 22.5637 24 15.5607 24H15.5627ZM0.707027 7.83246H2.19239C5.30168 7.83246 6.51198 6.47645 6.51198 3.96752C6.51198 1.45859 5.30372 0.094367 2.19239 0.094367H0.707027C0.250618 0.094367 0 0.346696 0 0.806223V7.12061C0 7.58014 0.250618 7.83246 0.707027 7.83246ZM2.25963 6.3308H1.67486V1.58167H2.24537C4.1953 1.58167 4.81879 2.35097 4.81879 3.95111C4.81879 5.55124 4.1953 6.32875 2.25963 6.32875V6.3308ZM27.9754 7.92478C29.7216 7.92478 30.936 7.01188 30.936 5.62099C30.936 2.70587 26.6816 3.84648 26.6816 2.20737C26.6816 1.67809 27.136 1.34781 27.8715 1.34781C28.385 1.34781 28.7558 1.51603 29.1205 1.83811C29.4384 2.12121 29.6116 2.31199 30.0721 2.20121L30.2493 2.15813C30.7384 2.0412 30.8647 1.71707 30.5855 1.26165C30.1088 0.484144 29.0105 0 27.8002 0C26.1743 0 25.0434 0.906744 25.0434 2.24635C25.0434 5.14916 29.2591 4.16651 29.2591 5.67023C29.2591 6.24669 28.7762 6.58928 27.9653 6.58928C27.3234 6.58928 26.7835 6.3349 26.3617 5.88768C26.0581 5.56355 25.8503 5.44457 25.4754 5.56766L25.3328 5.61484C24.8641 5.7687 24.7235 6.07437 24.9741 6.48876C25.4958 7.34627 26.6714 7.92478 27.9795 7.92478H27.9754Z" fill="#2F2F2F"/>
+<path id="Vector" d="M15.5627 24C8.55971 24 2.81792 18.4611 2.43079 11.5046C2.40837 11.0984 2.73438 10.7558 3.13781 10.7558H3.39658C3.76945 10.7558 4.07916 11.0491 4.09953 11.4246C4.44592 17.4887 9.45419 22.3158 15.5607 22.3158C21.6672 22.3158 26.6775 17.4887 27.0239 11.4246C27.0463 11.0491 27.354 10.7558 27.7269 10.7558H27.9856C28.3911 10.7558 28.7171 11.0984 28.6927 11.5046C28.3055 18.459 22.5637 24 15.5607 24H15.5627ZM0.707027 7.83246H2.19239C5.30168 7.83246 6.51198 6.47645 6.51198 3.96752C6.51198 1.45859 5.30372 0.094367 2.19239 0.094367H0.707027C0.250618 0.094367 0 0.346696 0 0.806223V7.12061C0 7.58014 0.250618 7.83246 0.707027 7.83246ZM2.25963 6.3308H1.67486V1.58167H2.24537C4.1953 1.58167 4.81879 2.35097 4.81879 3.95111C4.81879 5.55124 4.1953 6.32875 2.25963 6.32875V6.3308ZM27.9754 7.92478C29.7216 7.92478 30.936 7.01188 30.936 5.62099C30.936 2.70587 26.6816 3.84648 26.6816 2.20737C26.6816 1.67809 27.136 1.34781 27.8715 1.34781C28.385 1.34781 28.7558 1.51603 29.1205 1.83811C29.4384 2.12121 29.6116 2.31199 30.0721 2.20121L30.2493 2.15813C30.7384 2.0412 30.8647 1.71707 30.5855 1.26165C30.1088 0.484144 29.0105 0 27.8002 0C26.1743 0 25.0434 0.906744 25.0434 2.24635C25.0434 5.14916 29.2591 4.16651 29.2591 5.67023C29.2591 6.24669 28.7762 6.58928 27.9653 6.58928C27.3234 6.58928 26.7835 6.3349 26.3617 5.88768C26.0581 5.56355 25.8503 5.44457 25.4754 5.56766L25.3328 5.61484C24.8641 5.7687 24.7235 6.07437 24.9741 6.48876C25.4958 7.34627 26.6714 7.92478 27.9795 7.92478H27.9754Z" fill="#ED1C24"/>
 </svg></button>
             <button class="tb-tab" id="tabCal" aria-label="Calendar"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="calendar_month" opacity="0.8">
-<path id="Vector" d="M19 4H18V2H16V4H8V2H6V4H5C3.89 4 3.01 4.9 3.01 6L3 20C3 21.1 3.89 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4 19 4ZM19 20H5V10H19V20ZM19 8H5V6H19V8ZM9 14H7V12H9V14ZM13 14H11V12H13V14ZM17 14H15V12H17V14ZM9 18H7V16H9V18ZM13 18H11V16H13V18ZM17 18H15V16H17V18Z" fill="#ED1C24"/>
+<path id="Vector" d="M19 4H18V2H16V4H8V2H6V4H5C3.89 4 3.01 4.9 3.01 6L3 20C3 21.1 3.89 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4 19 4ZM19 20H5V10H19V20ZM19 8H5V6H19V8ZM9 14H7V12H9V14ZM13 14H11V12H13V14ZM17 14H15V12H17V14ZM9 18H7V16H9V18ZM13 18H11V16H13V18ZM17 18H15V16H17V18Z" fill="#0D0D0D"/>
 </g>
 </svg></button>
             <button class="tb-tab" id="tabPerson" aria-label="Profile"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -705,11 +807,12 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-09 · 12';
+const BUILD = 'home 2026-09-09 · 13';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
 const MODS = { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true,
+  consultBooked: false, discEmpty: false, dayShape: 'auto',
   tint: 0.14, blur: 5 };
 
 /* plan themes — gradients verbatim from Design System 4786-18146 */
@@ -758,18 +861,79 @@ function applyState() {
   /* native rule: consultation grows +50 when discounts is away */
   document.getElementById('rightcol').classList.toggle('sparse',
     !MODS.disc && MODS.consult);
+  /* — scenario (Figma 16828-83478): at 3 days or expired the days widget
+     merges into the urgent banner and the grid reflows — */
+  const urgent = n === 3 || n === 0;
+  const expired = n === 0;
+  document.getElementById('gUrgent').classList.toggle('off', !urgent);
+  document.getElementById('gPromo').classList.toggle('off', urgent || !MODS.promo);
+  document.getElementById('gDays').classList.toggle('off', urgent);
+  document.querySelector('.widgets').classList.toggle('urgent', urgent);
+  if (urgent) {
+    document.getElementById('ubNum').textContent = n;
+    document.getElementById('ubCap').textContent = expired ? 'Expired' : 'Days left';
+    document.getElementById('ubArc').setAttribute('stroke-dashoffset', expired ? '180.6' : '158.9');
+    document.getElementById('ubTitle').textContent = expired
+      ? 'Expired! Last chance to Save 🚨' : 'Renew early & Save 😱';
+    document.getElementById('ubSub').innerHTML = expired
+      ? 'your <span class="kd">KD</span>99 offer ends with the timer'
+      : 'starting price will change to <span class="kd">KD</span>109';
+    document.getElementById('ubRenew').classList.toggle('urgent', expired);
+    startUbTimer();
+  } else { stopUbTimer(); }
+  /* discounts content: expanded voucher card in urgent; empty state otherwise */
+  document.getElementById('gDisc').classList.toggle('expanded', urgent);
+  const kd = document.getElementById('diKd'), cap = document.getElementById('diCap');
+  if (urgent) {
+    kd.innerHTML = 'KD 32 <span class="off2">OFF</span>'; kd.style.font = '';
+    cap.style.display = ''; cap.textContent = '5 Vouchers available';
+  } else if (MODS.discEmpty) {
+    kd.textContent = 'Coupons'; kd.style.font = "600 13px/18px 'Urbane Rounded', sans-serif";
+    cap.style.display = 'none';
+  } else {
+    kd.textContent = 'KD 32'; kd.style.font = '';
+    cap.style.display = ''; cap.textContent = 'Discounts';
+  }
+  /* consultation state (Figma 16367-78807) */
+  document.getElementById('coTxt').innerHTML = MODS.consultBooked
+    ? '<span class="co-b1">Booked <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#fff"/><path d="M4 7.2l2 2 4-4.5" stroke="#ED1C24" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="co-date">12th Nov 8 AM</span>'
+    : 'Book Consultation';
+  /* tile radius moves class when consult grows sparse */
+  document.getElementById('gConsult').style.borderRadius =
+    (!MODS.disc && MODS.consult) ? '26px' : '22px';
   syncSegs();
   requestShape();
 }
+
+/* live countdown on the urgent chip */
+let ubTimer = null, ubAnchor = 0;
+function startUbTimer() {
+  if (ubTimer) return;
+  ubAnchor = Date.now();
+  const tick = () => {
+    const left = Math.max(0, 1211 - Math.floor((Date.now() - ubAnchor) / 1000));
+    const p = x => String(x).padStart(2, '0');
+    document.getElementById('ubChip').textContent = 'Expires in ' +
+      p(Math.floor(left / 3600)) + ':' + p(Math.floor(left / 60) % 60) + ':' + p(left % 60);
+  };
+  tick(); ubTimer = setInterval(tick, 1000);
+}
+function stopUbTimer() { clearInterval(ubTimer); ubTimer = null; }
 
 /* the days widget re-shapes itself by the height the column gives it
    (the documented tall / wide / slim forms) */
 function requestShape() {
   setTimeout(() => {
     const el = document.getElementById('gDays');
+    el.classList.remove('tall', 'slim', 'compact');
     const h = el.offsetHeight;
-    el.classList.toggle('tall', h >= 168);
-    el.classList.toggle('slim', h > 0 && h < 82);
+    const shape = MODS.dayShape !== 'auto' ? MODS.dayShape
+      : (h >= 168 ? 'tall' : (h > 0 && h < 82 ? 'slim' : 'wide'));
+    if (shape !== 'wide') el.classList.add(shape);
+    /* cradle + inset law: r = renew pill (18) + pad; pad follows the height */
+    const pad = Math.min(20, Math.max(12, h * 0.11));
+    el.style.borderRadius = (18 + pad).toFixed(1) + 'px';
+    el.style.padding = pad.toFixed(1) + 'px';
   }, 30);
 }
 
@@ -781,7 +945,18 @@ function syncSegs() {
   const on = { promo: MODS.promo, disc: MODS.disc, consult: MODS.consult };
   document.querySelectorAll('#modSeg button').forEach(b =>
     b.classList.toggle('on', !!on[b.dataset.v]));
+  document.querySelectorAll('#stateSeg button').forEach(b =>
+    b.classList.toggle('on', !!MODS[b.dataset.v]));
+  document.querySelectorAll('#shapeSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.v === MODS.dayShape));
 }
+
+document.querySelectorAll('#stateSeg button').forEach(b => b.onclick = () => {
+  MODS[b.dataset.v] = !MODS[b.dataset.v]; vibrate(8); applyState();
+});
+document.querySelectorAll('#shapeSeg button').forEach(b => b.onclick = () => {
+  MODS.dayShape = b.dataset.v; vibrate(8); applyState();
+});
 
 document.querySelectorAll('#planSeg button').forEach(b => b.onclick = () => {
   MODS.theme = b.dataset.v; vibrate(8); applyState();
@@ -793,7 +968,8 @@ document.querySelectorAll('#modSeg button').forEach(b => b.onclick = () => {
   MODS[b.dataset.v] = !MODS[b.dataset.v]; vibrate(8); applyState();
 });
 document.getElementById('sReset').onclick = () => {
-  Object.assign(MODS, { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true });
+  Object.assign(MODS, { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true,
+    consultBooked: false, discEmpty: false, dayShape: 'auto' });
   applyState();
 };
 document.getElementById('sCopy').onclick = () => {
