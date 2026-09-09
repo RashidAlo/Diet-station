@@ -2091,7 +2091,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 87';
+const BUILD = 'build 2026-09-09 · 88';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2348,6 +2348,11 @@ fit();
   function currentMode() { return docked ? 'page' : 'sheet'; }
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
+    /* ONE glass (Rashid): once the shell confirms the native gauge, the web
+       bar hides for good — visibility (not opacity) so the celebration's
+       burst/confetti children can still escape and render */
+    'html.ds-gauge #navigator { visibility: hidden !important; pointer-events: none !important; } ' +
+    'html.ds-gauge #navigator .burst-ring, html.ds-gauge #navigator .spark { visibility: visible; } ' +
     'html.ds-gauge #navigator .dock { opacity: 0 !important; pointer-events: none !important; transition: none !important; } ' +
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
@@ -2440,11 +2445,8 @@ fit();
     });
   };
   window.DSChromeTap = function (id) {
-    if (id === 'gauge-next') {
-      /* hand the bar back to the web so the dock's circle-loader morph and
-         the day-turn choreography play; the twin returns at the next rest */
-      clearGauge();
-    }
+    /* gauge-next used to hand the bar back to the web here — gone: the
+       native twin now owns the loader morph and every other state */
     var sel = TAPS[id] || ELS[id];
     var el = sel && document.querySelector(sel);
     if (el) el.click();
@@ -2459,27 +2461,54 @@ fit();
      (warn shake, Done celebration) hand back to the web bar that
      choreographs them; the web bar hides only after the shell CONFIRMS
      the native gauge, so hosts without macrogauge degrade gracefully. */
-  var gaugeOn = false, gaugeArmed = false, gaugeReT = null;
+  var gaugeOn = false, gaugeArmed = false;
+  /* ---- protocol v2: ONE glass, ALL states native (Rashid 2026-09-09) ----
+     The twin is persistent: the web never shows its own bar in-shell again
+     (no hand-backs for entrance / warn / celebrate / loader — every swap
+     was a visible pop). The web state machine still runs everything; it
+     just streams semantic states and the glass renders them. */
+  var instantHide = false;
   function gaugeState() {
     var nav = document.getElementById('navigator');
-    var r = nav.getBoundingClientRect();
     var off = frameOffset();
+    /* REST rect: undo the nav's own hide/entrance transform so the twin
+       never chases mid-flight coordinates (transform-origin is 50% 50%) */
+    var r = nav.getBoundingClientRect();
+    try {
+      var m = new DOMMatrixReadOnly(getComputedStyle(nav).transform);
+      if (!m.isIdentity && m.a) {
+        var w = r.width / m.a, h = r.height / m.d;
+        var cx = r.left + r.width / 2 - m.e, cy = r.top + r.height / 2 - m.f;
+        r = { left: cx - w / 2, top: cy - h / 2, width: w, height: h };
+      }
+    } catch (_) {}
     var t = totals();
     var quotaTotal = CATS.reduce(function (s, c) { return s + c.quota; }, 0);
     var frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
-    return { t: 'macrogauge', flow: FLOW, surface: SURFACE,
+    var state = 'progress';
+    if (nav.classList.contains('bar-hidden')) state = 'hidden';
+    else if (nav.classList.contains('warn')) state = 'warn';
+    else if (nav.classList.contains('celebrating')) state = 'celebrate';
+    var dockKind = 'none';
+    if (dock.classList.contains('show')) {
+      dockKind = dock.querySelector('.loader') ? 'loader'
+        : (dock.classList.contains('wide') ? 'next' : 'check');
+    }
+    var s = { t: 'macrogauge', flow: FLOW, surface: SURFACE,
       rect: { x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height },
       fill: GAUGE_BASE + frac * (1 - GAUGE_BASE),
       kcal: t.kcal, goal: MODS.target, p: t.p, c: t.c, f: t.f,
-      next: dock.classList.contains('show') };
+      next: dockKind === 'next',
+      state: state, dock: dockKind,
+      warn: (document.getElementById('warnMsg') || { textContent: '' }).textContent,
+      selc: (getComputedStyle(document.body).getPropertyValue('--selc') || '#ED1C24').trim(),
+      selcDark: document.body.classList.contains('selc-neon'),
+      instant: instantHide };
+    instantHide = false;
+    return s;
   }
   function postGauge() {
     if (!gaugeArmed || layerUp) return;   /* the gauge belongs to the base layer */
-    var nav = document.getElementById('navigator');
-    if (nav.classList.contains('warn') || nav.classList.contains('celebrating')) return;
-    /* no twin while the bar is absent or mid-entrance — the playful
-       spring is web motion; glass takes over at rest */
-    if (nav.classList.contains('bar-hidden')) { if (gaugeOn) clearGauge(); return; }
     try { webkit.messageHandlers.ds.postMessage(gaugeState()); gaugeOn = true; } catch (_) {}
   }
   function clearGauge() {
@@ -2489,12 +2518,10 @@ fit();
     document.getElementById('navigator').classList.remove('ds-native-hidden');
   }
   window.DSNativeGauge = function (on) {
-    if (on && gaugeOn) {
-      document.getElementById('navigator').classList.add('ds-native-hidden');
-      /* while the twin owns the bar, the web dock must never flash its own
-         Next — the glass one is the only Next (Rashid: no style morphing) */
-      document.documentElement.classList.add('ds-gauge');
-    }
+    /* confirm = the web bar retires for the session (visibility-hidden via
+       html.ds-gauge; particles exempt) — hosts without macrogauge never
+       confirm, so the web bar keeps working there */
+    if (on && gaugeOn) document.documentElement.classList.add('ds-gauge');
   };
   /* every totals change flows through updateAll — wrap it for state posts */
   var lastDualOn = null;
@@ -2511,23 +2538,27 @@ fit();
       return r;
     };
   }
-  /* warn / celebrating are class-driven: watch the class list and hand
-     the bar back to the web for those moments, retake it after */
-  var lastNavHidden = true;
-  new MutationObserver(function () {
-    var nav = document.getElementById('navigator');
-    var busy = nav.classList.contains('warn') || nav.classList.contains('celebrating') ||
-      nav.classList.contains('bar-hidden');
-    clearTimeout(gaugeReT);
-    if (busy) { if (gaugeOn) clearGauge(); }
-    else {
-      /* after the entrance spring wait it out; after warn/celebrate the bar
-         is already at rest — retake fast so Next never shows as web */
-      var wasEnter = lastNavHidden && !nav.classList.contains('bar-hidden');
-      gaugeReT = setTimeout(postGauge, wasEnter ? 640 : 220);
-    }
-    lastNavHidden = nav.classList.contains('bar-hidden');
-  }).observe(document.getElementById('navigator'), { attributes: true, attributeFilter: ['class'] });
+  /* the instant day-turn hide strips its no-anim class synchronously,
+     before observers run — wrap the presence toggle to carry the flag */
+  if (typeof syncBarPresence === 'function') {
+    var _sbp = syncBarPresence;
+    window.syncBarPresence = function (has, instant) {
+      var r = _sbp.apply(this, arguments);
+      if (instant) instantHide = true;
+      queueGauge();
+      return r;
+    };
+  }
+  /* every navigator/dock state flip streams to the twin — no hand-backs */
+  var gaugePostT = null;
+  function queueGauge() {
+    clearTimeout(gaugePostT);
+    gaugePostT = setTimeout(postGauge, 30);
+  }
+  new MutationObserver(queueGauge).observe(document.getElementById('navigator'),
+    { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(queueGauge).observe(dock,
+    { attributes: true, attributeFilter: ['class'], childList: true });
 
   /* ---- rest watcher: chrome state follows MOTION, not the dock ---- */
   var docked = false, moving = false, restT = null;

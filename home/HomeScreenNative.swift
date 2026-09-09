@@ -1331,15 +1331,22 @@ final class FlowPreloader {
                     }
                     rect = CGRect(x: rn("x"), y: rn("y"), width: rn("w"), height: rn("h"))
                 }
+                let nextFlag = (body["next"] as? Bool) ?? false
                 let model = DSGaugeModel(rect: rect, fill: num("fill"),
                                          kcal: Int(num("kcal")), goal: Int(num("goal")),
                                          p: Int(num("p")), c: Int(num("c")), f: Int(num("f")),
-                                         next: (body["next"] as? Bool) ?? false)
+                                         next: nextFlag,
+                                         state: body["state"] as? String ?? "progress",
+                                         dock: body["dock"] as? String ?? (nextFlag ? "next" : "none"),
+                                         warnMsg: body["warn"] as? String ?? "",
+                                         selc: body["selc"] as? String ?? "#ED1C24",
+                                         selcDark: (body["selcDark"] as? Bool) ?? false,
+                                         instant: (body["instant"] as? Bool) ?? false)
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
-                    withAnimation(.spring(response: 0.55, dampingFraction: 1)) {
-                        self.chrome.gauge = model
-                    }
+                    // no ambient animation: the persistent twin drives every
+                    // state's motion itself (protocol v2 — one glass)
+                    self.chrome.gauge = model
                     if let wv = self.chrome.webView {
                         wv.evaluateJavaScript("window.DSNativeGauge && DSNativeGauge(true)",
                                               in: frame, in: .page, completionHandler: nil)
@@ -1585,43 +1592,122 @@ struct DSGaugeModel: Equatable {
     var c: Int
     var f: Int
     var next: Bool
+    /* protocol v2 (Rashid 2026-09-09): ONE persistent glass, every state
+       native — the web streams semantic states, no more bar hand-backs.
+       Defaults keep older parses (the hub Coordinator) source-compatible. */
+    var state: String = "progress"   // hidden | progress | warn | celebrate
+    var dock: String = "none"        // none | check | next | loader
+    var warnMsg: String = ""
+    var selc: String = "#ED1C24"     // theme color for the Done flood
+    var selcDark: Bool = false       // neon theme: ink Done text, not white
+    var instant: Bool = false        // day-turn hide: no animation
 }
 
 @available(iOS 26.0, *)
 struct DSGaugeGlassView: View {
     let model: DSGaugeModel
     var onNext: () -> Void
+    /// grows by exactly 1 per warn — the shake effect plays t: 0→1 each time
+    @State private var shakes: CGFloat = 0
+
+    private var hidden: Bool { model.state == "hidden" }
+    private var selcColor: Color { Color(dsHex: model.selc) }
 
     var body: some View {
         ZStack(alignment: .leading) {
             fillBar
+                .opacity(model.state == "warn" || model.state == "celebrate" ? 0 : 1)
+            // Done: the whole bar floods the theme color under the check
+            Capsule().fill(selcColor)
+                .opacity(model.state == "celebrate" ? 1 : 0)
+            // over-quota: the error sits on FROST, not see-through glass
+            Capsule().fill(.white.opacity(0.78))
+                .opacity(model.state == "warn" ? 1 : 0)
             content
+                .opacity(model.state == "progress" ? 1 : 0)
+            doneCenter
+                .opacity(model.state == "celebrate" ? 1 : 0)
+                .scaleEffect(model.state == "celebrate" ? 1 : 0.92)
+            warnCenter
+                .opacity(model.state == "warn" ? 1 : 0)
         }
-        .overlay(alignment: .trailing) {
-            if model.next {
-                // web dock parity: 53pt capsule, 8pt off the bar's top/bottom/
-                // right (.glass buttonStyle padded past the 53 frame — build
-                // the glass capsule explicitly so the margins hold)
-                Button(action: onNext) {
+        .overlay(alignment: .trailing) { dockView }
+        // THE one glass — it never unmounts, never swaps for a web bar:
+        // every state above is a crossfade INSIDE the same material
+        .glassEffect(.regular, in: .capsule)
+        .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+        .animation(.easeOut(duration: 0.25), value: model.state)
+        .modifier(DSShakeEffect(travel: shakes))
+        // entrance/exit: the web's bar-hidden spring, played natively
+        .opacity(hidden ? 0 : 1)
+        .scaleEffect(hidden ? 0.9 : 1)
+        .offset(y: hidden ? model.rect.height + 80 : 0)
+        .animation(model.instant ? nil : .spring(response: 0.42, dampingFraction: 0.68),
+                   value: hidden)
+        .onChange(of: model.state) { _, s in
+            if s == "warn" {
+                withAnimation(.easeInOut(duration: 0.5)) { shakes += 1 }
+            }
+        }
+    }
+
+    /// none | check | next | loader — one glass pill morphing between them,
+    /// width-animated with crossfading glyphs (Rashid: no button swapping)
+    @ViewBuilder private var dockView: some View {
+        if model.dock != "none" {
+            Button {
+                if model.dock == "next" { onNext() }
+            } label: {
+                ZStack {
                     HStack(spacing: 7) {
                         Text("Next").font(DS.urbane(14, .medium))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 13, weight: .semibold))
                     }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 18)
-                    .frame(height: 53)
-                    // the house glass pill (same recipe as Renew/Change):
-                    // visibly liquid over the gold fill (Rashid)
-                    .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
+                    .fixedSize()
+                    .opacity(model.dock == "next" ? 1 : 0)
+                    DSSpinnerRing()
+                        .opacity(model.dock == "loader" ? 1 : 0)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .opacity(model.dock == "check" ? 1 : 0)
                 }
-                .buttonStyle(.plain)
-                .padding(.trailing, 8)
-                .transition(.scale(scale: 0.6).combined(with: .opacity))
+                .foregroundStyle(.white)
+                .frame(width: model.dock == "next" ? 92 : 53, height: 53)
+                // the house glass pill (same recipe as Renew/Change):
+                // visibly liquid over the gold fill (Rashid)
+                .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
             }
+            .buttonStyle(.plain)
+            .padding(.trailing, 8)
+            // the error owns the bar — Next steps aside while it speaks
+            .opacity(model.state == "warn" ? 0 : 1)
+            .scaleEffect(model.state == "warn" ? 0.6 : 1)
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: model.dock)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.state == "warn")
+            .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
-        .glassEffect(.regular, in: .capsule)
-        .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+    }
+
+    private var doneCenter: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 15, weight: .bold))
+            Text("Done").font(DS.urbane(17, .semibold))
+        }
+        .foregroundStyle(model.selcDark
+                         ? Color(red: 11/255, green: 14/255, blue: 18/255) : .white)
+        .shadow(color: .black.opacity(model.selcDark ? 0 : 0.3), radius: 2, y: 1)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var warnCenter: some View {
+        Text(model.warnMsg)
+            .font(DS.urbane(13, .semibold))
+            .foregroundStyle(DS.red)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var fillBar: some View {
@@ -1688,6 +1774,56 @@ struct DSGaugeGlassView: View {
             }
         }
         .frame(minWidth: minW, alignment: .leading)
+    }
+}
+
+/// The web's navshake, as an animatable decaying sine: travel advances by 1
+/// per warn, x sweeps -9…+8…-6…+4…-2-ish and lands exactly at 0.
+struct DSShakeEffect: GeometryEffect {
+    var travel: CGFloat
+    var animatableData: CGFloat {
+        get { travel }
+        set { travel = newValue }
+    }
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let t = travel - floor(travel)
+        let x = -sin(t * .pi * 5) * 9 * (1 - t)
+        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
+    }
+}
+
+/// Web loader parity: 22pt ring, 2.5pt stroke, faint track + bright quarter
+/// sweeping at .75s/turn.
+@available(iOS 26.0, *)
+struct DSSpinnerRing: View {
+    @State private var spin = false
+    var body: some View {
+        ZStack {
+            Circle().stroke(.white.opacity(0.28), lineWidth: 2.5)
+            Circle().trim(from: 0, to: 0.25)
+                .stroke(.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 0.75).repeatForever(autoreverses: false),
+                           value: spin)
+        }
+        .frame(width: 22, height: 22)
+        .onAppear { spin = true }
+    }
+}
+
+extension Color {
+    /// #RRGGBB (leading # optional); anything else falls back to DS red
+    init(dsHex s: String) {
+        var h = s.trimmingCharacters(in: .whitespaces)
+        if h.hasPrefix("#") { h.removeFirst() }
+        var v: UInt64 = 0
+        guard h.count == 6, Scanner(string: h).scanHexInt64(&v) else {
+            self = DS.red
+            return
+        }
+        self.init(red: Double((v >> 16) & 0xFF) / 255,
+                  green: Double((v >> 8) & 0xFF) / 255,
+                  blue: Double(v & 0xFF) / 255)
     }
 }
 
