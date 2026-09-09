@@ -955,8 +955,10 @@ function openMealOv(key) {
   document.getElementById('moStars').innerHTML =
     Array.from({ length: 5 }, (_, i) => moStarSVG(i < full ? '#FFC52E' : 'rgba(255,255,255,.55)')).join('');
   document.getElementById('moBadge').innerHTML = d.r + ' ' + moStarSVG('#FFC52E');
-  /* heat chips: hot mains get both, cold plates just the cold one */
-  const hot = ['breakfast', 'lunch', 'dinner'].includes(cat.id) && !/salad|pudding|pineapple/i.test(d.n);
+  /* heat chips: hot mains get both, cold plates just the cold one;
+     solo dishes (injected by the home pilot) declare it themselves */
+  const hot = d.hot !== undefined ? !!d.hot
+    : (['breakfast', 'lunch', 'dinner'].includes(cat.id) && !/salad|pudding|pineapple/i.test(d.n));
   document.getElementById('moHeat').innerHTML = hot
     ? '<div class="hc"><span class="he">&#x1F525;</span><div><b>Microwave it</b><span style="color:#ED1C24">2-3 minutes</span></div></div>' +
       '<span class="or">or</span>' +
@@ -2091,7 +2093,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 90';
+const BUILD = 'build 2026-09-09 · 91';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2336,8 +2338,50 @@ fit();
    bar is genuinely static at the top — Apple's scroll-edge treatment:
    materials swap at rest). Undocking or dismissal clears the twins the
    same frame and the web bar rides on. */
+/* ================= solo mode: the details page, standalone =================
+   The HOME pilot summons THIS overlay for its strip meals (Rashid: same
+   design, no recreated screens). ?solo=1 boots chromeless and transparent;
+   the shell injects the dish via DSSoloOpen(dish, locked) and every close
+   path hands back with ds-close. locked = within 72h of delivery: the
+   ingredient switches disable (gray, inert), list stays readable. */
+if (QS.get('solo') === '1') {
+  (function () {
+    document.documentElement.classList.add('solo');
+    var st = document.createElement('style');
+    st.textContent =
+      'html.solo, html.solo body, html.solo .phone { background: transparent !important; } ' +
+      'html.solo .sheet { transform: none !important; transition: none !important; ' +
+      '  background: transparent !important; box-shadow: none !important; } ' +
+      'html.solo .sheet > :not(.meal-ov):not(.mo-veil) { visibility: hidden !important; } ' +
+      'html.solo .nav, html.solo .navigator, html.solo .cat-dock { display: none !important; } ' +
+      'html.solo .mo-select { display: none !important; } ' +
+      'html.solo-locked .mo-row { pointer-events: none; } ' +
+      'html.solo-locked .mo-row .mo-sw { opacity: .45; filter: grayscale(1); }';
+    document.head.appendChild(st);
+    window.DSSoloOpen = function (dish, locked) {
+      CATS.push({ id: 'solo', title: dish.cat || 'Meals', quota: 0 });
+      DISHES.solo = [dish];
+      document.documentElement.classList.toggle('solo-locked', !!locked);
+      openMealOv('solo:0');
+    };
+    /* the X/veil listeners captured the ORIGINAL closeMealOv at bind time —
+       re-bind through the window slot so the solo wrap actually runs */
+    var _cmo = window.closeMealOv;
+    window.closeMealOv = function () {
+      var r = _cmo.apply(this, arguments);
+      setTimeout(function () { window.postMessage({ t: 'ds-close' }, '*'); }, 420);
+      return r;
+    };
+    var mc = document.getElementById('moClose'), mv = document.getElementById('moVeil');
+    mc.removeEventListener('click', _cmo);
+    mv.removeEventListener('click', _cmo);
+    mc.addEventListener('click', function () { window.closeMealOv(); });
+    mv.addEventListener('click', function () { window.closeMealOv(); });
+  })();
+}
 (function () {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
+  if (/[?&]solo=1/.test(location.search)) return;   /* solo: no twins, no gauge */
   var FLOW = 'selector', SURFACE = 'light';
   var ELS = { close: '#closeBtn', dual: '.dual' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
