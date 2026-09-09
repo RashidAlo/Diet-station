@@ -253,6 +253,10 @@ struct HomeScreenNative: View {
     /// dynamic-bar experiment: past this scroll depth the inline kcal module
     /// disconnects into its own glass macros row (Music's accessory beat)
     @State private var homeScrolled = false
+    /// two-beat choreography (Rashid): the compact pill HOPS to the middle
+    /// first, THEN grows into the macros row — this flags beat two
+    @State private var accessoryExpanded = false
+    @State private var dockSeq = 0   // cancels a stale beat two on rapid flips
     @Namespace private var modNS
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
@@ -282,11 +286,33 @@ struct HomeScreenNative: View {
             }
             .ignoresSafeArea(edges: .bottom)
             .onScrollGeometryChange(for: Bool.self, of: { $0.contentOffset.y > 60 }) { _, deep in
-                guard state.tabBarDynamic else { return }
-                // playful dock (Rashid): a loose spring so the module leaps
-                // up with visible overshoot before settling on its row
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.58)) {
-                    homeScrolled = deep
+                guard state.tabBarDynamic, deep != homeScrolled else { return }
+                dockSeq += 1
+                let seq = dockSeq
+                if deep {
+                    // beat one: the compact pill hops out of the bar to the
+                    // middle of its own row (loose spring = playful arc)
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) {
+                        homeScrolled = true
+                    }
+                    // beat two: it grows into the full macros row
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+                        guard seq == dockSeq, homeScrolled else { return }
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.58)) {
+                            accessoryExpanded = true
+                        }
+                    }
+                } else {
+                    // reverse mirrors: shrink to the pill, then drop back in
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.7)) {
+                        accessoryExpanded = false
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                        guard seq == dockSeq, !accessoryExpanded else { return }
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.66)) {
+                            homeScrolled = false
+                        }
+                    }
                 }
             }
             if state.calendarOpen {
@@ -520,13 +546,21 @@ struct HomeScreenNative: View {
     @ViewBuilder private var bottomBar: some View {
         if dynamicOn {
             VStack(spacing: 10) {
-                if homeScrolled { macrosAccessory }
+                if homeScrolled {
+                    if accessoryExpanded {
+                        macrosAccessory
+                    } else {
+                        // beat one perch: centered, with a whisper of
+                        // inflate as anticipation for the grow
+                        kcalModule.scaleEffect(1.06)
+                    }
+                }
                 HStack(spacing: 10) {
                     // widths rhyme (Rashid): docked bar matches the 370
                     // accessory; at rest bar + module + gap total the same
                     // 370, so the outer edges hold through the morph
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
-                             width: homeScrolled ? 370 : 268)
+                             width: homeScrolled ? 370 : 256)
                     if !homeScrolled { kcalModule }
                 }
             }
@@ -543,7 +577,8 @@ struct HomeScreenNative: View {
             Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
         }
         .foregroundStyle(DS.ink)
-        .frame(width: 92, height: 58)
+        // roomier flanks (Rashid): the text floats with real margin
+        .frame(width: 104, height: 58)
         .glassEffect(.regular.interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
         // the strip's day switch rolls the digits (Rashid: counting, not
