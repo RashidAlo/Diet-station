@@ -274,7 +274,22 @@ struct HomeScreenNative: View {
     /// scroll trigger measures depth relative to this first-report baseline,
     /// else the accessory latches open at boot
     @State private var scrollBase: CGFloat?
+    /// adaptive bar (Rashid: Apple's way — the bar reads the content behind
+    /// it): live global frames of the DARK bands (red page, photo strip) and
+    /// of the bar itself; overlap drives the bar's colorScheme
+    @State private var stripFrame: CGRect = .zero
+    @State private var sheetFrame: CGRect = .zero
+    @State private var barFrame: CGRect = .zero
     @Namespace private var modNS
+
+    /// true while dark content (the red page or the meal photos) sits under
+    /// the bar — the bar's environment flips to .dark and the Liquid Glass
+    /// + glyphs adapt, exactly like the system tab bar over dark content
+    private var barIsOverDark: Bool {
+        guard tabSel == .home, !state.calendarOpen, barFrame.height > 0 else { return false }
+        if sheetFrame.minY > barFrame.midY { return true }   // white sheet not here yet: red page
+        return barFrame.intersection(stripFrame).height > barFrame.height * 0.5
+    }
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
                                           // the persistent bar never blinks
@@ -336,6 +351,16 @@ struct HomeScreenNative: View {
             }
             arrival(bottomBar, 5)
                 .padding(.bottom, DS.barBottom)   // THE placement rule v2 (Music)
+                // adaptive bar (Apple's way): dark content behind flips the
+                // subtree's colorScheme — the Liquid Glass renders its dark
+                // variant and the glyphs adapt with it
+                .environment(\.colorScheme, barIsOverDark ? .dark : .light)
+                .animation(.easeInOut(duration: 0.25), value: barIsOverDark)
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .global)
+                } action: { r in
+                    barFrame = r
+                }
                 // chrome layers: while the meal selector owns the screen the
                 // ONE bar yields — slides out under the rising sheet and
                 // returns as it departs; it never unmounts, so no reflow
@@ -611,7 +636,7 @@ struct HomeScreenNative: View {
                 .transition(.opacity)
             }
         }
-        .foregroundStyle(DS.ink)
+        .foregroundStyle(barIsOverDark ? .white : DS.ink)
         .padding(.horizontal, homeScrolled ? 22 : 16)
         .frame(width: homeScrolled ? 370 : 104, height: homeScrolled ? 46 : 58)
         // same material as the tab bar it belongs to (Rashid)
@@ -623,11 +648,12 @@ struct HomeScreenNative: View {
     }
 
     private func thinPair(_ v: Int, _ label: String) -> some View {
-        HStack(alignment: .lastTextBaseline, spacing: 3) {
-            Text(label).font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
-            Text(verbatim: "\(v)").font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
+        let ink: Color = barIsOverDark ? .white : DS.ink
+        return HStack(alignment: .lastTextBaseline, spacing: 3) {
+            Text(label).font(DS.urbane(10, .medium)).foregroundStyle(ink.opacity(0.5))
+            Text(verbatim: "\(v)").font(DS.urbane(15, .semibold)).foregroundStyle(ink)
                 .contentTransition(.numericText(value: Double(v)))
-            Text("g").font(DS.proxima(9)).foregroundStyle(DS.ink.opacity(0.5))
+            Text("g").font(DS.proxima(9)).foregroundStyle(ink.opacity(0.5))
         }
     }
 
@@ -990,6 +1016,11 @@ struct HomeScreenNative: View {
                 // day groups exactly at the standard 24pt inset
                 .contentMargins(.horizontal, 24, for: .scrollContent)
                 .coordinateSpace(name: "strip")
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .global)
+                } action: { r in
+                    stripFrame = r   // the dark photo band, tracked live
+                }
                 .onAppear {
                     stripProxy.scrollTo("day1", anchor: .leading)
                     // seen once in the sim: the first scrollTo can race layout
@@ -1002,6 +1033,11 @@ struct HomeScreenNative: View {
             Spacer(minLength: 140)
         }
         .frame(maxWidth: .infinity, minHeight: 520, alignment: .top)
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { r in
+            sheetFrame = r   // where the white begins; red page above it
+        }
         .background(.white, in: UnevenRoundedRectangle(topLeadingRadius: 38, topTrailingRadius: 38))
         // bottom-overscroll rubber band must show white, never the red page
         .background(alignment: .bottom) {
@@ -1328,23 +1364,30 @@ struct DSTabBar: View {
     /// the dynamic-bar experiment narrows the capsule to make room for an
     /// inline module; every other host keeps the canonical 314
     var width: CGFloat = 314
+    /// adaptive bar: the host flips this subtree's colorScheme from the
+    /// content behind the bar (Apple's way) — glyphs and pill follow
+    @Environment(\.colorScheme) private var scheme
     @Namespace private var pillNS
+
+    private var resting: Color {
+        scheme == .dark ? .white.opacity(0.92) : Color(white: 0.12).opacity(0.85)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             item(.home) { sel in
                 DSLogoMark()
-                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .fill(sel ? DS.red : resting)
                     .frame(width: 26, height: 20)
             }
             item(.calendar) { sel in
                 DSTabCalendarIcon()
-                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .fill(sel ? DS.red : resting)
                     .frame(width: 24, height: 24)
             }
             item(.person) { sel in
                 DSTabPersonIcon()
-                    .fill(sel ? DS.red : Color(white: 0.12).opacity(0.85))
+                    .fill(sel ? DS.red : resting)
                     .frame(width: 24, height: 24)
             }
         }
@@ -1360,7 +1403,7 @@ struct DSTabBar: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 if selected == tab {
-                    Capsule().fill(.white.opacity(0.85))
+                    Capsule().fill(.white.opacity(scheme == .dark ? 0.24 : 0.85))
                         .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
                         .matchedGeometryEffect(id: "pill", in: pillNS)
                 }
