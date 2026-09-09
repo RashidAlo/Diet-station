@@ -371,7 +371,11 @@
     border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
   /* the calorie bar earns its entrance: absent until the first pick,
      then springs up with a playful overshoot (backOut) */
-  #navigator { transition: opacity .18s ease, transform .55s cubic-bezier(.34,1.56,.64,1); }
+  /* will-change keeps the spring on the compositor: the first pick also
+     fires the check draw + glow engine + auto-scroll on the main thread,
+     which was eating the entrance frames (bar seemed to appear late) */
+  #navigator { transition: opacity .18s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
+    will-change: transform, opacity; }
   #navigator.bar-hidden { transform: translateY(calc(100% + 80px)) scale(.9); opacity: 0;
     pointer-events: none;
     transition: opacity .22s ease, transform .35s cubic-bezier(.55,0,.8,.4); }
@@ -434,7 +438,8 @@
   .navigator.warn .warnmsg { opacity: 1; }
   .navigator .content { position: absolute; inset: 0; display: flex; align-items: center;
     gap: 8px; padding: 0 28px 0 22px; color: #f9f9f9; }
-  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); width: 78px; flex: none;
+  /* min-width fits four digits ("2025/1860") without breaking the row */
+  .navigator .kcal { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); min-width: 96px; flex: none;
     white-space: nowrap; }
   .navigator .kcal .lbl { font: 500 9px/10px 'Urbane Rounded', sans-serif; display: block;
     margin-bottom: -1px; }
@@ -442,7 +447,7 @@
   .navigator .kcal .big { font: 600 19px/25px 'Urbane Rounded', sans-serif; }
   .navigator .kcal .cap { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46;
     margin: 0 0 3px 1px; }
-  .navigator .mpairs { display: flex; gap: 3px; padding-bottom: 4px; }
+  .navigator .mpairs { display: flex; gap: 10px; padding-bottom: 4px; }
   .navigator .mpair { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
     white-space: nowrap; }
   .navigator .mpair .lbl { font: 500 9px/12px 'Urbane Rounded', sans-serif; display: block;
@@ -1352,8 +1357,8 @@ function updateAll(instant) {
   document.getElementById('mP').textContent = t.p;
   document.getElementById('mC').textContent = t.c;
   document.getElementById('mF').textContent = t.f;
+  syncBarPresence(t.count > 0, instant);   /* bar first, before any scroll */
   animateKcal(t.kcal, instant);
-  syncBarPresence(t.count > 0, instant);
   /* gauge fill: Figma base 24.73% at zero -> 100% at full quota */
   const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
   gaugeFx.target = frac;
@@ -2070,7 +2075,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 83';
+const BUILD = 'build 2026-09-09 · 84';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

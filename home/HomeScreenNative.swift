@@ -32,12 +32,17 @@ import WebKit
 @available(iOS 26.0, *)
 private enum DS {
     static let red = Color(red: 237/255, green: 28/255, blue: 36/255)
-    /// One radius law for every widget size (Rashid: small tiles were far
-    /// too round vs the big cards). Apple-style size-proportional corners:
-    /// linear in the tile's minor side, capped at the approved xlarge 26.
-    ///   60pt tile -> 12   72 banner -> 14   136 days -> 20   191+ card -> 26
-    static func radius(_ minSide: CGFloat) -> CGFloat {
-        min(26, (6 + 0.105 * minSide).rounded())
+    /// Apple Control-Center corner family (Rashid 2026-09-09, superseding
+    /// the linear law): platters share ONE concentric radius seeded from the
+    /// display bezel curvature minus the page margin — the reason every CC
+    /// platter feels nested in the screen — and any tile too small to carry
+    /// it rounds to a capsule, exactly how CC treats its smallest controls.
+    /// displayCorner is the single tuning knob (iPhone Pro bezel ~= 62pt).
+    static let displayCorner: CGFloat = 62
+    static let pageMargin: CGFloat = 20
+    static func radius(w: CGFloat, h: CGFloat) -> CGFloat {
+        let platter = displayCorner - pageMargin        // ~= 42
+        return min(platter, min(w, h) / 2)              // capsule below ~84pt
     }
     /// One gap everywhere in the red zone — grid gutters, column stacks,
     /// action-bar-to-banner, banner-to-grid (Rashid: cohesive spacing).
@@ -341,7 +346,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: DS.radius(68)))
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: DS.radius(w: 69, h: 68)))
     }
 
     // MARK: promo banner
@@ -359,7 +364,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(72)))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(w: 362, h: 72)))
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
@@ -437,8 +442,8 @@ struct HomeScreenNative: View {
         .frame(maxHeight: .infinity)
         // clip the CONTENT (gradient) before the glass so it can never bleed
         // past the rounded bottom edges; both shapes are the same fixed 26
-        .clipShape(RoundedRectangle(cornerRadius: DS.radius(193)))
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(193)))
+        .clipShape(RoundedRectangle(cornerRadius: DS.radius(w: 193, h: 288), style: .continuous))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(w: 193, h: 288)))
         .glassEffectID("plan", in: glassNS)
     }
 
@@ -461,7 +466,7 @@ struct HomeScreenNative: View {
         }
         .frame(maxHeight: .infinity)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)),
-                     in: .rect(cornerRadius: DS.radius(daysHeight)))
+                     in: .rect(cornerRadius: DS.radius(w: 153, h: daysHeight)))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -482,9 +487,9 @@ struct HomeScreenNative: View {
         .frame(maxWidth: .infinity)
         .frame(height: 60)   // twin of consult — slimmer so days-left breathes
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.radius(60)))
+                     in: .rect(cornerRadius: DS.radius(w: 153, h: 60)))
         .glassEffectID("disc", in: glassNS)
-        .contentShape(RoundedRectangle(cornerRadius: DS.radius(60)))
+        .contentShape(RoundedRectangle(cornerRadius: DS.radius(w: 153, h: 60)))
         .onTapGesture { instant { state.couponsOpen = true } }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -502,7 +507,7 @@ struct HomeScreenNative: View {
         // doesn't gape between it and the days widget (Rashid)
         .frame(height: state.showDiscounts ? 60 : 110)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.radius(state.showDiscounts ? 60 : 110)))
+                     in: .rect(cornerRadius: DS.radius(w: 153, h: state.showDiscounts ? 60 : 110)))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -1110,7 +1115,9 @@ struct DSGaugeGlassView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 18)
                     .frame(height: 53)
-                    .glassEffect(.regular, in: .capsule)
+                    // the house glass pill (same recipe as Renew/Change):
+                    // visibly liquid over the gold fill (Rashid)
+                    .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
                 }
                 .buttonStyle(.plain)
                 .padding(.trailing, 8)
@@ -1158,8 +1165,9 @@ struct DSGaugeGlassView: View {
                         .opacity(0.46)
                 }
             }
-            .frame(width: 78, alignment: .leading)
-            HStack(spacing: 3) {
+            // min-width fits four digits ("2025/1860") without breaking the row
+            .frame(minWidth: 96, alignment: .leading)
+            HStack(spacing: 10) {
                 pair("Protein", model.p, minW: 38)
                 pair("Carbs", model.c, minW: 32)
                 pair("Fat", model.f, minW: 28)
@@ -1167,8 +1175,8 @@ struct DSGaugeGlassView: View {
             .padding(.bottom, 4)
             Spacer(minLength: 0)
         }
-        .padding(.leading, 28)
-        .padding(.trailing, 64)
+        .padding(.leading, 22)
+        .padding(.trailing, 74)
         .foregroundStyle(.white)
         .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
         .animation(.spring(duration: 0.5), value: model.kcal)
