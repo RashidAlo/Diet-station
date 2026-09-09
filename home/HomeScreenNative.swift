@@ -467,8 +467,9 @@ struct HomeScreenNative: View {
                 .padding(.top, 3)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        // breathing room, top and trailing especially (Rashid) — the grid
+        // below gives back a little height to keep the page rhythm
+        .padding(EdgeInsets(top: 20, leading: 16, bottom: 16, trailing: 22))
         .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.cradle(pill: 18, inset: 16)))
         .glassEffectID("days", in: glassNS)
         .overlay(alignment: .topLeading) {
@@ -531,8 +532,9 @@ struct HomeScreenNative: View {
                 .frame(width: 153)
             }
             /* fixed height: removing the promo banner shifts everything UP —
-               it must never elongate the widgets (Rashid) */
-            .frame(height: 288)
+               it must never elongate the widgets (Rashid); the urgent banner's
+               extra padding is paid for here */
+            .frame(height: urgent ? 274 : 288)
         }
     }
 
