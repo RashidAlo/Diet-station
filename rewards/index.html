@@ -235,9 +235,9 @@
   .coupon .face { position: absolute; left: 0; top: 0;
     width: 368px; height: 125px; z-index: 2; pointer-events: none; }
   .coupon .piece { z-index: 4; visibility: hidden; will-change: transform, opacity; }
-  /* while grabbed, the tab reads a touch LIGHTER than at rest */
-  .coupon .piece .fill-lighter { mix-blend-mode: normal;
-    background: rgba(255,255,255,.15); }
+  /* the grabbed tab keeps the RESTING fill exactly (Rashid: no color
+     change while pulling) — the piece's own stack replicates the coupon
+     recipe, so the generic .fill-lighter rule covers it */
 
   /* pop effects at the perforation */
   .popring { position: absolute; border: 2px solid rgba(255,255,255,.85);
