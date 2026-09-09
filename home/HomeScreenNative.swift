@@ -296,8 +296,10 @@ struct HomeScreenNative: View {
            every DS bar shares; a whole-cover ignore pushed the bar to the
            raw screen edge). */
         .fullScreenCover(isPresented: $state.couponsOpen) {
-            // fully native per Rashid — real lensing everywhere, no web glass
-            RewardsScreenNative { instant { state.couponsOpen = false } }
+            // REVERTED (Rashid): the web coupon experience is the design —
+            // rip physics, levels, sounds. Native's job here is ONLY the
+            // glasschrome X twin the overlay already renders.
+            FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
                 .presentationBackground(Color.black.opacity(0.42))
         }
         .fullScreenCover(isPresented: $state.calendarOpen) {
@@ -1099,10 +1101,11 @@ private struct DaysContent: View {
     }
 }
 
-// MARK: - Rewards, fully native (Rashid 2026-09-09: the web overlay's glass
-// button can't do real lensing — the whole flow becomes a SwiftUI screen).
-// v1 scaffold: red sheet, glass close, three vouchers with the perforated
-// pull-stub and a working rip drag; levels/sounds/confetti follow.
+// MARK: - Rewards native screen — DORMANT (Rashid reverted 2026-09-09:
+// "revert to the previous design... I just wanted the X button to have
+// liquid glass"). The web overlay + its glasschrome X twin are the coupon
+// experience; this struct stays only until the shell removes its
+// nativerewards wiring, then both get deleted together.
 
 @available(iOS 26.0, *)
 struct RewardsScreenNative: View {
