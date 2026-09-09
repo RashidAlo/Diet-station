@@ -539,12 +539,16 @@ struct HomeScreenNative: View {
         let d = state.days[state.stripDay]
         return HStack(alignment: .lastTextBaseline, spacing: 4) {
             Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
+                .contentTransition(.numericText(value: Double(d.kcal)))
             Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
         }
         .foregroundStyle(DS.ink)
         .frame(width: 92, height: 58)
         .glassEffect(.regular.interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
+        // the strip's day switch rolls the digits (Rashid: counting, not
+        // snapping, as the meals scroll between days)
+        .animation(.spring(duration: 0.55), value: state.stripDay)
     }
 
     /// the docked layer, v2 (Rashid): NOT the orange gauge — a THIN slice
@@ -554,6 +558,7 @@ struct HomeScreenNative: View {
         return HStack(spacing: 0) {
             HStack(alignment: .lastTextBaseline, spacing: 3) {
                 Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
+                    .contentTransition(.numericText(value: Double(d.kcal)))
                 Text(verbatim: "/1860").font(DS.urbane(11, .medium)).foregroundStyle(DS.ink.opacity(0.4))
                 Text("kcal").font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
             }
@@ -568,12 +573,15 @@ struct HomeScreenNative: View {
         .frame(width: 370, height: 46)
         .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
+        // day switches mid-scroll roll every figure in place (Rashid)
+        .animation(.spring(duration: 0.55), value: state.stripDay)
     }
 
     private func thinPair(_ v: Int, _ label: String) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 3) {
             Text(label).font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
             Text(verbatim: "\(v)").font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
+                .contentTransition(.numericText(value: Double(v)))
             Text("g").font(DS.proxima(9)).foregroundStyle(DS.ink.opacity(0.5))
         }
     }
