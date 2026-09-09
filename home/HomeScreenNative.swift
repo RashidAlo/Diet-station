@@ -25,11 +25,54 @@
 //
 
 import SwiftUI
+import CoreText
 import WebKit
 
 // MARK: - Palette / constants (mirror home/index.html)
 
 @available(iOS 26.0, *)
+/// Rashid's licensed Avenir Next World files (Arabic coverage) ride
+/// gh-pages like every lab asset: downloaded once into Caches, registered
+/// with CoreText at runtime — no bundle/Info.plist plumbing needed, and a
+/// font update ships like any deploy.
+@available(iOS 26.0, *)
+enum DSFontLoader {
+    static let files = ["AvenirNextWorld-Medium.otf",
+                        "AvenirNextWorld-Demi.otf",
+                        "AvenirNextWorld-Bold.otf"]
+
+    static var cacheDir: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DSFonts", isDirectory: true)
+    }
+
+    /// warm launches: everything already cached registers before first render
+    static let registerCached: Void = {
+        for f in files {
+            let local = cacheDir.appendingPathComponent(f)
+            if FileManager.default.fileExists(atPath: local.path) {
+                CTFontManagerRegisterFontsForURL(local as CFURL, .process, nil)
+            }
+        }
+    }()
+
+    /// cold first launch: fetch the missing ones, register, report if any landed
+    static func downloadMissing() async -> Bool {
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        var landed = false
+        for f in files {
+            let local = cacheDir.appendingPathComponent(f)
+            guard !FileManager.default.fileExists(atPath: local.path),
+                  let url = URL(string: DS.assets + "fonts/" + f),
+                  let (tmp, _) = try? await URLSession.shared.download(from: url) else { continue }
+            try? FileManager.default.moveItem(at: tmp, to: local)
+            CTFontManagerRegisterFontsForURL(local as CFURL, .process, nil)
+            landed = true
+        }
+        return landed
+    }
+}
+
 private enum DS {
     static let red = Color(red: 237/255, green: 28/255, blue: 36/255)
     /// THE CRADLE LAW (Rashid 2026-09-09, v3 — supersedes the CC capsules):
@@ -268,6 +311,13 @@ struct HomeScreenNative: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: state.stripDay)
         .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
         .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: dialNumber)
+        .task {
+            _ = DSFontLoader.registerCached
+            if await DSFontLoader.downloadMissing() { fontTick += 1 }
+            #if DEBUG
+            NSLog("DSFONTS world: %@", UIFont.fontNames(forFamilyName: "Avenir Next World"))
+            #endif
+        }
         .task { await runIntro() }
         #if DEBUG
         // Headless QA: SIMCTL_CHILD_DSLAB_OVERLAY=meal-select|rewards summons
@@ -336,6 +386,7 @@ struct HomeScreenNative: View {
                     (Text("☀️ ").font(.system(size: 11))
                      + Text("صبحك الله بالخير").font(DS.avenirWorld(12)))
                         .foregroundStyle(DS.onColor)
+                        .id("greeting-\(fontTick)")
                     Text("Abdulrahman").font(DS.urbane(14)).foregroundStyle(.white)
                 }
             }
@@ -458,6 +509,7 @@ struct HomeScreenNative: View {
     // relocated to the top with the offer; countdown chip ticks live
 
     @State private var urgentT0 = Date()
+    @State private var fontTick = 0   // bumps when remote fonts land (cold launch)
 
     private var urgentBanner: some View {
         let expired = state.daysLeft == 0
