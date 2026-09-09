@@ -125,6 +125,14 @@ private enum DS {
     var macrosOpen = false
     var consultBooked = false       // Figma 16367:78807 "Booked" state
     var discountsEmpty = false      // no coupons: bare "Coupons" tile
+    /// lab override for the days widget's arrangement (Figma 4798:19569
+    /// defines four shapes; auto derives from the column height as usual)
+    enum DaysShapeChoice: String, CaseIterable, Identifiable {
+        case auto, tall, wide, compact, slim
+        var id: String { rawValue }
+        var label: String { rawValue.capitalized }
+    }
+    var daysShapeChoice: DaysShapeChoice = .auto
     var stripDay = 1                // index into days — boots on Today
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
@@ -231,6 +239,7 @@ struct HomeScreenNative: View {
         .animation(.spring(duration: 0.45), value: state.showConsult)
         .animation(.spring(duration: 0.4), value: state.plan)
         .animation(.spring(duration: 0.35), value: state.consultBooked)
+        .animation(.spring(duration: 0.35), value: state.daysShapeChoice)
         .animation(.spring(duration: 0.35), value: state.discountsEmpty)
         .sensoryFeedback(.impact(weight: .medium), trigger: state.stripDay)
         .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
@@ -327,14 +336,16 @@ struct HomeScreenNative: View {
 
     private var tabBar: some View {
         HStack(spacing: 0) {
+            // universal rule (Rashid): the ACTIVE tab's icon is red on the
+            // white pill; every inactive icon is neutral ink
             tabItem(selected: true) {
                 DSLogoMark()
-                    .fill(Color(white: 0.18))
+                    .fill(DS.red)
                     .frame(width: 26, height: 20)
             } action: { }
             tabItem {
                 DSTabCalendarIcon()
-                    .fill(DS.red.opacity(0.85))
+                    .fill(Color(white: 0.12).opacity(0.85))
                     .frame(width: 24, height: 24)
             } action: { instant { state.calendarOpen = true } }
             tabItem {
@@ -477,11 +488,19 @@ struct HomeScreenNative: View {
         return h
     }
 
-    // days-left: re-shapes with the height it is given (tall / wide / slim)
+    // days-left: re-shapes with the height it is given (tall / wide / slim),
+    // or renders the lab-forced shape (Figma 4798:19569 has four)
     private var daysWidget: some View {
         GeometryReader { geo in
             let h = geo.size.height
-            let shape: DaysShape = h >= 168 ? .tall : (h < 82 ? .slim : .wide)
+            let auto: DaysShape = h >= 168 ? .tall : (h < 82 ? .slim : .wide)
+            let shape: DaysShape = switch state.daysShapeChoice {
+            case .auto: auto
+            case .tall: .tall
+            case .wide: .wide
+            case .compact: .compact
+            case .slim: .slim
+            }
             DaysContent(state: state, shape: shape, number: dialNumber, frac: dialFrac,
                         height: h)
         }
@@ -496,10 +515,12 @@ struct HomeScreenNative: View {
     private var discountsWidget: some View {
         HStack(spacing: 12) {
             if state.discountsEmpty {
-                // no coupons: no currency, no bag — the whole tile just says
-                // Coupons, centered (Rashid)
-                Text("Coupons").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
-                    .frame(maxWidth: .infinity)
+                // no coupons: keep the bag, drop the currency — slightly
+                // smaller type so the whole title shows (Rashid)
+                Text("Coupons").font(DS.urbane(13, .semibold)).foregroundStyle(DS.onColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .layoutPriority(1)
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("KD 32").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
@@ -508,9 +529,9 @@ struct HomeScreenNative: View {
                 // scale, never wrap — the bag glyph leaves ~67pt for the text column
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                Spacer(minLength: 8)
-                DSBagIcon().frame(width: 34, height: 31.8)
             }
+            Spacer(minLength: 8)
+            DSBagIcon().frame(width: 34, height: 31.8)
         }
         .padding(.horizontal, 19)
         .frame(maxWidth: .infinity)
@@ -559,22 +580,23 @@ struct HomeScreenNative: View {
     /// The Figma consultation calendar is MULTILAYERED (mirrors the web
     /// `.calico` composite): translucent plate, traced subtract body, and
     /// two binding posts poking above the plate.
+    /// Rashid's SVG verbatim (Figma Frame 1321315918, 28-grid): translucent
+    /// plate, calendar body with six window cells punched out, two binding
+    /// posts poking above the plate.
     private var consultIcon: some View {
-        ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: 4.7)
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 4.685)
                 .fill(.white.opacity(0.25))
                 .shadow(color: .black.opacity(0.07), radius: 2, y: 1.9)
-                .padding(EdgeInsets(top: 2.4, leading: 2, bottom: 3.1, trailing: 2))
-            DSCalendarIcon().fill(.white.opacity(0.6))
-                .frame(width: 24, height: 21.6)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 2.6)
-            HStack {
-                Capsule().fill(.white.opacity(0.4)).frame(width: 1.9, height: 4.6)
-                Spacer()
-                Capsule().fill(.white.opacity(0.4)).frame(width: 1.9, height: 4.6)
-            }
-            .padding(.horizontal, 9)
+                .frame(width: 23.425, height: 22.488)
+                .offset(x: 2.333, y: 2.404)
+            DSConsultCalShape()
+                .fill(.white.opacity(0.6), style: FillStyle(eoFill: true))
+                .frame(width: 28, height: 28)
+            Capsule().fill(.white.opacity(0.4)).frame(width: 1.874, height: 4.685)
+                .offset(x: 8.892, y: 0)
+            Capsule().fill(.white.opacity(0.4)).frame(width: 1.874, height: 4.685)
+                .offset(x: 17.325, y: 0)
         }
         .frame(width: 28, height: 28)
     }
@@ -736,6 +758,10 @@ struct HomeScreenNative: View {
                         Text("19 days").tag(19); Text("5 days").tag(5); Text("Expired").tag(0)
                     }
                     .pickerStyle(.segmented)
+                    Picker("Shape", selection: $state.daysShapeChoice) {
+                        ForEach(HomeState.DaysShapeChoice.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
                 Section("Widgets on screen") {
                     Toggle("Promo banner", isOn: $state.showPromo)
@@ -768,10 +794,31 @@ struct HomeScreenNative: View {
     }
 }
 
+/// Calendar body from Rashid's SVG (Frame 1321315918): outer rounded rect
+/// with a 2x3 grid of rounded window cells punched out (even-odd fill).
+@available(iOS 26.0, *)
+private struct DSConsultCalShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = rect.width / 28
+        var p = Path()
+        p.addRoundedRect(in: CGRect(x: 2.333 * s, y: 6.449 * s,
+                                    width: 23.425 * s, height: 21.551 * s),
+                         cornerSize: CGSize(width: 4.685 * s, height: 4.685 * s))
+        for x: CGFloat in [7.018, 12.640, 18.262] {
+            for y: CGFloat in [12.711, 18.333] {
+                p.addRoundedRect(in: CGRect(x: x * s, y: y * s,
+                                            width: 2.812 * s, height: 2.812 * s),
+                                 cornerSize: CGSize(width: 0.937 * s, height: 0.937 * s))
+            }
+        }
+        return p
+    }
+}
+
 // MARK: - Days-left widget content (the documented shapes)
 
 @available(iOS 26.0, *)
-private enum DaysShape { case slim, wide, tall }
+private enum DaysShape { case slim, wide, tall, compact }
 
 @available(iOS 26.0, *)
 private struct DaysContent: View {
@@ -783,7 +830,7 @@ private struct DaysContent: View {
 
     var expired: Bool { state.daysLeft == 0 }
 
-    private var ringSize: CGFloat { shape == .slim ? 40 : (shape == .tall ? 60 : 50) }
+    private var ringSize: CGFloat { shape == .slim ? 40 : (shape == .tall ? 60 : 50) }   // wide & compact share 50
 
     var ring: some View {
         ZStack {
@@ -847,6 +894,17 @@ private struct DaysContent: View {
                     HStack(spacing: 8) { ring; texts; Spacer(minLength: 0) }
                     Spacer(minLength: 6)
                     renew
+                }
+            case .compact:
+                // Figma: ring left, Renew pill hugging right, texts below
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        ring
+                        // flexible: a fixed pill overflowed the 153pt column
+                        renew
+                    }
+                    Spacer(minLength: 4)
+                    texts
                 }
             case .tall:
                 VStack(alignment: .leading, spacing: 0) {
