@@ -1196,12 +1196,21 @@ private struct VoucherCard: View {
             }
             .padding(.leading, 25).padding(.top, 26)
 
-            // the rippable stub
+            // the rippable stub (visual only — the gesture lives on the
+            // stationary hit zone below; offset chains displace hit-testing)
             stub
                 .offset(x: stubX + drag * 0.92, y: 0)
                 .rotationEffect(.degrees(Double(min(14, drag * 0.09))),
                                 anchor: .bottomTrailing)
                 .opacity(ripped ? 0 : 1)
+                .allowsHitTesting(false)
+            if !ripped {
+                Color.clear
+                    .frame(width: W - stubX, height: H)
+                    .contentShape(Rectangle())
+                    .offset(x: stubX)
+                    .gesture(ripGesture)
+            }
             if ripped {
                 VStack(spacing: 2) {
                     Text("CODE").font(DS.proxima(9)).foregroundStyle(Color(white: 0.55))
@@ -1229,27 +1238,27 @@ private struct VoucherCard: View {
             }
             .frame(width: W, height: H, alignment: .leading)
             .offset(x: -stubX)
-        .contentShape(Rectangle().path(in: CGRect(x: stubX, y: 0, width: W - stubX, height: H)))
-        .gesture(
-            DragGesture()
-                .onChanged { g in
-                    drag = max(0, g.translation.width)
-                    if drag > 2, Int(drag) % 14 == 0 {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.5)
-                    }
+    }
+
+    private var ripGesture: some Gesture {
+        DragGesture(minimumDistance: 6)
+            .onChanged { g in
+                drag = max(0, g.translation.width)
+                if drag > 2, Int(drag) % 14 == 0 {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.5)
                 }
-                .onEnded { g in
-                    if g.translation.width > 70 {
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        withAnimation(.easeIn(duration: 0.32)) { drag = 420 }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
-                            withAnimation(.spring(duration: 0.35)) { ripped = true }
-                        }
-                    } else {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { drag = 0 }
+            }
+            .onEnded { g in
+                if g.translation.width > 70 {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    withAnimation(.easeIn(duration: 0.32)) { drag = 420 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+                        withAnimation(.spring(duration: 0.35)) { ripped = true }
                     }
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { drag = 0 }
                 }
-        )
+            }
     }
 }
 
@@ -1354,13 +1363,14 @@ struct DSTabBar: View {
 struct DSTabBarHost: View {
     var initial: DSTabId
     var onSelect: (DSTabId) -> Void
+    var onLongPress: ((DSTabId) -> Void)? = nil   // passthrough to DSTabBar
     @State private var sel: DSTabId = .home
 
     var body: some View {
-        DSTabBar(selected: sel) { tab in
+        DSTabBar(selected: sel, onSelect: { tab in
             withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { sel = tab }
             onSelect(tab)
-        }
+        }, onLongPress: onLongPress)
         .onAppear { sel = initial }
     }
 }
