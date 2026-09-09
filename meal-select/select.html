@@ -369,6 +369,13 @@
   .navigator { position: absolute; left: calc(50% - 179px); width: 358px; height: 69px; z-index: 35;
     bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     border-radius: 296px; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+  /* the calorie bar earns its entrance: absent until the first pick,
+     then springs up with a playful overshoot (backOut) */
+  #navigator { transition: opacity .18s ease, transform .55s cubic-bezier(.34,1.56,.64,1); }
+  #navigator.bar-hidden { transform: translateY(calc(100% + 80px)) scale(.9); opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease, transform .35s cubic-bezier(.55,0,.8,.4); }
+  #navigator.no-anim { transition: none !important; }
   .navigator .glassbase { position: absolute; inset: 0; border-radius: 296px; overflow: hidden;
     -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
     box-shadow: inset 0 1px 1px rgba(255,255,255,.4), inset 0 0 0 .6px rgba(255,255,255,.35),
@@ -1346,6 +1353,7 @@ function updateAll(instant) {
   document.getElementById('mC').textContent = t.c;
   document.getElementById('mF').textContent = t.f;
   animateKcal(t.kcal, instant);
+  syncBarPresence(t.count > 0, instant);
   /* gauge fill: Figma base 24.73% at zero -> 100% at full quota */
   const frac = quotaTotal ? Math.min(1, t.count / quotaTotal) : 0;
   gaugeFx.target = frac;
@@ -1357,6 +1365,23 @@ function updateAll(instant) {
   }
   if (!done && completed) { completed = false; hideDock(); }
   if (confirmBtn) confirmBtn.classList.toggle('on', done);
+}
+
+/* hidden at zero selections; the first pick springs it in */
+let barShown = null;
+function syncBarPresence(has, instant) {
+  if (has === barShown) return;
+  barShown = has;
+  const nav = document.getElementById('navigator');
+  if (instant) {
+    nav.classList.add('no-anim');
+    nav.classList.toggle('bar-hidden', !has);
+    void nav.offsetWidth;
+    nav.classList.remove('no-anim');
+    return;
+  }
+  nav.classList.toggle('bar-hidden', !has);
+  if (has) vibrate(8);
 }
 
 function animateKcal(target, instant) {
@@ -2045,7 +2070,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 82';
+const BUILD = 'build 2026-09-09 · 83';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2302,7 +2327,7 @@ fit();
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
-    '#navigator { transition: opacity .18s ease; }';
+    '';
   document.head.appendChild(st);
 
   function unhide() {
@@ -2403,6 +2428,9 @@ fit();
     if (!gaugeArmed) return;
     var nav = document.getElementById('navigator');
     if (nav.classList.contains('warn') || nav.classList.contains('celebrating')) return;
+    /* no twin while the bar is absent or mid-entrance — the playful
+       spring is web motion; glass takes over at rest */
+    if (nav.classList.contains('bar-hidden')) { if (gaugeOn) clearGauge(); return; }
     try { webkit.messageHandlers.ds.postMessage(gaugeState()); gaugeOn = true; } catch (_) {}
   }
   function clearGauge() {
@@ -2432,10 +2460,12 @@ fit();
      the bar back to the web for those moments, retake it after */
   new MutationObserver(function () {
     var nav = document.getElementById('navigator');
-    var busy = nav.classList.contains('warn') || nav.classList.contains('celebrating');
+    var busy = nav.classList.contains('warn') || nav.classList.contains('celebrating') ||
+      nav.classList.contains('bar-hidden');
     clearTimeout(gaugeReT);
     if (busy) { if (gaugeOn) clearGauge(); }
-    else gaugeReT = setTimeout(postGauge, 260);
+    /* 700ms: past the .55s entrance spring, so rects are at rest */
+    else gaugeReT = setTimeout(postGauge, 700);
   }).observe(document.getElementById('navigator'), { attributes: true, attributeFilter: ['class'] });
 
   /* ---- dock watcher: the single source of chrome state ---- */
