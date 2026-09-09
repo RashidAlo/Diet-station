@@ -105,7 +105,11 @@
   body.listview #flows .card .body { flex: 1; min-width: 0; }
   body.listview #flows .card .top { flex-wrap: nowrap; gap: 8px; }
   body.listview #flows .card h2 { font-size: 15px; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; }
+    overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 72px; }
+  /* narrow admin rows: pencil+power crowd the line — the title wins and
+     the power button already carries the published state */
+  @media (max-width: 600px) {
+    body.admin.listview #flows .card .pill { display: none; } }
   body.listview #flows .card .pill { font-size: 10px; padding: 5px 8px 4px;
     letter-spacing: .04em; }
   body.listview #flows .card .tag { display: none; }
@@ -118,6 +122,22 @@
   body.native.listview #flows .card { padding: 12px 16px; border-radius: 18px; }
   body.native.listview #flows .card .thumb { display: block !important; }
   body.native.listview #flows .card .row .body { padding: 0; }
+  /* admin keeps its controls in list rows: compact pencil + Live/Offline
+     power (the rest of the action bar stays card-view only) */
+  body.admin.listview #flows .card:not(.editing) .actions {
+    display: flex !important;
+    flex: none; margin: 0; gap: 8px; align-items: center; }
+  body.admin.listview #flows .card .actions > * { display: none !important; }
+  body.admin.listview #flows .card .actions .cardedit,
+  body.admin.listview #flows .card .actions .livebtn {
+    display: flex !important; width: 34px; height: 34px; }
+  body.admin.listview #flows .card .cardedit svg { width: 14px; height: 14px; }
+  body.admin.listview #flows .card .livebtn > svg:not(.lv-ring) {
+    width: 13px; height: 13px; }
+  /* opening the editor from a row: give the CMS form the full card back */
+  body.listview #flows .card.editing { display: block; cursor: default; }
+  body.listview #flows .card.editing::after { display: none; }
+  body.listview #flows .card.editing .row { display: none; }
 
   /* ---- cards ---- */
   .card {
