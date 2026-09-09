@@ -38,6 +38,9 @@ private enum DS {
     /// and "cradle each other" at every size. The subscription card is the
     /// reference (Change pill r20.5 + 20 inset ~= its 40.5 corner).
     static func cradle(pill: CGFloat, inset: CGFloat) -> CGFloat { pill + inset }
+    /// the big-card radius — the subscription card's cradle value; every
+    /// platter-class card shares it so large surfaces cohere
+    static var platter: CGFloat { cradle(pill: 20.5, inset: 20) }
     /// Pill-less tiles (star/bell docks, discounts, consult) are VERY
     /// rounded squares — 36% of the minor side, capped, never capsules
     /// (the Figma dock feel: 68pt dock -> 24, 60pt tile -> 22).
@@ -501,10 +504,12 @@ struct HomeScreenNative: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        // expanded = platter-class: it borrows the subscription card's
+        // radius, not the small-tile one (Rashid: it read sharpest)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.tile(153)))
+                     in: .rect(cornerRadius: DS.platter))
         .glassEffectID("disc", in: glassNS)
-        .contentShape(RoundedRectangle(cornerRadius: DS.tile(153)))
+        .contentShape(RoundedRectangle(cornerRadius: DS.platter))
         .onTapGesture { instant { state.couponsOpen = true } }
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -570,8 +575,8 @@ struct HomeScreenNative: View {
         .frame(maxHeight: .infinity)
         // clip the CONTENT (gradient) before the glass so it can never bleed
         // past the rounded bottom edges; both shapes are the same fixed 26
-        .clipShape(RoundedRectangle(cornerRadius: DS.cradle(pill: 20.5, inset: 20), style: .continuous))
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.cradle(pill: 20.5, inset: 20)))
+        .clipShape(RoundedRectangle(cornerRadius: DS.platter, style: .continuous))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.platter))
         .glassEffectID("plan", in: glassNS)
     }
 
