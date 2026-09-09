@@ -2093,7 +2093,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 91';
+const BUILD = 'build 2026-09-09 · 92';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2355,8 +2355,9 @@ if (QS.get('solo') === '1') {
       'html.solo .sheet > :not(.meal-ov):not(.mo-veil) { visibility: hidden !important; } ' +
       'html.solo .nav, html.solo .navigator, html.solo .cat-dock { display: none !important; } ' +
       'html.solo .mo-select { display: none !important; } ' +
+      /* disabled = the same red switch, just faded (Rashid: no gray) */
       'html.solo-locked .mo-row { pointer-events: none; } ' +
-      'html.solo-locked .mo-row .mo-sw { opacity: .45; filter: grayscale(1); }';
+      'html.solo-locked .mo-row .mo-sw { opacity: .4; }';
     document.head.appendChild(st);
     window.DSSoloOpen = function (dish, locked) {
       CATS.push({ id: 'solo', title: dish.cat || 'Meals', quota: 0 });
