@@ -301,32 +301,41 @@ pill                  .capsule                                    border radius/
   </section>
 
   <section class="card">
-    <h2>The lab gesture — triple-tap-and-hold</h2>
+    <h2>The lab gesture — three-finger tap-and-hold</h2>
     <p class="desc">One gesture summons the lab settings sheet on <b>every</b> prototype —
-      web and native SwiftUI, TestFlight and browser. Singular by direction (it supersedes
-      the retired three-finger tap). Identical numbers on both platforms:</p>
+      web and native SwiftUI, TestFlight and browser. Canonical and singular by direction:
+      <b>three fingers, one tap, hold</b>. The single-finger triple-tap-and-hold stays as the
+      documented fallback for surfaces that can't produce three touches (mice, desktop,
+      simulators).</p>
     <div class="pair">
-      <div class="ph">The recognizer <small>TAP 550 &middot; HOLD 380 &middot; SLOP 16</small></div>
+      <div class="ph">Canonical recognizer <small>3 touches &middot; HOLD 400 &middot; SLOP 24</small></div>
       <div class="cols">
         <div class="col"><div class="ct native">Rules (both platforms)</div>
-          <div class="cb">taps count on touch-DOWN; consecutive downs &le; 550ms apart<br>
-          3rd touch HELD &ge; 380ms to fire — earlier release = no fire<br>
-          &le; 16pt/px drift tolerated in the hold; more = cancel <i>(a drag never triggers)</i><br>
-          a second simultaneous finger cancels the sequence<br>
+          <div class="cb">three SIMULTANEOUS touches down<br>
+          held &ge; 400ms to fire — earlier release = no fire<br>
+          &le; 24px/pt drift per finger during the hold; more = cancel
+          <i>(a three-finger drag never triggers)</i><br>
+          a 4th finger cancels the sequence<br>
           on fire: present the lab sheet + light haptic <i>(web vibrate(12) where available;
           native light impact)</i><br>
-          never delay or block normal interaction</div></div>
-        <div class="col"><div class="ct web">Implementation notes</div>
-          <div class="cb"><i>web (reference: tripleTapHold() in lab-shell.js — auto-standard
-          on every flow that includes it):</i> passive listeners; POINTER events primary at
-          window-capture AND document-bubble with same-event dedupe (WKWebView can starve
-          window-level touch), touch events as fallback; timing from hardware
-          <i>e.timeStamp</i>, never processing time; a hold that was physically &ge; 380ms
-          still fires on release even if jank starved the timer.<br>
-          <i>native (reference: HomeScreenNative recognizer, Shell session, build &gt; 24):</i>
-          simultaneous gesture recognition, no delaysTouchesBegan.</div></div>
+          never delays or blocks normal interaction</div></div>
+        <div class="col"><div class="ct web">Fallback recognizer (pointer / desktop)</div>
+          <div class="cb">single-finger TRIPLE-tap-and-hold: taps on touch-down &le; 550ms
+          apart, 3rd held &ge; 380ms, &le; 16px drift, second finger cancels — same sheet,
+          same haptic.<br>
+          <i>web:</i> both run together — threeFingerHold() primary, tripleTapHold()
+          fallback (lab-shell.js, stamp 20260909a).<br>
+          <i>native:</i> ThreeFingerHoldGesture is canon; triple-tap-hold is Debug-only.</div></div>
       </div>
     </div>
+    <p class="desc" style="font-size:12.5px; margin-top:12px">Implementation notes (verified in lab-shell.js): passive listeners in the
+      capture phase; POINTER events primary with touch fallback; mouse pointers excluded from
+      the three-finger count; timing from hardware <code>e.timeStamp</code>, never processing
+      time; a hold physically &ge; 400ms still fires on release even if jank starved the
+      timer; a 600ms latch stops double-fires when both recognizers land. Native uses
+      simultaneous gesture recognition — no delaysTouchesBegan. Simulator ergonomics: a
+      Debug-only two-finger hold alias (Option + click-hold) exists because macOS never hands
+      the Simulator three touches.</p>
     <p class="meta">Sheet content standard: top bar = <b>Restart</b> (fresh cache-busted
       reload) + <b>Exit prototype</b> (red), then User flow / Dev handoff links, then the
       flow's live controls.</p>
