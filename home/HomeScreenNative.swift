@@ -264,8 +264,19 @@ struct HomeScreenNative: View {
                 arrival(mealSheet, 4)
             }
             .ignoresSafeArea(edges: .bottom)
+            if state.calendarOpen {
+                // the calendar lives UNDER the persistent bar — no cover, no
+                // second bar, no position shift; the web sheet spring is the
+                // only transition (Rashid: same bar, same place, seamless)
+                FlowOverlay(path: "meal-select", ownsTabBar: false) {
+                    state.calendarOpen = false
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
+                }
+                .zIndex(2)
+            }
             arrival(tabBar, 5)
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)   // THE placement rule: safe.bottom + 12
+                .zIndex(3)
         }
         /* THE lab house gesture (Rashid 2026-09-09, clarified): THREE-FINGER
            single tap-and-hold. The single-finger triple-tap-hold stays as a
@@ -302,13 +313,7 @@ struct HomeScreenNative: View {
             FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
                 .presentationBackground(Color.black.opacity(0.42))
         }
-        .fullScreenCover(isPresented: $state.calendarOpen) {
-            FlowOverlay(path: "meal-select") {
-                instant { state.calendarOpen = false }
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
-            }
-            .presentationBackground(Color.black.opacity(0.42))
-        }
+
         .animation(.spring(duration: 0.45), value: state.showPromo)
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
         .animation(.spring(duration: 0.45), value: state.showConsult)
@@ -432,10 +437,15 @@ struct HomeScreenNative: View {
     private var tabBar: some View {
         DSTabBar(selected: tabSel) { tab in
             withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
-            if tab == .calendar {
-                // Apple's beat: the pill lands first, then the page presents
+            // Apple's beat: the pill lands first, then the page moves under
+            // the stationary bar
+            if tab == .calendar, !state.calendarOpen {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
-                    instant { state.calendarOpen = true }
+                    state.calendarOpen = true
+                }
+            } else if tab == .home, state.calendarOpen {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                    state.calendarOpen = false
                 }
             }
         }
@@ -1673,12 +1683,16 @@ final class OverlayChrome: ObservableObject {
 @available(iOS 26.0, *)
 struct FlowOverlay: View {
     let path: String
+    /// false when the HOST keeps a persistent DS bar above this overlay
+    /// (the pilot's one-bar architecture) — the internal bar stays off
+    var ownsTabBar: Bool = true
     let onClose: () -> Void
     @ObservedObject private var chrome: OverlayChrome
 
     @MainActor
-    init(path: String, onClose: @escaping () -> Void) {
+    init(path: String, ownsTabBar: Bool = true, onClose: @escaping () -> Void) {
         self.path = path
+        self.ownsTabBar = ownsTabBar
         self.onClose = onClose
         _chrome = ObservedObject(wrappedValue: FlowPreloader.shared.entry(path).relay.chrome)
     }
@@ -1705,7 +1719,7 @@ struct FlowOverlay: View {
                 .ignoresSafeArea()
                 .transition(.opacity)
             }
-            if chrome.bar == "calendar" {
+            if ownsTabBar, chrome.bar == "calendar" {
                 // THE unified DS tab bar; home tap animates the pill, then
                 // returns to the pilot (Apple's beat)
                 DSTabBarHost(initial: .calendar) { tab in
