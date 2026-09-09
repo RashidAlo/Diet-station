@@ -209,6 +209,7 @@ private enum DS {
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
     var calendarOpen = false        // meal-select web flow over this screen
+    var mealOpen: DSStripMeal?      // a strip meal's native details sheet
 
     /* the carousel spans Yesterday .. Today+4; past Tomorrow the word slot
        carries the weekday name and the date line carries the date */
@@ -237,6 +238,18 @@ private enum DS {
         let d = Calendar.current.date(byAdding: .day, value: daysLeft, to: .now) ?? .now
         return "Ends " + d.formatted(.dateTime.day().month(.abbreviated))
     }
+}
+
+/// A strip meal with everything its details page shows — the home pilot's
+/// mirror of the selector's dish records (lab sample data).
+struct DSStripMeal: Identifiable, Equatable {
+    let img: String
+    let name: String
+    let kcal: Int, p: Int, c: Int, f: Int
+    let rating: Double
+    let hot: Bool           // hot mains get the microwave chip pair
+    let ing: [String]
+    var id: String { name }
 }
 
 // MARK: - Screen
@@ -349,6 +362,13 @@ struct HomeScreenNative: View {
         })
         #endif
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
+        // strip meal tap → native details (Rashid): the selector's details
+        // page as a native sheet; ingredients LOCK for days beyond 72 hours
+        .sheet(item: $state.mealOpen) { meal in
+            DSMealDetailsSheet(meal: meal,
+                               day: state.dayWord(state.stripDay),
+                               locked: state.days[state.stripDay].off >= 3)
+        }
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */
         /* NOTE: no .ignoresSafeArea() on the cover content — FlowOverlay's
@@ -973,16 +993,27 @@ struct HomeScreenNative: View {
         }
     }
 
-    private let stripMeals = [("meal1.jpg", "Chicken Machbous", 245),
-                              ("meal2.jpg", "Egg Sandwich", 343),
-                              ("meal3.jpg", "Biryani with tomato sauce and Veggies", 554)]
+    private let stripMeals = [
+        DSStripMeal(img: "meal1.jpg", name: "Chicken Machbous",
+                    kcal: 245, p: 30, c: 22, f: 12, rating: 4.3, hot: true,
+                    ing: ["Chicken thigh", "Basmati rice", "Machbous spices",
+                          "Crispy onions", "Tomato sauce", "Fresh coriander"]),
+        DSStripMeal(img: "meal2.jpg", name: "Egg Sandwich",
+                    kcal: 343, p: 18, c: 30, f: 15, rating: 4.3, hot: false,
+                    ing: ["Free-range eggs", "Brioche bun", "Cheddar",
+                          "Rocca leaves", "Light mayo"]),
+        DSStripMeal(img: "meal3.jpg", name: "Biryani with tomato sauce and Veggies",
+                    kcal: 554, p: 21, c: 74, f: 18, rating: 4.3, hot: true,
+                    ing: ["Basmati rice", "Biryani masala", "Seasonal veggie mix",
+                          "Tomato sauce", "Fried onions", "Mint yogurt"]),
+    ]
 
     private func dayGroup(_ i: Int) -> some View {
         HStack(spacing: 12) {
             ForEach(0..<3, id: \.self) { k in
                 // rotate per day; Today (i=1) keeps the original order
                 let m = stripMeals[(k + i + 2) % 3]
-                mealCard(m.0, m.1, m.2)
+                mealCard(m)
             }
         }
         .id("day\(i)")
@@ -1054,19 +1085,19 @@ struct HomeScreenNative: View {
         }
     }
 
-    private func mealCard(_ image: String, _ name: String, _ kcal: Int) -> some View {
+    private func mealCard(_ m: DSStripMeal) -> some View {
         ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: URL(string: DS.assets + image)) { $0.resizable().scaledToFill() }
+            AsyncImage(url: URL(string: DS.assets + m.img)) { $0.resizable().scaledToFill() }
                 placeholder: { Color(white: 0.92) }
                 .frame(width: 166.9, height: 236).clipped()
             LinearGradient(colors: [.clear, .black.opacity(0.41), .black.opacity(0.81)],
                            startPoint: .top, endPoint: .bottom)
                 .frame(height: 139.6)
             VStack(alignment: .leading, spacing: 6) {
-                Text(name).font(DS.urbane(15.4, .semibold)).foregroundStyle(DS.onColor)
+                Text(m.name).font(DS.urbane(15.4, .semibold)).foregroundStyle(DS.onColor)
                     .lineLimit(2).multilineTextAlignment(.leading)
                 HStack(alignment: .lastTextBaseline, spacing: 2) {
-                    Text("\(kcal)").font(DS.urbane(16.5, .semibold))
+                    Text("\(m.kcal)").font(DS.urbane(16.5, .semibold))
                     Text("Kcal").font(DS.proxima(11))
                 }
                 .foregroundStyle(DS.onColor)
@@ -1076,6 +1107,10 @@ struct HomeScreenNative: View {
         }
         .frame(width: 166.9, height: 236)
         .clipShape(RoundedRectangle(cornerRadius: 25.2))
+        .onTapGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            state.mealOpen = m
+        }
     }
 
     // MARK: native lab sheet (long-press)
@@ -1591,6 +1626,205 @@ final class FlowPreloader {
         let stamp = Int(Date().timeIntervalSince1970)
         if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)/?embed=1&v=\(stamp)") {
             e.web.load(URLRequest(url: url))
+        }
+    }
+}
+
+// MARK: - Strip meal details (native twin of the selector's details page)
+
+/// The meal-details page for home strip meals (Figma 14934-94030 family):
+/// photo header with glass close + stars, category/title, heat chips,
+/// ingredients with include switches, macros footer. THE RULE (Rashid):
+/// the ingredients list is LOCKED for days more than 72 hours out —
+/// blurred rows under a glass lock badge until the window opens.
+@available(iOS 26.0, *)
+struct DSMealDetailsSheet: View {
+    let meal: DSStripMeal
+    let day: String
+    let locked: Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var removed: Set<Int> = []
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(day).font(DS.urbane(16, .semibold)).foregroundStyle(DS.red)
+                        .padding(.bottom, 8)
+                    Text(meal.name).font(DS.urbane(22, .semibold)).foregroundStyle(DS.ink)
+                        .padding(.bottom, 12)
+                    heatChips
+                        .padding(.bottom, 18)
+                    Text("Ingredients:").font(DS.urbane(13, .semibold)).foregroundStyle(DS.ink)
+                        .padding(.bottom, 6)
+                    ingredients
+                    macrosFooter
+                        .padding(.top, 22)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 26)
+                .padding(.bottom, 40)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
+        .background(.white)
+        .presentationDetents([.large])
+        .presentationCornerRadius(44)
+    }
+
+    private var header: some View {
+        ZStack(alignment: .topTrailing) {
+            AsyncImage(url: URL(string: DS.assets + meal.img)) { $0.resizable().scaledToFill() }
+                placeholder: { Color(white: 0.92) }
+                .frame(height: 330)
+                .clipped()
+            // surface law: over the photo the close is CLEAR glass
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .glassEffect(.clear.tint(.white.opacity(0.12)).interactive(), in: .circle)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 62)
+            .padding(.trailing, 16)
+        }
+        .overlay(alignment: .bottomLeading) {
+            HStack(spacing: 4) {
+                ForEach(0..<5, id: \.self) { i in
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(i < Int(meal.rating.rounded())
+                                         ? Color(red: 1, green: 197/255, blue: 46/255)
+                                         : .white.opacity(0.55))
+                }
+            }
+            .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+            .padding(.leading, 20)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private var heatChips: some View {
+        HStack(spacing: 10) {
+            if meal.hot {
+                heatChip("🔥", "Microwave it", "2-3 minutes", DS.red)
+                Text("or").font(DS.proxima(12)).foregroundStyle(DS.caption)
+                heatChip("❄️", "Enjoy it", "cold!", Color(red: 59/255, green: 130/255, blue: 208/255))
+            } else {
+                heatChip("❄️", "Served chilled", "enjoy it cold!",
+                         Color(red: 59/255, green: 130/255, blue: 208/255))
+            }
+        }
+    }
+
+    private func heatChip(_ emoji: String, _ title: String, _ sub: String, _ tint: Color) -> some View {
+        HStack(spacing: 9) {
+            Text(emoji).font(.system(size: 17))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title).font(DS.urbane(12, .semibold)).foregroundStyle(DS.ink)
+                Text(sub).font(DS.urbane(12, .semibold)).foregroundStyle(tint)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(red: 237/255, green: 237/255, blue: 237/255), lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder private var ingredients: some View {
+        let rows = VStack(spacing: 0) {
+            ForEach(Array(meal.ing.enumerated()), id: \.offset) { i, label in
+                ingredientRow(i, label)
+                if i < meal.ing.count - 1 {
+                    Divider().overlay(Color(red: 237/255, green: 237/255, blue: 237/255))
+                }
+            }
+        }
+        if locked {
+            rows
+                .blur(radius: 6)
+                .disabled(true)
+                .overlay {
+                    VStack(spacing: 10) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(DS.ink)
+                            .frame(width: 52, height: 52)
+                            .glassEffect(.regular, in: .circle)
+                        Text("Ingredients unlock 72 hours\nbefore this day's delivery")
+                            .font(DS.urbane(13, .semibold))
+                            .foregroundStyle(DS.ink)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+        } else {
+            rows
+        }
+    }
+
+    private func ingredientRow(_ i: Int, _ label: String) -> some View {
+        let off = removed.contains(i)
+        return HStack {
+            Text(label).font(DS.urbane(14, .medium))
+                .foregroundStyle(DS.ink)
+                .strikethrough(off, color: DS.caption)
+                .opacity(off ? 0.45 : 1)
+            Spacer()
+            // the web row's include switch, natively: red knob = in the meal
+            Capsule()
+                .fill(off ? Color(white: 0.85) : DS.red)
+                .frame(width: 42, height: 26)
+                .overlay(alignment: off ? .leading : .trailing) {
+                    Circle().fill(.white)
+                        .frame(width: 22, height: 22)
+                        .padding(.horizontal, 2)
+                        .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                }
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                if off { removed.remove(i) } else { removed.insert(i) }
+            }
+        }
+    }
+
+    private var macrosFooter: some View {
+        HStack(alignment: .lastTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Meal's Macros").font(DS.urbane(10, .medium)).foregroundStyle(DS.caption)
+                HStack(alignment: .lastTextBaseline, spacing: 3) {
+                    Text(verbatim: "\(meal.kcal)").font(DS.urbane(20, .semibold)).foregroundStyle(DS.ink)
+                    Text("Kcal").font(DS.proxima(11)).foregroundStyle(DS.caption)
+                }
+            }
+            Spacer()
+            footPair(meal.p, "Protein")
+            Spacer().frame(width: 18)
+            footPair(meal.c, "Carbs")
+            Spacer().frame(width: 18)
+            footPair(meal.f, "Fat")
+        }
+    }
+
+    private func footPair(_ v: Int, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(DS.urbane(10, .medium)).foregroundStyle(DS.caption)
+            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                Text(verbatim: "\(v)").font(DS.urbane(16, .semibold)).foregroundStyle(DS.ink)
+                Text("g").font(DS.proxima(10)).foregroundStyle(DS.caption)
+            }
         }
     }
 }
