@@ -524,14 +524,14 @@ struct HomeScreenNative: View {
             // edge, so the morph reads as a pure rise-and-widen (Rashid:
             // no slide) — the left edge does all the growing
             VStack(alignment: .trailing, spacing: 10) {
-                if homeScrolled { macrosAccessory }
+                if homeScrolled { kcalCapsule }
                 HStack(spacing: 10) {
                     // widths rhyme (Rashid): docked bar matches the 370
                     // accessory; at rest bar + module + gap total the same
                     // 370, so the outer edges hold through the morph
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
                              width: homeScrolled ? 370 : 256)
-                    if !homeScrolled { kcalModule }
+                    if !homeScrolled { kcalCapsule }
                 }
             }
         } else {
@@ -539,46 +539,39 @@ struct HomeScreenNative: View {
         }
     }
 
-    private var kcalModule: some View {
+    /// ONE capsule for both states (Rashid: "expand, not dissolve" — the
+    /// pill hops in and ELONGATES as if it contained all the extra data):
+    /// the kcal group is constant; the macros tail lives inside and is
+    /// revealed by the stretch. Both matched instances render this same
+    /// tree, so the geometry morph reads as a single object growing.
+    private var kcalCapsule: some View {
         let d = state.days[state.stripDay]
-        return HStack(alignment: .lastTextBaseline, spacing: 4) {
-            Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
-                .contentTransition(.numericText(value: Double(d.kcal)))
-            Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
+        return HStack(spacing: 0) {
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
+                    .contentTransition(.numericText(value: Double(d.kcal)))
+                Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
+            }
+            .fixedSize()
+            if homeScrolled {
+                Group {
+                    Spacer(minLength: 14)
+                    thinPair(d.p, "Protein").fixedSize()
+                    Spacer(minLength: 14)
+                    thinPair(d.c, "Carbs").fixedSize()
+                    Spacer(minLength: 14)
+                    thinPair(d.f, "Fat").fixedSize()
+                }
+                .transition(.opacity)
+            }
         }
         .foregroundStyle(DS.ink)
-        // roomier flanks (Rashid): the text floats with real margin
-        .frame(width: 104, height: 58)
-        .glassEffect(.regular.interactive(), in: .capsule)
+        .padding(.horizontal, homeScrolled ? 22 : 16)
+        .frame(width: homeScrolled ? 370 : 104, height: homeScrolled ? 46 : 58)
+        .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
         // the strip's day switch rolls the digits (Rashid: counting, not
         // snapping, as the meals scroll between days)
-        .animation(.spring(duration: 0.55), value: state.stripDay)
-    }
-
-    /// the docked layer, v2 (Rashid): NOT the orange gauge — a THIN slice
-    /// of transparent glass, the tab bar's quiet sibling, ink text with air
-    private var macrosAccessory: some View {
-        let d = state.days[state.stripDay]
-        return HStack(spacing: 0) {
-            HStack(alignment: .lastTextBaseline, spacing: 3) {
-                // simpler read (Rashid): the day's number alone, no /goal cap
-                Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
-                    .contentTransition(.numericText(value: Double(d.kcal)))
-                Text("kcal").font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
-            }
-            Spacer(minLength: 14)
-            thinPair(d.p, "Protein")
-            Spacer(minLength: 14)
-            thinPair(d.c, "Carbs")
-            Spacer(minLength: 14)
-            thinPair(d.f, "Fat")
-        }
-        .padding(.horizontal, 22)
-        .frame(width: 370, height: 46)
-        .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
-        .matchedGeometryEffect(id: "kcalmod", in: modNS)
-        // day switches mid-scroll roll every figure in place (Rashid)
         .animation(.spring(duration: 0.55), value: state.stripDay)
     }
 
