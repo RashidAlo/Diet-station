@@ -46,8 +46,15 @@ enum DSFontLoader {
             .appendingPathComponent("DSFonts", isDirectory: true)
     }
 
+    /// true when another mechanism (the shell bundles these same OTFs and
+    /// registers at app init) already provides the family — the loader yields
+    static var familyPresent: Bool {
+        UIFont(name: "AvenirNextWorld-Medium", size: 12) != nil
+    }
+
     /// warm launches: everything already cached registers before first render
     static let registerCached: Void = {
+        if familyPresent { return }
         for f in files {
             let local = cacheDir.appendingPathComponent(f)
             if FileManager.default.fileExists(atPath: local.path) {
@@ -58,6 +65,7 @@ enum DSFontLoader {
 
     /// cold first launch: fetch the missing ones, register, report if any landed
     static func downloadMissing() async -> Bool {
+        if familyPresent { return false }
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         var landed = false
         for f in files {
