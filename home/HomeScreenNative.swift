@@ -522,8 +522,11 @@ struct HomeScreenNative: View {
             VStack(spacing: 10) {
                 if homeScrolled { macrosAccessory }
                 HStack(spacing: 10) {
+                    // widths rhyme (Rashid): docked bar matches the 370
+                    // accessory; at rest bar + module + gap total the same
+                    // 370, so the outer edges hold through the morph
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
-                             width: homeScrolled ? 314 : 220)
+                             width: homeScrolled ? 370 : 268)
                     if !homeScrolled { kcalModule }
                 }
             }
