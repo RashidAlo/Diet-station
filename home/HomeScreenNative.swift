@@ -557,9 +557,9 @@ struct HomeScreenNative: View {
         let d = state.days[state.stripDay]
         return HStack(spacing: 0) {
             HStack(alignment: .lastTextBaseline, spacing: 3) {
+                // simpler read (Rashid): the day's number alone, no /goal cap
                 Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
                     .contentTransition(.numericText(value: Double(d.kcal)))
-                Text(verbatim: "/1860").font(DS.urbane(11, .medium)).foregroundStyle(DS.ink.opacity(0.4))
                 Text("kcal").font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
             }
             Spacer(minLength: 14)
