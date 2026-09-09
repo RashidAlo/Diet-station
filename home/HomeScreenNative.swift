@@ -32,17 +32,17 @@ import WebKit
 @available(iOS 26.0, *)
 private enum DS {
     static let red = Color(red: 237/255, green: 28/255, blue: 36/255)
-    /// Apple Control-Center corner family (Rashid 2026-09-09, superseding
-    /// the linear law): platters share ONE concentric radius seeded from the
-    /// display bezel curvature minus the page margin — the reason every CC
-    /// platter feels nested in the screen — and any tile too small to carry
-    /// it rounds to a capsule, exactly how CC treats its smallest controls.
-    /// displayCorner is the single tuning knob (iPhone Pro bezel ~= 62pt).
-    static let displayCorner: CGFloat = 62
-    static let pageMargin: CGFloat = 20
-    static func radius(w: CGFloat, h: CGFloat) -> CGFloat {
-        let platter = displayCorner - pageMargin        // ~= 42
-        return min(platter, min(w, h) / 2)              // capsule below ~84pt
+    /// THE CRADLE LAW (Rashid 2026-09-09, v3 — supersedes the CC capsules):
+    /// a container's corner derives from the pill it holds — R = pill radius
+    /// + the pill's inset from the edge — so the two curves run concentric
+    /// and "cradle each other" at every size. The subscription card is the
+    /// reference (Change pill r20.5 + 20 inset ~= its 40.5 corner).
+    static func cradle(pill: CGFloat, inset: CGFloat) -> CGFloat { pill + inset }
+    /// Pill-less tiles (star/bell docks, discounts, consult) are VERY
+    /// rounded squares — 36% of the minor side, capped, never capsules
+    /// (the Figma dock feel: 68pt dock -> 24, 60pt tile -> 22).
+    static func tile(_ minSide: CGFloat) -> CGFloat {
+        min(26, (0.36 * minSide).rounded())
     }
     /// One gap everywhere in the red zone — grid gutters, column stacks,
     /// action-bar-to-banner, banner-to-grid (Rashid: cohesive spacing).
@@ -346,7 +346,7 @@ struct HomeScreenNative: View {
         content()
             .foregroundStyle(.white)
             .frame(width: 69, height: 68)
-            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: DS.radius(w: 69, h: 68)))
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(), in: .rect(cornerRadius: DS.tile(68)))
     }
 
     // MARK: promo banner
@@ -364,7 +364,7 @@ struct HomeScreenNative: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 72)
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(w: 362, h: 72)))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.cradle(pill: 18, inset: 16)))   // Renew pill r18 + its 16 inset
         .glassEffectID("promo", in: glassNS)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
@@ -442,8 +442,8 @@ struct HomeScreenNative: View {
         .frame(maxHeight: .infinity)
         // clip the CONTENT (gradient) before the glass so it can never bleed
         // past the rounded bottom edges; both shapes are the same fixed 26
-        .clipShape(RoundedRectangle(cornerRadius: DS.radius(w: 193, h: 288), style: .continuous))
-        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.radius(w: 193, h: 288)))
+        .clipShape(RoundedRectangle(cornerRadius: DS.cradle(pill: 20.5, inset: 20), style: .continuous))
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.cradle(pill: 20.5, inset: 20)))
         .glassEffectID("plan", in: glassNS)
     }
 
@@ -466,7 +466,8 @@ struct HomeScreenNative: View {
         }
         .frame(maxHeight: .infinity)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)),
-                     in: .rect(cornerRadius: DS.radius(w: 153, h: daysHeight)))
+                     in: .rect(cornerRadius: DS.cradle(pill: 18,
+                                    inset: min(20, max(12, daysHeight * 0.11)))))
         .glassEffectID("days", in: glassNS)
         .layoutPriority(1.6)
     }
@@ -487,9 +488,9 @@ struct HomeScreenNative: View {
         .frame(maxWidth: .infinity)
         .frame(height: 60)   // twin of consult — slimmer so days-left breathes
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.radius(w: 153, h: 60)))
+                     in: .rect(cornerRadius: DS.tile(60)))
         .glassEffectID("disc", in: glassNS)
-        .contentShape(RoundedRectangle(cornerRadius: DS.radius(w: 153, h: 60)))
+        .contentShape(RoundedRectangle(cornerRadius: DS.tile(60)))
         .onTapGesture { instant { state.couponsOpen = true } }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
@@ -507,7 +508,7 @@ struct HomeScreenNative: View {
         // doesn't gape between it and the days widget (Rashid)
         .frame(height: state.showDiscounts ? 60 : 110)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.radius(w: 153, h: state.showDiscounts ? 60 : 110)))
+                     in: .rect(cornerRadius: DS.tile(state.showDiscounts ? 60 : 110)))
         .glassEffectID("consult", in: glassNS)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
