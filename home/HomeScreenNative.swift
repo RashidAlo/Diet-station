@@ -1107,8 +1107,6 @@ final class TripleTapHoldRecognizer: UIGestureRecognizer {
     }
 }
 
-/// SwiftUI bridge — attach with `.gesture(TripleTapHoldGesture { … })`.
-@available(iOS 26.0, *)
 #if DEBUG
 /// Simulator alias (Debug only): Option+click-hold = the sim's synthetic
 /// two-touch pair, held. Mac trackpads cannot produce three touches.
@@ -1171,6 +1169,8 @@ struct ThreeFingerHoldGesture: UIGestureRecognizerRepresentable {
     }
 }
 
+/// SwiftUI bridge — attach with `.gesture(TripleTapHoldGesture { … })`.
+@available(iOS 26.0, *)
 struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
     let onFire: () -> Void
 
