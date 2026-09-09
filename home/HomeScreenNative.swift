@@ -568,7 +568,8 @@ struct HomeScreenNative: View {
         .foregroundStyle(DS.ink)
         .padding(.horizontal, homeScrolled ? 22 : 16)
         .frame(width: homeScrolled ? 370 : 104, height: homeScrolled ? 46 : 58)
-        .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
+        // same material as the tab bar it belongs to (Rashid)
+        .glassEffect(.regular.interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
         // the strip's day switch rolls the digits (Rashid: counting, not
         // snapping, as the meals scroll between days)
