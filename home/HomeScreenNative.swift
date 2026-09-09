@@ -46,15 +46,8 @@ enum DSFontLoader {
             .appendingPathComponent("DSFonts", isDirectory: true)
     }
 
-    /// true when another mechanism (the shell bundles these same OTFs and
-    /// registers at app init) already provides the family — the loader yields
-    static var familyPresent: Bool {
-        UIFont(name: "AvenirNextWorld-Medium", size: 12) != nil
-    }
-
     /// warm launches: everything already cached registers before first render
     static let registerCached: Void = {
-        if familyPresent { return }
         for f in files {
             let local = cacheDir.appendingPathComponent(f)
             if FileManager.default.fileExists(atPath: local.path) {
@@ -65,12 +58,14 @@ enum DSFontLoader {
 
     /// cold first launch: fetch the missing ones, register, report if any landed
     static func downloadMissing() async -> Bool {
-        if familyPresent { return false }
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         var landed = false
         for f in files {
             let local = cacheDir.appendingPathComponent(f)
-            guard !FileManager.default.fileExists(atPath: local.path),
+            // a face that's already registered (e.g. bundled by the shell)
+            // needs no download — file name minus extension == PostScript name
+            guard UIFont(name: String(f.dropLast(4)), size: 12) == nil,
+                  !FileManager.default.fileExists(atPath: local.path),
                   let url = URL(string: DS.assets + "fonts/" + f),
                   let (tmp, _) = try? await URLSession.shared.download(from: url) else { continue }
             try? FileManager.default.moveItem(at: tmp, to: local)
