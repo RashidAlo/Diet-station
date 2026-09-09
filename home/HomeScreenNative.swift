@@ -41,6 +41,10 @@ private enum DS {
     /// the big-card radius — the subscription card's cradle value; every
     /// platter-class card shares it so large surfaces cohere
     static var platter: CGFloat { cradle(pill: 20.5, inset: 20) }
+    /// PADDING FOLLOWS CURVATURE (Rashid's rule): the rounder a container,
+    /// the deeper its content inset, so text never crowds the corner arcs.
+    /// The subscription card validates the ratio (r40.5 -> insets ~20).
+    static func inset(for radius: CGFloat) -> CGFloat { max(14, (radius * 0.5).rounded()) }
     /// Pill-less tiles (star/bell docks, discounts, consult) are VERY
     /// rounded squares — 36% of the minor side, capped, never capsules
     /// (the Figma dock feel: 68pt dock -> 24, 60pt tile -> 22).
@@ -493,6 +497,11 @@ struct HomeScreenNative: View {
 
     /// Coupons grown into the days widget's vacated space: big bag on top,
     /// voucher copy at the bottom (Figma 16828:83478)
+    /// grown coupons sits BETWEEN classes: tile read sharp, full platter too
+    /// round — it carries the banner-family 34, with its inset following the
+    /// curvature rule
+    private static let expandedCouponsRadius: CGFloat = 34
+
     private var expandedCouponsWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack { Spacer(); DSBagIcon().frame(width: 46, height: 43) }
@@ -502,14 +511,12 @@ struct HomeScreenNative: View {
             Text("5 Vouchers available").font(DS.proxima(11))
                 .foregroundStyle(DS.onColor.opacity(0.8))
         }
-        .padding(16)
+        .padding(DS.inset(for: Self.expandedCouponsRadius))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        // expanded = platter-class: it borrows the subscription card's
-        // radius, not the small-tile one (Rashid: it read sharpest)
         .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                     in: .rect(cornerRadius: DS.platter))
+                     in: .rect(cornerRadius: Self.expandedCouponsRadius))
         .glassEffectID("disc", in: glassNS)
-        .contentShape(RoundedRectangle(cornerRadius: DS.platter))
+        .contentShape(RoundedRectangle(cornerRadius: Self.expandedCouponsRadius))
         .onTapGesture { instant { state.couponsOpen = true } }
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
