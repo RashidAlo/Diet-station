@@ -203,6 +203,12 @@ struct HomeScreenNative: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             state.labOpen = true
         })
+        // sim ergonomics: Option+click-hold makes a real two-touch pair —
+        // the ONLY multi-touch a Mac trackpad can hand the Simulator
+        .gesture(TwoFingerHoldGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            state.labOpen = true
+        })
         #endif
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
         /* web flows summoned over the native screen, transparent — they run
@@ -1103,6 +1109,38 @@ final class TripleTapHoldRecognizer: UIGestureRecognizer {
 
 /// SwiftUI bridge — attach with `.gesture(TripleTapHoldGesture { … })`.
 @available(iOS 26.0, *)
+#if DEBUG
+/// Simulator alias (Debug only): Option+click-hold = the sim's synthetic
+/// two-touch pair, held. Mac trackpads cannot produce three touches.
+@available(iOS 26.0, *)
+struct TwoFingerHoldGesture: UIGestureRecognizerRepresentable {
+    let onFire: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let r = UILongPressGestureRecognizer()
+        r.numberOfTouchesRequired = 2
+        r.minimumPressDuration = 0.4
+        r.allowableMovement = 24
+        r.cancelsTouchesInView = false
+        r.delegate = context.coordinator
+        return r
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+        if recognizer.state == .began { onFire() }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ g: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
+        }
+    }
+}
+#endif
+
 /// THE lab gesture: three fingers, one tap, held ~0.4s. Plain UIKit
 /// long-press with numberOfTouchesRequired = 3 — nothing custom needed.
 @available(iOS 26.0, *)
