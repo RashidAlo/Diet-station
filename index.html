@@ -77,6 +77,48 @@
   .count { margin: 0 0 14px; font: 500 12px/1 'Urbane Rounded', sans-serif;
     text-transform: uppercase; letter-spacing: .12em; color: var(--ink-soft); }
 
+  /* ---- card / list view toggle (top right, next to the content) ---- */
+  .flowsbar { display: flex; align-items: center; margin: 0 0 14px; }
+  .flowsbar .count { margin: 0; flex: 1; }
+  .viewtog { display: flex; margin-left: auto; padding: 3px;
+    border: 1px solid rgba(0,0,0,.12); border-radius: 999px; background: #fff; }
+  .viewtog button { width: 34px; height: 28px; border: 0; background: none;
+    border-radius: 999px; color: #8e8e93; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; }
+  .viewtog button.on { background: #1d1d1f; color: #fff; }
+  .viewtog svg { width: 15px; height: 15px; }
+  body.native .flowsbar { padding: 0 20px; margin: 4px 0 12px; }
+
+  /* list view: cards shrink to concise, tappable rows — a table of
+     contents for the lab rather than the showcase */
+  body.listview #flows .card { display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; margin-bottom: 10px; border-radius: 16px;
+    cursor: pointer; }
+  body.listview #flows .card .row { display: contents; }
+  body.listview #flows .card .thumb { order: -1; flex: none; }
+  body.listview #flows .card .thumb img { width: 38px; height: 46px;
+    aspect-ratio: auto; object-fit: cover; object-position: top;
+    border-radius: 9px; box-shadow: 0 0 0 0.5px var(--line); }
+  body.listview #flows .card .desc, body.listview #flows .card .meta,
+  body.listview #flows .card .actions, body.listview #flows .card .handoff,
+  body.listview #flows .card .appshots { display: none !important; }
+  body.listview #flows .card .body { flex: 1; min-width: 0; }
+  body.listview #flows .card .top { flex-wrap: nowrap; gap: 8px; }
+  body.listview #flows .card h2 { font-size: 15px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  body.listview #flows .card .pill { font-size: 10px; padding: 5px 8px 4px;
+    letter-spacing: .04em; }
+  body.listview #flows .card .tag { display: none; }
+  @media (min-width: 700px) {
+    body.listview #flows .card .tag { display: inline-block; } }
+  body.listview #flows .card::after { content: ''; width: 8px; height: 8px;
+    flex: none; margin-right: 2px; border-right: 2px solid #c7c7cc;
+    border-top: 2px solid #c7c7cc; transform: rotate(45deg); }
+  /* native cards are edge-to-edge showcases — restore row chrome in list */
+  body.native.listview #flows .card { padding: 12px 16px; border-radius: 18px; }
+  body.native.listview #flows .card .thumb { display: block !important; }
+  body.native.listview #flows .card .row .body { padding: 0; }
+
   /* ---- cards ---- */
   .card {
     background: var(--card); border-radius: 18px;
@@ -606,7 +648,13 @@
   </section>
 
   <section class="tabpane on" id="pane-prototypes">
-    <div class="count" id="count"></div>
+    <div class="flowsbar">
+      <div class="count" id="count"></div>
+      <div class="viewtog" role="group" aria-label="View">
+        <button class="vt-cards on" aria-label="Card view"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/></svg></button>
+        <button class="vt-list" aria-label="List view"><svg viewBox="0 0 16 16" fill="none"><path d="M5.5 3.5h8.5M5.5 8h8.5M5.5 12.5h8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.4" cy="3.5" r="1.1" fill="currentColor"/><circle cx="2.4" cy="8" r="1.1" fill="currentColor"/><circle cx="2.4" cy="12.5" r="1.1" fill="currentColor"/></svg></button>
+      </div>
+    </div>
     <main id="flows"></main>
   </section>
 
@@ -1450,6 +1498,33 @@ if (NATIVE) {
   while (document.body.firstChild) root.appendChild(document.body.firstChild);
   document.body.appendChild(root);
 }
+/* ============ card / list view toggle (persisted per device) ============ */
+(function () {
+  const bar = document.querySelector('.viewtog');
+  if (!bar) return;
+  const setView = v => {
+    document.body.classList.toggle('listview', v === 'list');
+    bar.querySelector('.vt-cards').classList.toggle('on', v !== 'list');
+    bar.querySelector('.vt-list').classList.toggle('on', v === 'list');
+    try { localStorage.setItem('ds-hub-view', v); } catch (_) {}
+  };
+  bar.querySelector('.vt-cards').addEventListener('click', () => setView('cards'));
+  bar.querySelector('.vt-list').addEventListener('click', () => setView('list'));
+  let v = 'cards';
+  try { v = localStorage.getItem('ds-hub-view') || 'cards'; } catch (_) {}
+  if (v === 'list') setView('list');
+  /* in list view a row IS the open action (web; native cards already
+     open on tap via their own handler) */
+  document.getElementById('flows').addEventListener('click', e => {
+    if (NATIVE || !document.body.classList.contains('listview')) return;
+    if (e.target.closest('a, button, .editor, .livebtn')) return;
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const a = card.querySelector('.btn.primary');
+    if (a) a.click();
+  });
+})();
+
 /* ============ intent router: flows never navigate each other ============
    A flow the hub presents posts {t:'ds-nav', to:'<flow-id>', context?,
    present:'tab'|'sheet'|'push'} and the hub resolves the id via flows.json
