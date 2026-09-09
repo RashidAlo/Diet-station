@@ -100,6 +100,10 @@ private enum DS {
     /// One gap everywhere in the red zone — grid gutters, column stacks,
     /// action-bar-to-banner, banner-to-grid (Rashid: cohesive spacing).
     static let gap: CGFloat = 16
+    /// THE bar placement rule v2 (Rashid 2026-09-09): match Apple Music /
+    /// App Store — the floating bar hugs the home indicator, bottom =
+    /// safeArea + 4 (was +12, read too high on device)
+    static let barBottom: CGFloat = 4
     static let onColor = Color(red: 249/255, green: 249/255, blue: 249/255)
     static let ink = Color(red: 11/255, green: 14/255, blue: 18/255)
     static let caption = Color(red: 94/255, green: 94/255, blue: 94/255)
@@ -197,6 +201,10 @@ private enum DS {
     }
     var daysShapeChoice: DaysShapeChoice = .auto
     var stripDay = 1                // index into days — boots on Today
+    /// lab experiment (Rashid 2026-09-09): Apple-Music-style modular bar —
+    /// the calorie counter lives IN the tab bar row and disconnects into
+    /// its own glass macros row on scroll. Home tab only; default off.
+    var tabBarDynamic = false
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
     var calendarOpen = false        // meal-select web flow over this screen
@@ -242,6 +250,10 @@ struct HomeScreenNative: View {
     /// chrome layers: true while the calendar's meal selector owns the whole
     /// screen — the persistent bar slides away for it (topmost surface only)
     @State private var selectorUp = false
+    /// dynamic-bar experiment: past this scroll depth the inline kcal module
+    /// disconnects into its own glass macros row (Music's accessory beat)
+    @State private var homeScrolled = false
+    @Namespace private var modNS
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
                                           // the persistent bar never blinks
@@ -269,6 +281,12 @@ struct HomeScreenNative: View {
                 arrival(mealSheet, 4)
             }
             .ignoresSafeArea(edges: .bottom)
+            .onScrollGeometryChange(for: Bool.self, of: { $0.contentOffset.y > 60 }) { _, deep in
+                guard state.tabBarDynamic else { return }
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
+                    homeScrolled = deep
+                }
+            }
             if state.calendarOpen {
                 // the calendar lives UNDER the persistent bar — no cover, no
                 // second bar, no position shift; the web sheet spring is the
@@ -289,8 +307,8 @@ struct HomeScreenNative: View {
                                             completionHandler: nil)
                 }
             }
-            arrival(tabBar, 5)
-                .padding(.bottom, 12)   // THE placement rule: safe.bottom + 12
+            arrival(bottomBar, 5)
+                .padding(.bottom, DS.barBottom)   // THE placement rule v2 (Music)
                 // chrome layers: while the meal selector owns the screen the
                 // ONE bar yields — slides out under the rising sheet and
                 // returns as it departs; it never unmounts, so no reflow
@@ -464,23 +482,71 @@ struct HomeScreenNative: View {
 
     @State private var tabSel: DSTabId = .home
 
-    private var tabBar: some View {
-        DSTabBar(selected: tabSel) { tab in
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
-            // Apple's beat: the pill lands first, then the page moves under
-            // the stationary bar
-            if tab == .calendar, !state.calendarOpen {
-                selectorUp = false   // stale layer state never hides the bar
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
-                    state.calendarOpen = true
-                }
-            } else if tab == .home, state.calendarOpen {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
-                    state.calendarOpen = false
-                    replayHomeIntro()
-                }
+    private func tabHandler(_ tab: DSTabId) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
+        // Apple's beat: the pill lands first, then the page moves under
+        // the stationary bar
+        if tab == .calendar, !state.calendarOpen {
+            selectorUp = false   // stale layer state never hides the bar
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                state.calendarOpen = true
+            }
+        } else if tab == .home, state.calendarOpen {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                state.calendarOpen = false
+                replayHomeIntro()
             }
         }
+    }
+
+    private var tabBar: some View {
+        DSTabBar(selected: tabSel, onSelect: tabHandler)
+    }
+
+    /// Music-style modular bar (lab experiment, Rashid 2026-09-09): at rest
+    /// the kcal module rides IN the bar row; scrolling disconnects it into
+    /// its own glass macros row above — one matched-geometry morph.
+    private var dynamicOn: Bool {
+        state.tabBarDynamic && tabSel == .home && !state.calendarOpen
+    }
+
+    @ViewBuilder private var bottomBar: some View {
+        if dynamicOn {
+            VStack(spacing: 10) {
+                if homeScrolled { macrosAccessory }
+                HStack(spacing: 10) {
+                    DSTabBar(selected: tabSel, onSelect: tabHandler,
+                             width: homeScrolled ? 314 : 220)
+                    if !homeScrolled { kcalModule }
+                }
+            }
+        } else {
+            tabBar
+        }
+    }
+
+    private var kcalModule: some View {
+        let d = state.days[state.stripDay]
+        return HStack(alignment: .lastTextBaseline, spacing: 3) {
+            Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
+            Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
+        }
+        .foregroundStyle(DS.ink)
+        .frame(width: 84, height: 58)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .matchedGeometryEffect(id: "kcalmod", in: modNS)
+    }
+
+    private var macrosAccessory: some View {
+        let d = state.days[state.stripDay]
+        let base = 0.2473   // the gauge's Figma zero-fill
+        let model = DSGaugeModel(rect: CGRect(x: 0, y: 0, width: 358, height: 64),
+                                 fill: base + min(1, Double(d.kcal) / 1860) * (1 - base),
+                                 kcal: d.kcal, goal: 1860,
+                                 p: d.p, c: d.c, f: d.f, next: false)
+        return DSGaugeGlassView(model: model, onNext: {})
+            .frame(width: 358, height: 64)
+            .matchedGeometryEffect(id: "kcalmod", in: modNS)
     }
 
     private func dock<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -988,6 +1054,7 @@ struct HomeScreenNative: View {
                     Toggle("Promo banner", isOn: $state.showPromo)
                     Toggle("Discounts", isOn: $state.showDiscounts)
                     Toggle("Consultation", isOn: $state.showConsult)
+                    Toggle("Dynamic tab bar (Music)", isOn: $state.tabBarDynamic)
                 }
                 if state.showDiscounts {
                     Section("Discounts state") {
@@ -1157,6 +1224,9 @@ struct DSTabBar: View {
     /// optional: a held tab (0.5s) fires this instead of a select — the
     /// wordmark long-press pilot entry rides here
     var onLongPress: ((DSTabId) -> Void)? = nil
+    /// the dynamic-bar experiment narrows the capsule to make room for an
+    /// inline module; every other host keeps the canonical 314
+    var width: CGFloat = 314
     @Namespace private var pillNS
 
     var body: some View {
@@ -1178,7 +1248,7 @@ struct DSTabBar: View {
             }
         }
         .padding(4)
-        .frame(width: 314, height: 58)
+        .frame(width: width, height: 58)
         .glassEffect(.regular, in: .capsule)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: selected)
     }
@@ -1300,6 +1370,38 @@ final class FlowPreloader {
                 }
                 return
             }
+            if t == "chrometrack" {
+                // continuous follow (Rashid: buttons must ride the drag, not
+                // settle-then-jump): the page streams verbatim rects per frame
+                // while the sheet moves; positions apply with NO animation so
+                // the twins are glued to the surface, and the rest report's
+                // spring lands the final anchor
+                var pos: [String: CGPoint] = [:]
+                for e in body["els"] as? [[String: Any]] ?? [] {
+                    guard let id = e["id"] as? String else { continue }
+                    func n(_ k: String) -> CGFloat {
+                        CGFloat((e[k] as? NSNumber)?.doubleValue ?? 0)
+                    }
+                    pos[id] = CGPoint(x: n("x"), y: n("y"))
+                }
+                DispatchQueue.main.async {
+                    guard !self.chrome.els.isEmpty else { return }
+                    var tx = Transaction()
+                    tx.disablesAnimations = true
+                    withTransaction(tx) {
+                        // verbatim while tracking — normalization would pin
+                        // the twin to the top line and break the follow
+                        self.chrome.mode = "sheet"
+                        self.chrome.els = self.chrome.els.map { el in
+                            guard let p = pos[el.id] else { return el }
+                            return GlassChromeEl(id: el.id, x: p.x, y: p.y,
+                                                 w: el.w, h: el.h, r: el.r,
+                                                 on: el.on)
+                        }
+                    }
+                }
+                return
+            }
             if t == "selector" {
                 // chrome layers: the calendar posts this from its selector
                 // open/close choke points — the pilot's persistent bar
@@ -1364,6 +1466,9 @@ final class FlowPreloader {
             guard t == "haptic" else { return }
             let kind = body["kind"] as? String ?? "impact"
             let style = body["style"] as? String ?? "light"
+            #if DEBUG
+            NSLog("DSHAPTIC kind=%@ style=%@", kind, style)
+            #endif
             DispatchQueue.main.async { [self] in
                 switch kind {
                 case "notification":
@@ -1925,7 +2030,7 @@ struct FlowOverlay: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { onClose() }
                     }
                 }
-                .padding(.bottom, 12)
+                .padding(.bottom, DS.barBottom)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

@@ -2091,7 +2091,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 89';
+const BUILD = 'build 2026-09-09 · 90';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2574,12 +2574,36 @@ fit();
      twins never confirm (iOS<26, desktop). */
   var docked = false, moving = false, restT = null;
   function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
+  /* continuous follow (Rashid: the buttons must RIDE the drag, then anchor
+     at the dock — settle-then-jump is out): while the sheet moves, stream
+     verbatim rects one per frame; the shell applies them with no animation
+     so the twins are glued to the surface. The rest report still lands the
+     exact anchor (canonical top line when docked). */
+  var trackRaf = null;
+  function postTrack() {
+    trackRaf = null;
+    if (layerUp) return;
+    var off = frameOffset();
+    var els = [];
+    Object.keys(ELS).forEach(function (id) {
+      var el = document.querySelector(ELS[id]);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      els.push({ id: id, x: r.left + off.x, y: r.top + off.y });
+    });
+    if (!els.length) return;
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'chrometrack', flow: FLOW, els: els });
+    } catch (_) {}
+  }
   function watchDock() {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
     sa.addEventListener('scroll', function () {
       docked = sa.scrollTop >= gapNow() - 0.5;
       moving = true;
+      if (!trackRaf) trackRaf = requestAnimationFrame(postTrack);
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
@@ -2593,6 +2617,7 @@ fit();
   function chromeExit() {
     moving = true;              /* no queued report can revive dead chrome */
     clearTimeout(restT);
+    if (trackRaf) { cancelAnimationFrame(trackRaf); trackRaf = null; }
     docked = false;
     clearChrome();
     clearGauge();
