@@ -833,16 +833,106 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       on('touchcancel', function () { cancel(); });
     }
   }
-  /* Canonical lab gesture (Rashid): a SINGULAR triple-tap-and-hold,
-     identical on web and native — no secondary gestures. */
+  /* Canonical lab gesture (Rashid, spec corrected 2026-09-09): a
+     THREE-FINGER single tap-and-hold — three simultaneous touches held
+     ~0.4s. The single-finger triple-tap-and-hold above stays as the
+     pointer/desktop fallback (mice and simulators can't make 3 touches).
+     Same delivery belt-and-suspenders as tripleTapHold: pointer tracking
+     AND document-level touch counting behind one latch, hardware
+     timestamps, and a hold the release can honor when jank starves the
+     timer. */
+  function threeFingerHold(openFn) {
+    var HOLD_MS = 400, SLOP = 24;
+    var lastFire = 0;
+    function latchFire() {
+      var now = performance.now();
+      if (now - lastFire < 600) return;
+      lastFire = now;
+      openFn();
+    }
+    /* ---- pointer source ---- */
+    if (window.PointerEvent) {
+      var active = {}, pAt = 0, pHold = null;
+      var pCount = function () { var n = 0; for (var k in active) n++; return n; };
+      var pCancel = function () {
+        if (pHold) clearTimeout(pHold);
+        pHold = null; pAt = 0;
+      };
+      addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse') return;
+        active[e.pointerId] = { x: e.clientX, y: e.clientY };
+        var n = pCount();
+        if (n === 3) {
+          pAt = e.timeStamp || performance.now();
+          pHold = setTimeout(function () { pHold = null; pAt = 0; latchFire(); }, HOLD_MS);
+        } else if (n > 3) pCancel();
+      }, { passive: true, capture: true });
+      addEventListener('pointermove', function (e) {
+        var a = active[e.pointerId];
+        if (!a || !pAt) return;
+        if (Math.abs(e.clientX - a.x) > SLOP ||
+            Math.abs(e.clientY - a.y) > SLOP) pCancel();
+      }, { passive: true, capture: true });
+      var pLift = function (e) {
+        delete active[e.pointerId];
+        if (pAt) {
+          var held = (e.timeStamp || performance.now()) - pAt;
+          pCancel();
+          if (held >= HOLD_MS) latchFire();
+        }
+      };
+      addEventListener('pointerup', pLift, { passive: true, capture: true });
+      addEventListener('pointercancel', function (e) {
+        delete active[e.pointerId]; pCancel();
+      }, { passive: true, capture: true });
+    }
+    /* ---- document-level touch source ---- */
+    var tAt = 0, tHold = null, tPts = null;
+    function tCancel() {
+      if (tHold) clearTimeout(tHold);
+      tHold = null; tAt = 0; tPts = null;
+    }
+    document.addEventListener('touchstart', function (e) {
+      if (!e.touches) return;
+      if (e.touches.length === 3 && !tAt) {
+        tAt = e.timeStamp || performance.now();
+        tPts = [];
+        for (var i = 0; i < 3; i++)
+          tPts.push({ id: e.touches[i].identifier,
+            x: e.touches[i].clientX, y: e.touches[i].clientY });
+        tHold = setTimeout(function () { tHold = null; tAt = 0; latchFire(); }, HOLD_MS);
+      } else if (e.touches.length > 3) tCancel();
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!tAt || !e.changedTouches) return;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var c = e.changedTouches[i];
+        for (var j = 0; j < tPts.length; j++) {
+          if (tPts[j].id === c.identifier &&
+              (Math.abs(c.clientX - tPts[j].x) > SLOP ||
+               Math.abs(c.clientY - tPts[j].y) > SLOP)) { tCancel(); return; }
+        }
+      }
+    }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!tAt) return;
+      var held = (e.timeStamp || performance.now()) - tAt;
+      tCancel();
+      if (held >= HOLD_MS) latchFire();
+    }, { passive: true });
+    document.addEventListener('touchcancel', function () { tCancel(); }, { passive: true });
+  }
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
       /* flows with their own sheet still get the reliable window-level
          gestures, routed to their opener when they expose one */
-      if (typeof window.openLabMenu === 'function')
-        tripleTapHold(function () {
+      if (typeof window.openLabMenu === 'function') {
+        var routed = function () {
           if (!document.body.classList.contains('desktop')) window.openLabMenu();
-        });
+        };
+        threeFingerHold(routed);   /* primary */
+        tripleTapHold(routed);     /* pointer/desktop fallback */
+      }
       return;
     }
     var side = document.getElementById('side');
@@ -896,7 +986,8 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     links.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
     });
-    tripleTapHold(open);
+    threeFingerHold(open);   /* primary */
+    tripleTapHold(open);     /* pointer/desktop fallback */
     /* hub Settings button lands here with #labmenu: open the sheet on arrival */
     if (location.hash === '#labmenu') {
       history.replaceState(null, '', location.pathname);
