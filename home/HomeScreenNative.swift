@@ -201,10 +201,11 @@ private enum DS {
     }
     var daysShapeChoice: DaysShapeChoice = .auto
     var stripDay = 1                // index into days — boots on Today
-    /// lab experiment (Rashid 2026-09-09): Apple-Music-style modular bar —
-    /// the calorie counter lives IN the tab bar row and disconnects into
-    /// its own glass macros row on scroll. Home tab only; default off.
-    var tabBarDynamic = false
+    /// Apple-Music-style modular bar — the calorie counter lives IN the
+    /// tab bar row and disconnects into its own glass macros row on
+    /// scroll. PROMOTED TO DEFAULT (Rashid 2026-09-09 late); the classic
+    /// three-tab bar stays as the lab's secondary option.
+    var tabBarDynamic = true
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
     var calendarOpen = false        // meal-select web flow over this screen
@@ -253,6 +254,10 @@ struct HomeScreenNative: View {
     /// dynamic-bar experiment: past this scroll depth the inline kcal module
     /// disconnects into its own glass macros row (Music's accessory beat)
     @State private var homeScrolled = false
+    /// the ScrollView's RESTING offset is not 0 (safe-area adjusted) — the
+    /// scroll trigger measures depth relative to this first-report baseline,
+    /// else the accessory latches open at boot
+    @State private var scrollBase: CGFloat?
     @Namespace private var modNS
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
@@ -281,8 +286,11 @@ struct HomeScreenNative: View {
                 arrival(mealSheet, 4)
             }
             .ignoresSafeArea(edges: .bottom)
-            .onScrollGeometryChange(for: Bool.self, of: { $0.contentOffset.y > 60 }) { _, deep in
-                guard state.tabBarDynamic, deep != homeScrolled else { return }
+            .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, y in
+                guard state.tabBarDynamic else { return }
+                if scrollBase == nil { scrollBase = y }
+                let deep = y > (scrollBase ?? 0) + 60
+                guard deep != homeScrolled else { return }
                 // one clean morph (Rashid: no slide, no beats): the pill
                 // rises from its slot and WIDENS — right edges pinned by
                 // the trailing-aligned stack, so nothing travels sideways
@@ -519,19 +527,21 @@ struct HomeScreenNative: View {
     }
 
     @ViewBuilder private var bottomBar: some View {
-        if dynamicOn {
+        if state.tabBarDynamic {
             // trailing-aligned: the pill and the accessory SHARE a right
             // edge, so the morph reads as a pure rise-and-widen (Rashid:
-            // no slide) — the left edge does all the growing
+            // no slide) — the left edge does all the growing.
+            // The FOOTPRINT is 370 on EVERY tab (Rashid: no size jumps
+            // between pages): home-at-rest splits it with the module,
+            // everywhere else the bar absorbs the full width
             VStack(alignment: .trailing, spacing: 10) {
-                if homeScrolled { kcalCapsule }
+                if dynamicOn && homeScrolled { kcalCapsule }
                 HStack(spacing: 10) {
-                    // widths rhyme (Rashid): docked bar matches the 370
-                    // accessory; at rest bar + module + gap total the same
-                    // 370, so the outer edges hold through the morph
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
-                             width: homeScrolled ? 370 : 256)
-                    if !homeScrolled { kcalCapsule }
+                             width: dynamicOn && !homeScrolled ? 256 : 370)
+                    if dynamicOn && !homeScrolled {
+                        kcalCapsule.transition(.opacity)
+                    }
                 }
             }
         } else {
