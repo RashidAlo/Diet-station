@@ -1342,6 +1342,11 @@ final class FlowPreloader {
                                          selc: body["selc"] as? String ?? "#ED1C24",
                                          selcDark: (body["selcDark"] as? Bool) ?? false,
                                          instant: (body["instant"] as? Bool) ?? false)
+                #if DEBUG
+                NSLog("DSGAUGE state=%@ dock=%@ kcal=%d fill=%.2f instant=%d",
+                      model.state, model.dock, model.kcal, model.fill,
+                      model.instant ? 1 : 0)
+                #endif
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
                     // no ambient animation: the persistent twin drives every
