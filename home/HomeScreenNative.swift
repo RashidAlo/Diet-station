@@ -283,7 +283,9 @@ struct HomeScreenNative: View {
             .ignoresSafeArea(edges: .bottom)
             .onScrollGeometryChange(for: Bool.self, of: { $0.contentOffset.y > 60 }) { _, deep in
                 guard state.tabBarDynamic else { return }
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
+                // playful dock (Rashid): a loose spring so the module leaps
+                // up with visible overshoot before settling on its row
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.58)) {
                     homeScrolled = deep
                 }
             }
@@ -532,26 +534,45 @@ struct HomeScreenNative: View {
 
     private var kcalModule: some View {
         let d = state.days[state.stripDay]
-        return HStack(alignment: .lastTextBaseline, spacing: 3) {
+        return HStack(alignment: .lastTextBaseline, spacing: 4) {
             Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
             Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
         }
         .foregroundStyle(DS.ink)
-        .frame(width: 84, height: 58)
+        .frame(width: 92, height: 58)
         .glassEffect(.regular.interactive(), in: .capsule)
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
     }
 
+    /// the docked layer, v2 (Rashid): NOT the orange gauge — a THIN slice
+    /// of transparent glass, the tab bar's quiet sibling, ink text with air
     private var macrosAccessory: some View {
         let d = state.days[state.stripDay]
-        let base = 0.2473   // the gauge's Figma zero-fill
-        let model = DSGaugeModel(rect: CGRect(x: 0, y: 0, width: 358, height: 64),
-                                 fill: base + min(1, Double(d.kcal) / 1860) * (1 - base),
-                                 kcal: d.kcal, goal: 1860,
-                                 p: d.p, c: d.c, f: d.f, next: false)
-        return DSGaugeGlassView(model: model, onNext: {})
-            .frame(width: 358, height: 64)
-            .matchedGeometryEffect(id: "kcalmod", in: modNS)
+        return HStack(spacing: 0) {
+            HStack(alignment: .lastTextBaseline, spacing: 3) {
+                Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
+                Text(verbatim: "/1860").font(DS.urbane(11, .medium)).foregroundStyle(DS.ink.opacity(0.4))
+                Text("kcal").font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
+            }
+            Spacer(minLength: 14)
+            thinPair(d.p, "Protein")
+            Spacer(minLength: 14)
+            thinPair(d.c, "Carbs")
+            Spacer(minLength: 14)
+            thinPair(d.f, "Fat")
+        }
+        .padding(.horizontal, 22)
+        .frame(width: 370, height: 46)
+        .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
+        .matchedGeometryEffect(id: "kcalmod", in: modNS)
+    }
+
+    private func thinPair(_ v: Int, _ label: String) -> some View {
+        HStack(alignment: .lastTextBaseline, spacing: 3) {
+            Text(label).font(DS.urbane(10, .medium)).foregroundStyle(DS.ink.opacity(0.5))
+            Text(verbatim: "\(v)").font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
+            Text("g").font(DS.proxima(9)).foregroundStyle(DS.ink.opacity(0.5))
+        }
     }
 
     private func dock<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -975,6 +996,9 @@ struct HomeScreenNative: View {
             .lineLimit(1)
             .minimumScaleFactor(0.75)
             Spacer(minLength: 8)
+            // dynamic-bar mode: the bar's own kcal module IS the calorie
+            // surface — the strip pill would be a duplicate (Rashid)
+            if !state.tabBarDynamic {
             Button { withAnimation(.spring(duration: 0.4, bounce: 0.12)) { state.macrosOpen.toggle() } } label: {
                 HStack(spacing: 3) {
                     // verbatim: interpolated Ints localize ("1,200") — web shows "1200"
@@ -997,6 +1021,7 @@ struct HomeScreenNative: View {
                 .shadow(color: .black.opacity(0.08), radius: 6.65)
             }
             .fixedSize()
+            }
         }
         .frame(height: 48)
     }
