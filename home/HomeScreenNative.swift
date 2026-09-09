@@ -397,6 +397,11 @@ struct HomeScreenNative: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 state.labOpen = true
             }
+            // SIMCTL_CHILD_DSLAB_DYNBAR=1 arms the dynamic-bar experiment —
+            // sheet toggles resist scripted taps, so QA flips it here
+            if ProcessInfo.processInfo.environment["DSLAB_DYNBAR"] != nil {
+                state.tabBarDynamic = true
+            }
         }
         #endif
         .onChange(of: state.daysLeft) {   /* lab changes bypass the intro */
@@ -1312,15 +1317,14 @@ final class FlowPreloader {
         var onClose: (() -> Void)?
         let chrome = OverlayChrome()
 
-        private let impact: [String: UIImpactFeedbackGenerator] = [
-            "light": UIImpactFeedbackGenerator(style: .light),
-            "medium": UIImpactFeedbackGenerator(style: .medium),
-            "heavy": UIImpactFeedbackGenerator(style: .heavy),
-            "soft": UIImpactFeedbackGenerator(style: .soft),
-            "rigid": UIImpactFeedbackGenerator(style: .rigid),
+        /// generators are built FRESH per event: long-lived unprepared ones
+        /// go silent on device when iOS parks the haptic engine (suspected
+        /// cause of the build-27/28 "haptics are gone" report) — a fresh
+        /// instance always spins the engine up
+        private static let impactStyle: [String: UIImpactFeedbackGenerator.FeedbackStyle] = [
+            "light": .light, "medium": .medium, "heavy": .heavy,
+            "soft": .soft, "rigid": .rigid,
         ]
-        private let notify = UINotificationFeedbackGenerator()
-        private let select = UISelectionFeedbackGenerator()
 
         func userContentController(_ c: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
@@ -1384,6 +1388,10 @@ final class FlowPreloader {
                     }
                     pos[id] = CGPoint(x: n("x"), y: n("y"))
                 }
+                #if DEBUG
+                NSLog("DSTRACK %@", pos.map { "\($0.key)=\(Int($0.value.y))" }
+                    .sorted().joined(separator: " "))
+                #endif
                 DispatchQueue.main.async {
                     guard !self.chrome.els.isEmpty else { return }
                     var tx = Transaction()
@@ -1469,17 +1477,19 @@ final class FlowPreloader {
             #if DEBUG
             NSLog("DSHAPTIC kind=%@ style=%@", kind, style)
             #endif
-            DispatchQueue.main.async { [self] in
+            DispatchQueue.main.async {
                 switch kind {
                 case "notification":
                     let map: [String: UINotificationFeedbackGenerator.FeedbackType] = [
                         "success": .success, "warning": .warning, "error": .error,
                     ]
-                    notify.notificationOccurred(map[style] ?? .success)
+                    UINotificationFeedbackGenerator()
+                        .notificationOccurred(map[style] ?? .success)
                 case "selection":
-                    select.selectionChanged()
+                    UISelectionFeedbackGenerator().selectionChanged()
                 default:
-                    (impact[style] ?? impact["light"]!).impactOccurred()
+                    UIImpactFeedbackGenerator(style: Relay.impactStyle[style] ?? .light)
+                        .impactOccurred()
                 }
             }
         }
