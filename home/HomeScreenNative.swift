@@ -58,6 +58,16 @@ private enum DS {
     static let ink = Color(red: 11/255, green: 14/255, blue: 18/255)
     static let caption = Color(red: 94/255, green: 94/255, blue: 94/255)
     static let assets = "https://rashidalo.github.io/Diet-station/home/"
+    /// Arabic text wears Avenir Next World (Rashid); name cascade because
+    /// custom-font misses fall back silently
+    static func avenirWorld(_ size: CGFloat, _ weight: Font.Weight = .medium) -> Font {
+        for name in ["AvenirNextWorld-Medium", "Avenir Next World", "AvenirNextLTW05-Medium"] {
+            if UIFont(name: name, size: size) != nil {
+                return .custom(name, size: size)
+            }
+        }
+        return .system(size: size, weight: weight)
+    }
 
     static func urbane(_ size: CGFloat, _ weight: Font.Weight = .medium) -> Font {
         // Urbane Rounded ships as separate faces; fall back to rounded system
@@ -271,6 +281,13 @@ struct HomeScreenNative: View {
                     if p == "rewards" { state.couponsOpen = true }
                 }
             }
+            #if DEBUG
+            NSLog("DSFONTS families: %@",
+                  UIFont.familyNames.filter { $0.localizedCaseInsensitiveContains("avenir") })
+            for fam in UIFont.familyNames where fam.localizedCaseInsensitiveContains("avenir") {
+                NSLog("DSFONTS %@ -> %@", fam, UIFont.fontNames(forFamilyName: fam))
+            }
+            #endif
             // SIMCTL_CHILD_DSLAB_LABMENU=1 opens the lab controls on launch —
             // scripted sim taps can't hit the triple-tap-hold's 550ms window
             if ProcessInfo.processInfo.environment["DSLAB_LABMENU"] != nil {
@@ -316,7 +333,9 @@ struct HomeScreenNative: View {
                     placeholder: { Circle().fill(.white.opacity(0.2)) }
                     .frame(width: 48, height: 48).clipShape(Circle())
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("☀︎ صبحك الله بالخير").font(DS.proxima(12)).foregroundStyle(DS.onColor)
+                    (Text("☀️ ").font(.system(size: 11))
+                     + Text("صبحك الله بالخير").font(DS.avenirWorld(12)))
+                        .foregroundStyle(DS.onColor)
                     Text("Abdulrahman").font(DS.urbane(14)).foregroundStyle(.white)
                 }
             }
