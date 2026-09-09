@@ -123,6 +123,8 @@ private enum DS {
     var showDiscounts = true
     var showConsult = true
     var macrosOpen = false
+    var consultBooked = false       // Figma 16367:78807 "Booked" state
+    var discountsEmpty = false      // no coupons: bare "Coupons" tile
     var stripDay = 1                // index into days — boots on Today
     var labOpen = false
     var couponsOpen = false         // rewards web flow over this screen
@@ -188,15 +190,20 @@ struct HomeScreenNative: View {
             arrival(tabBar, 5)
                 .padding(.bottom, 16)
         }
-        /* THE lab house gesture (Rashid: singular, every surface, every
-           prototype): triple-tap-and-hold, matching lab-shell's tuned state
-           machine exactly — see TripleTapHoldGesture below, the standard
-           scaffold for every native pilot. The old plain long-press is
-           retired (it fired when holding widgets). */
+        /* THE lab house gesture (Rashid 2026-09-09, clarified): THREE-FINGER
+           single tap-and-hold. The single-finger triple-tap-hold stays as a
+           Debug/simulator fallback only — a Mac mouse cannot produce three
+           simultaneous touches. */
+        .gesture(ThreeFingerHoldGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            state.labOpen = true
+        })
+        #if DEBUG
         .gesture(TripleTapHoldGesture {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             state.labOpen = true
         })
+        #endif
         .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
         /* web flows summoned over the native screen, transparent — they run
            their own sheet choreography and post ds-close when done */
@@ -217,6 +224,8 @@ struct HomeScreenNative: View {
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
         .animation(.spring(duration: 0.45), value: state.showConsult)
         .animation(.spring(duration: 0.4), value: state.plan)
+        .animation(.spring(duration: 0.35), value: state.consultBooked)
+        .animation(.spring(duration: 0.35), value: state.discountsEmpty)
         .sensoryFeedback(.impact(weight: .medium), trigger: state.stripDay)
         .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
         .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: dialNumber)
@@ -232,6 +241,12 @@ struct HomeScreenNative: View {
                     if p == "meal-select" { state.calendarOpen = true }
                     if p == "rewards" { state.couponsOpen = true }
                 }
+            }
+            // SIMCTL_CHILD_DSLAB_LABMENU=1 opens the lab controls on launch —
+            // scripted sim taps can't hit the triple-tap-hold's 550ms window
+            if ProcessInfo.processInfo.environment["DSLAB_LABMENU"] != nil {
+                try? await Task.sleep(for: .seconds(1.5))
+                state.labOpen = true
             }
         }
         #endif
@@ -474,15 +489,22 @@ struct HomeScreenNative: View {
 
     private var discountsWidget: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("KD 32").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
-                Text("Discounts").font(DS.proxima(12)).foregroundStyle(DS.onColor.opacity(0.8))
+            if state.discountsEmpty {
+                // no coupons: no currency, no bag — the whole tile just says
+                // Coupons, centered (Rashid)
+                Text("Coupons").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
+                    .frame(maxWidth: .infinity)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("KD 32").font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
+                    Text("Discounts").font(DS.proxima(12)).foregroundStyle(DS.onColor.opacity(0.8))
+                }
+                // scale, never wrap — the bag glyph leaves ~67pt for the text column
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                Spacer(minLength: 8)
+                DSBagIcon().frame(width: 34, height: 31.8)
             }
-            // scale, never wrap — the bag glyph leaves ~67pt for the text column
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            Spacer(minLength: 8)
-            DSBagIcon().frame(width: 34, height: 31.8)
         }
         .padding(.horizontal, 19)
         .frame(maxWidth: .infinity)
@@ -498,9 +520,24 @@ struct HomeScreenNative: View {
     private var consultWidget: some View {
         HStack(spacing: 12) {
             consultIcon
-            Text("Book Consultation").font(DS.urbane(12)).foregroundStyle(DS.onColor)
-                .lineLimit(2).minimumScaleFactor(0.9)
+            if state.consultBooked {
+                // Figma 16367:78807: "Booked ✓" + the slot, on one tile
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text("Booked").font(DS.urbane(13, .semibold)).foregroundStyle(.white)
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(DS.red, .white)
+                    }
+                    Text("12th Nov 8 AM").font(DS.proxima(11))
+                        .foregroundStyle(DS.onColor.opacity(0.75))
+                }
                 .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text("Book Consultation").font(DS.urbane(12)).foregroundStyle(DS.onColor)
+                    .lineLimit(2).minimumScaleFactor(0.9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)   // fill the 151pt column exactly — no bleed
@@ -698,6 +735,22 @@ struct HomeScreenNative: View {
                     Toggle("Promo banner", isOn: $state.showPromo)
                     Toggle("Discounts", isOn: $state.showDiscounts)
                     Toggle("Consultation", isOn: $state.showConsult)
+                }
+                if state.showDiscounts {
+                    Section("Discounts state") {
+                        Picker("Coupons", selection: $state.discountsEmpty) {
+                            Text("KD 32").tag(false); Text("No coupons").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+                if state.showConsult {
+                    Section("Consultation state") {
+                        Picker("Consultation", selection: $state.consultBooked) {
+                            Text("Book").tag(false); Text("Booked").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
                 if let onClose {
                     Section { Button("Exit native pilot", role: .destructive) { onClose() } }
@@ -1050,6 +1103,36 @@ final class TripleTapHoldRecognizer: UIGestureRecognizer {
 
 /// SwiftUI bridge — attach with `.gesture(TripleTapHoldGesture { … })`.
 @available(iOS 26.0, *)
+/// THE lab gesture: three fingers, one tap, held ~0.4s. Plain UIKit
+/// long-press with numberOfTouchesRequired = 3 — nothing custom needed.
+@available(iOS 26.0, *)
+struct ThreeFingerHoldGesture: UIGestureRecognizerRepresentable {
+    let onFire: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let r = UILongPressGestureRecognizer()
+        r.numberOfTouchesRequired = 3
+        r.minimumPressDuration = 0.4
+        r.allowableMovement = 24
+        r.cancelsTouchesInView = false
+        r.delegate = context.coordinator
+        return r
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+        if recognizer.state == .began { onFire() }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ g: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
+        }
+    }
+}
+
 struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
     let onFire: () -> Void
 
