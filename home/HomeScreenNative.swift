@@ -187,9 +187,10 @@ struct HomeScreenNative: View {
     @State private var dialNumber = 30
     @State private var dialFrac: Double = 1.0
 
-    /// Figma 16828:83478 — at three days left the days widget MERGES into an
-    /// urgent offer banner on top and the grid reflows around its absence
-    private var urgent: Bool { state.daysLeft == 3 }
+    /// Figma 16828:83478 — at three days left (and once EXPIRED, per Rashid)
+    /// the days widget MERGES into an urgent offer banner on top and the grid
+    /// reflows around its absence; expired swaps in hotter messaging
+    private var urgent: Bool { state.daysLeft == 3 || state.daysLeft == 0 }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -440,25 +441,38 @@ struct HomeScreenNative: View {
     @State private var urgentT0 = Date()
 
     private var urgentBanner: some View {
-        HStack(spacing: 14) {
+        let expired = state.daysLeft == 0
+        return HStack(spacing: 14) {
             ZStack {
                 Circle().stroke(.white.opacity(0.25), lineWidth: 3.5)
-                Circle().trim(from: 0, to: 0.12)
+                Circle().trim(from: 0, to: expired ? 0 : 0.12)
                     .stroke(.white, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .scaleEffect(x: -1)
                 VStack(spacing: 0) {
-                    Text(verbatim: "3").font(DS.urbane(22, .semibold)).foregroundStyle(.white)
-                    Text("Days left").font(DS.proxima(9)).foregroundStyle(DS.onColor)
+                    Text(verbatim: "\(state.daysLeft)")
+                        .font(DS.urbane(22, .semibold)).foregroundStyle(.white)
+                    Text(expired ? "Expired" : "Days left")
+                        .font(DS.proxima(9)).foregroundStyle(DS.onColor)
                 }
             }
             .frame(width: 64, height: 64)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Renew early & Save 😱")
+                Text(expired ? "Expired! Last chance to Save 🚨"
+                             : "Renew early & Save 😱")
                     .font(DS.urbane(15, .semibold)).foregroundStyle(.white)
-                (Text("starting price will change to ").font(DS.proxima(10))
-                 + Text("KD").font(DS.proxima(7)) + Text("109").font(DS.proxima(10)))
-                    .foregroundStyle(DS.onColor.opacity(0.85))
+                    .lineLimit(1).minimumScaleFactor(0.85)
+                Group {
+                    if expired {
+                        (Text("your ").font(DS.proxima(10))
+                         + Text("KD").font(DS.proxima(7)) + Text("99").font(DS.proxima(10))
+                         + Text(" offer ends with the timer").font(DS.proxima(10)))
+                    } else {
+                        (Text("starting price will change to ").font(DS.proxima(10))
+                         + Text("KD").font(DS.proxima(7)) + Text("109").font(DS.proxima(10)))
+                    }
+                }
+                .foregroundStyle(DS.onColor.opacity(0.85))
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Before").font(DS.proxima(8)).foregroundStyle(DS.onColor.opacity(0.7))
@@ -469,7 +483,9 @@ struct HomeScreenNative: View {
                      + Text("99").font(DS.urbane(18, .semibold)))
                         .foregroundStyle(.white)
                     Spacer(minLength: 8)
-                    pill("Renew")
+                    // expired = the prominent white pill, same treatment as
+                    // the days widget's expired Renew
+                    pill("Renew", urgent: expired)
                 }
                 .padding(.top, 3)
             }
