@@ -240,6 +240,8 @@ struct HomeScreenNative: View {
     /* entrance choreography: widgets arrive staggered, then the days dial
        sweeps to its value while the number counts down from 30 */
     @State private var arrived = false
+    @State private var contentIn = true   // re-toggled for return intros;
+                                          // the persistent bar never blinks
     @State private var dialNumber = 30
     @State private var dialFrac: Double = 1.0
 
@@ -271,8 +273,16 @@ struct HomeScreenNative: View {
                 FlowOverlay(path: "meal-select", ownsTabBar: false) {
                     state.calendarOpen = false
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
+                    replayHomeIntro()
                 }
                 .zIndex(2)
+                .onAppear {
+                    // warm webviews played their entrance offscreen — replay
+                    // it now that the page is actually on stage
+                    FlowPreloader.shared.entry("meal-select").web
+                        .evaluateJavaScript("window.DSReplayIntro && DSReplayIntro()",
+                                            completionHandler: nil)
+                }
             }
             arrival(tabBar, 5)
                 .padding(.bottom, 12)   // THE placement rule: safe.bottom + 12
@@ -369,9 +379,18 @@ struct HomeScreenNative: View {
     }
 
     private func arrival<V: View>(_ v: V, _ index: Double) -> some View {
-        v.opacity(arrived ? 1 : 0)
-            .scaleEffect(arrived ? 1 : 0.94, anchor: .center)
-            .animation(.spring(duration: 0.55).delay(0.07 * index), value: arrived)
+        let on = arrived && (index >= 5 || contentIn)   // bar (5) rides arrived only
+        return v.opacity(on ? 1 : 0)
+            .scaleEffect(on ? 1 : 0.94, anchor: .center)
+            .offset(y: on ? 0 : 10)
+            .animation(.spring(duration: 0.55).delay(0.07 * index), value: on)
+    }
+
+    /// brief page intro when home comes back into view (Rashid: no static
+    /// switches) — the content restaggers, the bar stays put
+    private func replayHomeIntro() {
+        contentIn = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { contentIn = true }
     }
 
     private func runIntro() async {
@@ -446,6 +465,7 @@ struct HomeScreenNative: View {
             } else if tab == .home, state.calendarOpen {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
                     state.calendarOpen = false
+                    replayHomeIntro()
                 }
             }
         }
