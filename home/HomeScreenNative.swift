@@ -180,13 +180,18 @@ struct HomeScreenNative: View {
     @State private var dialNumber = 30
     @State private var dialFrac: Double = 1.0
 
+    /// Figma 16828:83478 — at three days left the days widget MERGES into an
+    /// urgent offer banner on top and the grid reflows around its absence
+    private var urgent: Bool { state.daysLeft == 3 }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             DS.red.ignoresSafeArea()
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: DS.gap) {
                     arrival(topRow, 0)
-                    if state.showPromo { arrival(promoBanner, 1) }
+                    if urgent { arrival(urgentBanner, 1) }
+                    else if state.showPromo { arrival(promoBanner, 1) }
                     widgetGrid
                 }
                 .padding(.horizontal, 20)
@@ -240,6 +245,7 @@ struct HomeScreenNative: View {
         .animation(.spring(duration: 0.4), value: state.plan)
         .animation(.spring(duration: 0.35), value: state.consultBooked)
         .animation(.spring(duration: 0.35), value: state.daysShapeChoice)
+        .animation(.spring(duration: 0.45), value: state.daysLeft == 3)
         .animation(.spring(duration: 0.35), value: state.discountsEmpty)
         .sensoryFeedback(.impact(weight: .medium), trigger: state.stripDay)
         .sensoryFeedback(.impact(weight: .light), trigger: state.macrosOpen)
@@ -421,6 +427,87 @@ struct HomeScreenNative: View {
         }
     }
 
+    // MARK: urgent renewal banner (Figma 16828:83478) — the days widget
+    // relocated to the top with the offer; countdown chip ticks live
+
+    @State private var urgentT0 = Date()
+
+    private var urgentBanner: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().stroke(.white.opacity(0.25), lineWidth: 3.5)
+                Circle().trim(from: 0, to: 0.12)
+                    .stroke(.white, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .scaleEffect(x: -1)
+                VStack(spacing: 0) {
+                    Text(verbatim: "3").font(DS.urbane(22, .semibold)).foregroundStyle(.white)
+                    Text("Days left").font(DS.proxima(9)).foregroundStyle(DS.onColor)
+                }
+            }
+            .frame(width: 64, height: 64)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Renew early & Save 😱")
+                    .font(DS.urbane(15, .semibold)).foregroundStyle(.white)
+                (Text("starting price will change to ").font(DS.proxima(10))
+                 + Text("KD").font(DS.proxima(7)) + Text("109").font(DS.proxima(10)))
+                    .foregroundStyle(DS.onColor.opacity(0.85))
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Before").font(DS.proxima(8)).foregroundStyle(DS.onColor.opacity(0.7))
+                        Text("KD139").font(DS.urbane(11)).strikethrough()
+                            .foregroundStyle(DS.onColor.opacity(0.7))
+                    }
+                    (Text("KD").font(DS.urbane(10, .semibold))
+                     + Text("99").font(DS.urbane(18, .semibold)))
+                        .foregroundStyle(.white)
+                    Spacer(minLength: 8)
+                    pill("Renew")
+                }
+                .padding(.top, 3)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)), in: .rect(cornerRadius: DS.cradle(pill: 18, inset: 16)))
+        .glassEffectID("days", in: glassNS)
+        .overlay(alignment: .topLeading) {
+            // yellow countdown chip riding the banner's top edge, ticking live
+            TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                let left = max(0, 1211 - Int(ctx.date.timeIntervalSince(urgentT0)))
+                Text(verbatim: String(format: "Expires in %02d:%02d:%02d",
+                                      left / 3600, (left / 60) % 60, left % 60))
+                    .font(DS.urbane(10, .semibold)).foregroundStyle(DS.ink)
+                    .padding(.horizontal, 10).frame(height: 20)
+                    .background(Color(red: 1, green: 197/255, blue: 46/255), in: Capsule())
+            }
+            .offset(x: 16, y: -10)
+        }
+        .padding(.top, 10)   // room for the chip overhang in the stack rhythm
+        .transition(.scale(scale: 0.94).combined(with: .opacity))
+    }
+
+    /// Coupons grown into the days widget's vacated space: big bag on top,
+    /// voucher copy at the bottom (Figma 16828:83478)
+    private var expandedCouponsWidget: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack { Spacer(); DSBagIcon().frame(width: 46, height: 43) }
+            Spacer(minLength: 8)
+            (Text("KD 32 ").font(DS.urbane(17, .semibold)).foregroundStyle(DS.onColor)
+             + Text("OFF").font(DS.urbane(10, .semibold)).foregroundStyle(DS.onColor.opacity(0.8)))
+            Text("5 Vouchers available").font(DS.proxima(11))
+                .foregroundStyle(DS.onColor.opacity(0.8))
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
+                     in: .rect(cornerRadius: DS.tile(153)))
+        .glassEffectID("disc", in: glassNS)
+        .contentShape(RoundedRectangle(cornerRadius: DS.tile(153)))
+        .onTapGesture { instant { state.couponsOpen = true } }
+        .transition(.scale(scale: 0.9).combined(with: .opacity))
+    }
+
     // MARK: widget grid — the modular system
 
     private var widgetGrid: some View {
@@ -430,9 +517,16 @@ struct HomeScreenNative: View {
             HStack(alignment: .top, spacing: DS.gap) {
                 planWidget.frame(width: 193)
                 VStack(spacing: DS.gap) {
-                    daysWidget
-                    if state.showDiscounts { discountsWidget }
-                    if state.showConsult { consultWidget }
+                    if urgent {
+                        // days lives in the top banner now; coupons expands
+                        // into the vacated space (Figma 16828:83478)
+                        if state.showDiscounts { expandedCouponsWidget }
+                        if state.showConsult { consultWidget }
+                    } else {
+                        daysWidget
+                        if state.showDiscounts { discountsWidget }
+                        if state.showConsult { consultWidget }
+                    }
                 }
                 .frame(width: 153)
             }
@@ -755,7 +849,8 @@ struct HomeScreenNative: View {
                 }
                 Section("Days left") {
                     Picker("Days", selection: $state.daysLeft) {
-                        Text("19 days").tag(19); Text("5 days").tag(5); Text("Expired").tag(0)
+                        Text("19").tag(19); Text("5").tag(5)
+                        Text("3 (urgent)").tag(3); Text("Expired").tag(0)
                     }
                     .pickerStyle(.segmented)
                     Picker("Shape", selection: $state.daysShapeChoice) {
