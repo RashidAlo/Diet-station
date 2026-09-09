@@ -1282,7 +1282,9 @@ final class FlowPreloader {
                 let frame = message.frameInfo
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
-                    withAnimation(.easeOut(duration: 0.25)) {
+                    // chrome v2: twins persist and TRAVEL — a re-report after
+                    // a dock flip springs the same glass to its new geometry
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
                         self.chrome.els = els
                         self.chrome.bar = bar
                         self.chrome.flow = flow

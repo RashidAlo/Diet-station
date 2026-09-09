@@ -473,6 +473,21 @@
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
+  /* chrome v2 (Rashid): web chrome never renders in-shell — hidden from
+     the first frame; the 1.9s fallback restores it where twins never
+     confirm (iOS<26) */
+  prehide();
+  function clearChrome() {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: [] });
+    } catch (_) {}
+  }
+  /* exit clears — twins must never outlive the page (build-27 linger) */
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.closebtn')) clearChrome();
+  }, true);
+  addEventListener('pagehide', clearChrome);
 
   function prehide() {
     Object.keys(ELS).forEach(function (id) {

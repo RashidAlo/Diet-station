@@ -370,7 +370,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-09 · 20';
+const BUILD = 'calendar 2026-09-09 · 21';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -879,6 +879,10 @@ if (/[?&]qaopen=1/.test(location.search)) {
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
+  /* chrome v2 (Rashid): web chrome never renders in-shell — hidden from
+     the first frame; the 1.9s fallback still restores it where twins
+     never confirm (iOS<26) */
+  prehide();
 
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
@@ -954,10 +958,9 @@ if (/[?&]qaopen=1/.test(location.search)) {
      the bottom, header text eases in staggered (Rashid) */
   window.DSReplayIntro = function () {
     if (overlayUp) return;               /* never during the selector */
+    /* chrome v2: the web pause stays retired through the replay — the
+       native twin pops back with the end-of-intro report instead */
     clearChrome();
-    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
-      el.classList.remove('ds-native-hidden');
-    });
     var cal = document.querySelector('.cal');
     var bits = document.querySelectorAll('.hd-txt, .pausebtn, .sheetc');
     if (!cal) return;
@@ -1000,9 +1003,14 @@ if (/[?&]qaopen=1/.test(location.search)) {
     if (overlayUp) postSelector(false);
     overlayUp = false;
     var r = _close.apply(this, arguments);
+    /* early report REPLACES any leftover selector chrome (linger-proof
+       even if the iframe's own exit clear was lost) once the sheet is
+       mostly gone; the late one re-confirms after the settle */
+    setTimeout(report, 250);
     setTimeout(report, 600);
     return r;
   };
+  addEventListener('pagehide', clearChrome);
 })();
 </script>
 <script src="../lab-shell.js?v=20260909a" data-flow="meal-select" defer></script>

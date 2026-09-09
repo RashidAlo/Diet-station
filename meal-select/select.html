@@ -2091,7 +2091,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 88';
+const BUILD = 'build 2026-09-09 · 89';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2358,6 +2358,10 @@ fit();
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
     '';
   document.head.appendChild(st);
+  /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
+     frame (twins fade in at rest); the 900ms/1.6s fallbacks still restore
+     it on shells that never confirm (iOS<26) */
+  prehide();
 
   function unhide() {
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
@@ -2396,7 +2400,9 @@ fit();
   window.DSLayer = function (name, up) {
     if (up) {
       layerUp = true;
-      clearChrome(); unhide(); clearGauge();
+      /* chrome v2: no unhide — web chrome stays retired even under a
+         higher layer (it would flash during the layer's slide-away) */
+      clearChrome(); clearGauge();
     } else if (layerUp) {
       layerUp = false;
       /* the sheet slides away .52s — web chrome rides the reveal, glass
@@ -2560,7 +2566,12 @@ fit();
   new MutationObserver(queueGauge).observe(dock,
     { attributes: true, attributeFilter: ['class'], childList: true });
 
-  /* ---- rest watcher: chrome state follows MOTION, not the dock ---- */
+  /* ---- chrome v2 (Rashid 2026-09-09): ONE glass, no web fallback ----
+     Twins are PERMANENT in-shell. Motion no longer hands chrome back to
+     the web (the mid-scroll swap read as a double button style); during
+     scroll the twin holds, and at rest we re-report so the shell SPRINGS
+     the same glass to its new geometry. Web chrome renders only where
+     twins never confirm (iOS<26, desktop). */
   var docked = false, moving = false, restT = null;
   function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
   function watchDock() {
@@ -2568,34 +2579,46 @@ fit();
     if (!sa) return;
     sa.addEventListener('scroll', function () {
       docked = sa.scrollTop >= gapNow() - 0.5;
-      if (!moving) {
-        /* motion begins: web bar takes over THIS frame and rides */
-        moving = true;
-        clearChrome(); unhide();
-      }
+      moving = true;
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
     docked = sa.scrollTop >= gapNow() - 0.5;
     report();
   }
-  function armDismissRelease() {
-    var sh = document.getElementById('sheet');
-    if (!sh) return;
-    sh.addEventListener('transitionstart', function h(e) {
-      /* target check: descendant transitions (day-turn track) bubble here */
-      if (e.target !== sh || e.propertyName !== 'transform') return;
-      sh.removeEventListener('transitionstart', h);
-      docked = false; clearTimeout(dockT);
-      clearChrome(); unhide();
-      clearGauge();
-    });
+  /* dismissal clears, take 2: the old one-shot transitionstart arm was
+     consumed by ANY sheet transform (details-open dock, day-turn), so the
+     REAL dismissal never cleared and the twins lingered over the calendar
+     (Rashid's device, build 27). Clear at the actual exit choke points. */
+  function chromeExit() {
+    moving = true;              /* no queued report can revive dead chrome */
+    clearTimeout(restT);
+    docked = false;
+    clearChrome();
+    clearGauge();
   }
+  (function armExits() {
+    var cb = document.getElementById('closeBtn');
+    if (cb) {
+      var _c = cb.onclick;
+      cb.onclick = function () { chromeExit(); return _c && _c.apply(this, arguments); };
+    }
+    if (confirmBtn) {
+      var _f = confirmBtn.onclick;
+      confirmBtn.onclick = function () {
+        /* the top check dismisses only in the CAL flow with the day done
+           (and never mid day-turn) — mirror the handler's own gate */
+        if (typeof completed !== 'undefined' && completed &&
+            typeof CAL !== 'undefined' && CAL && EMBED &&
+            !(typeof turning !== 'undefined' && turning)) chromeExit();
+        return _f && _f.apply(this, arguments);
+      };
+    }
+    addEventListener('pagehide', chromeExit);
+  })();
   function boot() {
-    /* arm only after the entry spring, so its own transition events don't
-       consume the dismissal listener */
     var sh = document.getElementById('sheet'), done = false;
-    function go() { if (done) return; done = true; armDismissRelease(); watchDock(); gaugeArmed = true; postGauge(); }
+    function go() { if (done) return; done = true; watchDock(); gaugeArmed = true; postGauge(); }
     if (sh) sh.addEventListener('transitionend', function h(e) {
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionend', h); go();

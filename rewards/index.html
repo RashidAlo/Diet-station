@@ -1042,6 +1042,10 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
   document.head.appendChild(st);
+  /* chrome v2 (Rashid): web chrome never renders in-shell — hidden from
+     the first frame; the 1.9s fallback restores it where twins never
+     confirm (iOS<26) */
+  prehide();
 
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
@@ -1049,6 +1053,30 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
       if (el) el.classList.add('ds-native-hidden');
     });
   }
+  function clearChrome() {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: [] });
+    } catch (_) {}
+  }
+  /* exit clears: the X posts ds-close and the host tears the page down —
+     without these the twin outlived the sheet (Rashid's device, build 27) */
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.closebtn')) clearChrome();
+  }, true);
+  addEventListener('pagehide', clearChrome);
+  /* the closebtn is REBUILT per level theme — re-hide the fresh web one
+     and re-report its rect so the twin follows */
+  var rebuildT = null;
+  new MutationObserver(function () {
+    if (!nativeConfirmed) return;
+    var cb = document.querySelector('.closebtn');
+    if (cb && !cb.classList.contains('ds-native-hidden')) {
+      prehide();
+      clearTimeout(rebuildT);
+      rebuildT = setTimeout(report, 120);
+    }
+  }).observe(document.body, { childList: true, subtree: true });
   function report() {
     prehide();   /* idempotent — catches async-built elements too */
     /* overlay pages live in (possibly offset / sliding) iframes — convert
