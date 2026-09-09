@@ -145,17 +145,23 @@
     display: flex; align-items: center; padding: var(--top-pad) 16px 0 24px; gap: 12px; }
   .nav > * { position: relative; z-index: 2; }
   /* clean white nav bar: fades in on scroll, grows for the dock row */
+  /* the surface's height is var-driven and the var changes EVERY scroll
+     frame while the sheet docks — a height transition would chase that
+     moving target and rubber-band (Rashid's "janky white background").
+     Height is frame-locked to the pad; only opacity ever transitions. */
   .nav .nav-surface { position: absolute; left: 0; right: 0; top: 0; z-index: 0;
     height: calc(var(--top-pad) + 58px); pointer-events: none;
     background: #ffffff;
-    opacity: 0; transition: opacity .25s ease, height .28s cubic-bezier(.2,.8,.3,1); }
-  .nav.scrolled .nav-surface { opacity: 1; }
-  .nav.docked .nav-surface { opacity: 1; height: calc(var(--top-pad) + 92px); }
+    opacity: 0; transition: opacity .25s ease; }
+  .nav.scrolled .nav-surface, .nav.docked .nav-surface { opacity: 1; }
+  /* the docked extension IS the cat-dock band: it brings its own white,
+     so nothing animates height. Appears atomically with the title swap
+     (the head hides the same instant); fades out on undock. */
   .cat-dock { position: absolute; left: 0; right: 0;
     top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
-    overflow: hidden; pointer-events: none;
-    opacity: 0; transition: opacity .2s ease; }
-  .nav.docked .cat-dock { opacity: 1; }
+    overflow: hidden; pointer-events: none; background: #ffffff;
+    opacity: 0; transition: opacity .15s ease; }
+  .nav.docked .cat-dock { opacity: 1; transition: opacity 0s; }
   .dock-row { height: 34px; display: flex; align-items: center;
     justify-content: space-between; padding: 0 20px; }
   .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
@@ -2039,7 +2045,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 81';
+const BUILD = 'build 2026-09-09 · 82';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2218,10 +2224,12 @@ function syncDockCounter() {
 let adaptPend = false;
 scrollArea.addEventListener('scroll', () => {
   syncSheet();      /* scroll-linked sheet: synchronous, never behind the rAF gate */
+  updateCatDock();  /* dock state flips the same frame as the sheet moves —
+                       one frame behind reads as jitter at the snap */
   if (adaptPend) return;
   adaptPend = true;
   requestAnimationFrame(() => {
-    adaptPend = false; updateCatDock(); adaptNav();
+    adaptPend = false; adaptNav();
   });
 }, { passive: true });
 setInterval(adaptNav, 900);
