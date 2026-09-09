@@ -253,10 +253,6 @@ struct HomeScreenNative: View {
     /// dynamic-bar experiment: past this scroll depth the inline kcal module
     /// disconnects into its own glass macros row (Music's accessory beat)
     @State private var homeScrolled = false
-    /// two-beat choreography (Rashid): the compact pill HOPS to the middle
-    /// first, THEN grows into the macros row — this flags beat two
-    @State private var accessoryExpanded = false
-    @State private var dockSeq = 0   // cancels a stale beat two on rapid flips
     @Namespace private var modNS
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
@@ -287,32 +283,11 @@ struct HomeScreenNative: View {
             .ignoresSafeArea(edges: .bottom)
             .onScrollGeometryChange(for: Bool.self, of: { $0.contentOffset.y > 60 }) { _, deep in
                 guard state.tabBarDynamic, deep != homeScrolled else { return }
-                dockSeq += 1
-                let seq = dockSeq
-                if deep {
-                    // beat one: the compact pill hops out of the bar to the
-                    // middle of its own row (loose spring = playful arc)
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) {
-                        homeScrolled = true
-                    }
-                    // beat two: it grows into the full macros row
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
-                        guard seq == dockSeq, homeScrolled else { return }
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.58)) {
-                            accessoryExpanded = true
-                        }
-                    }
-                } else {
-                    // reverse mirrors: shrink to the pill, then drop back in
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.7)) {
-                        accessoryExpanded = false
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                        guard seq == dockSeq, !accessoryExpanded else { return }
-                        withAnimation(.spring(response: 0.42, dampingFraction: 0.66)) {
-                            homeScrolled = false
-                        }
-                    }
+                // one clean morph (Rashid: no slide, no beats): the pill
+                // rises from its slot and WIDENS — right edges pinned by
+                // the trailing-aligned stack, so nothing travels sideways
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
+                    homeScrolled = deep
                 }
             }
             if state.calendarOpen {
@@ -545,16 +520,11 @@ struct HomeScreenNative: View {
 
     @ViewBuilder private var bottomBar: some View {
         if dynamicOn {
-            VStack(spacing: 10) {
-                if homeScrolled {
-                    if accessoryExpanded {
-                        macrosAccessory
-                    } else {
-                        // beat one perch: centered, with a whisper of
-                        // inflate as anticipation for the grow
-                        kcalModule.scaleEffect(1.06)
-                    }
-                }
+            // trailing-aligned: the pill and the accessory SHARE a right
+            // edge, so the morph reads as a pure rise-and-widen (Rashid:
+            // no slide) — the left edge does all the growing
+            VStack(alignment: .trailing, spacing: 10) {
+                if homeScrolled { macrosAccessory }
                 HStack(spacing: 10) {
                     // widths rhyme (Rashid): docked bar matches the 370
                     // accessory; at rest bar + module + gap total the same
