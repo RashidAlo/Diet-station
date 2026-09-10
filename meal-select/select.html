@@ -252,33 +252,66 @@
      red; neighbours faded numbers). Crossing a month boundary flips the
      month. A full backward pull snaps home and latches. */
   .nav .ttl { top: calc(var(--top-pad) + 20px); }   /* explicit: same optical line as now */
-  /* the scrubber pill v7 (Rashid): FORMS the moment the finger lands (no
-     dead hold-pause — .forming grows it across the hold window), then
-     locks armed (.scrub) and takes FULL WIDTH while the other actions
-     fade away — more dates, slower px/day, smoother scan. Glass = the
-     HOUSE Apple-glass recipe verbatim (the sanctioned fallback; real
-     Liquid Glass is shell-chrome only). Centred on the controls' line. */
-  .nav .ttl.forming, .nav .ttl.scrub { height: 56px; padding: 0;
-    width: min(370px, calc(100vw - 32px));
-    top: calc(var(--top-pad) + 3px);
-    border-radius: 28px; overflow: hidden;
+  /* the scrubber pill v8 (Rashid: "not liquid glass at all — like its
+     neighbours / the tab bar"): LIQUID, not frost. Real Liquid Glass is
+     clear in the middle — content reads through nearly unblurred — with
+     the optics pushed to the RIM, where curved glass bends light. Web
+     approximation: a near-clear center (light blur, hard saturation) +
+     a ring-masked ::before that over-blurs and brightens ONLY the edge
+     band (the lens), + specular top arc, hairline, floating shadow.
+     TWO-STAGE MORPH (Rashid): the label swells into a CONTROL-SIZED pill
+     the instant the finger lands (.forming — 44pt, radius 22, the very
+     container its neighbours wear), then GROWS into the fat full-width
+     scrubber on arm (.scrub) with a springy overshoot while the other
+     actions fade away. */
+  .nav .ttl.forming, .nav .ttl.scrub { padding: 0; overflow: hidden;
     transform: translateX(-50%);
-    background: rgba(255,255,255,.34);
-    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
-    backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
-    box-shadow: inset 0 1.2px 1px rgba(255,255,255,.55),
-      inset 0 0 0 .6px rgba(255,255,255,.42),
-      0 6px 20px -10px rgba(0,0,0,.28); }
-  /* the Apple-glass sheen, under the content */
+    background: rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(3px) saturate(190%);
+    backdrop-filter: blur(3px) saturate(190%);
+    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.62),
+      inset 0 -1px 1.2px rgba(255,255,255,.28),
+      inset 0 0 0 .8px rgba(255,255,255,.34),
+      0 10px 28px -12px rgba(0,0,0,.34),
+      0 2px 8px -5px rgba(0,0,0,.18); }
+  /* stage 1: the neighbours' own container, formed around the label */
+  .nav .ttl.forming { height: 44px; top: calc(var(--top-pad) + 9px);
+    border-radius: 22px;
+    animation: ttlform .3s cubic-bezier(.3,1.3,.4,1); }
+  @keyframes ttlform { 0% { transform: translateX(-50%) scale(.94); }
+    100% { transform: translateX(-50%) scale(1); } }
+  /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
+     width !important beats the inline forming width so the grow
+     transitions px -> full on the same property. */
+  .nav .ttl.scrub { height: 56px; top: calc(var(--top-pad) + 3px);
+    border-radius: 28px;
+    width: min(370px, calc(100vw - 32px)) !important;
+    transition: color .35s ease, text-shadow .35s ease, background .3s ease,
+      box-shadow .3s ease, width .48s cubic-bezier(.3,1.22,.36,1),
+      height .48s cubic-bezier(.3,1.22,.36,1), top .48s cubic-bezier(.3,1.22,.36,1),
+      border-radius .48s cubic-bezier(.3,1.22,.36,1); }
+  /* the lens: rim-only over-blur + brighten — curved glass at the edge */
+  .nav .ttl.forming::before, .nav .ttl.scrub::before { content: '';
+    position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+    padding: 9px; box-sizing: border-box; pointer-events: none;
+    -webkit-backdrop-filter: blur(14px) saturate(230%) brightness(1.1);
+    backdrop-filter: blur(14px) saturate(230%) brightness(1.1);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude; }
+  /* the specular sheen, under the content */
   .nav .ttl.forming::after, .nav .ttl.scrub::after { content: '';
     position: absolute; inset: 0; border-radius: inherit; z-index: 0;
-    background: linear-gradient(115deg, rgba(255,255,255,.32), rgba(255,255,255,0) 42%);
+    background: linear-gradient(115deg, rgba(255,255,255,.24), rgba(255,255,255,0) 40%);
     pointer-events: none; }
-  .nav .ttl.forming.on-dark, .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
+  .nav .ttl.forming.on-dark, .nav .ttl.scrub.on-dark { background: rgba(50,50,54,.22); }
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
   .scb { display: none; }
   .nav .ttl.scrub .scb { display: flex; align-items: center; width: 432px; flex: none;
-    position: relative; z-index: 1; }
+    position: relative; z-index: 1;
+    animation: scbin .36s cubic-bezier(.3,1.2,.4,1); }   /* dates ride the grow in */
+  @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
   .scb .scb-it { width: 48px; height: 56px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     padding: 8px 0; box-sizing: border-box; }   /* air above and below the stack */
@@ -1705,6 +1738,12 @@ function turnDay(dir, target) {
   if (target !== undefined && target === dayIdx) return;
   if (dir < 0 && dayIdx === 0 && target === undefined) return;
   turning = true;
+  /* fullscreen latch (Rashid): switching days is a CONTENT change, not a
+     presentation change — a sheet the user pulled to full screen stays
+     there through Next / swipes / scrubber commits. Only pulling the
+     sheet down again re-docks it (the scroll-linked gap does that free).
+     Latched before the slide-out so the exit can't drift the reading. */
+  const stayFull = sheetLive && scrollArea.scrollTop >= sheetGap() - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1730,11 +1769,21 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day always rides in from its very top — keeping the docked
-       scrollTop (SHEET_GAP) hid the first row under the nav, because the
-       sheet collapse consumes exactly that many pixels of scroll */
-    scrollArea.scrollTop = 0;
+    /* arrival scroll: docked days ride in from their very top (keeping
+       SHEET_GAP here used to hide the first row under the nav). A
+       FULLSCREEN day instead lands like pursueIntent lands a category —
+       first thumbnail row clear of the docked nav, sheet still at the
+       top — so the fullscreen state carries across the turn. */
+    if (stayFull) {
+      const head = scrollArea.querySelector('.cat-head');
+      const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
+      scrollArea.scrollTop = Math.max(sheetGap(), head
+        ? head.offsetTop + head.offsetHeight - (tp + 92) - 12 : 0);
+    } else {
+      scrollArea.scrollTop = 0;
+    }
     syncSheet();
+    updateCatDock();   /* dock band + title must be right on the arrival frame */
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
     scrollArea.classList.add('stagger');
     setTimeout(() => {
@@ -1886,17 +1935,23 @@ confirmBtn.onclick = () => {
   const navEl = document.querySelector('.nav');
   function unform() {
     ttl.classList.remove('forming');
+    ttl.style.width = '';
     if (navEl) navEl.classList.remove('scrubbing');
     window.DSScrubChrome && DSScrubChrome(false);   /* twins return */
   }
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
     clearTimeout(holdT);
-    /* the glass FORMS the moment the finger lands (Rashid: no dead
-       pause) — the grow spans the hold window; the other actions fade */
+    /* stage 1, the instant the finger lands (Rashid: no dead pause):
+       the label swells into a CONTROL-SIZED glass pill around itself —
+       width pinned to its current px first so the inflate animates
+       (auto -> px never transitions). Neighbours stay put for now. */
+    const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
+    ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
+    void ttl.offsetWidth;
     ttl.classList.add('forming');
-    if (navEl) navEl.classList.add('scrubbing');
-    window.DSScrubChrome && DSScrubChrome(true);
+    ttl.style.width = Math.max(96, w0 + 26) + 'px';
+    ttl.style.height = '';   /* committed at h0 by the reflow — animates to 44 */
     holdT = setTimeout(() => {
       scrubbing = true;
       lastX = downX;
@@ -1904,7 +1959,12 @@ confirmBtn.onclick = () => {
       calibrate(downX);
       paintStrip(winC);
       strip.style.transform = '';
+      /* stage 2, armed: the pill GROWS into the full-width scrubber and
+         ONLY NOW the other actions fade away (they yield to the takeover,
+         not to the tap) */
       ttl.classList.add('scrub');            /* armed: dates in, label out */
+      if (navEl) navEl.classList.add('scrubbing');
+      window.DSScrubChrome && DSScrubChrome(true);
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
       cancelAnimationFrame(raf);
@@ -2325,7 +2385,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 107';
+const BUILD = 'build 2026-09-10 · 108';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
