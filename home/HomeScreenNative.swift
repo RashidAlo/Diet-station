@@ -111,6 +111,9 @@ private enum DS {
     /// the selector's meal-details page, standalone — home summons THE
     /// design, no recreated screens (Rashid)
     static let soloDetails = "meal-select/select.html?solo=1"
+    /// the auth flow self-presenting over the live home (scrim dissolves
+    /// in place, sheet springs — THE OVERLAY RULE)
+    static let authSolo = "auth/?solo=1"
     /// Arabic text wears Avenir Next World (Rashid); name cascade because
     /// custom-font misses fall back silently
     static func avenirWorld(_ size: CGFloat, _ weight: Font.Weight = .medium) -> Font {
@@ -443,15 +446,18 @@ struct HomeScreenNative: View {
             FlowOverlay(path: "plan-quiz") { instant { state.guideOpen = false } }
                 .presentationBackground(Color.black.opacity(0.42))
         }
-        // Sign in = the auth lane's flow (card sheet; ds-close hands back)
+        // Sign in = the auth lane's flow. THE OVERLAY RULE (Rashid): scrims
+        // never travel — the cover is TRANSPARENT with the system slide
+        // suppressed, and auth's ?solo=1 page dissolves its own scrim in
+        // place while only its sheet rides the house spring
         .fullScreenCover(isPresented: $state.authOpen) {
-            FlowOverlay(path: "auth") { instant { state.authOpen = false } }
-                .presentationBackground(Color.black.opacity(0.42))
+            FlowOverlay(path: DS.authSolo) { instant { state.authOpen = false } }
+                .presentationBackground(.clear)
         }
         // warm the auth webview whenever the signed-out state arrives, so
         // the Sign in tap presents instantly like every other summon
         .onChange(of: state.loggedOut) {
-            if state.loggedOut { FlowPreloader.shared.warm(["auth"]) }
+            if state.loggedOut { FlowPreloader.shared.warm([DS.authSolo]) }
         }
 
         .animation(.spring(duration: 0.45), value: state.loggedOut)
@@ -1042,7 +1048,8 @@ struct HomeScreenNative: View {
         HStack(spacing: 12) {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                state.authOpen = true
+                // no system slide — auth's solo page runs the presentation
+                instant { state.authOpen = true }
             } label: {
                 HStack(spacing: 10) {
                     ZStack {
