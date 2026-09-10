@@ -1092,6 +1092,13 @@ const CATS = [
 const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
 /* primer settings from the app launcher (hub Settings sheet) */
 try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}')); } catch (_) {}
+/* headless A/B primer: ?scrub=portal|glass seeds the scrubber mode so lane
+   verification can drive both variants without the triple-tap menu (the
+   calendar forwards the param into this embed) */
+try {
+  var _sp = new URLSearchParams(location.search);
+  if (_sp.get('scrub')) MODS.scrubStyle = _sp.get('scrub');
+} catch (_) {}
 const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
 
 const ICON = {
@@ -2301,6 +2308,8 @@ document.querySelectorAll('#scrubSeg button').forEach(b =>
     document.querySelectorAll('#scrubSeg button').forEach(x =>
       x.classList.toggle('on', x === b));
   });
+document.querySelectorAll('#scrubSeg button').forEach(x =>   /* primer sync */
+  x.classList.toggle('on', x.dataset.v === (MODS.scrubStyle || 'glass')));
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -2472,7 +2481,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 114';
+const BUILD = 'build 2026-09-10 · 115';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
