@@ -31,6 +31,12 @@
           "to": "plan-quiz",
           "present": "push",
           "note": "Guide me widget on the signed-out home — context {src:'guideme-widget'}"
+        },
+        {
+          "intent": "sign-in",
+          "to": "auth",
+          "present": "sheet",
+          "note": "Sign in on the signed-out home — context {src:'home-signin'}"
         }
       ],
       "entries": [
@@ -933,6 +939,234 @@
           "note": "Boots fresh — no context"
         }
       ]
+    },
+    {
+      "id": "auth",
+      "title": "Sign in — Phone, OTP & Face ID",
+      "status": "in-progress",
+      "path": "auth/",
+      "platform": "iOS",
+      "area": "Authentication",
+      "preview": "auth/preview.png",
+      "sheet": true,
+      "hidden": true,
+      "updated": "2026-09-10",
+      "description": "The mock sign-in journey from the signed-out home: the Sign in sheet (Figma 16360-78680) with the +965 phone field and in-frame numeric keyboard, OTP confirmation (16360-78950) with countdown resend and error state, and a simulated Face ID quick path. Everything is fake — no real authentication — the flow demos validation, OTP entry, error/success states and haptics for dev handoff. Lab menu tunes Face ID scan time, OTP verify pause and the resend timer; OTP 0000 forces the error state.",
+      "entries": [
+        {
+          "id": "default",
+          "note": "Boots on the Sign in sheet, empty phone field"
+        },
+        {
+          "id": "otp",
+          "params": {
+            "step": "otp",
+            "num": "<8 digits>"
+          },
+          "note": "ctx {step:'otp', num} deep-links straight to OTP for a given number"
+        }
+      ],
+      "exits": [
+        {
+          "intent": "close",
+          "to": "(host)",
+          "present": "close",
+          "note": "X and post-success both post ds-close — the presenting home resumes (signed in)"
+        },
+        {
+          "intent": "continue-home",
+          "to": "home",
+          "present": "push",
+          "note": "Standalone success only: Continue to Home — context {auth:'signed-in', num}"
+        }
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "home",
+            "t": "Signed-out home",
+            "kind": "module",
+            "note": "Home flow — 'Got an account? Sign in' presents this sheet"
+          },
+          {
+            "id": "signin",
+            "t": "Sign in sheet",
+            "kind": "screen",
+            "note": "Logo · Welcome back! · +965 field · numeric keyboard"
+          },
+          {
+            "id": "method",
+            "t": "Choose path",
+            "kind": "decision",
+            "note": "Proceed with mobile number, or Face ID"
+          },
+          {
+            "id": "validate",
+            "t": "8 digits?",
+            "kind": "decision",
+            "note": "Short number: shake + red border + hint + error haptic"
+          },
+          {
+            "id": "otp",
+            "t": "OTP SENT",
+            "kind": "screen",
+            "note": "4 round cells · caret pipe · resend unlocks after countdown"
+          },
+          {
+            "id": "verify",
+            "t": "Code checks",
+            "kind": "decision",
+            "note": "Mock: 0000 fails, anything else passes"
+          },
+          {
+            "id": "otperr",
+            "t": "Wrong code",
+            "kind": "module",
+            "note": "Cells flash red, row shakes, clears for retry"
+          },
+          {
+            "id": "faceid",
+            "t": "Face ID scan",
+            "kind": "module",
+            "note": "Simulated HUD: glyph pulse → tick · tap outside cancels"
+          },
+          {
+            "id": "pwd",
+            "t": "Password sign-in",
+            "kind": "module",
+            "note": "Later sprint — branded card for now"
+          },
+          {
+            "id": "success",
+            "t": "Welcome back!",
+            "kind": "end",
+            "note": "Tick draw + success haptic · hands back to home"
+          }
+        ],
+        "edges": [
+          [
+            "home",
+            "signin",
+            "sheet"
+          ],
+          [
+            "signin",
+            "method",
+            ""
+          ],
+          [
+            "method",
+            "validate",
+            "mobile number"
+          ],
+          [
+            "method",
+            "faceid",
+            "Face ID"
+          ],
+          [
+            "validate",
+            "otp",
+            "valid"
+          ],
+          [
+            "validate",
+            "signin",
+            "error shake"
+          ],
+          [
+            "otp",
+            "verify",
+            "4th digit"
+          ],
+          [
+            "verify",
+            "success",
+            "accepted"
+          ],
+          [
+            "verify",
+            "otperr",
+            "0000"
+          ],
+          [
+            "otperr",
+            "otp",
+            "retry"
+          ],
+          [
+            "otp",
+            "pwd",
+            "password link"
+          ],
+          [
+            "faceid",
+            "success",
+            "match"
+          ],
+          [
+            "faceid",
+            "signin",
+            "cancel"
+          ],
+          [
+            "success",
+            "home",
+            "ds-close"
+          ]
+        ]
+      },
+      "handoff": {
+        "Sheet": "White card sheet, radius 38 top, springs on cubic-bezier(.32,.72,0,1); header: centred 'Sign in' Urbane 600 22/32 #0B0E12, 40pt close circle border #E5E5E5",
+        "Phone field": "+965 pre-tab (Urbane 300 22/28 #0B0E12) + chevron; digits Urbane 300 22/28 #ED1C24; hairline #E5E5E5 underline, flips #ED1C24 on error with shake",
+        "Buttons": "53pt pills radius round; primary fill #ED1C24 / white Urbane 500 16; secondary white, 1px #EE2023 border, Face ID glyph (red→orange gradient) + #0B0E12 label",
+        "OTP cells": "44pt circles, 2px border — empty #E5E5E5 with blinking pipe, filled #454545, error #ED1C24; verify pulse scale 1.07",
+        "OTP copy": "Chat bubble 30pt #ED1C24 · 'OTP SENT' Urbane 600 30/40 #ED1C24 · sent-to line Proxima 400 18/28 #0B0E12 · resend Proxima 15/22, link unlocks after countdown",
+        "Keyboard": "In-frame iOS numeric board: #E6E9ED, top radius 27, keys 50pt white radius 8.5, SF 23pt; delete borderless — native uses the real keyboard, this is the design twin",
+        "Face ID": "Simulated HUD 152pt, radius 34, rgba(28,28,30,.82) + blur; white glyph pulses through scan, circle+tick draw on success — native uses LocalAuthentication",
+        "Haptics": "Key tap light(8) · error [24,60,24] · success [10,40,16] — via native bridge {t:'haptic'} first, navigator.vibrate fallback",
+        "Mock rules": "Any 8-digit number proceeds · OTP 0000 forces the error state · Face ID always matches"
+      },
+      "swift": [
+        {
+          "t": "Sheet + journey state",
+          "note": "Present as a .sheet over the signed-out home; one state enum drives push-style transitions inside the card.",
+          "code": "enum AuthStep { case signIn, otp, success }\n\nstruct AuthSheet: View {\n  @State private var step: AuthStep = .signIn\n  @State private var number = \"\"\n  @State private var code = \"\"\n\n  var body: some View {\n    NavigationStack {\n      Group {\n        switch step {\n        case .signIn: SignInView(number: $number) { step = .otp }\n        case .otp:    OTPView(code: $code) { step = .success }\n        case .success: SuccessView()\n        }\n      }\n      .animation(.spring(response: 0.46, dampingFraction: 0.86), value: step)\n    }\n    .presentationCornerRadius(38)\n    .presentationDetents([.large])\n  }\n}"
+        },
+        {
+          "t": "Phone field + validation",
+          "note": "Native text field with .keyboardType(.numberPad); the web prototype's in-frame keyboard is only the design twin of the system board.",
+          "code": "HStack(spacing: 10) {\n  HStack(spacing: 10) {\n    Text(\"+965\").font(.custom(\"UrbaneRounded-Light\", size: 22))\n    Image(systemName: \"chevron.down\").font(.system(size: 14))\n  }\n  TextField(\"\", text: $number)\n    .keyboardType(.numberPad)\n    .font(.custom(\"UrbaneRounded-Light\", size: 22))\n    .foregroundStyle(Color(hex: 0xED1C24))\n    .onChange(of: number) { number = String($0.filter(\\.isNumber).prefix(8)) }\n}\n.overlay(alignment: .bottom) {\n  Rectangle().frame(height: 1)\n    .foregroundStyle(showError ? Color(hex: 0xED1C24) : Color(hex: 0xE5E5E5))\n}\n// invalid submit: shake + UINotificationFeedbackGenerator().notificationOccurred(.error)"
+        },
+        {
+          "t": "OTP cells",
+          "note": "Hidden TextField carries focus; cells render its value. 0000 demos the error path in the mock.",
+          "code": "HStack(spacing: 18) {\n  ForEach(0..<4) { i in\n    ZStack {\n      Circle().strokeBorder(borderColor(i), lineWidth: 2)\n      Text(digit(i)).font(.custom(\"ProximaNova-Regular\", size: 15))\n    }\n    .frame(width: 44, height: 44)\n    .scaleEffect(verifying ? 1.07 : 1)\n    .animation(verifying ? .easeInOut(duration: 0.35).repeatForever() : .default, value: verifying)\n  }\n}\nfunc borderColor(_ i: Int) -> Color {\n  if error { return Color(hex: 0xED1C24) }\n  return i < code.count ? Color(hex: 0x454545) : Color(hex: 0xE5E5E5)\n}"
+        },
+        {
+          "t": "Face ID (real on native)",
+          "note": "The web HUD is a simulation; native calls LocalAuthentication — same success beat and haptic either way.",
+          "code": "import LocalAuthentication\n\nfunc signInWithFaceID() {\n  let ctx = LAContext()\n  guard ctx.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else { return }\n  ctx.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,\n                     localizedReason: \"Sign in to DietStation\") { ok, _ in\n    DispatchQueue.main.async {\n      if ok {\n        UINotificationFeedbackGenerator().notificationOccurred(.success)\n        step = .success   // then dismiss back to home\n      }\n    }\n  }\n}"
+        }
+      ],
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "React fallback for non-iOS targets — iOS should use the SwiftUI spec above.",
+          "code": "// expo install react-native-reanimated react-native-gesture-handler expo-haptics expo-local-authentication\n// fonts: UrbaneRounded (300/500/600) + ProximaNova-Regular via expo-font (per-weight family names)"
+        },
+        {
+          "t": "Tokens",
+          "note": "Figma-exact values from frames 16360-78680 / 16360-78950.",
+          "code": "export const AUTH = {\n  sheet:   { radius: 38, bg: '#FFFFFF' },\n  header:  { size: 22, lh: 32, weight: '600', color: '#0B0E12' },\n  close:   { size: 40, border: '#E5E5E5' },\n  welcome: { size: 24, lh: 32, color: '#ED1C24' },\n  field:   { size: 22, lh: 28, weight: '300', digits: '#ED1C24', pre: '#0B0E12', line: '#E5E5E5', lineErr: '#ED1C24' },\n  button:  { h: 53, radius: 999, primary: '#ED1C24', outline: '#EE2023', label: 16 },\n  otp:     { cell: 44, gap: 18, border: 2, empty: '#E5E5E5', filled: '#454545', error: '#ED1C24',\n             title: { size: 30, lh: 40, color: '#ED1C24' }, sent: { size: 18, lh: 28, color: '#0B0E12' } },\n  faceHud: { size: 152, radius: 34, bg: 'rgba(28,28,30,0.82)' },\n  timing:  { push: 460, pushEase: [0.32, 0.72, 0, 1], verifyMs: 550, faceMs: 1400, resendS: 30,\n             shake: { dur: 380, keyframes: [0, -7, 6, -4, 3, 0] } },\n};"
+        },
+        {
+          "t": "Interactions",
+          "note": "The exact mock behaviors to reproduce.",
+          "code": "// validation: number.length < 8 on submit -> translateX shake (AUTH.timing.shake),\n//   underline + hint flip to #ED1C24, Haptics.notificationAsync(ERROR)\n// OTP: hidden TextInput drives 4 cells; on 4th digit pulse cells (scale 1.07)\n//   for verifyMs, then code === '0000' ? error flash + clear : success\n// resend: mm:ss countdown from resendS; on 0 the label becomes a red underlined link\n// Face ID: expo-local-authentication authenticateAsync(); success ->\n//   Haptics.notificationAsync(SUCCESS), tick draw-on (stroke-dashoffset), dismiss to home\n// success: sheet auto-dismisses after ~1.6s back to the (now signed-in) home"
+        }
+      ],
+      "downloads": []
     }
   ]
 }
