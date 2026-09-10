@@ -551,15 +551,17 @@
     border-radius: 50%; pointer-events: none; z-index: 41; }
 
   /* ================= meal details overlay (Figma 14934-94030) ============ */
+  /* THE OVERLAY RULE: the scrim never travels — it dissolves in place */
   .mo-veil { position: absolute; inset: 0; z-index: 44; background: rgba(11,14,18,.42);
-    opacity: 0; pointer-events: none; transition: opacity .38s ease; }
+    opacity: 0; pointer-events: none; transition: opacity .32s ease; }
   .mo-veil.show { opacity: 1; pointer-events: auto; }
   .meal-ov { position: absolute; left: 0; right: 0; bottom: 0;
     top: calc(var(--top-pad) - 18px); z-index: 45; background: #fff;
     border-radius: 44px 44px 0 0; overflow: hidden;
     box-shadow: 0 -14px 44px rgba(0,0,0,.24);
     transform: translateY(103%); pointer-events: none;
-    transition: transform .52s cubic-bezier(.3,1,.32,1); }
+    /* THE OVERLAY RULE: sheets travel on THE house spring */
+    transition: transform .55s cubic-bezier(.32,.72,0,1); }
   .meal-ov.open { transform: none; pointer-events: auto; }
   html.embed .meal-ov { top: calc(env(safe-area-inset-top, 34px) + 4px); }
   body.desktop .meal-ov { top: 56px; }   /* clear the frame's island */
@@ -2306,7 +2308,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 104';
+const BUILD = 'build 2026-09-10 · 105';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
