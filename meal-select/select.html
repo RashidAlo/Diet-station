@@ -108,8 +108,11 @@
   .sheet { position: absolute; inset: 0; background: #fff; overflow: hidden; }
   /* native sheet: the gap collapses 1:1 with the first pixels of scroll —
      scroll-linked transform, no thresholds (HIG medium->large handoff) */
-  body.sheet-mode .sheet { will-change: transform;
-    border-radius: 44px 44px 0 0; }
+  /* NO will-change here: like a real transform, it makes the sheet a
+     containing block and WebKit then miscomputes position:sticky for the
+     category heads inside (the device "disconnected mess"). The sheet
+     gets its compositing layer from the actual transform while moving. */
+  body.sheet-mode .sheet { border-radius: 44px 44px 0 0; }
   body.sheet-enter .sheet { transform: translateY(103%); }
   .sheet.springing { transition: transform .55s cubic-bezier(.32,.72,0,1); }
   body.sheet-mode .phone { background: #0b0e12; }
@@ -2488,7 +2491,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 117';
+const BUILD = 'build 2026-09-10 · 118';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2701,7 +2704,12 @@ function syncSheet() {
      seamless ONE-gesture scroll-link in both directions, docked look
      untouched, and day-turn arrivals land un-cropped. */
   scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
-  sheetEl.style.transform = 'translateY(' + y + 'px)';
+  /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
+     miscomputes position:sticky (the category heads) inside a
+     transformed ancestor — and translateY(0px) still counts. Safe by
+     construction: y > 0 only while scrollTop < GAP, where no head can
+     reach the sticky line yet, so sticky never runs under a transform. */
+  sheetEl.style.transform = y > 0.5 ? 'translateY(' + y + 'px)' : '';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
   /* the calorie bar stays pinned to the SCREEN bottom whatever the sheet does */
