@@ -239,12 +239,14 @@
     transition: color .35s ease, text-shadow .35s ease, background .28s ease,
       box-shadow .28s ease, height .28s cubic-bezier(.3,.8,.3,1),
       padding .28s cubic-bezier(.3,.8,.3,1), transform .28s cubic-bezier(.3,.8,.3,1); }
-  /* hold-the-date scrubber (Rashid v2): the date inflates into a soft
-     SQUARE glass card — big date number on top, weekday below — and the
-     held drag scrubs through days at a stepped cadence */
-  .nav .ttl.scrub { width: 96px; height: 88px; padding: 0;
-    border-radius: 26px; flex-direction: column; gap: 1px;
-    transform: translateX(-50%) translateY(-11px);
+  /* hold-the-date scrubber (Rashid v3): the date inflates into a wide
+     glass PILL holding a mini date carousel — the current day centered
+     (number big, weekday under), neighbours faded left and right — and
+     the held drag PULLS the strip through at a stepped cadence. A full
+     backward pull snaps home to the earliest selectable day and latches. */
+  .nav .ttl.scrub { width: 208px; height: 54px; padding: 0;
+    border-radius: 27px; overflow: hidden;
+    transform: translateX(-50%) translateY(-16px);
     background: rgba(255,255,255,.34);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
@@ -252,12 +254,20 @@
       0 4px 14px -8px rgba(0,0,0,.22); }
   .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
-  .scb { display: none; flex-direction: column; align-items: center; gap: 1px; }
-  .nav .ttl.scrub .scb { display: flex; }
-  .scb .scb-num { font: 600 34px/36px 'Urbane Rounded', sans-serif; color: inherit; }
-  .scb .scb-day { font: 500 11px/14px 'Urbane Rounded', sans-serif; opacity: .55; }
-  .scb.tick { animation: scbtick .14s ease; }
-  @keyframes scbtick { 0% { transform: translateX(var(--tickdir, 8px)); opacity: .3; }
+  .scb { display: none; }
+  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 280px; flex: none; }
+  .scb .scb-it { width: 56px; flex: none; display: flex; flex-direction: column;
+    align-items: center; gap: 0; }
+  .scb .scb-it .n { font: 600 19px/22px 'Urbane Rounded', sans-serif; }
+  .scb .scb-it .d { font: 500 9px/12px 'Urbane Rounded', sans-serif; opacity: .6; }
+  /* staggered fade: center full, neighbours dim, edges whispers */
+  .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(5) { opacity: .14; }
+  .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(4) { opacity: .42; }
+  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 16px; }
+  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 14px; }
+  .scb.slide { transition: transform .09s ease-out; }
+  .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
+  @keyframes scbsnap { 0% { transform: translateX(-34px); opacity: .4; }
     100% { transform: translateX(0); opacity: 1; } }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
@@ -1767,32 +1777,45 @@ confirmBtn.onclick = () => {
   const monthDays = new Date(new Date().getFullYear(), monIdx + 1, 0).getDate();
   const maxIdx = Math.max(0, monthDays - DAY_START);
 
-  const card = document.createElement('div');
-  card.className = 'scb';
-  card.innerHTML = '<div class="scb-num"></div><div class="scb-day"></div>';
-  ttl.appendChild(card);
-  const num = card.querySelector('.scb-num'), dayEl = card.querySelector('.scb-day');
-  function paintCard(idx, dir) {
+  const strip = document.createElement('div');
+  strip.className = 'scb';
+  ttl.appendChild(strip);
+  function itemHTML(idx, center) {
     const d = DAY_START + idx;
-    num.textContent = d;
-    dayEl.textContent = new Date(new Date().getFullYear(), monIdx, d)
-      .toLocaleDateString('en', { weekday: 'long' });
-    if (dir) {
-      card.style.setProperty('--tickdir', (dir > 0 ? 10 : -10) + 'px');
-      card.classList.remove('tick'); void card.offsetWidth; card.classList.add('tick');
-    }
+    if (idx < 0 || d > monthDays) return '<div class="scb-it"></div>';
+    const wd = new Date(new Date().getFullYear(), monIdx, d)
+      .toLocaleDateString('en', { weekday: center ? 'long' : 'short' });
+    return '<div class="scb-it"><span class="n">' + d + '</span>' +
+      '<span class="d">' + wd + '</span></div>';
+  }
+  function paintStrip(idx) {
+    let h = '';
+    for (let k = -2; k <= 2; k++) h += itemHTML(idx + k, k === 0);
+    strip.innerHTML = h;
+  }
+  function slideStep(idx, dir) {
+    /* carousel pull: the strip glides one slot toward the drag, then the
+       window re-centres — reads as pulling dates through the pill */
+    strip.classList.add('slide');
+    strip.style.transform = 'translateX(' + (-dir * 56) + 'px)';
+    setTimeout(() => {
+      strip.classList.remove('slide');
+      strip.style.transform = '';
+      paintStrip(idx);
+    }, 95);
   }
 
+  const FULLPULL = 150;         /* px of one backward stroke = snap home */
   let holdT = null, scrubbing = false, anchorX = 0, downX = 0, downY = 0;
-  let scrubIdx = 0, lastStep = 0;
+  let scrubIdx = 0, lastStep = 0, strokeBack = 0, latched = false, lastX = 0;
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
     clearTimeout(holdT);
     holdT = setTimeout(() => {
       scrubbing = true;
-      anchorX = downX;
-      scrubIdx = dayIdx;
-      paintCard(scrubIdx, 0);
+      anchorX = downX; lastX = downX;
+      scrubIdx = dayIdx; strokeBack = 0; latched = false;
+      paintStrip(scrubIdx);
       ttl.classList.add('scrub');
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
@@ -1804,7 +1827,26 @@ confirmBtn.onclick = () => {
       if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) clearTimeout(holdT);
       return;
     }
-    /* drag left = forward; position-mapped, one step per cadence beat */
+    const mx = e.clientX - lastX;
+    lastX = e.clientX;
+    /* the home latch (Rashid): a FULL backward pull snaps to the earliest
+       selectable day and STOPS — a fresh forward stroke re-arms the wheel */
+    if (latched) {
+      anchorX = e.clientX;
+      if (mx < -8) { latched = false; strokeBack = 0; }   /* new stroke */
+      return;
+    }
+    strokeBack = mx > 0 ? strokeBack + mx : 0;
+    if (strokeBack >= FULLPULL && scrubIdx !== 0) {
+      scrubIdx = 0;
+      paintStrip(0);
+      strip.classList.remove('snap'); void strip.offsetWidth; strip.classList.add('snap');
+      latched = true;
+      anchorX = e.clientX;
+      vibrate([12, 40, 14]);
+      return;
+    }
+    /* drag left = later days, drag right = earlier; one step per beat */
     const target = Math.max(0, Math.min(maxIdx,
       scrubIdx + Math.round((anchorX - e.clientX) / STEP)));
     if (target === scrubIdx) return;
@@ -1814,7 +1856,7 @@ confirmBtn.onclick = () => {
     const dir = target > scrubIdx ? 1 : -1;
     scrubIdx += dir;                       /* one beat per step, wheel-like */
     anchorX -= dir * STEP;                 /* re-anchor so holds keep stepping */
-    paintCard(scrubIdx, dir);
+    slideStep(scrubIdx, dir);
     vibrate(6);
   });
   const endScrub = () => {
@@ -2206,7 +2248,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 96';
+const BUILD = 'build 2026-09-10 · 97';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
