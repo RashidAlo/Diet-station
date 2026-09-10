@@ -2780,16 +2780,18 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
-/* the collapse completes in HALF the gap's scroll distance (K=2): the
-   sheet attaches at 2px per scrolled px while the CONTENT moves at a
-   constant 1px/px through the whole gesture — no speed change at the
-   boundary, so one swipe attaches the sheet AND keeps scrolling the
-   meals (Rashid, TF: the old ride froze content during the collapse,
-   which read as a separate 'attach' step). */
-function collapseEnd() { return SHEET_GAP / 2; }
+/* EASED ATTACH (Rashid: overlay→fullscreen must be ONE seamless scroll —
+   the constant-K frame hit the docked stop at full speed, and that hard
+   arrest read as a step). CONTENT keeps the accepted constant 1px/px
+   through the whole gesture (the riding pad below is curve-agnostic);
+   the FRAME starts at the old responsive 2px/px and decays quadratically
+   to ZERO velocity exactly at the dock — no arrest, the corners and gap
+   melt shut. The collapse zone now spans the full gap of scroll travel. */
+function collapseEnd() { return SHEET_GAP; }
 function syncSheet() {
   if (!sheetLive) return;
-  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop * 2);
+  const t = SHEET_GAP > 0 ? Math.min(1, scrollArea.scrollTop / SHEET_GAP) : 1;
+  const y = SHEET_GAP * (1 - t) * (1 - t);
   /* headroom spacer rides the collapse so the fullscreen resting scroll
      keeps a full nav above Breakfast; day-turn arrivals land un-cropped */
   scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
