@@ -554,10 +554,12 @@ function openDay(mon, day, auto) {
      stale builds because this iframe src was the one unbusted URL */
   ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day +
     '&auto=' + (auto ? 1 : 0) +
-    /* headless A/B primer rides through: ?scrub=portal|glass on the
-       calendar URL seeds the selector's scrubber mode */
+    /* headless primers ride through: ?scrub=portal|glass seeds the mode,
+       ?scrubtwin=1 enables the gated native twin for lane test runs */
     ((new URLSearchParams(location.search)).get('scrub')
       ? '&scrub=' + (new URLSearchParams(location.search)).get('scrub') : '') +
+    ((new URLSearchParams(location.search)).get('scrubtwin')
+      ? '&scrubtwin=' + (new URLSearchParams(location.search)).get('scrubtwin') : '') +
     '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
 }

@@ -2576,7 +2576,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 126';
+const BUILD = 'build 2026-09-10 · 127';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3017,7 +3017,10 @@ if (QS.get('solo') === '1') {
      integer crossings re-anchor via a fresh arm-shape post), monthLabel
      + dayName drawn around the center. Re-enabled now the renderer
      draws all the dates (canon 026f4b6). */
-  var SCRUB_TWIN = true;
+  /* verification gate: the phase-3 twin stays OFF for users until the
+     both-modes tape passes; ?scrubtwin=1 enables it for lane test runs.
+     Flip the default to true in the tape-pass commit. */
+  var SCRUB_TWIN = /[?&]scrubtwin=1/.test(location.search);
   function scrubEl(off, frac) {
     if (!SCRUB_TWIN) return null;
     var el = document.querySelector('.nav .ttl.scrub');
