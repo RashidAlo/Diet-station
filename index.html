@@ -97,29 +97,24 @@
   body.listview #flows .card .row { display: contents; }
   /* list view is icon-first, not artwork: the glyph replaces the shot */
   body.listview #flows .card .thumb { display: none !important; }
-  /* ---- feature icon: per-flow duotone + frosted-glass tile ----
-     glass without a live backdrop: a saturated blob painted INSIDE the
-     tile, frosted by a backdrop-filter overlay, specular ring on top */
+  /* ---- feature icon, Apple HIG app-icon language: a white filled
+     symbol on a rich vertical hue gradient, squircle tile with a top
+     sheen and a soft colored shadow (Mail / FaceTime construction) */
   .ficon { display: flex; flex: none; width: 64px; height: 64px;
-    border-radius: 18px; align-items: center; justify-content: center;
-    position: relative; overflow: hidden; isolation: isolate;
-    background: linear-gradient(160deg, var(--fb, #FCE9EA), #fff 135%);
-    color: var(--fa, var(--red));
-    box-shadow: 0 10px 22px -12px
-      color-mix(in srgb, var(--fa, #ED1C24) 45%, transparent),
+    border-radius: 22.5%; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: linear-gradient(180deg, var(--ft, #FF6E68),
+      var(--fb, #E5131C));
+    box-shadow: 0 10px 20px -10px
+      color-mix(in srgb, var(--fb, #E5131C) 60%, transparent),
+      inset 0 1px 0 rgba(255,255,255,.32),
       0 0 0 0.5px rgba(0,0,0,.05); }
-  .ficon::before { content: ''; position: absolute; width: 74%; height: 74%;
-    left: -14%; top: -16%; border-radius: 50%;
-    background: var(--fa, #ED1C24); opacity: .42; filter: blur(9px); }
-  .ficon::after { content: ''; position: absolute; inset: 0;
+  .ficon::before { content: ''; position: absolute; inset: 0;
     border-radius: inherit;
-    background: linear-gradient(205deg, rgba(255,255,255,.55),
-      rgba(255,255,255,.05) 58%);
-    -webkit-backdrop-filter: blur(5px) saturate(160%);
-    backdrop-filter: blur(5px) saturate(160%);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.65),
-      inset 0 -7px 12px -7px rgba(0,0,0,.10); }
-  .ficon svg { width: 30px; height: 30px; position: relative; z-index: 1; }
+    background: radial-gradient(120% 70% at 50% -12%,
+      rgba(255,255,255,.30), rgba(255,255,255,0) 55%); }
+  .ficon svg { width: 56%; height: 56%; position: relative;
+    filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.22)); }
   /* icon replaces the artwork everywhere on the hub cards */
   #flows .card .thumb, #flows .appshots { display: none !important; }
   /* desktop card view: the tile sits where the shot sat, right of copy */
@@ -127,10 +122,9 @@
   /* native card view: app-icon header above the copy */
   body.native:not(.listview) #flows .card .row .ficon { order: 0;
     margin: 22px 24px 0; }
-  /* list view: compact tile, back on the left */
-  body.listview #flows .card .ficon { order: -1; width: 36px; height: 36px;
-    border-radius: 11px; }
-  body.listview #flows .card .ficon svg { width: 19px; height: 19px; }
+  /* list view: compact tile, back on the left (radius stays 22.5%) */
+  body.listview #flows .card .ficon { order: -1; width: 36px;
+    height: 36px; }
   body.listview #flows .card .desc, body.listview #flows .card .meta,
   body.listview #flows .card .actions, body.listview #flows .card .handoff,
   body.listview #flows .card .appshots { display: none !important; }
@@ -165,7 +159,7 @@
       background: var(--card); position: relative; z-index: 2;
       transition: transform .26s cubic-bezier(.3,.8,.3,1); }
     body.listview #flows .card .ficon { width: 40px; height: 40px;
-      border-radius: 12px; align-self: flex-start; margin-top: 2px; }
+      align-self: flex-start; margin-top: 2px; }
     body.listview #flows .card .ficon svg { width: 20px; height: 20px; }
     body.listview #flows .card .body { display: flex;
       flex-direction: column; align-items: flex-start; flex: 1;
@@ -1163,29 +1157,29 @@ function openLogin() {
   setTimeout(dismiss, MAX_MS);         /* hard ceiling — never trap the user */
 })();
 
-/* feature glyphs for list view — replaces flow artwork with an icon */
+/* feature glyphs — HIG app-icon style: white filled symbols */
 const FLOW_ICONS = {
-  'meal-select': '<svg viewBox="0 0 24 24" fill="none"><rect x="3.2" y="4.6" width="17.6" height="16" rx="3.4" stroke="currentColor" stroke-width="1.8"/><path d="M3.2 9.4h17.6M8 2.8v3.4M16 2.8v3.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8.4" cy="14" r="1.15" fill="currentColor"/><circle cx="12" cy="14" r="1.15" fill="currentColor"/><circle cx="15.6" cy="14" r="1.15" fill="currentColor"/></svg>',
-  breathe: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.6" stroke="currentColor" stroke-width="1.8" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>',
-  'plan-quiz': '<svg viewBox="0 0 24 24" fill="none"><path d="M4 5.6l1.6 1.6 2.8-2.8M4 12l1.6 1.6 2.8-2.8M4 18.4l1.6 1.6 2.8-2.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.4 6h7.6M12.4 12.4h7.6M12.4 18.8h7.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  rewards: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 9.2V6.4A1.4 1.4 0 0 1 4.4 5h15.2A1.4 1.4 0 0 1 21 6.4v2.8a2.8 2.8 0 0 0 0 5.6v2.8a1.4 1.4 0 0 1-1.4 1.4H4.4A1.4 1.4 0 0 1 3 17.6v-2.8a2.8 2.8 0 0 0 0-5.6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.2 5v14" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.2 2.6"/></svg>',
-  home: '<svg viewBox="0 0 24 24" fill="none"><rect x="3.4" y="3.4" width="7.4" height="7.4" rx="2.2" stroke="currentColor" stroke-width="1.8"/><rect x="13.2" y="3.4" width="7.4" height="7.4" rx="2.2" stroke="currentColor" stroke-width="1.8"/><rect x="3.4" y="13.2" width="7.4" height="7.4" rx="2.2" stroke="currentColor" stroke-width="1.8"/><rect x="13.2" y="13.2" width="7.4" height="7.4" rx="2.2" stroke="currentColor" stroke-width="1.8"/></svg>',
-  checkout: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 9.6h18M6.4 14.6h4.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  account: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.6" r="3.6" stroke="currentColor" stroke-width="1.8"/><path d="M4.8 20.2a7.4 7.4 0 0 1 14.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  auth: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10.2" width="14" height="10" rx="2.8" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 10.2V7.8a3.8 3.8 0 0 1 7.6 0v2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15.2" r="1.5" fill="currentColor"/></svg>',
-  _: '<svg viewBox="0 0 24 24" fill="none"><rect x="6.4" y="2.8" width="11.2" height="18.4" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M10.4 18.4h3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  'meal-select': '<svg viewBox="0 0 24 24" fill="#fff"><path d="M8.72 2.55c.34 0 .62.28.62.62v4.06a2.6 2.6 0 0 1-1.53 2.37c.06 3.86.21 9.24.21 10.4 0 .86-.53 1.45-1.32 1.45s-1.32-.59-1.32-1.45c0-1.16.15-6.54.21-10.4a2.6 2.6 0 0 1-1.53-2.37V3.17a.6.6 0 1 1 1.2 0v3.4c0 .2.16.36.36.36s.36-.16.36-.36l.02-3.42a.59.59 0 1 1 1.18 0l.02 3.42c0 .2.16.36.36.36s.36-.16.36-.36v-3.4c0-.34.27-.62.6-.62zM15.4 2.7c2.35 1.72 3.9 4.5 3.9 7.13 0 1.94-1.05 3.24-2.62 3.53.06 3.2.17 6.72.17 7.62 0 .86-.52 1.45-1.3 1.45-.79 0-1.31-.59-1.31-1.45 0-1.63.21-13.36.26-17.53.01-.53.55-.94 1-.75z"/></svg>',
+  breathe: '<svg viewBox="0 0 24 24"><g fill="#fff" fill-opacity=".58"><ellipse cx="12" cy="8.4" rx="3" ry="5.2"/><ellipse cx="12" cy="8.4" rx="3" ry="5.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="8.4" rx="3" ry="5.2" transform="rotate(120 12 12)"/><ellipse cx="12" cy="8.4" rx="3" ry="5.2" transform="rotate(180 12 12)"/><ellipse cx="12" cy="8.4" rx="3" ry="5.2" transform="rotate(240 12 12)"/><ellipse cx="12" cy="8.4" rx="3" ry="5.2" transform="rotate(300 12 12)"/></g></svg>',
+  'plan-quiz': '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="5.6" cy="6" r="2.2"/><rect x="9.8" y="4.9" width="10.6" height="2.2" rx="1.1"/><circle cx="5.6" cy="12" r="2.2"/><rect x="9.8" y="10.9" width="10.6" height="2.2" rx="1.1"/><circle cx="5.6" cy="18" r="2.2"/><rect x="9.8" y="16.9" width="10.6" height="2.2" rx="1.1"/></svg>',
+  rewards: '<svg viewBox="0 0 24 24"><path fill="#fff" d="M3 7.9C3 6.85 3.85 6 4.9 6h14.2C20.15 6 21 6.85 21 7.9v1.55a2.65 2.65 0 0 0 0 5.1v1.55c0 1.05-.85 1.9-1.9 1.9H4.9A1.9 1.9 0 0 1 3 16.1v-1.55a2.65 2.65 0 0 0 0-5.1V7.9z"/><path stroke="rgba(0,0,0,.22)" stroke-width="1.5" stroke-dasharray="2 2.6" stroke-linecap="round" fill="none" d="M15.1 7.4v9.2"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M11.17 3.3a1.3 1.3 0 0 1 1.66 0l7.3 6.13c.46.39.19 1.14-.41 1.14h-1.24v7.06c0 .96-.78 1.74-1.74 1.74h-2.98v-4.62a1.76 1.76 0 1 0-3.52 0v4.62H7.26a1.74 1.74 0 0 1-1.74-1.74v-7.06H4.28c-.6 0-.87-.75-.41-1.14l7.3-6.12z"/></svg>',
+  checkout: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M3 8.5V8c0-1.16.94-2.1 2.1-2.1h13.8c1.16 0 2.1.94 2.1 2.1v.5H3z"/><path d="M3 10.9h18V16c0 1.16-.94 2.1-2.1 2.1H5.1A2.1 2.1 0 0 1 3 16v-5.1zm2.6 4.1c0 .44.36.8.8.8h3a.8.8 0 0 0 0-1.6h-3a.8.8 0 0 0-.8.8z" fill-rule="evenodd"/></svg>',
+  account: '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.1" r="3.9"/><path d="M12 13.5c4.36 0 7.4 2.34 7.4 5.06 0 .9-.72 1.44-1.72 1.44H6.32c-1 0-1.72-.54-1.72-1.44 0-2.72 3.04-5.06 7.4-5.06z"/></svg>',
+  auth: '<svg viewBox="0 0 24 24" fill="#fff"><path fill-rule="evenodd" d="M7.5 9.9V7.95a4.5 4.5 0 0 1 9 0V9.9h.35c1.03 0 1.85.83 1.85 1.85v6.5c0 1.02-.82 1.85-1.85 1.85H7.15a1.85 1.85 0 0 1-1.85-1.85v-6.5c0-1.02.82-1.85 1.85-1.85h.35zm1.95 0h5.1V7.95a2.55 2.55 0 0 0-5.1 0V9.9zM12 13.3c.75 0 1.35.6 1.35 1.35 0 .5-.27.93-.67 1.16l.25 1.5a.55.55 0 0 1-.54.64h-.78a.55.55 0 0 1-.54-.64l.25-1.5c-.4-.23-.67-.66-.67-1.16 0-.75.6-1.35 1.35-1.35z"/></svg>',
+  _: '<svg viewBox="0 0 24 24" fill="#fff"><path fill-rule="evenodd" d="M9.3 2.5h5.4a2.9 2.9 0 0 1 2.9 2.9v13.2a2.9 2.9 0 0 1-2.9 2.9H9.3a2.9 2.9 0 0 1-2.9-2.9V5.4a2.9 2.9 0 0 1 2.9-2.9zm1.2 15.2a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5h-3z"/></svg>'
 };
-/* per-flow duotone: [accent, soft wash] — each feature owns a hue */
+/* per-flow HIG gradient: [top stop, bottom stop] */
 const FLOW_HUES = {
-  'meal-select': ['#1FA94E', '#E7F7EC'],
-  breathe: ['#2E9FD8', '#E6F4FC'],
-  'plan-quiz': ['#9D4EDD', '#F3EAFB'],
-  rewards: ['#E8880C', '#FCF1DF'],
-  home: ['#ED1C24', '#FCE9EA'],
-  checkout: ['#0A6CFF', '#E6F0FF'],
-  account: ['#5856D6', '#ECEBFA'],
-  auth: ['#12A5B8', '#E4F6F8'],
-  _: ['#1d1d1f', '#EFEFF1']
+  'meal-select': ['#5BD97A', '#1FA84C'],
+  breathe: ['#66C6F2', '#1E96DB'],
+  'plan-quiz': ['#C078EE', '#8B3FD6'],
+  rewards: ['#FFB84D', '#EE8A00'],
+  home: ['#FF6E68', '#E5131C'],
+  checkout: ['#5EA1FF', '#0A63E8'],
+  account: ['#8B89EC', '#4E4CCB'],
+  auth: ['#54CBDE', '#0F97AC'],
+  _: ['#5A5A60', '#1d1d1f']
 };
 
 fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
@@ -1235,7 +1229,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     const tags = [f.platform, f.area].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join('');
     card.innerHTML = `
       <div class="row">
-        <span class="ficon" style="--fa:${(FLOW_HUES[f.id] || FLOW_HUES._)[0]};--fb:${(FLOW_HUES[f.id] || FLOW_HUES._)[1]}">${FLOW_ICONS[f.id] || FLOW_ICONS._}</span>
+        <span class="ficon" style="--ft:${(FLOW_HUES[f.id] || FLOW_HUES._)[0]};--fb:${(FLOW_HUES[f.id] || FLOW_HUES._)[1]}">${FLOW_ICONS[f.id] || FLOW_ICONS._}</span>
         <div class="body">
           <div class="top">
             <h2>${f.title}</h2>
