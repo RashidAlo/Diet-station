@@ -160,11 +160,11 @@
   /* the docked extension IS the cat-dock band: it brings its own white,
      so nothing animates height. Appears atomically with the title swap
      (the head hides the same instant); fades out on undock. */
-  /* RETIRED (·113): the docked band is gone — the JS-sticky pinned head
-     carries the title on its own white slab. The empty opaque band was
-     invisibly sitting over the pin line and shaved the title's top half
-     (Rashid's device). Markup kept; never shown. */
-  .cat-dock { display: none; }
+  .cat-dock { position: absolute; left: 0; right: 0;
+    top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
+    overflow: hidden; pointer-events: none; background: #ffffff;
+    opacity: 0; transition: opacity .15s ease; }
+  .nav.docked .cat-dock { opacity: 1; transition: opacity 0s; }
   .dock-row { height: 34px; display: flex; align-items: center;
     justify-content: space-between; padding: 0 20px; }
   .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
@@ -450,57 +450,21 @@
   .confirm.on { background: #ed1c24; box-shadow: 0 6px 16px -6px rgba(237,28,36,.55); }
 
   /* ---- scroll area ---- */
+  /* RETRACTED TO THE PRE-3PM MECHANISM (Rashid, 2026-09-11: "every scroll
+     change done on the meal selection overlay before 3pm yesterday to be
+     retracted"). Baseline is 0092cf2 (·107, 14:31 Sep 10) — the last
+     state before the scroll was touched at all. Constant scroller
+     padding, no spacer, no sticky heads: the category title docks into
+     the NAV instead, which is why none of the sticky-era workarounds
+     (spacer headroom, transform-removal-at-rest, dock-pad) exist here.
+     Everything after ·107 that touched scrolling is gone; the scrubber
+     work built on top of it is untouched. */
   .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
     touch-action: pan-y; overscroll-behavior: contain;
-    /* headroom lives in a SPACER (.scroll-pad), NOT scroller padding:
-       WebKit offsets position:sticky by the scroll container's padding
-       (Chromium doesn't), so padding-top here pinned the category heads
-       hundreds of px too low on device. The spacer is plain content —
-       both engines then stick from the scrollport top. */
-    padding: 0 0 132px;
-    overflow-anchor: none; scrollbar-width: none; }
-  /* THE APP STORE SHEET MODEL (Rashid: "follow Apple's App Store scroll
-     when you open articles"). In UIKit's sheet, a drag first EXPANDS the
-     sheet while its content holds still inside it, and the scroll only
-     takes over once the sheet is large — so the content's speed under
-     your thumb never changes. Two vars reproduce that here:
-
-       --pad-base  the DOCKED nav's pad, constant. The spacer no longer
-                   tracks the animating --top-pad, so the nav growing
-                   during the attach can never swallow the content.
-       --dock-pad  min(scrollTop, SHEET_GAP): grows 1:1 with the scroll
-                   through the attach, then stops.
-
-     Content's offset inside the scrollport is therefore pad-base + 66
-     for the whole attach — dead still relative to the sheet, exactly as
-     Apple does it — so the only thing moving is the sheet, at 1:1. Past
-     the gap --dock-pad is frozen and the content scrolls at 1:1. Same
-     speed on both sides of the dock, no discontinuity anywhere.
-
-     It also fixes the two collisions that made one flick feel like
-     three: the first head can no longer reach the sticky line until
-     10px AFTER the dock (it used to lock on at 10px, ~40% into a ~25px
-     attach), and the fullscreen rest lands the first row just below the
-     bar by construction, which retires the day-turn crop hack. */
-  .scroll-pad { height: calc(var(--pad-base, var(--top-pad)) + 66px + var(--dock-pad, 0px)); }
+    padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
-    padding: 16px 20px 12px;
-    /* NATIVE sticky (Rashid: the JS pin jittered — scroll events lag the
-       compositor in WKWebView, so a per-frame transform correction reads
-       as up-down shake; position:sticky rides the compositor itself and
-       the section's own end provides the push-out). The white slab makes
-       the stuck head mask the cards passing beneath. */
-    position: -webkit-sticky; position: sticky;
-    /* z 7: above the cards' autobadges (z 6) so nothing pokes over the
-       stuck head */
-    top: calc(var(--top-pad) + 56px); z-index: 7; background: #ffffff; }
-  .cat-head::before { content: ''; position: absolute;
-    inset: 0 -24px; background: #ffffff; z-index: -1; }
-  /* desktop playground: sticky miscomputes inside the scale()d stage
-     (house gotcha) — the JS pin in updateCatDock takes over there */
-  body.desktop .cat-head { position: relative; top: auto; }
-  body.desktop .cat-head.pinned { z-index: 6; }
+    padding: 16px 20px 12px; }
   .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
@@ -1239,8 +1203,8 @@ function openMealOv(key) {
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
-  if (typeof collapseEnd === 'function' && scrollArea.scrollTop < collapseEnd()) {
-    scrollArea.scrollTop = collapseEnd();   /* dock the outer sheet fullscreen */
+  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
+    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
     syncSheet();
   }
   setTimeout(() => {
@@ -1386,24 +1350,13 @@ moScroll.addEventListener('touchend', () => {
 
 /* ================= build the screen ================= */
 const scrollArea = document.getElementById('scrollArea');
-/* the headroom spacer replaced the scroller's padding-top (WebKit adds
-   scroller padding to sticky offsets — see .scroll-pad in CSS); every
-   old paddingTop reader goes through this */
-function scrollPadPx() {
-  const sp = document.getElementById('scrollPad');
-  return sp ? sp.offsetHeight
-    : (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100);
+/* headroom is the scroller's own padding-top again (·107) — no spacer */
+function navPadPx() {
+  return (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
 }
-/* the DOCKED nav's pad. Every pin/target line is nav-relative, never
-   spacer-relative — the spacer carries the dock pad on top of it. */
-let PAD_BASE = 0;
-function navPadPx() { return PAD_BASE || (scrollPadPx() - 66); }
 let cardSeq = 0;
 function buildScreen() {
   scrollArea.innerHTML = '';
-  const pad = document.createElement('div');
-  pad.className = 'scroll-pad'; pad.id = 'scrollPad';
-  scrollArea.appendChild(pad);
   cardSeq = 0;
   CATS.forEach(cat => {
     if (cat.quota === 0 && !MODS.showEmpty) return;
@@ -1908,9 +1861,6 @@ function turnDay(dir, target) {
   if (target !== undefined && target === dayIdx) return;
   if (dir < 0 && dayIdx === 0 && target === undefined) return;
   turning = true;
-  /* a sheet at fullscreen STAYS at fullscreen through a day switch —
-     content changed, presentation didn't. Captured before the slide-out. */
-  const stayFull = sheetLive && scrollArea.scrollTop >= collapseEnd() - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1936,12 +1886,10 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day rides in from its very top (the 9am rule); a
-       fullscreen day parks at the gap. Breakfast arrives clear of the
-       nav with no special case now — holding the content still inside
-       the expanding sheet puts the first row just below the bar at
-       fullscreen rest, the un-cropped arrival Rashid asked for. */
-    scrollArea.scrollTop = stayFull ? collapseEnd() : 0;
+    /* a fresh day always rides in from its very top — keeping the docked
+       scrollTop (SHEET_GAP) hid the first row under the nav, because the
+       sheet collapse consumes exactly that many pixels of scroll */
+    scrollArea.scrollTop = 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
@@ -2601,7 +2549,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 132';
+const BUILD = 'build 2026-09-11 · 133 (pre-3pm scroll)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2736,45 +2684,43 @@ function adaptNav() {
    the incoming section's header pushes the docked title out as it arrives */
 let dockedCatId = null;
 function updateCatDock() {
-  /* JS-sticky category heads (Rashid: "breakfast should smoothly connect
-     with the header and stay there... continue the scroll") — the active
-     head PINS at the dock line, riding its own white slab; the next head
-     pushes it out. Everything is scroll-linked per frame: no visibility
-     swaps, no band handoff — the cat-dock band is retired to an empty
-     white backing strip. NOTE: the pin line is NAV-relative, so it goes
-     through navPadPx() (the docked nav's own pad) — never the spacer,
-     which carries the dock pad on top and would dock GAP px early. */
-  const tp = navPadPx();
+  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
   const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
   const secs = Array.from(scrollArea.querySelectorAll('section'));
   let ai = -1;
   secs.forEach((sec, i) => { if (sec.offsetTop <= line) ai = i; });
   const nav = document.querySelector('.nav');
   nav.classList.toggle('scrolled', scrollArea.scrollTop > 8);
-  nav.classList.toggle('docked', ai >= 0);
-  dockedCatId = null;
-  if (ai >= 0) {
-    const of = secs[ai].querySelector('[data-of]');
-    if (of) dockedCatId = of.dataset.of;
+  if (ai < 0) {
+    nav.classList.remove('docked');
+    dockedCatId = null;
+    secs.forEach(sec => {
+      const h = sec.querySelector('.cat-head');
+      if (h) h.style.visibility = '';
+    });
+    return;
   }
-  /* mobile/native: position:sticky owns the pin (compositor-smooth, no
-     per-frame JS). The JS transform pin survives ONLY for the desktop
-     playground, where sticky miscomputes inside the scaled stage. */
-  if (!document.body.classList.contains('desktop')) return;
+  nav.classList.add('docked');
+  /* the docked title IS the category title — never show both */
   secs.forEach((sec, i) => {
     const h = sec.querySelector('.cat-head');
-    if (!h) return;
-    if (i !== ai) { h.style.transform = ''; h.classList.remove('pinned'); return; }
-    let y = line - sec.offsetTop;                   /* pin shift */
-    const B = secs[i + 1];
-    if (B) y = Math.min(y, B.offsetTop - sec.offsetTop - h.offsetHeight - 10);
-    if (y > 0) {
-      h.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
-      h.classList.add('pinned');
-    } else {
-      h.style.transform = ''; h.classList.remove('pinned');
-    }
+    if (h) h.style.visibility =
+      (i <= ai || sec.offsetTop < line + 44) ? 'hidden' : '';
   });
+  const A = secs[ai], B = secs[ai + 1];
+  const catA = CATS.find(c => c.id === A.querySelector('[data-of]').dataset.of);
+  dockedCatId = catA.id;
+  document.getElementById('dockTitle').textContent = catA.title;
+  renderOf(document.getElementById('dockOf'), catCount(catA.id), catA.quota);
+  let p = 0;
+  if (B) {
+    p = Math.max(0, Math.min(1, (line + 34 - B.offsetTop) / 34));
+    const catB = CATS.find(c => c.id === B.querySelector('[data-of]').dataset.of);
+    document.getElementById('dockTitle2').textContent = catB.title;
+    renderOf(document.getElementById('dockOf2'), catCount(catB.id), catB.quota);
+  }
+  document.getElementById('dockTrack').style.transform =
+    p > 0 ? 'translateY(' + (-p * 34) + 'px)' : '';
 }
 function syncDockCounter() {
   if (dockedCatId) updateCatDock();
@@ -2804,33 +2750,12 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
-/* The sheet is a pure 1:1 readout of the scroll — y = gap − s, no
-   easing, no speed constants, no settle glide, nothing that finishes,
-   nudges or re-aims a gesture (the 9am rule, kept). What makes it read
-   as ONE motion rather than three is the content-hold in .scroll-pad
-   above: through the attach the content sits still inside the sheet, so
-   the sheet's rise is the only movement, and past the dock the content
-   scrolls at that same 1:1. See the .scroll-pad comment for the model
-   and for the two collisions it removes. */
-function collapseEnd() { return SHEET_GAP; }
+/* ·107 (0092cf2) VERBATIM — the pre-3pm sheet. Scroll-linked 1:1,
+   transform written unconditionally, nothing else touched. */
 function syncSheet() {
   if (!sheetLive) return;
-  /* NOTHING here may write scrollTop: assigning it from inside a scroll
-     handler cancels WKWebView's deceleration outright — that killed the
-     first flick after every Next. The sheet is a pure readout.
-     --dock-pad grows 1:1 with the scroll for exactly the attach, which
-     is what holds the content still inside the expanding sheet (see
-     .scroll-pad); past the gap it is frozen and never moves again. */
-  const s = scrollArea.scrollTop;
-  scrollArea.style.setProperty('--dock-pad',
-    Math.min(SHEET_GAP, Math.max(0, s)).toFixed(1) + 'px');
-  const y = Math.max(0, SHEET_GAP - s);
-  /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
-     miscomputes position:sticky (the category heads) inside a
-     transformed ancestor — and translateY(0px) still counts. Safe by
-     construction: y > 0 only while scrollTop < GAP, where no head can
-     reach the sticky line yet, so sticky never runs under a transform. */
-  sheetEl.style.transform = y > 0.5 ? 'translateY(' + y + 'px)' : '';
+  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
+  sheetEl.style.transform = 'translateY(' + y + 'px)';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
   /* the calorie bar stays pinned to the SCREEN bottom whatever the sheet does */
@@ -2843,18 +2768,9 @@ function syncSheet() {
   }
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
-/* read the resolved pad BEFORE pinning --pad-base (the spacer still
-   falls back to --top-pad at this point) */
-const RESOLVED_PAD = scrollPadPx() - 66;
 SHEET_GAP = EMBED ? REAL_PAD + 16
   : document.body.classList.contains('desktop') ? 56
-  : Math.max(22, RESOLVED_PAD - 12);
-/* pin the spacer to the DOCKED nav pad. In the embed the nav's own
-   --top-pad still rides 14 -> REAL_PAD for the chrome, but the content
-   no longer rides with it: that ride was what let the growing bar eat
-   the first row and drag the sticky line down onto Breakfast mid-attach. */
-PAD_BASE = EMBED ? REAL_PAD : RESOLVED_PAD;
-document.getElementById('phone').style.setProperty('--pad-base', PAD_BASE + 'px');
+  : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
 setTimeout(() => {
   sheetEl.classList.add('springing');
   document.body.classList.remove('sheet-enter');
@@ -3254,18 +3170,12 @@ if (QS.get('solo') === '1') {
      the same glass to its new geometry. Web chrome renders only where
      twins never confirm (iOS<26, desktop). */
   var docked = false, moving = false, restT = null;
-  /* the dock line is the SHEET's own collapse end — never a local copy.
-     ·124 hardcoded gapNow()/2 here and that residue outlived two full
-     restores of the sheet math (·129, ·130), flipping the chrome to
-     'page' mode — which re-anchors the native glass to the canonical
-     top line — HALFWAY through every swipe, while the sheet was still
-     rising. That mid-gesture jump of the whole top bar is what kept
-     reading as a step. Route through collapseEnd() so the two can
-     never drift apart again. */
-  function gapNow() {
-    return (typeof collapseEnd === 'function') ? collapseEnd()
-      : (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22;
-  }
+  /* the dock line is the sheet's gap, full stop. (·124 once hardcoded
+     gapNow()/2 here and the residue survived two restores of the sheet
+     math, flipping the chrome to 'page' — which re-anchors the native
+     glass to the canonical top line — halfway through every swipe. Never
+     keep a second copy of this number.) */
+  function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
   /* continuous follow (Rashid: the buttons must RIDE the drag, then anchor
      at the dock — settle-then-jump is out): while the sheet moves, stream
      verbatim rects one per frame; the shell applies them with no animation
