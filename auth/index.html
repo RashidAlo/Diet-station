@@ -112,6 +112,7 @@
     border-radius: 38px 38px 0 0; overflow: hidden; background: #ffffff;
     transition: transform .55s cubic-bezier(.32,.72,0,1); }   /* house spring — every boot */
   html.sheet-enter .sheet { transform: translateY(103%); }
+  .sheet.drag { transition: none; }   /* drag-to-close trait: glued to the finger */
   /* embedded/solo: hub, home, or the native cover shows through */
   html.embed, html.embed body, html.embed #stage, html.embed .device,
   html.embed .phone { background: transparent !important; }
@@ -722,6 +723,61 @@ function finishAuth() {
 }
 document.getElementById('btnHome').addEventListener('click', () =>
   dsNav('home', 'push', { auth: 'signed-in', num: phoneDigits }, () => { location.href = '../home/'; }));
+
+/* ---------------- drag-to-close trait (system/overlays.html) ----------------
+   Granted to SIGN-IN only (no unsaved state). OTP is withheld — mid-journey
+   (code sent, digits typed, countdown live); success auto-closes. Spec per
+   the doc: top-only grab (no scroller to chain on this sheet), rubber-band
+   ×0.42, commit past 195px of finger travel, .drag kills the transition;
+   short release springs back on the house curve. Distances are in sheet
+   points (finger travel ÷ stageScale) so the threshold matches on the
+   scaled desktop stage. */
+(function () {
+  const sh = document.getElementById('sheet');
+  const GRAB_ZONE = 260;     /* sheet-local px: header + brand, above the field */
+  const DAMP = 0.42, COMMIT = 195;
+  let tracking = false, startY = 0, dy = 0, pid = null;
+  const scale = () => sh.getBoundingClientRect().height / sh.offsetHeight || 1;
+  function eligible(e) {
+    if (current !== 'signin') return false;
+    if (fidOv.classList.contains('on')) return false;
+    if (e.target.closest('.authx, .btn, .kbd, .phone-field, .pretab')) return false;
+    const r = sh.getBoundingClientRect();
+    return (e.clientY - r.top) / scale() <= GRAB_ZONE;
+  }
+  sh.addEventListener('pointerdown', e => {
+    if (!eligible(e)) return;
+    tracking = true; startY = e.clientY; dy = 0; pid = e.pointerId;
+    try { sh.setPointerCapture(pid); } catch (_) {}
+  });
+  sh.addEventListener('pointermove', e => {
+    if (!tracking || e.pointerId !== pid) return;
+    dy = Math.max(0, (e.clientY - startY) / scale());
+    if (dy > 6) sh.classList.add('drag');
+    sh.style.transform = `translateY(${dy * DAMP}px)`;
+  });
+  function release(e) {
+    if (!tracking || (e.pointerId !== undefined && e.pointerId !== pid)) return;
+    tracking = false;
+    sh.classList.remove('drag');                /* transition back on */
+    if (dy > COMMIT) {
+      buzz();
+      sh.style.transform = 'translateY(103%)';
+      document.documentElement.classList.remove('bd-on');
+      setTimeout(() => {
+        document.documentElement.classList.add('sheet-enter');
+        sh.style.transform = '';
+        if (window.DS_EMBED || window.DS_SOLO) parent.postMessage({ t: 'ds-close' }, '*');
+        else location.href = '../';
+      }, 430);
+    } else {
+      sh.style.transform = '';                  /* springs back to seat */
+    }
+    dy = 0;
+  }
+  sh.addEventListener('pointerup', release);
+  sh.addEventListener('pointercancel', release);
+})();
 
 /* ---- ds-nav intent router (Sprint-0 contract) ----
    cross-flow jumps post {t:'ds-nav'} to the parent once the hub router has
