@@ -1859,7 +1859,8 @@ confirmBtn.onclick = () => {
   function calibrate(x) {
     engageX = x; baseIdx = scrubIdx;
     stepFwd = Math.min(STEP, Math.max(6, (x - EDGE) / Math.max(1, maxIdx - scrubIdx)));
-    stepBack = Math.min(STEP, Math.max(6, (window.innerWidth - EDGE - x) / Math.max(1, scrubIdx || 1)));
+    const vw = document.documentElement.clientWidth || window.innerWidth || 402;
+    stepBack = Math.min(STEP, Math.max(6, (vw - EDGE - x) / Math.max(1, scrubIdx || 1)));
   }
   function spin(now) {
     raf = scrubbing ? requestAnimationFrame(spin) : null;
@@ -2304,7 +2305,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 102';
+const BUILD = 'build 2026-09-10 · 103';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
