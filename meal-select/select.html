@@ -250,7 +250,11 @@
     /* base transitions COLOR ONLY — top rides --top-pad every frame of a
        sheet drag, and a top transition here chases it (Rashid's "date
        keeps jittering"). The morph curves live on .forming/.scrub/.unforming. */
-    transition: color .35s ease, text-shadow .35s ease; }
+    /* opacity is here so the label can FADE back in as the native capsule
+       is released, instead of blinking on underneath it — a returned web
+       label under a live twin shows as a blurred double image, because the
+       capsule is a backdrop-filter over it. */
+    transition: color .35s ease, text-shadow .35s ease, opacity .16s ease; }
   .nav .ttl.forming, .nav .ttl.unforming { transition: color .35s ease,
     text-shadow .35s ease, background .38s ease, box-shadow .38s ease,
     height .38s cubic-bezier(.32,.72,0,1), padding .38s cubic-bezier(.32,.72,0,1),
@@ -2133,10 +2137,17 @@ confirmBtn.onclick = () => {
      by the time this runs, so it is pure cleanup — no second visual step */
   function deflate() {
     clearTimeout(closeT); clearTimeout(unformT);
-    ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
+    /* dropping .scrub is what releases the twin (scrubEl queries it), so it
+       goes first and alone. ds-native-hidden is held two frames longer: the
+       label must not come back UNDER a capsule that is still on screen —
+       that overlap is a blurred double image, since the capsule blurs
+       whatever is beneath it. By the time the class is shed the twin is
+       gone, and the label fades in over the vacated rect. */
+    ttl.classList.remove('forming', 'scrub', 'closing', 'portal');
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
+    unformT = setTimeout(() => ttl.classList.remove('ds-native-hidden'), 40);
   }
   function unform() {
     clearTimeout(unformT); clearTimeout(closeT);
@@ -2640,7 +2651,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 136 (scrub one-morph)';
+const BUILD = 'build 2026-09-11 · 137 (scrub one-morph + clean release)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
