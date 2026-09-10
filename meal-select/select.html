@@ -1912,10 +1912,11 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day rides in from its very top. A fullscreen day parks at
-       the gap — the --sheet-pad headroom ride means that position now
-       keeps a full nav above Breakfast, so nothing arrives cropped —
-       and a docked day parks at 0, re-opening the overlay gap. */
+    /* a fresh day rides in from its very top (the 9am rule). A
+       fullscreen day parks at the gap WITH the day-turn pad — the one
+       addition Rashid asked for — so Breakfast arrives clear of the
+       nav; a docked day parks at 0 with no pad, the canonical layout. */
+    setDayPad(stayFull ? SHEET_GAP : 0);
     scrollArea.scrollTop = stayFull ? collapseEnd() : 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
@@ -2780,21 +2781,37 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
-/* THE 9AM MECHANISM (Rashid: "there was a build with the perfect scroll
-   — copy it, and only add the day-turn offset"): the sheet is linked
-   1:1 to the scroll, no easing, no speed constants — y = gap − s,
-   exactly the original HIG scroll-link. The ONLY addition kept from
-   the later rounds is the riding headroom pad below, whose sole job is
-   the day-turn arrival: a fullscreen park (Next / swipe / scrubber)
-   lands at s = gap where the pad holds a full nav above Breakfast, so
-   thumbnails arrive un-cropped. */
+/* THE 9AM MECHANISM, verbatim (Rashid: "copy the scroll from the build
+   available 9am — and ONLY add the extra offset for when Next is
+   clicked, to avoid cropping breakfast"): the sheet is linked 1:1 to
+   the scroll — y = gap − s — no easing, no speed constants, no settle
+   glide, and the headroom spacer NEVER moves during a gesture. The one
+   addition is dayPad: a day-turn that arrives fullscreen parks at
+   s = gap with the spacer grown by one gap, so Breakfast lands clear
+   of the nav. The pad then folds away invisibly the first time the
+   scroll runs a full gap deep into content (spacer −pad, scrollTop
+   −pad, net zero on screen); if the user instead detaches first, the
+   pad shrinks with s so the sheet glides off over held content and the
+   overlay lands at its canonical layout. Every other gesture is the
+   pure 9am scroll. */
 function collapseEnd() { return SHEET_GAP; }
+let dayPad = 0;
+function setDayPad(px) {
+  dayPad = px;
+  scrollArea.style.setProperty('--sheet-pad', px + 'px');
+}
 function syncSheet() {
   if (!sheetLive) return;
+  if (dayPad > 0) {
+    const s = scrollArea.scrollTop;
+    if (s >= SHEET_GAP + dayPad) {         /* deep in content: fold the pad away, invisible */
+      const p = dayPad; setDayPad(0);
+      scrollArea.scrollTop = s - p;
+      return syncSheet();
+    }
+    if (s < SHEET_GAP) setDayPad(Math.min(dayPad, Math.max(0, s)));
+  }
   const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
-  /* headroom spacer rides the collapse so the fullscreen resting scroll
-     keeps a full nav above Breakfast; day-turn arrivals land un-cropped */
-  scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
   /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
      miscomputes position:sticky (the category heads) inside a
      transformed ancestor — and translateY(0px) still counts. Safe by
@@ -2827,36 +2844,10 @@ setTimeout(() => {
   }, 600);
 }, 60);
 
-/* detent settle (Rashid, TF34: "one scroll — one state anchors to the
-   other, no multiple steps"): a scroll that DIES inside the collapse
-   zone glides to the nearest state, so the sheet never rests half-open.
-   Momentum-safe — runs only after scroll goes quiet with no finger
-   down; a fresh grab aborts the glide. The scroll-link itself is
-   untouched: this only finishes what a gesture started. */
-let snapT = null, snapping = false, snapFinger = false;
-function armSnap() {
-  clearTimeout(snapT);
-  snapT = setTimeout(() => {
-    if (snapFinger || snapping || !sheetLive || turning) return;
-    const gap = collapseEnd(), s = scrollArea.scrollTop;
-    if (s <= 0.5 || s >= gap - 0.5) return;
-    snapping = true;
-    const to = s > gap * 0.5 ? gap : 0;
-    const from = s, t0 = performance.now(), dur = 240;
-    const tick = now => {
-      if (snapFinger) { snapping = false; return; }   /* user grabbed — yield */
-      const x = Math.min(1, (now - t0) / dur);
-      scrollArea.scrollTop = from + (to - from) * (1 - Math.pow(1 - x, 3));
-      if (x < 1) requestAnimationFrame(tick);
-      else snapping = false;
-    };
-    requestAnimationFrame(tick);
-  }, 140);
-}
-scrollArea.addEventListener('touchstart', () => { snapFinger = true; clearTimeout(snapT); }, { passive: true });
-scrollArea.addEventListener('touchend', () => { snapFinger = false; armSnap(); }, { passive: true });
-scrollArea.addEventListener('touchcancel', () => { snapFinger = false; armSnap(); }, { passive: true });
-scrollArea.addEventListener('scroll', () => { if (!snapping) armSnap(); }, { passive: true });
+/* NO settle glide, NO detents (·121 removed): the 9am build let a dying
+   scroll rest wherever momentum left it — native scroll physics only.
+   Rashid: that build's scroll was "perfect"; nothing may finish, nudge
+   or re-aim a gesture. */
 fit();
 </script>
 <script>
