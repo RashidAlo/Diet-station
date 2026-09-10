@@ -356,7 +356,10 @@ pill                  .capsule                                    border radius/
       the three-finger count; timing from hardware <code>e.timeStamp</code>, never processing
       time; a hold physically &ge; 400ms still fires on release even if jank starved the
       timer; a 600ms latch stops double-fires when both recognizers land. Native uses
-      simultaneous gesture recognition — no delaysTouchesBegan. Simulator ergonomics: a
+      simultaneous gesture recognition, and a lab gesture <b>never delays touches under a
+      web surface</b>: delaysTouchesBegan AND delaysTouchesEnded both false (the END default
+      is true — it withholds a short swipe's touch-end up to 0.4s while the recognizer
+      waits, eating quick sub-24pt flicks). Simulator ergonomics: a
       Debug-only two-finger hold alias (Option + click-hold) exists because macOS never hands
       the Simulator three touches.</p>
     <p class="meta">Sheet content standard: top bar = <b>Restart</b> (fresh cache-busted
