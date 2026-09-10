@@ -345,6 +345,46 @@
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
   @keyframes scbsnap { 0% { transform: translateX(-30px); opacity: .4; }
     100% { transform: translateX(0); opacity: 1; } }
+  /* ---- PORTAL scrubber (Rashid A/B, Figma Calendar Strip 4091-134124,
+     compacted): the armed pill becomes a WINDOW onto a red layer — brand
+     red behind the sliding dates, the current day wearing the Figma tile
+     (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
+     the SIDE bands refract the red and the dates as they slide under.
+     Switch lives in the triple-tap menu › Date scrubber. ---- */
+  .nav .ttl.scrub.portal { background: #ed1c24;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.34),
+      inset 0 -1px 1.2px rgba(255,255,255,.14),
+      inset 0 0 0 .8px rgba(255,255,255,.26),
+      0 10px 26px -12px rgba(202,0,2,.42),
+      0 2px 9px -5px rgba(0,0,0,.25); }
+  /* red swallows faint white — the fade ladder runs brighter in the portal */
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(3),
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(7) { opacity: .48; }
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(2),
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(8) { opacity: .28; }
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(1),
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(9) { opacity: .15; }
+  /* the side refraction: the lens rides ABOVE the red and the dates,
+     smearing them stylistically at the edges while scrubbing */
+  .nav .ttl.scrub.portal::before { z-index: 2; padding: 0;
+    -webkit-backdrop-filter: blur(5px) saturate(170%) brightness(1.16);
+    backdrop-filter: blur(5px) saturate(170%) brightness(1.16);
+    -webkit-mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
+    -webkit-mask-composite: source-over;
+    mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
+    mask-composite: add; }
+  .nav .ttl.scrub.portal .scb .scb-it .n { color: #f9f9f9; }
+  .nav .ttl.scrub.portal .scb .scb-it .m { color: #ffffff; opacity: .7; }
+  .nav .ttl.scrub.portal .scb .scb-it .d { color: #f9f9f9; opacity: .78; }
+  /* the current day = the Figma tile, compact 30pt */
+  .nav .ttl.scrub.portal .scb .scb-it:nth-child(5) .n { color: #f9f9f9;
+    width: 30px; height: 30px; display: flex; align-items: center;
+    justify-content: center; border-radius: 9px; background: #ed1c24;
+    border: 1px solid #f53a3a; box-sizing: border-box;
+    box-shadow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55); }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
   .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
@@ -844,6 +884,11 @@
       <button data-v="green">Green</button>
       <button data-v="red" class="on">Red</button>
       <button data-v="neon">Neon</button>
+    </div>
+    <div class="s-note" style="margin-top:14px">Date scrubber</div>
+    <div class="seg2" id="scrubSeg">
+      <button data-v="glass" class="on">Glass</button>
+      <button data-v="portal">Red portal</button>
     </div>
   </div>
 
@@ -1939,6 +1984,8 @@ confirmBtn.onclick = () => {
     const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;
+    /* A/B: portal mode reveals the red layer when the pill arms */
+    ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
     ttl.classList.add('forming');
     ttl.style.width = Math.max(96, w0 + 26) + 'px';
     ttl.style.height = '';   /* committed at h0 by the reflow — animates to 44 */
@@ -1990,7 +2037,7 @@ confirmBtn.onclick = () => {
     scrubIdx = Math.round(target);
     paintStrip(scrubIdx);
     strip.style.transform = '';
-    ttl.classList.remove('scrub');
+    ttl.classList.remove('scrub', 'portal');
     if (scrubIdx !== dayIdx) {
       turnDay(scrubIdx > dayIdx ? 1 : -1, scrubIdx);   /* ONE commit turn */
       vibrate(12);
@@ -2204,6 +2251,13 @@ function drawGlowRing(o, now, RW, RH, RR) {
 document.querySelectorAll('#selcSeg button').forEach(b =>
   b.onclick = () => applySelc(b.dataset.v));
 applySelc(MODS.selc || 'red');   /* red is the house default (Rashid 2026-09-08) */
+/* date scrubber A/B (Rashid): Glass vs the Figma red Portal */
+document.querySelectorAll('#scrubSeg button').forEach(b =>
+  b.onclick = () => {
+    MODS.scrubStyle = b.dataset.v;
+    document.querySelectorAll('#scrubSeg button').forEach(x =>
+      x.classList.toggle('on', x === b));
+  });
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -2375,7 +2429,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 109';
+const BUILD = 'build 2026-09-10 · 110';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
