@@ -2077,7 +2077,10 @@ confirmBtn.onclick = () => {
     scrubIdx = Math.round(target);
     paintStrip(scrubIdx);
     strip.style.transform = '';
-    ttl.classList.remove('scrub', 'portal');
+    /* ds-native-hidden: a confirmed scrub twin suppressed the web glass —
+       the twin releases with the next report, so the web pill's own look
+       must return for the next gesture */
+    ttl.classList.remove('scrub', 'portal', 'ds-native-hidden');
     if (scrubIdx !== dayIdx) {
       turnDay(scrubIdx > dayIdx ? 1 : -1, scrubIdx);   /* ONE commit turn */
       vibrate(12);
@@ -2469,7 +2472,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 113';
+const BUILD = 'build 2026-09-10 · 114';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2781,6 +2784,13 @@ if (QS.get('solo') === '1') {
     'html.ds-gauge #navigator .dock { opacity: 0 !important; pointer-events: none !important; transition: none !important; } ' +
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
+    /* scrub twin confirm: the NATIVE capsule is container-only — the web
+       pill drops its own glass but keeps drawing the dates (they read
+       through the material), and hit-testing stays web */
+    '.nav .ttl.scrub.ds-native-hidden { opacity: 1 !important; pointer-events: auto !important; ' +
+    '  background: transparent !important; box-shadow: none !important; ' +
+    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
+    '.nav .ttl.scrub.ds-native-hidden::before, .nav .ttl.scrub.ds-native-hidden::after { display: none !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
@@ -2836,9 +2846,21 @@ if (QS.get('solo') === '1') {
     }
   };
   var restoreT = null;
+  /* the armed scrubber's twin entry (Home-lane contract, 2026-09-10):
+     container-only native Liquid Glass at the pill's live rect; present
+     while armed, released by omission from the next glasschrome post.
+     mode picks the material: 'glass' (.regular) or 'portal' (red tint). */
+  function scrubEl(off) {
+    var el = document.querySelector('.nav .ttl.scrub');
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+      r: parseFloat(getComputedStyle(el).borderRadius) || r.height / 2,
+      mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
+  }
   function report() {
-    if (moving || layerUp || scrubHold) return;   /* twins only at rest, topmost
-                                                     layer only, never mid-scrub */
+    if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
@@ -2857,6 +2879,8 @@ if (QS.get('solo') === '1') {
       if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
       els.push(entry);
     });
+    var se = scrubEl(off);
+    if (se) els.push(se);
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
         surface: SURFACE, mode: currentMode(), els: els });
@@ -2870,8 +2894,16 @@ if (QS.get('solo') === '1') {
   }
   window.DSNativeChrome = function (ids) {
     nativeConfirmed = true;
+    ids = ids || [];
+    /* scrub confirm applies in ANY sheet state — the twin only exists
+       while armed, and the web pill must yield its glass immediately */
+    if (ids.indexOf('scrub') >= 0) {
+      var sc = document.querySelector('.nav .ttl.scrub');
+      if (sc) sc.classList.add('ds-native-hidden');
+    }
     if (!docked) return;   /* a late confirm must not re-hide the riding bar */
-    (ids || []).forEach(function (id) {
+    ids.forEach(function (id) {
+      if (id === 'scrub') return;
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
@@ -2889,7 +2921,7 @@ if (QS.get('solo') === '1') {
      animate the push (CSS transforms) and a per-frame chrometrack burst
      keeps the native twins glued to that exact motion; scrubHold parks
      rest-reports so nothing re-anchors the twins mid-scrub. */
-  var scrubHold = false, scrubRaf = null, scrubT0 = 0;
+  var scrubRaf = null, scrubT0 = 0;
   function trackBurst(ms) {
     scrubT0 = performance.now();
     if (scrubRaf) cancelAnimationFrame(scrubRaf);
@@ -2901,9 +2933,14 @@ if (QS.get('solo') === '1') {
     scrubRaf = requestAnimationFrame(step);
   }
   window.DSScrubChrome = function (on) {
-    scrubHold = on;
-    trackBurst(560);                       /* twins ride the push / the return */
-    if (!on) setTimeout(function () { report(); }, 600);   /* exact anchor after the ride */
+    trackBurst(560);           /* twins ride the push / return; scrub rides the grow */
+    if (on) {
+      report();                /* anchor post WITH the scrub twin = it appears */
+    } else {
+      /* release: the class is gone by the next tick, so this report omits
+         the scrub entry — the shell releases the twin; close/dual re-anchor */
+      setTimeout(function () { report(); }, 600);
+    }
   };
   addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
 
@@ -3038,8 +3075,12 @@ if (QS.get('solo') === '1') {
       if (!el) return;
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      els.push({ id: id, x: r.left + off.x, y: r.top + off.y });
+      /* protocol v2 (Home lane): track frames carry w/h so twins can
+         ride live SIZE changes (the scrub grow morph), not just position */
+      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height });
     });
+    var se = scrubEl(off);
+    if (se) els.push(se);
     if (!els.length) return;
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'chrometrack', flow: FLOW, els: els });
