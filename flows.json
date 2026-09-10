@@ -25,6 +25,12 @@
           "to": "rewards",
           "present": "sheet",
           "note": "Discounts widget — context {src:'discounts-widget'}"
+        },
+        {
+          "intent": "open-guide-me",
+          "to": "plan-quiz",
+          "present": "push",
+          "note": "Guide me widget on the signed-out home — context {src:'guideme-widget'}"
         }
       ],
       "entries": [
