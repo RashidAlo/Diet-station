@@ -2,7 +2,7 @@
   "flows": [
     {
       "id": "home",
-      "title": "Home — Widget System",
+      "title": "Homescreen",
       "status": "in-progress",
       "path": "home/",
       "platform": "iOS",
