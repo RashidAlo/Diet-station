@@ -230,7 +230,26 @@
   .alert .btns .destructive { color: #ed1c24; font-weight: 600;
     border-left: .5px solid rgba(60,60,67,.29); }
   .nav .ttl { position: absolute; left: 50%; transform: translateX(-50%);
-    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    touch-action: none; border-radius: 22px; padding: 0 12px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    transition: color .35s ease, text-shadow .35s ease, background .28s ease,
+      box-shadow .28s ease, height .28s cubic-bezier(.3,.8,.3,1),
+      padding .28s cubic-bezier(.3,.8,.3,1), transform .28s cubic-bezier(.3,.8,.3,1); }
+  /* hold-the-date scrubber (Rashid): the date inflates into a glass pill at
+     the nav buttons' height; while held, horizontal swipes turn the days */
+  .nav .ttl::before, .nav .ttl::after { content: '\2039'; font: 600 18px/1 'Urbane Rounded', sans-serif;
+    opacity: 0; width: 0; overflow: hidden; transition: opacity .25s ease .05s, width .28s ease; }
+  .nav .ttl::after { content: '\203A'; }
+  .nav .ttl.scrub { height: 44px; padding: 0 22px;
+    transform: translateX(-50%) translateY(-11px);
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22); }
+  .nav .ttl.scrub::before, .nav .ttl.scrub::after { opacity: .35; width: 10px; }
+  .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
   .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
@@ -1719,6 +1738,50 @@ confirmBtn.onclick = () => {
   }
   nextTapped();
 };
+
+/* ================= hold-the-date day scrubber (Rashid) =================
+   Tap-and-hold the date: it inflates into a glass pill at the nav
+   buttons' height, and while STILL HOLDING, horizontal swipes turn the
+   days (the full day-turn choreography per step, rate-limited by its own
+   `turning` guard). Release collapses the pill. Only the hold activates
+   it — plain taps do nothing. */
+(function () {
+  const ttl = document.querySelector('.nav .ttl');
+  if (!ttl) return;
+  const STEP = 64;              /* px of swipe per day turn */
+  let holdT = null, scrubbing = false, anchorX = 0, downX = 0, downY = 0;
+  ttl.addEventListener('pointerdown', e => {
+    downX = e.clientX; downY = e.clientY;
+    clearTimeout(holdT);
+    holdT = setTimeout(() => {
+      scrubbing = true;
+      anchorX = downX;
+      ttl.classList.add('scrub');
+      try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
+      vibrate(10);
+    }, 380);
+  });
+  ttl.addEventListener('pointermove', e => {
+    if (!scrubbing) {
+      /* a drift before the hold lands is a scroll, not a scrub */
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) clearTimeout(holdT);
+      return;
+    }
+    const dx = e.clientX - anchorX;
+    if (dx <= -STEP) { anchorX = e.clientX; turnDay(1); }
+    else if (dx >= STEP) { anchorX = e.clientX; turnDay(-1); }
+  });
+  const endScrub = () => {
+    clearTimeout(holdT);
+    if (scrubbing) {
+      scrubbing = false;
+      ttl.classList.remove('scrub');
+      vibrate(6);
+    }
+  };
+  ttl.addEventListener('pointerup', endScrub);
+  ttl.addEventListener('pointercancel', endScrub);
+})();
 const clearModal = document.getElementById('clearModal');
 document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
 document.getElementById('clearCancel').onclick = () => clearModal.classList.remove('show');
@@ -2093,7 +2156,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-09 · 92';
+const BUILD = 'build 2026-09-10 · 93';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
