@@ -982,7 +982,15 @@
           "params": {
             "solo": "1"
           },
-          "note": "native cover — page self-presents per the overlay rule"
+          "note": "Native cover summon — page self-presents per the overlay rule (own scrim dissolves over a transparent, unanimated cover); ds-close hands back"
+        },
+        {
+          "id": "register",
+          "params": {
+            "intent": "register",
+            "plan": "<optional plan summary: {goal, kcal, mealsPerDay, durationWeeks, priceKD, name, flags[]}>"
+          },
+          "note": "CONTRACT ONLY — create-account journey agreed with Guide Me (their quiz-end emits ds-nav to 'auth' present:'sheet' with context {src:'plan-quiz', intent:'register', plan}). NOT BUILT: awaiting Figma frames; Guide Me holds the emit until the auth lane pings. Until built, this entry boots the default sign-in."
         }
       ],
       "exits": [
