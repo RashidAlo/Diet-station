@@ -246,9 +246,13 @@
       changes. Web recipe: frame <code>y = gap − s</code>, radius riding y, and a spacer pad
       <code>--dock-pad = min(s, gap)</code> growing 1:1 through the attach to absorb the
       sheet's travel (headroom pinned once at init, never tracking animated chrome).
-      Device-verified: uniform steps before and after the dock, zero discontinuity. Accepted
-      trade: fullscreen rest carries ~46pt of clear air above the first category — constant
-      velocity + never-cropped forces it.</p>
+      Measured: uniform steps before and after the dock, zero discontinuity — <i>taken on
+      the pre-fix shell (bounce gate still present); a retest on the corrected shell is
+      pending</i>. Accepted trade: fullscreen rest carries ~46pt of clear air above the
+      first category — constant velocity + never-cropped forces it.
+      <b>Status: model ADOPTED; resolution PENDING</b> — the shell retest and Rashid's
+      device verdict decide whether this chapter closes or the parked nav-dock lever
+      (9am: titles dock into the bar, no position:sticky) gets played.</p>
     <p class="spec"><b>Two laws for any scroll-driven sheet:</b> (1) <b>never write
       scrollTop from inside a scroll handler</b> — it cancels WKWebView's deceleration
       outright; the sheet is a pure readout of the scroll. (2) if the scroll container
@@ -256,9 +260,20 @@
       of both motions — the spacer must absorb the sheet's travel or the user feels a speed
       change at the dock. Rejected along the way (six variants, recorded so nobody re-walks
       them): two-detent, detent-settle glide, K=2 frame, eased attach, always-riding pad,
-      day-pad fold — and the stack of shell-side causes (twin re-anchor at half-gap,
-      mid-gesture scroll mutation, gauge dead zone, delayed touch-ends) that hid behind
-      them.</p>
+      day-pad fold.</p>
+    <p class="spec"><b>Causes were concurrent, not ranked.</b> Web and shell defects ran at
+      the same time and the split between them is <i>not yet known</i>: web — a chrome flip
+      hardcoded at half the gap (re-anchoring native twins mid-rise, invisible outside a
+      device) and content running at the sum of sheet + scroll (1.17&rarr;0.70 px/px at the
+      dock); shell — <code>syncChrome()</code> firing on <b>every</b> chrome message, not
+      just navigation, re-seating the scroll view's refresh control and re-asserting
+      <code>bounces</code> mid-pan (a subview change and a physics change with the finger
+      still down; <code>bounces=false</code> also makes the scroll view refuse the gesture
+      at offset 0, which is why the reverse direction read worse), plus a full-width gauge
+      swallowing swipes and lab recognizers delaying touch-ends. The lesson generalizes:
+      <b>a scroll that &ldquo;sticks&rdquo; is as likely to be the host mutating the scroll
+      view mid-gesture as it is the page's math</b> — never re-seat subviews or re-assert
+      physics on a live scroll view.</p>
   </section>
 
   <section class="card">
