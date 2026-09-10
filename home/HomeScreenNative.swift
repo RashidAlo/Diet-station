@@ -1186,104 +1186,133 @@ struct HomeScreenNative: View {
         }
     }
 
-    /// LIQUID GLASS subscription card (Rashid): a frosted glass platter on
-    /// the white sheet, cradling a glass theme-gradient plan pill
+    /// DS component 4539-10208 VARIANT A, verbatim: the r32 "Liquid Glass
+    /// Regular Medium" platter (hairline dbdbdb ring, 0 8 37 shadow) with
+    /// 18pt circle badges, hairline chips, gradient price + the r28
+    /// gradient plan pill (Rashid: the card is glass, the pill is glass)
     private func planCard(_ plan: HomeState.Plan, _ price: Int) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 7.5) {
                 planRow("1", "Breakfast")
                 planRow("2", "Lunch & Dinner")
                 planRow("5", "Salad & Soup")
                 planRow("1", "Snack")
-                HStack(spacing: 5) {
-                    Text("~1200 kcal").font(DS.urbane(11.5, .semibold)).foregroundStyle(DS.ink)
-                    Text("|").font(DS.proxima(11.5)).foregroundStyle(Color(white: 0.78))
-                    Text("100g macros").font(DS.proxima(11.5)).foregroundStyle(DS.caption)
+                Spacer(minLength: 4)
+                HStack(spacing: 4) {
+                    Text("~1200 kcal").font(DS.proxima(12)).fontWeight(.bold)
+                    Text("|").font(DS.proxima(12)).foregroundStyle(Color(white: 0.75))
+                    (Text("100g").font(DS.proxima(12)).fontWeight(.bold)
+                     + Text(" macros").font(DS.proxima(12)))
                 }
+                .foregroundStyle(DS.ink)
                 .lineLimit(1).fixedSize()
-                .padding(.horizontal, 9).frame(height: 26)
-                .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color(white: 0.89), lineWidth: 1))
-                .padding(.top, 12)
+                .padding(.horizontal, 10).frame(height: 20)
+                .overlay(Capsule().stroke(Color.black.opacity(0.06), lineWidth: 1))
             }
+            .frame(height: 122)
             .lineLimit(1).minimumScaleFactor(0.85)
             Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 10) {
-                HStack(alignment: .lastTextBaseline, spacing: 3) {
-                    Text("KD139").font(DS.urbane(12))
-                        .strikethrough(true, color: DS.red.opacity(0.8))
-                        .foregroundStyle(Color(white: 0.73))
-                    (Text("KD").font(DS.urbane(14, .semibold))
-                     + Text(verbatim: "\(price)").font(DS.urbane(33, .semibold)))
-                        .foregroundStyle(plan.priceColor)
-                    Text("/mo").font(DS.proxima(12)).foregroundStyle(DS.caption)
+            VStack(alignment: .trailing, spacing: 0) {
+                HStack(alignment: .lastTextBaseline, spacing: 0) {
+                    Text("KD139").font(DS.proxima(15)).fontWeight(.semibold)
+                        .strikethrough(true, color: Color(white: 0.6))
+                        .foregroundStyle(Color(red: 153/255, green: 153/255, blue: 153/255))
+                        // the red diagonal strike (Figma Line 79, ~170°)
+                        .overlay {
+                            Capsule().fill(DS.red).frame(height: 1.6)
+                                .rotationEffect(.degrees(-9.9))
+                                .padding(.horizontal, -2)
+                        }
+                        .padding(.trailing, 4)
+                    Text("KD").font(DS.proxima(15)).fontWeight(.bold)
+                        .foregroundStyle(plan.solidGradient)
+                    Text(verbatim: "\(price)").font(DS.urbane(30, .semibold))
+                        .foregroundStyle(plan.solidGradient)
+                    Text("/mo").font(DS.proxima(15)).fontWeight(.medium)
+                        .foregroundStyle(Color(red: 153/255, green: 153/255, blue: 153/255))
                 }
                 .lineLimit(1).fixedSize()
-                dealChip
+                Spacer(minLength: 6)
+                dealChip(plan)
+                Spacer(minLength: 8)
                 planPill(plan)
             }
+            .frame(height: 122)
             .layoutPriority(1)   // the price never wraps; the list scales first
         }
-        .padding(19)
+        .padding(EdgeInsets(top: 24, leading: 20, bottom: 20, trailing: 20))
         .frame(maxWidth: .infinity)
         // real material on white: the card IS glass, not a painted white box
-        .glassEffect(.regular, in: .rect(cornerRadius: 38))
-        .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.14),
-                radius: 16, y: 8)
+        .glassEffect(.regular, in: .rect(cornerRadius: 32))
+        .overlay(RoundedRectangle(cornerRadius: 32)
+            .stroke(Color(red: 219/255, green: 219/255, blue: 219/255), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.08), radius: 18.5, y: 8)
         .onTapGesture { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
     }
 
     private func planRow(_ n: String, _ label: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(n).font(DS.urbane(12, .semibold))
-                .foregroundStyle(Color(red: 185/255, green: 188/255, blue: 194/255))
-                .frame(width: 10)
-            Text(label).font(DS.urbane(14)).foregroundStyle(DS.ink)
+        HStack(spacing: 6) {
+            Text(n).font(DS.proxima(12)).fontWeight(.semibold)
+                .foregroundStyle(DS.ink)
+                .frame(width: 18, height: 18)
+                .background(Color(red: 244/255, green: 244/255, blue: 244/255).opacity(0.6),
+                            in: Circle())
+            Text(label).font(DS.urbane(12)).foregroundStyle(DS.ink)
         }
-        .frame(height: 26, alignment: .center)
+        .frame(height: 18, alignment: .center)
     }
 
-    private var dealChip: some View {
-        (Text("خصم ").font(DS.avenirWorld(11.5))
-            .foregroundColor(Color(red: 58/255, green: 58/255, blue: 63/255))
-         + Text("KD 40 ").font(DS.urbane(11, .semibold)).foregroundColor(DS.red)
-         + Text("🔥 ").font(.system(size: 10))
-         + Text("اشترك الحين").font(DS.avenirWorld(11.5))
-            .foregroundColor(Color(red: 58/255, green: 58/255, blue: 63/255)))
-            .lineLimit(1).fixedSize()
-            .padding(.horizontal, 10).frame(height: 28)
-            .background(Color(red: 244/255, green: 244/255, blue: 246/255), in: Capsule())
-            .id("lo-deal-\(fontTick)")
+    /// hairline transparent chip, theme-GRADIENT text — the fire emoji keeps
+    /// its own colors outside the gradient fill
+    private func dealChip(_ plan: HomeState.Plan) -> some View {
+        HStack(spacing: 3) {
+            Text("خصم KD 40").font(DS.avenirWorld(12, .semibold))
+                .foregroundStyle(plan.solidGradient)
+            Text("🔥").font(.system(size: 11))
+            Text("اشترك الحين").font(DS.avenirWorld(12, .semibold))
+                .foregroundStyle(plan.solidGradient)
+        }
+        .environment(\.layoutDirection, .rightToLeft)
+        .lineLimit(1).fixedSize()
+        .padding(.horizontal, 10).frame(height: 24)
+        .overlay(Capsule().stroke(Color.black.opacity(0.06), lineWidth: 1))
+        .id("lo-deal-\(fontTick)")
     }
 
     /// glass pill over the plan's theme gradient — gradient clipped BEFORE
-    /// the glass (the house bleed rule)
+    /// the glass (the house bleed rule); hairline e3e3e3 ring per variant A
     private func planPill(_ plan: HomeState.Plan) -> some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             planPillLabel(plan)
-                .padding(.horizontal, 22).frame(height: 44)
+                .padding(.horizontal, 20).frame(height: 40)
                 .background(plan.solidGradient)
                 .clipShape(Capsule())
                 .glassEffect(.clear, in: .capsule)
-                .shadow(color: DS.ink.opacity(0.28), radius: 10, y: 5)
+                .overlay(Capsule().stroke(Color(red: 227/255, green: 227/255, blue: 227/255),
+                                          lineWidth: 1))
+                .shadow(color: DS.ink.opacity(0.22), radius: 9, y: 4)
         }
         .buttonStyle(.plain)
     }
 
-    private func planPillLabel(_ plan: HomeState.Plan) -> Text {
-        switch plan {
-        case .body:
-            return Text("BODY").font(DS.urbane(15, .semibold)).foregroundColor(.white)
-                 + Text("Building").font(DS.urbane(15, .semibold))
+    private func planPillLabel(_ plan: HomeState.Plan) -> some View {
+        Group {
+            switch plan {
+            case .body:
+                Text("BODY").font(DS.urbane(16, .semibold)).foregroundColor(.white)
+                + Text("Building").font(DS.urbane(16, .semibold))
                     .foregroundColor(Color(red: 242/255, green: 84/255, blue: 61/255))
-        case .kids:
-            return Text("Kids").font(DS.urbane(15, .semibold)).foregroundColor(.white)
-        default:
-            let (a, b) = plan.words
-            return Text(a).font(DS.urbane(15, .light)).foregroundColor(.white.opacity(0.75))
-                 + Text(b).font(DS.urbane(15, .semibold)).foregroundColor(.white)
+            case .kids:
+                Text("Kids").font(DS.urbane(16, .semibold)).foregroundColor(.white)
+            default:
+                let (a, b) = plan.words
+                Text(a).font(DS.urbane(16, .light)).foregroundColor(.white.opacity(0.6))
+                + Text(b).font(DS.urbane(16, .semibold)).foregroundColor(.white)
+            }
         }
+        .shadow(color: .black.opacity(0.1), radius: 4, y: 1)
     }
 
     // MARK: meal sheet
@@ -1551,19 +1580,20 @@ extension HomeState.Plan {
         case .kids: return Color(red: 1, green: 63/255, blue: 85/255)
         }
     }
-    /// full-opacity siblings of the plan-widget gradients — the same Design
-    /// System families, solid enough to live on the white sheet
+    /// DS component 4539-10208 variant A gradients (~116deg): TheDiet +
+    /// LifeStyle are TOKEN-EXACT from get_design_context; Body + Kids are
+    /// traced from their instances — swap when their tokens are readable
     var solidGradient: LinearGradient {
         func g(_ c1: Color, _ c2: Color) -> LinearGradient {
-            LinearGradient(colors: [c1, c2], startPoint: .topTrailing, endPoint: .bottomLeading)
+            LinearGradient(colors: [c1, c2], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
         switch self {
         case .diet:
-            return g(Color(red: 138/255, green: 86/255, blue: 232/255),
-                     Color(red: 95/255, green: 46/255, blue: 194/255))
+            return g(Color(red: 130/255, green: 69/255, blue: 156/255),
+                     Color(red: 85/255, green: 37/255, blue: 181/255))
         case .lifestyle:
-            return g(Color(red: 247/255, green: 154/255, blue: 75/255),
-                     Color(red: 238/255, green: 82/255, blue: 40/255))
+            return g(Color(red: 1, green: 150/255, blue: 62/255),
+                     Color(red: 1, green: 5/255, blue: 5/255))
         case .body:
             return g(Color(red: 42/255, green: 42/255, blue: 82/255),
                      Color(red: 21/255, green: 21/255, blue: 46/255))
