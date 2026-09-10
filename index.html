@@ -95,10 +95,8 @@
     padding: 11px 14px; margin-bottom: 10px; border-radius: 16px;
     cursor: pointer; }
   body.listview #flows .card .row { display: contents; }
-  body.listview #flows .card .thumb { order: -1; flex: none; }
-  body.listview #flows .card .thumb img { width: 38px; height: 46px;
-    aspect-ratio: auto; object-fit: cover; object-position: top;
-    border-radius: 9px; box-shadow: 0 0 0 0.5px var(--line); }
+  /* a readable list is text-first: no flow thumbnails in list view */
+  body.listview #flows .card .thumb { display: none !important; }
   body.listview #flows .card .desc, body.listview #flows .card .meta,
   body.listview #flows .card .actions, body.listview #flows .card .handoff,
   body.listview #flows .card .appshots { display: none !important; }
@@ -123,32 +121,39 @@
   body.native .ordertoast {
     bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
 
-  /* mobile: a strict two-row GRID so everything lines up on clean axes —
-     thumb spans both rows, the title owns row 1 full-width, and row 2 is
-     the aligned baseline: pill at left, admin controls at right */
+  /* mobile: a FULL-BLEED flat list — an iOS table, not floating cards.
+     Rows are separated by hairlines; the title owns row 1 at a smaller
+     size, and row 2 is one aligned baseline: pill left, controls right */
   @media (max-width: 600px) {
+    body.listview #flows { margin: 0 calc(50% - 50vw);
+      background: var(--card);
+      border-top: 0.5px solid var(--line);
+      border-bottom: 0.5px solid var(--line); }
     body.listview #flows .card { display: grid;
-      grid-template-columns: auto 1fr auto; align-items: center;
-      column-gap: 12px; row-gap: 8px; padding: 13px 14px; }
+      grid-template-columns: 1fr auto; align-items: center;
+      column-gap: 14px; row-gap: 7px; padding: 13px 20px;
+      margin: 0; border-radius: 0; box-shadow: none; background: transparent;
+      border-bottom: 0.5px solid var(--line); }
+    body.listview #flows .card:last-child { border-bottom: 0; }
     body.listview #flows .card .body,
     body.listview #flows .card .top { display: contents; }
-    body.listview #flows .card .thumb { grid-column: 1; grid-row: 1 / 3; }
-    body.listview #flows .card .thumb img { width: 42px; height: 52px; }
-    body.listview #flows .card h2 { grid-column: 2 / 4; grid-row: 1;
-      min-width: 0; font-size: 14.5px; line-height: 1.3; margin: 0;
+    body.listview #flows .card h2 { grid-column: 1 / 3; grid-row: 1;
+      min-width: 0; font-size: 13.5px; line-height: 1.4; margin: 0;
       white-space: normal; display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; align-self: end; }
-    body.listview #flows .card .pill { grid-column: 2; grid-row: 2;
+      -webkit-box-orient: vertical; }
+    body.listview #flows .card .pill { grid-column: 1; grid-row: 2;
       justify-self: start; align-self: center; font-size: 9px;
       letter-spacing: .05em; padding: 4px 8px 3px; }
-    body.listview #flows .card::after { grid-column: 3; grid-row: 1 / 3; }
+    body.listview #flows .card::after { grid-column: 2; grid-row: 1 / 3; }
     body.admin.listview #flows .card:not(.editing)::after { display: none; }
     body.admin.listview #flows .card:not(.editing) .actions {
-      grid-column: 3; grid-row: 2; justify-self: end; align-self: center;
-      flex-direction: row; gap: 8px; }
+      grid-column: 2; grid-row: 2; justify-self: end; align-self: center;
+      flex-direction: row; gap: 10px; }
     body.admin.listview #flows .card .actions .cardedit,
     body.admin.listview #flows .card .actions .livebtn {
       width: 34px; height: 34px; }
+    body.listview #flows .card.editing { padding: 18px 20px; }
+    body.listview #flows .card.drag { background: var(--card); }
   }
   body.listview #flows .card .pill { font-size: 10px; padding: 5px 8px 4px;
     letter-spacing: .04em; }
@@ -158,9 +163,7 @@
   body.listview #flows .card::after { content: ''; width: 8px; height: 8px;
     flex: none; margin-right: 2px; border-right: 2px solid #c7c7cc;
     border-top: 2px solid #c7c7cc; transform: rotate(45deg); }
-  /* native cards are edge-to-edge showcases — restore row chrome in list */
-  body.native.listview #flows .card { padding: 12px 16px; border-radius: 18px; }
-  body.native.listview #flows .card .thumb { display: block !important; }
+  /* native cards are edge-to-edge showcases — neutralize their body pad */
   body.native.listview #flows .card .row .body { padding: 0; }
   /* admin keeps its controls in list rows: compact pencil + Live/Offline
      power (the rest of the action bar stays card-view only) */
@@ -1408,7 +1411,8 @@ async function publishOrder(ids, done) {
 function wireReorder() {
   if (!ADMIN) return;
   const root = document.getElementById('flows');
-  const GAP = 10;                          /* list-row margin-bottom */
+  /* row gap differs per breakpoint (card margins vs flat hairlines) */
+  const gapOf = el => parseFloat(getComputedStyle(el).marginBottom) || 0;
   let card = null, pid = null, holdT = null, armed = false, moved = false;
   let sx = 0, sy = 0, startY = 0;
   document.addEventListener('touchmove', e => {
@@ -1445,11 +1449,11 @@ function wireReorder() {
     const prev = card.previousElementSibling, next = card.nextElementSibling;
     if (prev && mid < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
       root.insertBefore(card, prev);
-      startY -= prev.offsetHeight + GAP;
+      startY -= prev.offsetHeight + gapOf(prev);
       card.style.transform = 'translateY(' + (e.clientY - startY) + 'px)';
     } else if (next && mid > next.getBoundingClientRect().top + next.offsetHeight / 2) {
       root.insertBefore(next, card);
-      startY += next.offsetHeight + GAP;
+      startY += next.offsetHeight + gapOf(next);
       card.style.transform = 'translateY(' + (e.clientY - startY) + 'px)';
     }
   });
