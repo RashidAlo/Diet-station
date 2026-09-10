@@ -284,7 +284,7 @@
      the center figures pop as the day snaps in */
   .scb.slide { transition: transform .16s cubic-bezier(.25, 1.55, .45, 1); }
   .scb .scb-it:nth-child(3) .n { animation: scbpop .18s cubic-bezier(.3,1.4,.5,1); }
-  @keyframes scbpop { 0% { transform: scale(.82); } 60% { transform: scale(1.1); }
+  @keyframes scbpop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); }
     100% { transform: scale(1); } }
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
   @keyframes scbsnap { 0% { transform: translateX(-30px); opacity: .4; }
@@ -1826,62 +1826,42 @@ confirmBtn.onclick = () => {
     for (let k = -2; k <= 2; k++) h += itemHTML(idx + k, k === 0);
     strip.innerHTML = h;
   }
-  let slideT = null;
-  function slideStep(idx, dir) {
-    /* carousel pull: the NEW window paints immediately (fast scrubs never
-       show stale dates), starts displaced one slot toward the old window,
-       and glides to rest — reads as pulling dates through the pill */
-    clearTimeout(slideT);
-    strip.classList.remove('slide');
-    paintStrip(idx);
-    strip.style.transform = 'translateX(' + (dir * 48) + 'px)';
-    void strip.offsetWidth;
-    strip.classList.add('slide');
-    strip.style.transform = '';
-    slideT = setTimeout(() => strip.classList.remove('slide'), 170);
-  }
-  function settleStrip(idx) {
-    /* kill any in-flight slide so it can't fight a snap */
-    clearTimeout(slideT);
-    strip.classList.remove('slide');
-    strip.style.transform = '';
-    paintStrip(idx);
-  }
-
-  /* one-swipe reach (Rashid): sensitivity calibrates at engage so the
-     travel from the finger to each SCREEN EDGE maps to the whole
-     remaining range in that direction — center-to-edge = end of the
-     subscription, no re-stroking. The wheel spins to catch the finger
-     at an adaptive cadence (faster the further behind it is). */
+  /* continuous glide (Rashid v6): no snapping — the strip's position is
+     FRACTIONAL and slides with the finger, dates flowing left-right so
+     the eye scans BETWEEN days even at speed. An exponential smoother
+     trails the finger (the soften); crossing a day's center re-windows
+     the strip and ticks. One-swipe reach calibration kept, floor eased. */
   const EDGE = 16;                              /* travel map margin */
-  const CAD_NEAR = 60, CAD_MID = 40, CAD_FAR = 22;
+  const FOLLOW = 0.2;                           /* smoothing — lower = softer */
+  const SLOT = 48;                              /* strip slot width */
   let holdT = null, scrubbing = false, downX = 0, downY = 0;
   let engageX = 0, baseIdx = 0, target = 0, scrubIdx = 0;
-  let stepFwd = STEP, stepBack = STEP, lastStep = 0, latched = false, lastX = 0, raf = null;
+  let disp = 0, winC = 0;                       /* displayed fraction + window center */
+  let stepFwd = STEP, stepBack = STEP, latched = false, lastX = 0, raf = null;
 
   function calibrate(x) {
-    engageX = x; baseIdx = scrubIdx;
-    stepFwd = Math.min(STEP, Math.max(6, (x - EDGE) / Math.max(1, maxIdx - scrubIdx)));
+    engageX = x; baseIdx = target;
+    stepFwd = Math.min(STEP, Math.max(8, (x - EDGE) / Math.max(1, maxIdx - target)));
     const vw = document.documentElement.clientWidth || window.innerWidth || 402;
-    stepBack = Math.min(STEP, Math.max(6, (vw - EDGE - x) / Math.max(1, scrubIdx || 1)));
+    stepBack = Math.min(STEP, Math.max(8, (vw - EDGE - x) / Math.max(1, target || 1)));
   }
-  function spin(now) {
-    raf = scrubbing ? requestAnimationFrame(spin) : null;
-    if (!scrubbing || scrubIdx === target) return;
-    const gap = Math.abs(target - scrubIdx);
-    const cad = gap > 10 ? CAD_FAR : gap > 4 ? CAD_MID : CAD_NEAR;
-    if (now - lastStep < cad) return;
-    lastStep = now;
-    const dir = target > scrubIdx ? 1 : -1;
-    scrubIdx += dir;
-    slideStep(scrubIdx, dir);
-    vibrate(8);                                 /* the snap-into-a-day tick */
-    if (scrubIdx === 0 && dir < 0) {
-      /* home detent (Rashid): landing on the earliest selectable day
-         STOPS the wheel — a fresh forward stroke re-arms it */
-      latched = true; target = 0;
-      vibrate([12, 40, 14]);
+  function glide() {
+    raf = scrubbing ? requestAnimationFrame(glide) : null;
+    if (!scrubbing) return;
+    disp += (target - disp) * FOLLOW;
+    if (Math.abs(target - disp) < 0.003) disp = target;
+    const c = Math.round(disp);
+    if (c !== winC) {
+      winC = c;
+      paintStrip(c);                            /* re-window on center crossing */
+      vibrate(4);                               /* soft per-day tick */
+      if (c === 0 && target === 0 && !latched && baseIdx !== 0) {
+        /* home detent: gliding home STOPS the wheel — fresh stroke re-arms */
+        latched = true;
+        vibrate([12, 40, 14]);
+      }
     }
+    strip.style.transform = 'translateX(' + (-(disp - winC) * SLOT).toFixed(2) + 'px)';
   }
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
@@ -1889,14 +1869,15 @@ confirmBtn.onclick = () => {
     holdT = setTimeout(() => {
       scrubbing = true;
       lastX = downX;
-      scrubIdx = dayIdx; target = scrubIdx; latched = false;
+      target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
       calibrate(downX);
-      paintStrip(scrubIdx);
+      paintStrip(winC);
+      strip.style.transform = '';
       ttl.classList.add('scrub');
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(spin);
+      raf = requestAnimationFrame(glide);
     }, 380);
   });
   ttl.addEventListener('pointermove', e => {
@@ -1911,18 +1892,19 @@ confirmBtn.onclick = () => {
       if (mx < -8) { latched = false; calibrate(e.clientX); }   /* fresh stroke */
       return;
     }
-    /* absolute slider mapping from the engage point */
+    /* absolute FRACTIONAL mapping — the strip position IS the finger */
     const dx = engageX - e.clientX;             /* + = later days */
-    target = dx >= 0
-      ? Math.min(maxIdx, baseIdx + Math.round(dx / stepFwd))
-      : Math.max(0, baseIdx - Math.round(-dx / stepBack));
+    target = Math.max(0, Math.min(maxIdx,
+      baseIdx + (dx >= 0 ? dx / stepFwd : dx / stepBack)));
   });
   const endScrub = () => {
     clearTimeout(holdT);
     if (!scrubbing) return;
     scrubbing = false;
     cancelAnimationFrame(raf); raf = null;
-    if (scrubIdx !== target) { scrubIdx = target; settleStrip(scrubIdx); }
+    scrubIdx = Math.round(target);
+    paintStrip(scrubIdx);
+    strip.style.transform = '';
     ttl.classList.remove('scrub');
     if (scrubIdx !== dayIdx) {
       turnDay(scrubIdx > dayIdx ? 1 : -1, scrubIdx);   /* ONE commit turn */
@@ -2308,7 +2290,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 105';
+const BUILD = 'build 2026-09-10 · 106';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
