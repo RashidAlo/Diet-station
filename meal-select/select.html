@@ -298,20 +298,24 @@
     background: rgba(255,255,255,.12);
     -webkit-backdrop-filter: blur(3px) saturate(190%);
     backdrop-filter: blur(3px) saturate(190%); }
-  /* EXIT stage 1 (Rashid: "it exits abruptly"). The old exit dropped
-     .scrub, which did TWO abrupt things at once: the width fell back to
-     auto (auto never transitions, so the pill snapped) and the native
-     twin — which only tracks while .scrub exists — vanished the same
-     frame. .closing keeps .scrub ON and overrides the geometry instead,
-     so the capsule COLLAPSES home on a spring and the twin rides the
-     shrinking rect all the way down with it. Mirror image of the grow. */
-  .nav .ttl.scrub.closing { height: 44px; top: calc(var(--top-pad) + 9px);
-    border-radius: 22px; width: var(--close-w, 120px) !important;
-    transition: width .44s cubic-bezier(.32,1.24,.4,1),
-      height .44s cubic-bezier(.32,1.24,.4,1),
-      top .44s cubic-bezier(.32,1.24,.4,1),
-      border-radius .44s cubic-bezier(.32,1.24,.4,1),
+  /* EXIT — ONE motion home, the mirror of the entry's one spring. The old
+     exit dropped .scrub, which did two abrupt things at once: width fell
+     back to auto (auto never transitions, so the capsule snapped) and the
+     native twin — which only tracks while .scrub exists — vanished the
+     same frame. .closing keeps .scrub ON and overrides the geometry to the
+     LABEL's own (not to an intermediate pill: that was the second step),
+     so the capsule travels all the way home on one spring with the twin
+     riding the shrinking rect, and the glass eases off as it lands. */
+  .nav .ttl.scrub.closing { width: var(--close-w, 120px) !important;
+    height: var(--close-h, 28px); top: calc(var(--top-pad) + 20px);
+    border-radius: 22px;
+    transition: width .44s cubic-bezier(.32,1.2,.42,1),
+      height .44s cubic-bezier(.32,1.2,.42,1),
+      top .44s cubic-bezier(.32,1.2,.42,1),
+      border-radius .44s cubic-bezier(.32,1.2,.42,1),
       background .34s ease, box-shadow .34s ease; }
+  .nav .ttl.scrub.closing .glassbg { opacity: 0;
+    transition: opacity .3s ease .12s; }
   /* the glass keeps its scale through the collapse, then eases out over
      the final deflate so the pill doesn't pop off the label */
   .nav .ttl.unforming .glassbg { opacity: 0; transition: opacity .3s ease .04s; }
@@ -2125,69 +2129,71 @@ confirmBtn.onclick = () => {
   const navEl = document.querySelector('.nav');
   let unformT = null, closeT = null;
   let formW0 = 0, formH0 = 0;          /* the label's own size, pre-morph */
-  /* stage 2 of the exit: the control pill deflates back into the plain
-     label. Explicit px both ends — auto never transitions, which is what
-     made the old exit snap. */
+  /* the collapse has already carried the capsule to the label's exact size
+     by the time this runs, so it is pure cleanup — no second visual step */
   function deflate() {
     clearTimeout(closeT); clearTimeout(unformT);
     ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
-    ttl.classList.add('unforming');
     ttl.style.removeProperty('--close-w');
-    if (formW0) { ttl.style.width = formW0 + 'px'; ttl.style.height = formH0 + 'px'; }
-    unformT = setTimeout(() => {
-      ttl.classList.remove('unforming');
-      ttl.style.width = ''; ttl.style.height = '';
-    }, 360);
+    ttl.style.removeProperty('--close-h');
+    ttl.style.width = ''; ttl.style.height = '';
   }
   function unform() {
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
-      /* ARMED exit: collapse the full capsule home FIRST, with .scrub still
-         on so the native twin keeps tracking it, then deflate. The twin is
-         released by the omit-post inside DSScrubChrome(false), timed to
-         land as the collapse finishes rather than at the first frame. */
-      ttl.style.setProperty('--close-w', Math.max(96, formW0 + 26) + 'px');
+      /* ONE motion home, with .scrub still on so the native twin keeps
+         tracking the shrinking rect the whole way. It is released by the
+         omit-post inside DSScrubChrome(false), timed to land as the
+         capsule arrives rather than as it leaves. */
+      ttl.style.setProperty('--close-w', (formW0 || 96) + 'px');
+      ttl.style.setProperty('--close-h', (formH0 || 28) + 'px');
       ttl.classList.add('closing');
-      closeT = setTimeout(deflate, 380);
+      closeT = setTimeout(deflate, 430);
     } else {
-      deflate();                        /* early lift: never armed, just undo */
+      deflate();                        /* never armed: nothing to collapse */
     }
     window.DSScrubChrome && DSScrubChrome(false);   /* twins return */
   }
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
     clearTimeout(holdT);
-    /* stage 1, the instant the finger lands (Rashid: no dead pause):
-       the label swells into a CONTROL-SIZED glass pill around itself —
-       width pinned to its current px first so the inflate animates
-       (auto -> px never transitions). Neighbours stay put for now. */
+    /* ONE MORPH, on touch (Rashid: "the moment I touch the date the liquid
+       glass container should morph in — the current transition seems to be
+       2 steps"). It WAS two: a control-sized .forming pill on touch, then a
+       second grow into .scrub 380ms later, with a scale keyframe on top of
+       the first — three beats in all. Now the container goes straight to its
+       full armed geometry in a single spring, and the ladder is painted in
+       the same frame so the dates arrive WITH the glass instead of after it.
+       The 380ms hold no longer gates the look, only whether dragging
+       scrubs — so a drift before it still cancels as a scroll. Width and
+       height are pinned in px first: auto never transitions, which is what
+       forced the staging in the first place. */
     clearTimeout(unformT); clearTimeout(closeT);
-    ttl.classList.remove('unforming', 'closing');   /* rapid re-grab: fresh morph */
+    ttl.classList.remove('unforming', 'closing', 'forming');
     ttl.style.width = ''; ttl.style.height = '';
     void ttl.offsetWidth;                /* re-measure the bare label */
     const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
     formW0 = w0; formH0 = h0;            /* the size the exit comes home to */
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
-    void ttl.offsetWidth;
-    /* A/B: portal mode reveals the red layer when the pill arms */
+    void ttl.offsetWidth;                /* commit the start of the morph */
     ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
-    ttl.classList.add('forming');
-    ttl.style.width = Math.max(96, w0 + 26) + 'px';
-    ttl.style.height = '';   /* committed at h0 by the reflow — animates to 44 */
+    target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
+    paintStrip(winC);
+    strip.style.transform = '';
+    ttl.classList.add('scrub');          /* the whole container, one spring */
+    ttl.style.width = ''; ttl.style.height = '';   /* .scrub's own geometry wins */
+    if (navEl) navEl.classList.add('scrubbing');
+    vibrate(6);                          /* light tick on the morph itself */
+    /* arm the twin a frame later, so the rects it tracks start at the
+       label's size and grow with the morph rather than jumping to the end */
+    requestAnimationFrame(() => {
+      if (ttl.classList.contains('scrub')) window.DSScrubChrome && DSScrubChrome(true);
+    });
     holdT = setTimeout(() => {
-      scrubbing = true;
+      scrubbing = true;                  /* only now does dragging scrub */
       lastX = downX;
-      target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
       calibrate(downX);
-      paintStrip(winC);
-      strip.style.transform = '';
-      /* stage 2, armed: the pill GROWS into the full-width scrubber and
-         ONLY NOW the other actions fade away (they yield to the takeover,
-         not to the tap) */
-      ttl.classList.add('scrub');            /* armed: dates in, label out */
-      if (navEl) navEl.classList.add('scrubbing');
-      window.DSScrubChrome && DSScrubChrome(true);
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
       cancelAnimationFrame(raf);
@@ -2634,7 +2640,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 135 (scrub entry/exit)';
+const BUILD = 'build 2026-09-11 · 136 (scrub one-morph)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3157,11 +3163,14 @@ if (QS.get('solo') === '1') {
         }, 320);
       }
     } else {
-      /* release: .scrub survives the collapse now, so the omit-post has to
-         wait for deflate() to drop it — time it to land as the capsule
-         finishes coming home instead of on the first frame of the exit */
+      /* release: .scrub SURVIVES the collapse now, so the per-frame track
+         burst above keeps the twin glued to the shrinking rect and then
+         omits it by itself the first frame after deflate() drops the class
+         (~430ms). This report is only the backstop that re-anchors
+         close/dual afterwards — it must land AFTER that removal, or it
+         would still find .scrub and re-arm the twin it meant to release. */
       clearTimeout(scrubFbT);
-      setTimeout(function () { report(); }, 420);
+      setTimeout(function () { report(); }, 500);
     }
   };
   addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
