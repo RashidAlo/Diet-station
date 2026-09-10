@@ -1793,16 +1793,25 @@ confirmBtn.onclick = () => {
     for (let k = -2; k <= 2; k++) h += itemHTML(idx + k, k === 0);
     strip.innerHTML = h;
   }
+  let slideT = null;
   function slideStep(idx, dir) {
     /* carousel pull: the strip glides one slot toward the drag, then the
        window re-centres — reads as pulling dates through the pill */
+    clearTimeout(slideT);
     strip.classList.add('slide');
     strip.style.transform = 'translateX(' + (-dir * 56) + 'px)';
-    setTimeout(() => {
+    slideT = setTimeout(() => {
       strip.classList.remove('slide');
       strip.style.transform = '';
       paintStrip(idx);
     }, 95);
+  }
+  function settleStrip(idx) {
+    /* kill any in-flight slide so it can't repaint over a snap */
+    clearTimeout(slideT);
+    strip.classList.remove('slide');
+    strip.style.transform = '';
+    paintStrip(idx);
   }
 
   const FULLPULL = 150;         /* px of one backward stroke = snap home */
@@ -1839,7 +1848,7 @@ confirmBtn.onclick = () => {
     strokeBack = mx > 0 ? strokeBack + mx : 0;
     if (strokeBack >= FULLPULL && scrubIdx !== 0) {
       scrubIdx = 0;
-      paintStrip(0);
+      settleStrip(0);
       strip.classList.remove('snap'); void strip.offsetWidth; strip.classList.add('snap');
       latched = true;
       anchorX = e.clientX;
@@ -2248,7 +2257,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 97';
+const BUILD = 'build 2026-09-10 · 98';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
