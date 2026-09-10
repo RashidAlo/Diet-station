@@ -1845,20 +1845,54 @@ confirmBtn.onclick = () => {
     paintStrip(idx);
   }
 
-  const FULLPULL = 150;         /* px of one backward stroke = snap home */
-  let holdT = null, scrubbing = false, anchorX = 0, downX = 0, downY = 0;
-  let scrubIdx = 0, lastStep = 0, strokeBack = 0, latched = false, lastX = 0;
+  /* one-swipe reach (Rashid): sensitivity calibrates at engage so the
+     travel from the finger to each SCREEN EDGE maps to the whole
+     remaining range in that direction — center-to-edge = end of the
+     subscription, no re-stroking. The wheel spins to catch the finger
+     at an adaptive cadence (faster the further behind it is). */
+  const EDGE = 16;                              /* travel map margin */
+  const CAD_NEAR = 60, CAD_MID = 40, CAD_FAR = 22;
+  let holdT = null, scrubbing = false, downX = 0, downY = 0;
+  let engageX = 0, baseIdx = 0, target = 0, scrubIdx = 0;
+  let stepFwd = STEP, stepBack = STEP, lastStep = 0, latched = false, lastX = 0, raf = null;
+
+  function calibrate(x) {
+    engageX = x; baseIdx = scrubIdx;
+    stepFwd = Math.min(STEP, Math.max(6, (x - EDGE) / Math.max(1, maxIdx - scrubIdx)));
+    stepBack = Math.min(STEP, Math.max(6, (window.innerWidth - EDGE - x) / Math.max(1, scrubIdx || 1)));
+  }
+  function spin(now) {
+    raf = scrubbing ? requestAnimationFrame(spin) : null;
+    if (!scrubbing || scrubIdx === target) return;
+    const gap = Math.abs(target - scrubIdx);
+    const cad = gap > 10 ? CAD_FAR : gap > 4 ? CAD_MID : CAD_NEAR;
+    if (now - lastStep < cad) return;
+    lastStep = now;
+    const dir = target > scrubIdx ? 1 : -1;
+    scrubIdx += dir;
+    slideStep(scrubIdx, dir);
+    vibrate(8);                                 /* the snap-into-a-day tick */
+    if (scrubIdx === 0 && dir < 0) {
+      /* home detent (Rashid): landing on the earliest selectable day
+         STOPS the wheel — a fresh forward stroke re-arms it */
+      latched = true; target = 0;
+      vibrate([12, 40, 14]);
+    }
+  }
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
     clearTimeout(holdT);
     holdT = setTimeout(() => {
       scrubbing = true;
-      anchorX = downX; lastX = downX;
-      scrubIdx = dayIdx; strokeBack = 0; latched = false;
+      lastX = downX;
+      scrubIdx = dayIdx; target = scrubIdx; latched = false;
+      calibrate(downX);
       paintStrip(scrubIdx);
       ttl.classList.add('scrub');
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(spin);
     }, 380);
   });
   ttl.addEventListener('pointermove', e => {
@@ -1869,40 +1903,22 @@ confirmBtn.onclick = () => {
     }
     const mx = e.clientX - lastX;
     lastX = e.clientX;
-    /* the home latch (Rashid): a FULL backward pull snaps to the earliest
-       selectable day and STOPS — a fresh forward stroke re-arms the wheel */
     if (latched) {
-      anchorX = e.clientX;
-      if (mx < -8) { latched = false; strokeBack = 0; }   /* new stroke */
+      if (mx < -8) { latched = false; calibrate(e.clientX); }   /* fresh stroke */
       return;
     }
-    strokeBack = mx > 0 ? strokeBack + mx : 0;
-    if (strokeBack >= FULLPULL && scrubIdx !== 0) {
-      scrubIdx = 0;
-      settleStrip(0);
-      strip.classList.remove('snap'); void strip.offsetWidth; strip.classList.add('snap');
-      latched = true;
-      anchorX = e.clientX;
-      vibrate([12, 40, 14]);
-      return;
-    }
-    /* drag left = later days, drag right = earlier; one step per beat */
-    const target = Math.max(0, Math.min(maxIdx,
-      scrubIdx + Math.round((anchorX - e.clientX) / STEP)));
-    if (target === scrubIdx) return;
-    const now = performance.now();
-    if (now - lastStep < CADENCE) return;
-    lastStep = now;
-    const dir = target > scrubIdx ? 1 : -1;
-    scrubIdx += dir;                       /* one beat per step, wheel-like */
-    anchorX -= dir * STEP;                 /* re-anchor so holds keep stepping */
-    slideStep(scrubIdx, dir);
-    vibrate(8);              /* the snap-into-a-day tick */
+    /* absolute slider mapping from the engage point */
+    const dx = engageX - e.clientX;             /* + = later days */
+    target = dx >= 0
+      ? Math.min(maxIdx, baseIdx + Math.round(dx / stepFwd))
+      : Math.max(0, baseIdx - Math.round(-dx / stepBack));
   });
   const endScrub = () => {
     clearTimeout(holdT);
     if (!scrubbing) return;
     scrubbing = false;
+    cancelAnimationFrame(raf); raf = null;
+    if (scrubIdx !== target) { scrubIdx = target; settleStrip(scrubIdx); }
     ttl.classList.remove('scrub');
     if (scrubIdx !== dayIdx) {
       turnDay(scrubIdx > dayIdx ? 1 : -1, scrubIdx);   /* ONE commit turn */
@@ -2288,7 +2304,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 101';
+const BUILD = 'build 2026-09-10 · 102';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
