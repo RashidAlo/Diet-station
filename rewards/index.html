@@ -163,7 +163,9 @@
   html.embed.sheet-enter .sheet { transform: translateY(103%); }
 
   /* nav X: liquid-glass-js container (the configured glass) */
-  .glass-container.closebtn { position: absolute; left: 24px; top: 24px;
+  /* action-bar law (/system/overlays.html): a lone X takes the RIGHT seat;
+     rewards keeps its own 24 corner inset, mirrored */
+  .glass-container.closebtn { position: absolute; right: 24px; top: 24px;
     width: 40px; height: 40px; border-radius: 50%; overflow: hidden; z-index: 10;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: transform .18s cubic-bezier(.3,.8,.3,1);
