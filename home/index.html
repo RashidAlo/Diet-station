@@ -297,9 +297,10 @@
     padding-top: 30px;
     padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
   /* bottom-overscroll rubber band must show white, never the red page —
-     a bleed riding under the sheet covers whatever the bounce reveals */
-  .sheetc::after { content: ''; position: absolute; left: 0; right: 0;
-    top: 100%; height: 600px; background: #fff; }
+     a bleed riding under the sheet covers whatever the bounce reveals.
+     box-shadow, not a ::after box: ink overflow doesn't extend the
+     scroller's range (an abspos bleed added 600px of scrollable white) */
+  .sheetc { box-shadow: 0 600px 0 0 #fff; }
   .sh-head { height: 51px; margin: 0 0 20px;
     display: flex; align-items: center; padding: 0 24px; gap: 14px; }
   .sh-tile { width: 44px; height: 44px; border-radius: 14px; background: #fff;
@@ -395,6 +396,143 @@
   html.ds-native .tabbar { display: none !important; }
   html.ds-native .sheetc { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
 
+  /* ============ logged-out state (Figma 16360-78205 "Not logged in") ======
+     the gesture-menu Account toggle flips .home.logged-out: the greeting
+     swaps to the DS ring + Sign in, the docks become one phone tile, the
+     widget grid yields to Book Consultation + Guide me, and the meal sheet
+     becomes the subscription plans list. */
+  .lo-only { display: none; }
+  .home.logged-out .li-only { display: none; }
+  .home.logged-out .promo, .home.logged-out .widgets,
+  .home.logged-out .ubwrap { display: none !important; }
+  .home.logged-out .sh-head, .home.logged-out .mealstrip { display: none; }
+
+  /* greeting: DS ring mark + "Got an account? Sign in" */
+  .ds-ring { width: 48px; height: 48px; border-radius: 50%; flex: none;
+    border: 1.6px solid rgba(255,255,255,.9);
+    align-items: center; justify-content: center; }
+  .ds-ring svg { width: 26px; height: 18px; display: block; }
+  .home.logged-out .ds-ring { display: flex; }
+  .st-signin { font: 400 14px/18px 'Urbane Rounded', sans-serif; color: #fff;
+    font-weight: 300; }
+  .st-signin b { font-weight: 600; }
+  .home.logged-out .st-signin { display: inline; }
+
+  /* one phone dock */
+  .home.logged-out #gPhone { display: block; }
+  #gPhone { display: none; }
+
+  /* the two option widgets — the grid's own 193/153 columns, tile radius */
+  .lo-opts { flex: none; height: 76px; display: none; gap: 16px; }
+  .home.logged-out .lo-opts { display: flex; }
+  .lo-book { flex: none; width: 193px; border-radius: 26px; cursor: pointer;
+    border: none; display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    text-align: left; }
+  .lo-book .bk-txt { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #f9f9f9; }
+  .lo-guide { flex: 1; min-width: 0; border-radius: 26px; cursor: pointer;
+    border: none; display: flex; align-items: center; justify-content: center; }
+  .lo-guide .gd-txt { font: 300 16px/22px 'Urbane Rounded', sans-serif; color: #fff;
+    position: relative; z-index: 3; }
+  .lo-guide .gd-txt b { font-weight: 600; }
+  .lo-guide .spark { position: absolute; z-index: 3; pointer-events: none; }
+  .lo-guide .wand { position: absolute; right: 10px; bottom: 8px; width: 34px;
+    z-index: 3; transform: rotate(8deg); pointer-events: none; }
+
+  /* ---- plans sheet ---- */
+  .lo-sheet { display: none; padding: 0 19px; }
+  .home.logged-out .lo-sheet { display: block; }
+  /* summer offer banner card — white platter over the sheet */
+  .lo-offer { display: flex; align-items: center; gap: 16px; height: 109px;
+    background: #fff; border-radius: 30px; padding: 0 16px 0 24px;
+    border: 1px solid rgba(0,0,0,.05);
+    box-shadow: 0 12px 34px -22px rgba(56,64,74,.35); cursor: pointer; }
+  .lo-offer .mono { flex: none; width: 56px; height: 56px; }
+  .lo-off-t { flex: 1; min-width: 0; text-align: right; }
+  .lo-off-t b { display: block; font: 600 17px/22px 'Urbane Rounded', sans-serif;
+    color: #0b0e12; }
+  .lo-off-t span { display: block;
+    font: 500 15px/21px 'Avenir Next World', 'Proxima Nova', sans-serif;
+    color: #0b0e12; }
+  .lo-arrow { flex: none; width: 48px; height: 48px; border-radius: 50%;
+    border: none; cursor: pointer; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px -6px rgba(56,64,74,.28); }
+  .lo-arrow svg { width: 20px; height: 20px; display: block; }
+  /* "or try a different plan" — curved flanks */
+  .lo-or { display: flex; align-items: center; gap: 12px; margin: 22px 4px 20px;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93;
+    white-space: nowrap; }
+  .lo-or svg { flex: 1; height: 12px; min-width: 0; }
+  /* subscription plan card — LIQUID GLASS: frosted white platter, rim + sheen,
+     and the plan-name pill inside is glass over its theme gradient */
+  .plancard { position: relative; border-radius: 38px; padding: 19px;
+    margin-bottom: 18px; cursor: pointer; overflow: hidden;
+    background: rgba(255,255,255,.62);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.9),
+      inset 0 0 0 1px rgba(255,255,255,.55),
+      0 1px 0 rgba(0,0,0,.03),
+      0 16px 40px -26px rgba(56,64,74,.45);
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .plancard:active { transform: scale(.98); }
+  .plancard::before { content: ''; position: absolute; inset: 0;
+    border-radius: inherit; pointer-events: none; z-index: 1;
+    background: linear-gradient(160deg, rgba(255,255,255,.7),
+      rgba(255,255,255,0) 38%, rgba(255,255,255,0) 70%, rgba(255,255,255,.25));
+    opacity: .8; }
+  .pc-cols { position: relative; z-index: 2; display: flex; gap: 12px; }
+  .pc-list { flex: 1; min-width: 0; }
+  .pc-row { display: flex; gap: 12px; align-items: baseline; height: 26px; }
+  .pc-row i { font: 600 12px/26px 'Urbane Rounded', sans-serif; color: #b9bcc2;
+    font-style: normal; width: 10px; text-align: center; flex: none; }
+  .pc-row span { font: 500 14px/26px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .pc-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px;
+    margin-top: 12px; padding: 0 10px; border-radius: 9px;
+    border: 1px solid #e3e3e6; white-space: nowrap; }
+  .pc-chip b { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .pc-chip span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
+  .pc-right { flex: none; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 10px; }
+  .pc-price { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+  .pc-was { font: 500 13px/16px 'Urbane Rounded', sans-serif; color: #b9bcc2;
+    text-decoration: line-through; text-decoration-color: rgba(237,28,36,.8);
+    margin-right: 2px; }
+  .pc-kd { font: 600 15px/18px 'Urbane Rounded', sans-serif; }
+  .pc-num { font: 600 36px/36px 'Urbane Rounded', sans-serif; letter-spacing: -.5px; }
+  .pc-mo { font: 400 13px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
+  .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 4px;
+    height: 28px; padding: 0 12px; border-radius: 999px; background: #f4f4f6;
+    font: 500 12.5px/28px 'Avenir Next World', 'Proxima Nova', sans-serif;
+    color: #3a3a3f; white-space: nowrap; }
+  .pc-deal b { font-weight: 600; color: #ED1C24;
+    font-family: 'Urbane Rounded', sans-serif; font-size: 12px; }
+  /* the glass plan pill: theme gradient under a liquid-glass skin */
+  .pc-pill { position: relative; height: 44px; border-radius: 999px; border: none;
+    cursor: pointer; padding: 0 22px; overflow: hidden; background-color: transparent;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    display: flex; align-items: baseline; justify-content: center;
+    font-size: 15px; line-height: 44px; color: #fff; white-space: nowrap;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.45),
+      inset 0 0 0 .8px rgba(255,255,255,.22),
+      0 8px 20px -8px rgba(11,14,18,.35);
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .pc-pill:active { transform: scale(.94); }
+  .pc-pill::before { content: ''; position: absolute; inset: 0;
+    border-radius: inherit; pointer-events: none;
+    background: linear-gradient(165deg, rgba(255,255,255,.4),
+      rgba(255,255,255,0) 45%, rgba(255,255,255,0) 72%, rgba(255,255,255,.14)); }
+  .pc-pill .a { font-weight: 300; opacity: .75; position: relative; }
+  .pc-pill .b { font-weight: 600; position: relative; }
+  .home.logged-out .sheetc { min-height: 0;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
+  /* logged-out tab bar: the middle tab browses meals, not the calendar */
+  .tb-tab .ic-fork { display: none; }
+  .home.logged-out .tb-tab .ic-fork { display: block; }
+  /* !important: the inlined Figma svg root carries style="display: block" */
+  .home.logged-out .tb-tab .ic-cal { display: none !important; }
+
   /* ---- flow summon overlay (native replica: discounts -> coupons) ---- */
   .ov-veil { position: absolute; inset: 0; background: rgba(0,0,0,.42); opacity: 0;
     pointer-events: none; transition: opacity .32s ease; z-index: 80; }
@@ -458,6 +596,16 @@
     shape with the space it's given; hide the promo, discounts or consultation and the
     neighbours stretch to fill in. Below, today's and tomorrow's meals preview on the white
     sheet under the floating tab bar.</p>
+
+  <div class="s-sec">
+    <div class="s-label">Account</div>
+    <div class="s-note">The signed-out home (Figma 16360-78205) — Sign in greeting,
+      Book Consultation + Guide me, and the liquid-glass plans list.</div>
+    <div class="seg2" id="acctSeg">
+      <button data-v="in" class="on">Logged in</button>
+      <button data-v="out">Logged out</button>
+    </div>
+  </div>
 
   <div class="s-sec">
     <div class="s-label">Subscription plan</div>
@@ -551,14 +699,20 @@
         <div class="redzone" id="redzone">
           <div class="toprow">
             <button class="stories" id="storiesBtn">
-              <img class="av" src="avatar.png" alt="">
+              <img class="av li-only" src="avatar.png" alt="">
+              <span class="ds-ring lo-only"><svg viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5627 24C8.55971 24 2.81792 18.4611 2.43079 11.5046C2.40837 11.0984 2.73438 10.7558 3.13781 10.7558H3.39658C3.76945 10.7558 4.07916 11.0491 4.09953 11.4246C4.44592 17.4887 9.45419 22.3158 15.5607 22.3158C21.6672 22.3158 26.6775 17.4887 27.0239 11.4246C27.0463 11.0491 27.354 10.7558 27.7269 10.7558H27.9856C28.3911 10.7558 28.7171 11.0984 28.6927 11.5046C28.3055 18.459 22.5637 24 15.5607 24H15.5627ZM0.707027 7.83246H2.19239C5.30168 7.83246 6.51198 6.47645 6.51198 3.96752C6.51198 1.45859 5.30372 0.094367 2.19239 0.094367H0.707027C0.250618 0.094367 0 0.346696 0 0.806223V7.12061C0 7.58014 0.250618 7.83246 0.707027 7.83246ZM2.25963 6.3308H1.67486V1.58167H2.24537C4.1953 1.58167 4.81879 2.35097 4.81879 3.95111C4.81879 5.55124 4.1953 6.32875 2.25963 6.3308ZM27.9754 7.92478C29.7216 7.92478 30.936 7.01188 30.936 5.62099C30.936 2.70587 26.6816 3.84648 26.6816 2.20737C26.6816 1.67809 27.136 1.34781 27.8715 1.34781C28.385 1.34781 28.7558 1.51603 29.1205 1.83811C29.4384 2.12121 29.6116 2.31199 30.0721 2.20121L30.2493 2.15813C30.7384 2.0412 30.8647 1.71707 30.5855 1.26165C30.1088 0.484144 29.0105 0 27.8002 0C26.1743 0 25.0434 0.906744 25.0434 2.24635C25.0434 5.14916 29.2591 4.16651 29.2591 5.67023C29.2591 6.24669 28.7762 6.58928 27.9653 6.58928C27.3234 6.58928 26.7835 6.3349 26.3617 5.88768C26.0581 5.56355 25.8503 5.44457 25.4754 5.56766L25.3328 5.61484C24.8641 5.7687 24.7235 6.07437 24.9741 6.48876C25.4958 7.34627 26.6714 7.92478 27.9795 7.92478H27.9754Z" fill="#fff"/></svg></span>
               <span>
                 <span class="st-hello" dir="auto">☀️ <span class="ar">صبحك الله بالخير</span></span><br>
-                <span class="st-name">Abdulrahman</span>
+                <span class="st-name li-only">Abdulrahman</span><span class="st-signin lo-only">Got an account? <b>Sign in</b></span>
               </span>
             </button>
             <div class="topdocks">
-              <button class="dockbtn gwrap" id="gStar" style="border-radius:24px" aria-label="Rewards">
+              <button class="dockbtn gwrap lo-only" id="gPhone" style="border-radius:24px" aria-label="Call us">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic" style="width:28px;height:28px">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill="#fff" fill-opacity=".92"/>
+                </svg>
+              </button>
+              <button class="dockbtn gwrap li-only" id="gStar" style="border-radius:24px" aria-label="Rewards">
                                 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="star" clip-path="url(#clip0_0_1070)">
 <foreignObject x="0.390724" y="2.89612" width="31.2185" height="30.2078"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_1070_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_1070)" data-figma-bg-blur-radius="5.3">
@@ -584,7 +738,7 @@
 </defs>
 </svg>
               </button>
-              <button class="dockbtn gwrap" id="gBell" style="border-radius:24px" aria-label="Notifications">
+              <button class="dockbtn gwrap li-only" id="gBell" style="border-radius:24px" aria-label="Notifications">
                                 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="ic">
 <g id="notifications" clip-path="url(#clip0_0_869)">
 <foreignObject x="1.68634" y="0.8" width="28.6273" height="34.4"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.65px);clip-path:url(#bgblur_1_0_869_clip_path);height:100%;width:100%"></div></foreignObject><g id="Vector" filter="url(#filter0_d_0_869)" data-figma-bg-blur-radius="5.3">
@@ -755,6 +909,30 @@
               </div>
             </div>
           </div>
+
+          <div class="lo-opts">
+            <button class="lo-book gwrap" id="loBook" style="border-radius:26px">
+              <div class="calico z">
+                <span class="plate"></span>
+                <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24.4592" height="22.5852" viewBox="0 0 24.4592 22.5852" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19.2575 0.270925C21.8447 0.271119 23.942 2.36818 23.942 4.9555V17.1362C23.942 19.7235 21.8447 21.8215 19.2575 21.8217H5.20179C2.61453 21.8215 0.51722 19.7235 0.51722 17.1362V4.9555C0.51722 2.36819 2.61454 0.27114 5.20179 0.270925H19.2575ZM6.13929 12.1547C5.6218 12.1547 5.20179 12.5747 5.20179 13.0922V14.0287C5.20179 14.5462 5.6218 14.9662 6.13929 14.9662H7.07581C7.5933 14.9662 8.01331 14.5462 8.01331 14.0287V13.0922C8.01331 12.5747 7.5933 12.1547 7.07581 12.1547H6.13929ZM11.7614 12.1547C11.2439 12.1547 10.8239 12.5747 10.8239 13.0922V14.0287C10.8239 14.5462 11.2439 14.9662 11.7614 14.9662H12.6979C13.2154 14.9662 13.6354 14.5462 13.6354 14.0287V13.0922C13.6354 12.5747 13.2154 12.1547 12.6979 12.1547H11.7614ZM17.3834 12.1547C16.8659 12.1547 16.4459 12.5747 16.4459 13.0922V14.0287C16.4459 14.5462 16.8659 14.9662 17.3834 14.9662H18.32C18.8374 14.9662 19.2575 14.5462 19.2575 14.0287V13.0922C19.2575 12.5747 18.8374 12.1547 18.32 12.1547H17.3834ZM6.13929 6.53264C5.6218 6.53264 5.20179 6.95266 5.20179 7.47014V8.40667C5.20179 8.92415 5.6218 9.34417 6.13929 9.34417H7.07581C7.5933 9.34417 8.01331 8.92415 8.01331 8.40667V7.47014C8.01331 6.95266 7.5933 6.53264 7.07581 6.53264H6.13929ZM11.7614 6.53264C11.2439 6.53264 10.8239 6.95266 10.8239 7.47014V8.40667C10.8239 8.92415 11.2439 9.34417 11.7614 9.34417H12.6979C13.2154 9.34417 13.6354 8.92415 13.6354 8.40667V7.47014C13.6354 6.95266 13.2154 6.53264 12.6979 6.53264H11.7614ZM17.3834 6.53264C16.8659 6.53264 16.4459 6.95266 16.4459 7.47014V8.40667C16.4459 8.92415 16.8659 9.34417 17.3834 9.34417H18.32C18.8374 9.34417 19.2575 8.92415 19.2575 8.40667V7.47014C19.2575 6.95266 18.8374 6.53264 18.32 6.53264H17.3834Z" fill="white" fill-opacity="0.6"/>
+                </svg>
+                <span class="post p1"></span><span class="post p2"></span>
+              </div>
+              <div class="bk-txt z">Book<br>Consultation</div>
+            </button>
+            <button class="lo-guide gwrap" id="loGuide" style="border-radius:26px">
+              <svg class="spark" style="left:26px;top:14px;width:9px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#fff" fill-opacity=".85"/></svg>
+              <svg class="spark" style="left:38px;top:30px;width:6px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#fff" fill-opacity=".7"/></svg>
+              <svg class="spark" style="right:34px;top:10px;width:13px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#FFC52E"/></svg>
+              <svg class="spark" style="right:22px;top:26px;width:8px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#FFC52E" fill-opacity=".9"/></svg>
+              <span class="gd-txt">Guide <b>me</b></span>
+              <svg class="wand" viewBox="0 0 34 34" fill="none">
+                <path d="M9.5 8.5L27 29" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+                <path d="M6.8 5.2L9.9 8.9" stroke="#FFE3E0" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="sheetc">
@@ -768,6 +946,28 @@
             <button class="sh-kcal" id="kcalPill"><b id="kcalNum">1200</b><i>Kcal</i><span class="mac"><span class="mp"><b id="macC" style="font:inherit">55</b><i>C</i></span><span class="mp"><b id="macP" style="font:inherit">87</b><i>P</i></span><span class="mp"><b id="macF" style="font:inherit">23</b><i>F</i></span></span></button>
           </div>
           <div class="mealstrip" id="mealStrip"><!-- built from DAYINFO at boot --></div>
+
+          <div class="lo-sheet">
+            <button class="lo-offer" id="loOffer">
+              <!-- DS monogram — traced approximation, swap for the exported brand SVG -->
+              <svg class="mono" viewBox="0 0 56 56" fill="none">
+                <circle cx="15.5" cy="15" r="10" stroke="#17171b" stroke-width="7.5"/>
+                <path d="M45.5 5.5C38 15.5 22.5 37 11.5 50.5" stroke="#17171b" stroke-width="7.5" stroke-linecap="round"/>
+                <circle cx="40.5" cy="41" r="10" stroke="#17171b" stroke-width="7.5"/>
+              </svg>
+              <span class="lo-off-t">
+                <b>Summer Offer</b>
+                <span dir="rtl">عروض الصيــــف</span>
+              </span>
+              <span class="lo-arrow"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4.5L16.5 10 11 15.5" stroke="#17171b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="lo-or">
+              <svg viewBox="0 0 100 12" preserveAspectRatio="none"><path d="M0 10 C30 10, 70 2, 100 2" stroke="#dcdcdf" stroke-width="1.2" fill="none"/></svg>
+              <span>Or try a different plan</span>
+              <svg viewBox="0 0 100 12" preserveAspectRatio="none"><path d="M0 2 C30 2, 70 10, 100 10" stroke="#dcdcdf" stroke-width="1.2" fill="none"/></svg>
+            </div>
+            <div id="loPlans"><!-- built from PLANS at boot --></div>
+          </div>
         </div>
 
         </div><!-- /scroller -->
@@ -795,7 +995,9 @@
             <button class="tb-tab on" aria-label="Home"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30.936" height="24" viewBox="0 0 30.936 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
 <path id="Vector" d="M15.5627 24C8.55971 24 2.81792 18.4611 2.43079 11.5046C2.40837 11.0984 2.73438 10.7558 3.13781 10.7558H3.39658C3.76945 10.7558 4.07916 11.0491 4.09953 11.4246C4.44592 17.4887 9.45419 22.3158 15.5607 22.3158C21.6672 22.3158 26.6775 17.4887 27.0239 11.4246C27.0463 11.0491 27.354 10.7558 27.7269 10.7558H27.9856C28.3911 10.7558 28.7171 11.0984 28.6927 11.5046C28.3055 18.459 22.5637 24 15.5607 24H15.5627ZM0.707027 7.83246H2.19239C5.30168 7.83246 6.51198 6.47645 6.51198 3.96752C6.51198 1.45859 5.30372 0.094367 2.19239 0.094367H0.707027C0.250618 0.094367 0 0.346696 0 0.806223V7.12061C0 7.58014 0.250618 7.83246 0.707027 7.83246ZM2.25963 6.3308H1.67486V1.58167H2.24537C4.1953 1.58167 4.81879 2.35097 4.81879 3.95111C4.81879 5.55124 4.1953 6.32875 2.25963 6.32875V6.3308ZM27.9754 7.92478C29.7216 7.92478 30.936 7.01188 30.936 5.62099C30.936 2.70587 26.6816 3.84648 26.6816 2.20737C26.6816 1.67809 27.136 1.34781 27.8715 1.34781C28.385 1.34781 28.7558 1.51603 29.1205 1.83811C29.4384 2.12121 29.6116 2.31199 30.0721 2.20121L30.2493 2.15813C30.7384 2.0412 30.8647 1.71707 30.5855 1.26165C30.1088 0.484144 29.0105 0 27.8002 0C26.1743 0 25.0434 0.906744 25.0434 2.24635C25.0434 5.14916 29.2591 4.16651 29.2591 5.67023C29.2591 6.24669 28.7762 6.58928 27.9653 6.58928C27.3234 6.58928 26.7835 6.3349 26.3617 5.88768C26.0581 5.56355 25.8503 5.44457 25.4754 5.56766L25.3328 5.61484C24.8641 5.7687 24.7235 6.07437 24.9741 6.48876C25.4958 7.34627 26.6714 7.92478 27.9795 7.92478H27.9754Z" fill="#ED1C24"/>
 </svg></button>
-            <button class="tb-tab" id="tabCal" aria-label="Calendar"><svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button class="tb-tab" id="tabCal" aria-label="Calendar"><svg class="ic-fork" preserveAspectRatio="none" overflow="visible" width="24" height="24" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g opacity="0.8"><path d="M15.3333 5.75V11.5C15.3333 12.5542 16.1958 13.4167 17.25 13.4167H18.2083V20.125C18.2083 20.6521 18.6396 21.0833 19.1667 21.0833C19.6937 21.0833 20.125 20.6521 20.125 20.125V2.99958C20.125 2.37667 19.5404 1.91667 18.9367 2.06042C16.8667 2.56833 15.3333 4.32208 15.3333 5.75ZM10.5417 8.625H8.625V2.875C8.625 2.34792 8.19375 1.91667 7.66667 1.91667C7.13958 1.91667 6.70833 2.34792 6.70833 2.875V8.625H4.79167V2.875C4.79167 2.34792 4.36042 1.91667 3.83333 1.91667C3.30625 1.91667 2.875 2.34792 2.875 2.875V8.625C2.875 10.7429 4.59042 12.4583 6.70833 12.4583V20.125C6.70833 20.6521 7.13958 21.0833 7.66667 21.0833C8.19375 21.0833 8.625 20.6521 8.625 20.125V12.4583C10.7429 12.4583 12.4583 10.7429 12.4583 8.625V2.875C12.4583 2.34792 12.0271 1.91667 11.5 1.91667C10.9729 1.91667 10.5417 2.34792 10.5417 2.875V8.625Z" fill="#0D0D0D"/></g>
+</svg><svg class="ic-cal" preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="calendar_month" opacity="0.8">
 <path id="Vector" d="M19 4H18V2H16V4H8V2H6V4H5C3.89 4 3.01 4.9 3.01 6L3 20C3 21.1 3.89 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4 19 4ZM19 20H5V10H19V20ZM19 8H5V6H19V8ZM9 14H7V12H9V14ZM13 14H11V12H13V14ZM17 14H15V12H17V14ZM9 18H7V16H9V18ZM13 18H11V16H13V18ZM17 18H15V16H17V18Z" fill="#0D0D0D"/>
 </g>
@@ -818,12 +1020,12 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-09 · 14';
+const BUILD = 'home 2026-09-10 · 15';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
 const MODS = { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true,
-  consultBooked: false, discEmpty: false, dayShape: 'auto',
+  consultBooked: false, discEmpty: false, dayShape: 'auto', loggedOut: false,
   tint: 0.14, blur: 5 };
 
 /* plan themes — gradients verbatim from Design System 4786-18146 */
@@ -848,6 +1050,7 @@ let stageScale = 1;
 
 /* ================= state ================= */
 function applyState() {
+  document.getElementById('homePage').classList.toggle('logged-out', MODS.loggedOut);
   const t = THEMES[MODS.theme];
   document.getElementById('planGrad').style.backgroundImage = t.grad;
   document.getElementById('planTitle').innerHTML =
@@ -960,6 +1163,8 @@ function syncSegs() {
     b.classList.toggle('on', !!MODS[b.dataset.v]));
   document.querySelectorAll('#shapeSeg button').forEach(b =>
     b.classList.toggle('on', b.dataset.v === MODS.dayShape));
+  document.querySelectorAll('#acctSeg button').forEach(b =>
+    b.classList.toggle('on', (b.dataset.v === 'out') === MODS.loggedOut));
 }
 
 document.querySelectorAll('#stateSeg button').forEach(b => b.onclick = () => {
@@ -969,6 +1174,15 @@ document.querySelectorAll('#shapeSeg button').forEach(b => b.onclick = () => {
   MODS.dayShape = b.dataset.v; vibrate(8); applyState();
 });
 
+document.querySelectorAll('#acctSeg button').forEach(b => b.onclick = () => {
+  MODS.loggedOut = b.dataset.v === 'out'; vibrate(8); applyState();
+  /* display:none zeroed the strip's scroll — re-boot it on Today */
+  if (!MODS.loggedOut) requestAnimationFrame(() => {
+    const strip = document.getElementById('mealStrip');
+    const groups = strip.querySelectorAll('.mgroup');
+    strip.scrollLeft = groups[1].offsetLeft - strip.offsetLeft - 24;
+  });
+});
 document.querySelectorAll('#planSeg button').forEach(b => b.onclick = () => {
   MODS.theme = b.dataset.v; vibrate(8); applyState();
 });
@@ -980,11 +1194,12 @@ document.querySelectorAll('#modSeg button').forEach(b => b.onclick = () => {
 });
 document.getElementById('sReset').onclick = () => {
   Object.assign(MODS, { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true,
-    consultBooked: false, discEmpty: false, dayShape: 'auto' });
+    consultBooked: false, discEmpty: false, dayShape: 'auto', loggedOut: false });
   applyState();
 };
 document.getElementById('sCopy').onclick = () => {
-  const s = 'home · plan ' + MODS.theme + ' · days ' + MODS.days +
+  const s = 'home · ' + (MODS.loggedOut ? 'signed-out' : 'signed-in') +
+    ' · plan ' + MODS.theme + ' · days ' + MODS.days +
     ' · promo ' + (MODS.promo ? 'on' : 'off') + ' · discounts ' + (MODS.disc ? 'on' : 'off') +
     ' · consult ' + (MODS.consult ? 'on' : 'off');
   try { navigator.clipboard.writeText(s); } catch (_) {}
@@ -1318,6 +1533,54 @@ document.getElementById('gDisc').addEventListener('click', () =>
   dsNav('rewards', 'sheet', { src: 'discounts-widget' }, () => openFlow('rewards')));
 document.getElementById('gDisc').style.cursor = 'pointer';
 
+/* ============ logged-out: the subscription plans (Figma 16360-78205) ======
+   full-opacity siblings of the plan-widget THEMES gradients — the same
+   Design System families, solid enough to live on the white sheet */
+const PLANS = [
+  { key: 'diet', a: 'The', b: 'Diet', price: 99, was: 139, color: '#6C3ACD',
+    grad: 'linear-gradient(250deg, #8A56E8 0%, #5F2EC2 100%)' },
+  { key: 'lifestyle', a: 'Life', b: 'Style', price: 109, was: 139, color: '#ED1C24',
+    grad: 'linear-gradient(250deg, #F79A4B 0%, #EE5228 100%)' },
+  { key: 'body', a: 'BODY', b: 'Building', price: 149, was: 139, color: '#1D1D3A',
+    grad: 'linear-gradient(250deg, #2A2A52 0%, #15152E 100%)' },
+  { key: 'kids', a: 'Kids', b: '', price: 99, was: 139, color: '#FF3F55',
+    grad: 'linear-gradient(250deg, #FF6A54 0%, #FF3287 100%)' },
+];
+const PLAN_ITEMS = [['1', 'Breakfast'], ['2', 'Lunch & Dinner'],
+  ['5', 'Salad & Soup'], ['1', 'Snack']];
+(function buildPlans() {
+  const html = PLANS.map(p => {
+    const rows = PLAN_ITEMS.map(r =>
+      '<div class="pc-row"><i>' + r[0] + '</i><span>' + r[1] + '</span></div>').join('');
+    const name = p.key === 'body'
+      ? '<span class="a" style="font-weight:600;opacity:1">BODY</span><span class="b" style="color:#F2543D">Building</span>'
+      : p.b ? '<span class="a">' + p.a + '</span><span class="b">' + p.b + '</span>'
+            : '<span class="b">' + p.a + '</span>';
+    return '<div class="plancard" data-plan="' + p.key + '">' +
+      '<div class="pc-cols"><div class="pc-list">' + rows +
+        '<div class="pc-chip"><b>~1200 kcal</b><span>|</span><span>100g macros</span></div>' +
+      '</div><div class="pc-right">' +
+        '<span class="pc-price"><span class="pc-was">KD139</span>' +
+          '<span class="pc-kd" style="color:' + p.color + '">KD</span>' +
+          '<span class="pc-num" style="color:' + p.color + '">' + p.price + '</span>' +
+          '<span class="pc-mo">/mo</span></span>' +
+        '<span class="pc-deal">خصم <b>KD 40</b> 🔥 اشترك الحين</span>' +
+        '<button class="pc-pill" style="background-image:' + p.grad + '">' + name + '</button>' +
+      '</div></div></div>';
+  }).join('');
+  document.getElementById('loPlans').innerHTML = html;
+  document.querySelectorAll('.plancard, .pc-pill').forEach(el =>
+    el.addEventListener('click', e => { e.stopPropagation(); vibrate(8); }));
+})();
+/* Guide me -> the Guide Me experience (plan quiz) — intent when routed,
+   the direct door standalone */
+document.getElementById('loGuide').addEventListener('click', () =>
+  dsNav('plan-quiz', 'push', { src: 'guideme-widget' }, () => {
+    location.href = '../plan-quiz/' + (EMBED ? '?embed=1&v=' : '?v=') + Date.now();
+  }));
+['loBook', 'loOffer'].forEach(id =>
+  document.getElementById(id).addEventListener('click', () => vibrate(8)));
+
 /* ================= boot ================= */
 fit();
 applyState();
@@ -1328,7 +1591,8 @@ document.getElementById('todayDate').textContent = dayDateStr(0);
    30 down to the real days-left with tiny haptic ticks */
 (function intro() {
   const els = [document.querySelector('.toprow'), document.getElementById('gPromo'),
-    document.querySelector('.widgets'), document.querySelector('.sheetc')];
+    document.querySelector('.widgets'), document.querySelector('.lo-opts'),
+    document.querySelector('.sheetc')];
   els.forEach((el, i) => {
     if (!el) return;
     el.style.opacity = '0';
