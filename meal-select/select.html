@@ -275,16 +275,28 @@
      container its neighbours wear), then GROWS into the fat full-width
      scrubber on arm (.scrub) with a springy overshoot while the other
      actions fade away. */
+  /* CRITICAL (Rashid on-device, TF33: "all the dates blurred and
+     unreadable" in the fluid form): the DATES must never be descendants
+     of a filtered element — during accelerated animation, device WebKit
+     can rasterize a backdrop-filtered container WITH its children and
+     bake the blur over the content (the sim renders it fine, hardware
+     doesn't). ALL glass (tint, backdrop blur, lens, sheen, vignette)
+     lives on .glassbg — a SIBLING below the strip — so no renderer can
+     ever blur the dates. The ttl itself carries only geometry+shadows. */
   .nav .ttl.forming, .nav .ttl.scrub { padding: 0; overflow: hidden;
     transform: translateX(-50%);
-    background: rgba(255,255,255,.12);
-    -webkit-backdrop-filter: blur(3px) saturate(190%);
-    backdrop-filter: blur(3px) saturate(190%);
     box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.62),
       inset 0 -1px 1.2px rgba(255,255,255,.28),
       inset 0 0 0 .8px rgba(255,255,255,.34),
       0 10px 28px -12px rgba(0,0,0,.34),
       0 2px 8px -5px rgba(0,0,0,.18); }
+  .ttl .glassbg { display: none; }
+  .nav .ttl.forming .glassbg, .nav .ttl.scrub .glassbg { display: block;
+    position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+    pointer-events: none;
+    background: rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(3px) saturate(190%);
+    backdrop-filter: blur(3px) saturate(190%); }
   /* stage 1: the neighbours' own container, formed around the label */
   .nav .ttl.forming { height: 44px; top: calc(var(--top-pad) + 9px);
     border-radius: 22px;
@@ -301,22 +313,25 @@
       box-shadow .3s ease, width .48s cubic-bezier(.3,1.22,.36,1),
       height .48s cubic-bezier(.3,1.22,.36,1), top .48s cubic-bezier(.3,1.22,.36,1),
       border-radius .48s cubic-bezier(.3,1.22,.36,1); }
-  /* the lens: rim-only over-blur + brighten — curved glass at the edge */
-  .nav .ttl.forming::before, .nav .ttl.scrub::before { content: '';
-    position: absolute; inset: 0; border-radius: inherit; z-index: 0;
-    padding: 9px; box-sizing: border-box; pointer-events: none;
-    -webkit-backdrop-filter: blur(14px) saturate(230%) brightness(1.1);
-    backdrop-filter: blur(14px) saturate(230%) brightness(1.1);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude; }
+  /* the lens: EDGE slivers only, single-layer mask (the two-layer xor
+     ring is not WebKit-safe, and wide feathers blurred the dates) */
+  .nav .ttl.forming .glassbg::before, .nav .ttl.scrub .glassbg::before { content: '';
+    position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(9px) saturate(220%) brightness(1.08);
+    backdrop-filter: blur(9px) saturate(220%) brightness(1.08);
+    -webkit-mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
+    -webkit-mask-composite: source-over;
+    mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
+    mask-composite: add; }
   /* the specular sheen, under the content */
-  .nav .ttl.forming::after, .nav .ttl.scrub::after { content: '';
-    position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+  .nav .ttl.forming .glassbg::after, .nav .ttl.scrub .glassbg::after { content: '';
+    position: absolute; inset: 0; border-radius: inherit;
     background: linear-gradient(115deg, rgba(255,255,255,.24), rgba(255,255,255,0) 40%);
     pointer-events: none; }
-  .nav .ttl.forming.on-dark, .nav .ttl.scrub.on-dark { background: rgba(50,50,54,.22); }
+  .nav .ttl.forming.on-dark .glassbg, .nav .ttl.scrub.on-dark .glassbg {
+    background: rgba(50,50,54,.22); }
+  .nav .ttl #dayLabel { position: relative; z-index: 1; }  /* above .glassbg */
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
   .scb { display: none; }
   .nav .ttl.scrub .scb { display: flex; align-items: center; width: 432px; flex: none;
@@ -359,9 +374,8 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { background: #ed1c24;
-    height: 64px; top: calc(var(--top-pad) - 1px); border-radius: 30px;
-    -webkit-backdrop-filter: none; backdrop-filter: none;
+  .nav .ttl.scrub.portal { height: 64px; top: calc(var(--top-pad) - 1px);
+    border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
        a soft seat shadow. The vignette ::after finishes the depth. */
@@ -369,6 +383,10 @@
       inset 0 2px 7px rgba(64,0,2,.3),
       inset 0 -1px 5px rgba(64,0,2,.18),
       0 6px 18px -10px rgba(0,0,0,.32); }
+  /* the red layer rides the same under-strip .glassbg (no filters) */
+  .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
+    -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .nav .ttl.scrub.portal .glassbg::before { display: none; }
   .nav .ttl.scrub.portal .scb .scb-it { height: 64px; padding: 3px 0; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
@@ -381,17 +399,25 @@
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(9) { opacity: .15; }
   /* the side refraction: the lens rides ABOVE the red and the dates,
      smearing them stylistically at the edges while scrubbing */
-  .nav .ttl.scrub.portal::before { z-index: 2; padding: 0;
-    -webkit-backdrop-filter: blur(4px) saturate(160%);
-    backdrop-filter: blur(4px) saturate(160%);
-    -webkit-mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
+  /* the side lens hugs the very EDGES only (Rashid on TF33: wide
+     feathers blurred the dates — the lens now starts past the last
+     visible slot, so only the entry/exit sliver refracts). Deliberately
+     ABOVE the strip (that IS the refraction) but a SIBLING of the dates,
+     never their ancestor. */
+  .nav .ttl.scrub.portal::before { content: ''; position: absolute;
+    inset: 0; border-radius: inherit; z-index: 2; pointer-events: none;
+    -webkit-backdrop-filter: blur(3px) saturate(160%);
+    backdrop-filter: blur(3px) saturate(160%);
+    -webkit-mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
     -webkit-mask-composite: source-over;
-    mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
+    mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
     mask-composite: add; }
   /* the vignette: edges darken toward the rim like the inside of a
      recess — the dates dim INTO the shadow, so the pill reads as a
      peek into the red sheet rather than a surface floating over it */
-  .nav .ttl.scrub.portal::after { z-index: 3; background:
+  .nav .ttl.scrub.portal::after { content: ''; position: absolute;
+    inset: 0; border-radius: inherit; z-index: 3; pointer-events: none;
+    background:
     linear-gradient(90deg, rgba(56,0,2,.34), rgba(56,0,2,0) 14% 86%, rgba(56,0,2,.34)),
     linear-gradient(180deg, rgba(56,0,2,.14), rgba(56,0,2,0) 24% 74%, rgba(56,0,2,.18)),
     radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.16), rgba(255,255,255,0) 42%); }
@@ -1976,6 +2002,12 @@ confirmBtn.onclick = () => {
   const maxIdx = 30;            /* the subscription window — one swipe spans it;
                                    still crosses the month boundary freely */
 
+  /* the glass lives on a SIBLING below the strip — never an ancestor of
+     the dates (device WebKit bakes ancestor filters over children during
+     accelerated animation) */
+  const glassbg = document.createElement('div');
+  glassbg.className = 'glassbg';
+  ttl.insertBefore(glassbg, ttl.firstChild);
   const strip = document.createElement('div');
   strip.className = 'scb';
   ttl.appendChild(strip);
@@ -2123,6 +2155,18 @@ confirmBtn.onclick = () => {
   };
   ttl.addEventListener('pointerup', endScrub);
   ttl.addEventListener('pointercancel', endScrub);
+  /* lab primer: ?scrubopen=1 arms the scrubber STATICALLY on load so the
+     armed rendering can be inspected/photographed without a live touch
+     (WebKit truth runs in the sim's Safari, where JS can't be injected) */
+  if (new URLSearchParams(location.search).get('scrubopen') === '1') {
+    setTimeout(() => {
+      target = dayIdx; disp = dayIdx; winC = dayIdx;
+      paintStrip(winC);
+      ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
+      ttl.classList.add('forming', 'scrub');
+      if (navEl) navEl.classList.add('scrubbing');
+    }, 700);
+  }
 })();
 const clearModal = document.getElementById('clearModal');
 document.getElementById('clearBtn').onclick = () => clearModal.classList.add('show');
@@ -2507,7 +2551,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 119';
+const BUILD = 'build 2026-09-10 · 120';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2830,17 +2874,17 @@ if (QS.get('solo') === '1') {
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
     /* scrub twin confirm: the NATIVE capsule is container-only — the web
-       pill drops its own glass but keeps drawing the dates (they read
-       through the material), and hit-testing stays web */
+       pill drops its own glass (.glassbg) but keeps drawing the dates,
+       and hit-testing stays web */
     '.nav .ttl.scrub.ds-native-hidden { opacity: 1 !important; pointer-events: auto !important; ' +
-    '  background: transparent !important; box-shadow: none !important; ' +
-    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
+    '  box-shadow: none !important; } ' +
+    '.nav .ttl.scrub.ds-native-hidden .glassbg { display: none !important; } ' +
     '.nav .ttl.scrub.ds-native-hidden::before, .nav .ttl.scrub.ds-native-hidden::after { display: none !important; } ' +
-    /* PORTAL under the native twin: the agreed split is web = red layer +
-       dates + vignette, native = lensing only — so portal keeps its red
-       and its vignette; only the web lens (::before) yields */
-    '.nav .ttl.scrub.portal.ds-native-hidden { background: #ed1c24 !important; ' +
+    /* PORTAL under the native twin: web keeps red + dates + vignette,
+       native adds the lensing — only the web lens (::before) yields */
+    '.nav .ttl.scrub.portal.ds-native-hidden { ' +
     '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
+    '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
     '';
   document.head.appendChild(st);
