@@ -239,14 +239,15 @@
     <p class="spec">Drag tracking kills the transition (<code>.drag</code> class); release
       snaps to the nearest state on the house spring. Expanding snap points: rest height and
       full screen (top inset ~10px). All thresholds below.</p>
-    <p class="spec"><b>Scroll-driven expanding</b> (reference: the meal selection screen) —
-      when the sheet's own content scroll drives the docking, it must read as ONE seamless
-      scroll: content tracks the finger at a constant 1px/px through the whole gesture,
-      while the frame starts at 2px/px and decays <i>quadratically to zero velocity exactly
-      at the dock</i> — no arrest, corners and gap melt shut
-      (<code>y = gap·(1−s/gap)²</code>, radius riding y). A scroll that dies mid-zone
-      detents to the nearest state after momentum ends. Never dock a frame at constant
-      speed: the hard stop reads as a step.</p>
+    <p class="spec"><b>Scroll-driven expanding</b> (reference: the meal selection screen,
+      Rashid's settled mechanism) — when the sheet's own content scroll drives the docking,
+      sheet and content travel <b>as one piece, 1:1 with the finger</b>
+      (<code>y = gap − s</code>, radius riding y, a headroom pad keeping content glued to
+      the frame) until the frame docks; content then keeps scrolling. The only velocity
+      event is the natural arrest at the top — the same stop a native sheet makes at its
+      detent. A scroll that dies mid-zone detents to the nearest state after momentum ends.
+      Iteration history (recorded in the flow): content-freeze and eased-frame profiles were
+      both tried and superseded by this 1:1 one-piece feel — his taste call.</p>
   </section>
 
   <section class="card">
