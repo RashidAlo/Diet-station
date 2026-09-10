@@ -370,7 +370,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-09 · 21';
+const BUILD = 'calendar 2026-09-10 · 22';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -953,39 +953,59 @@ if (/[?&]qaopen=1/.test(location.search)) {
     /* bar: null asks replace-semantics shells to drop the tab bar too */
     try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: SURFACE, mode: MODE, els: [], bar: null }); } catch (_) {}
   }
-  /* the shell presents warm webviews instantly (the load-time spring
-     played offscreen) — replay the entrance on stage: sheet pulls up from
-     the bottom, header text eases in staggered (Rashid) */
+  /* tab-swap entrance v2 (Rashid via the Home lane): the STRUCTURE renders
+     statically — red page and the white container hold still, no sheet
+     spring, no page slide — and only the CONTENT cascades in: header text,
+     weekday row, month title, then day cells week-row by week-row (later
+     months rise as blocks). House stagger: 55ms steps on the .55s spring
+     curve, opacity + 10px rise + .96 scale — home's arrival recipe. */
   window.DSReplayIntro = function () {
     if (overlayUp) return;               /* never during the selector */
     /* chrome v2: the web pause stays retired through the replay — the
        native twin pops back with the end-of-intro report instead */
     clearChrome();
-    var cal = document.querySelector('.cal');
-    var bits = document.querySelectorAll('.hd-txt, .pausebtn, .sheetc');
-    if (!cal) return;
-    cal.classList.add('presenting');
-    cal.style.transition = 'none';
-    cal.style.transform = 'translateY(103%)';
-    bits.forEach(function (el) {
-      el.style.transition = 'none';
-      el.style.opacity = '0';
+    var EASE = '.55s cubic-bezier(.32,.72,0,1)';
+    var steps = [];                      /* [element, stepIndex] */
+    var hd = document.querySelector('.hd-txt');
+    var dow = document.querySelector('.dow');
+    if (hd) steps.push([hd, 0]);
+    if (dow) steps.push([dow, 1]);
+    var base = 2;
+    document.querySelectorAll('#months .month').forEach(function (sec, m) {
+      if (m === 0) {
+        var title = sec.querySelector('.mtitle');
+        if (title) steps.push([title, base]);
+        var days = sec.querySelectorAll('.day');
+        days.forEach(function (cell, i) {
+          steps.push([cell, base + 1 + Math.floor(i / 7)]);   /* week rows */
+        });
+        base += 2 + Math.ceil(days.length / 7);
+      } else {
+        steps.push([sec, base]);         /* later months rise as one block */
+        base += 1;
+      }
     });
-    void cal.offsetWidth;
-    cal.style.transition = 'transform .55s cubic-bezier(.32,.72,0,1)';
-    cal.style.transform = 'translateY(0)';
+    if (!steps.length) return;
+    var maxStep = 0;
+    steps.forEach(function (s) {
+      s[0].style.transition = 'none';
+      s[0].style.opacity = '0';
+      s[0].style.transform = 'translateY(10px) scale(.96)';
+      if (s[1] > maxStep) maxStep = s[1];
+    });
+    void document.body.offsetWidth;
+    steps.forEach(function (s) {
+      var d = s[1] * 55;
+      s[0].style.transition = 'opacity ' + EASE + ' ' + d + 'ms, transform ' + EASE + ' ' + d + 'ms';
+      s[0].style.opacity = '1';
+      s[0].style.transform = 'none';
+    });
     setTimeout(function () {
-      bits.forEach(function (el, i) {
-        el.style.transition = 'opacity .45s ease ' + (100 + i * 80) + 'ms';
-        el.style.opacity = '1';
+      steps.forEach(function (s) {
+        s[0].style.transition = ''; s[0].style.opacity = ''; s[0].style.transform = '';
       });
-    }, 160);
-    setTimeout(function () {
-      cal.style.transition = ''; cal.style.transform = '';
-      cal.classList.remove('presenting');
-      bits.forEach(function (el) { el.style.transition = ''; el.style.opacity = ''; });
       report();
-    }, 780);
+    }, maxStep * 55 + 650);
   };
 
   var _open = window.openDay, _close = window.closeOverlay;
