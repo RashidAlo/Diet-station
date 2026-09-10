@@ -961,7 +961,7 @@
       "area": "Authentication",
       "preview": "auth/preview.png",
       "sheet": true,
-      "hidden": true,
+      "hidden": false,
       "updated": "2026-09-10",
       "description": "The mock sign-in journey from the signed-out home: the Sign in sheet (Figma 16360-78680) with the +965 phone field and in-frame numeric keyboard, OTP confirmation (16360-78950) with countdown resend and error state, and a simulated Face ID quick path. Everything is fake — no real authentication — the flow demos validation, OTP entry, error/success states and haptics for dev handoff. Lab menu tunes Face ID scan time, OTP verify pause and the resend timer; OTP 0000 forces the error state.",
       "entries": [
