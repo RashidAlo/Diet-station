@@ -2576,7 +2576,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 128';
+const BUILD = 'build 2026-09-10 · 129';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2780,18 +2780,18 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
-/* EASED ATTACH (Rashid: overlay→fullscreen must be ONE seamless scroll —
-   the constant-K frame hit the docked stop at full speed, and that hard
-   arrest read as a step). CONTENT keeps the accepted constant 1px/px
-   through the whole gesture (the riding pad below is curve-agnostic);
-   the FRAME starts at the old responsive 2px/px and decays quadratically
-   to ZERO velocity exactly at the dock — no arrest, the corners and gap
-   melt shut. The collapse zone now spans the full gap of scroll travel. */
+/* THE 9AM MECHANISM (Rashid: "there was a build with the perfect scroll
+   — copy it, and only add the day-turn offset"): the sheet is linked
+   1:1 to the scroll, no easing, no speed constants — y = gap − s,
+   exactly the original HIG scroll-link. The ONLY addition kept from
+   the later rounds is the riding headroom pad below, whose sole job is
+   the day-turn arrival: a fullscreen park (Next / swipe / scrubber)
+   lands at s = gap where the pad holds a full nav above Breakfast, so
+   thumbnails arrive un-cropped. */
 function collapseEnd() { return SHEET_GAP; }
 function syncSheet() {
   if (!sheetLive) return;
-  const t = SHEET_GAP > 0 ? Math.min(1, scrollArea.scrollTop / SHEET_GAP) : 1;
-  const y = SHEET_GAP * (1 - t) * (1 - t);
+  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
   /* headroom spacer rides the collapse so the fullscreen resting scroll
      keeps a full nav above Breakfast; day-turn arrivals land un-cropped */
   scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
