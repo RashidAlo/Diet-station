@@ -11,6 +11,39 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#f5f5f7">
+<script>
+/* LAUNCH FLASH GUARD — runs synchronously before first paint. In the
+   shell (or ?native=1 preview), when the splash is eligible (fresh
+   session, or ?splash=1 replay), the very first frame must be pure
+   brand red: html.ds-boot paints the body red and hides everything
+   except the splash overlay. The splash's dismiss() lifts it on every
+   path; the 8s failsafe below can never trap the user on red even if
+   the splash script itself dies. Mirrors the splash IIFE's eligibility
+   EXACTLY — plain web/desktop never gets the class. */
+(function () {
+  try {
+    var native = /DietStationLab/.test(navigator.userAgent) ||
+      /[?&]native=1/.test(location.search);
+    if (!native) return;
+    var seen = false;
+    try { seen = !!sessionStorage.getItem('ds-splashed'); } catch (_) {}
+    if (seen && !/[?&]splash=1/.test(location.search)) return;
+    document.documentElement.classList.add('ds-boot');
+    setTimeout(function () {
+      document.documentElement.classList.remove('ds-boot');
+    }, 8000);
+  } catch (_) {}
+})();
+</script>
+<style>
+  html.ds-boot body { background: #ED1C24; }
+  /* structure-agnostic: wrappers like #appRoot may hold the splash, so
+     hide everything and re-show the splash subtree (visibility, unlike
+     display, lets a descendant override a hidden ancestor) */
+  html.ds-boot body * { visibility: hidden; }
+  html.ds-boot #splash, html.ds-boot #splash * {
+    visibility: visible !important; }
+</style>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
   @font-face { font-family: 'Urbane Rounded'; src: url('breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -79,16 +112,22 @@
 
   /* ---- pane header: big title + explainer, view toggle beside it ---- */
   .hero { display: none; }               /* per-pane headers replace it */
-  .panehead { display: flex; align-items: flex-start; gap: 16px;
-    margin: 6px 0 18px; }
-  .panehead .ph-copy { flex: 1; min-width: 0; }
-  .panehead h1 { font: 600 26px/1.2 'Urbane Rounded', sans-serif;
-    letter-spacing: -.015em; margin: 0 0 6px; }
-  .panehead p { margin: 0; font: 400 13px/1.5 -apple-system, sans-serif;
-    color: var(--ink-soft); max-width: 52ch; }
-  .panehead .count { margin: 10px 0 0; }
-  .panehead .viewtog { margin-top: 4px; }
-  body.native .panehead { padding: 12px 20px 0; margin-bottom: 14px; }
+  /* title + view toggle share the first row; the explainer runs full
+     width beneath both. Sides align to the app's 20px standard (the
+     .wrap already provides it — no extra inset), generous v-padding. */
+  .panehead { display: grid; grid-template-columns: 1fr auto;
+    align-items: center; column-gap: 16px; row-gap: 9px;
+    padding: 28px 0 22px; margin: 0; }
+  .panehead .ph-copy { display: contents; }
+  .panehead h1 { grid-column: 1; grid-row: 1;
+    font: 600 26px/1.2 'Urbane Rounded', sans-serif;
+    letter-spacing: -.015em; margin: 0; }
+  .panehead .viewtog { grid-column: 2; grid-row: 1; margin: 0; }
+  .panehead p { grid-column: 1 / 3; grid-row: 2; margin: 0;
+    font: 400 13px/1.5 -apple-system, sans-serif;
+    color: var(--ink-soft); max-width: 56ch; }
+  .panehead .count { grid-column: 1 / 3; margin: 2px 0 0; }
+  body.native .panehead { padding: 22px 0 18px; }
   body.native .panehead h1 { font-size: 24px; }
   /* system pane in list mode: compact cards, previews tucked away */
   body.listview #pane-system .card { padding: 16px 18px; }
@@ -645,7 +684,17 @@
   /* card controls: white surfaces, colored actions (Rashid) — the red
      lives in the glyphs and label, not the fill */
   body.native .actions .btn.primary { background: #fff; color: var(--red);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09); }
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+  /* iOS shell: the outline chips become frosted-glass buttons (house
+     CSS-glass standard — translucent white, blur, specular ring) */
+  html.ds-native body .actions .btn.primary,
+  html.ds-native body .cardedit,
+  html.ds-native body .livebtn {
+    background: rgba(255,255,255,.52); border: none;
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: blur(14px) saturate(170%);
+    box-shadow: inset 0 0 0 0.5px rgba(255,255,255,.65),
+      inset 0 0 0 1px rgba(0,0,0,.07); }
   .dual .d-gear svg { width: 20px; height: 20px; }
   .dual .d-gear:active { background: rgba(0,0,0,.06); }
   /* round Live/Offline power button in the action bar (admin) —
@@ -656,11 +705,12 @@
     align-items: center; justify-content: center; cursor: pointer;
     transition: background .28s ease, color .28s ease, box-shadow .28s ease; }
   body.native .livebtn { width: 50px; height: 50px; order: 1; }
+  /* uniform action style (Rashid): plain outline chips, NO drop shadows —
+     state lives in the glyph color alone */
   .livebtn.on { background: #fff; color: #34C759;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09),
-      0 5px 14px -6px rgba(52,199,89,.45); }
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
   .livebtn.off { background: #fff; color: #8e8e93;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09); }
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
   .livebtn > svg:not(.lv-ring) { width: 17px; height: 17px; }
   body.native .livebtn > svg:not(.lv-ring) { width: 18px; height: 18px; }
   /* publishing: a green stroke traces circles around the button's border;
@@ -1129,6 +1179,8 @@ function openLogin() {
   function dismiss() {
     if (gone) return;
     gone = true;
+    /* lift the boot guard first so the hub is painted under the fade */
+    document.documentElement.classList.remove('ds-boot');
     el.classList.add('bye');
     try { window.webkit.messageHandlers.ds.postMessage({ t: 'chrome', show: true }); } catch (_) {}
     setTimeout(() => el.remove(), 700);
