@@ -1951,7 +1951,9 @@ final class FlowPreloader {
                     els.append(GlassChromeEl(id: id, x: n("x"), y: n("y"),
                                              w: n("w"), h: n("h"), r: n("r"),
                                              on: (e["on"] as? Bool) ?? false,
-                                             mode: e["mode"] as? String))
+                                             mode: e["mode"] as? String,
+                                             dates: e["dates"] as? [String],
+                                             center: (e["center"] as? NSNumber)?.doubleValue))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
@@ -1986,6 +1988,7 @@ final class FlowPreloader {
                 // spring lands the final anchor
                 var pos: [String: CGPoint] = [:]
                 var dims: [String: (w: CGFloat?, h: CGFloat?)] = [:]
+                var ctr: [String: Double] = [:]
                 for e in body["els"] as? [[String: Any]] ?? [] {
                     guard let id = e["id"] as? String else { continue }
                     func n(_ k: String) -> CGFloat {
@@ -1996,6 +1999,7 @@ final class FlowPreloader {
                     // carry w/h; absent keys keep the el's armed size
                     dims[id] = ((e["w"] as? NSNumber).map { CGFloat($0.doubleValue) },
                                 (e["h"] as? NSNumber).map { CGFloat($0.doubleValue) })
+                    if let c = e["center"] as? NSNumber { ctr[id] = c.doubleValue }
                 }
                 #if DEBUG
                 NSLog("DSTRACK %@", pos.map { "\($0.key)=\(Int($0.value.y))" }
@@ -2014,7 +2018,9 @@ final class FlowPreloader {
                             let d = dims[el.id]
                             return GlassChromeEl(id: el.id, x: p.x, y: p.y,
                                                  w: d?.w ?? el.w, h: d?.h ?? el.h,
-                                                 r: el.r, on: el.on, mode: el.mode)
+                                                 r: el.r, on: el.on, mode: el.mode,
+                                                 dates: el.dates,
+                                                 center: ctr[el.id] ?? el.center)
                         }
                     }
                 }
