@@ -2147,7 +2147,12 @@ confirmBtn.onclick = () => {
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
-    unformT = setTimeout(() => ttl.classList.remove('ds-native-hidden'), 40);
+    /* 40ms was not enough — a tape showed the ladder still ghosting behind
+       the label, so the shell does not drop the capsule on the omit frame,
+       it animates it away. Hold the label back far enough that its own
+       fade-in overlaps the capsule's fade-out as a dissolve rather than
+       landing under a capsule at full strength. */
+    unformT = setTimeout(() => ttl.classList.remove('ds-native-hidden'), 180);
   }
   function unform() {
     clearTimeout(unformT); clearTimeout(closeT);
@@ -2651,7 +2656,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 137 (scrub one-morph + clean release)';
+const BUILD = 'build 2026-09-11 · 138 (scrub release crossfade)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
