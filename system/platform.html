@@ -199,7 +199,16 @@ webkit.messageHandlers.ds.postMessage({
 window.DSNativeChrome(['close']);
 // native → web: route taps back
 window.DSChromeTap('close');
-// guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome</pre>
+// guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome
+
+// TOUCH LAW (2026-09-10, after the meal-selector dead-zone forensics):
+// a twin must NEVER create a touch dead-zone over scrollable content.
+// - interactive twins hit-test ONLY inside the exact rects the web
+//   reported for them (the els{} geometry) — never a larger container;
+// - display-only twins (gauges, badges) pass ALL touches through
+//   (isUserInteractionEnabled = false except real buttons);
+// - the shell must not mutate the live scroll view mid-gesture (no
+//   refresh-control re-seating, no bounce re-assertion) on chrome posts.</pre>
       <button class="copycode" data-copy="handshake">Copy</button>
     </div>
   </section>
