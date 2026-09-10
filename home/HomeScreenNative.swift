@@ -1950,7 +1950,8 @@ final class FlowPreloader {
                     }
                     els.append(GlassChromeEl(id: id, x: n("x"), y: n("y"),
                                              w: n("w"), h: n("h"), r: n("r"),
-                                             on: (e["on"] as? Bool) ?? false))
+                                             on: (e["on"] as? Bool) ?? false,
+                                             mode: e["mode"] as? String))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
@@ -1984,12 +1985,17 @@ final class FlowPreloader {
                 // the twins are glued to the surface, and the rest report's
                 // spring lands the final anchor
                 var pos: [String: CGPoint] = [:]
+                var dims: [String: (w: CGFloat?, h: CGFloat?)] = [:]
                 for e in body["els"] as? [[String: Any]] ?? [] {
                     guard let id = e["id"] as? String else { continue }
                     func n(_ k: String) -> CGFloat {
                         CGFloat((e[k] as? NSNumber)?.doubleValue ?? 0)
                     }
                     pos[id] = CGPoint(x: n("x"), y: n("y"))
+                    // scrub morphs (label -> pill -> full-width): track may
+                    // carry w/h; absent keys keep the el's armed size
+                    dims[id] = ((e["w"] as? NSNumber).map { CGFloat($0.doubleValue) },
+                                (e["h"] as? NSNumber).map { CGFloat($0.doubleValue) })
                 }
                 #if DEBUG
                 NSLog("DSTRACK %@", pos.map { "\($0.key)=\(Int($0.value.y))" }
@@ -2005,9 +2011,10 @@ final class FlowPreloader {
                         self.chrome.mode = "sheet"
                         self.chrome.els = self.chrome.els.map { el in
                             guard let p = pos[el.id] else { return el }
+                            let d = dims[el.id]
                             return GlassChromeEl(id: el.id, x: p.x, y: p.y,
-                                                 w: el.w, h: el.h, r: el.r,
-                                                 on: el.on)
+                                                 w: d?.w ?? el.w, h: d?.h ?? el.h,
+                                                 r: el.r, on: el.on, mode: el.mode)
                         }
                     }
                 }
