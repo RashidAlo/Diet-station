@@ -153,36 +153,36 @@
   body.listview #flows .card .row { display: contents; }
   /* list view is icon-first, not artwork: the glyph replaces the shot */
   body.listview #flows .card .thumb { display: none !important; }
-  /* ---- feature icon, blueprint language: a technical line drawing
-     in the feature's accent on light-toned grid paper of the same hue —
-     dashed construction lines, crosshair ticks, hairline ring */
-  .ficon { display: flex; flex: none; width: 64px; height: 64px;
-    border-radius: 22.5%; align-items: center; justify-content: center;
-    position: relative; overflow: hidden;
-    background: var(--fb, #FBECEC); color: var(--fa, #ED1C24);
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--fa, #ED1C24) 22%, transparent),
-      0 6px 14px -9px color-mix(in srgb, var(--fa, #ED1C24) 50%, transparent); }
+  /* ---- feature icon: a clean line glyph on a light wash of its own
+     hue. In card view the wash becomes the card's HEADER BAND — full
+     bleed, generous height — which separates one card from the next. */
+  .ficon { display: flex; flex: none; align-items: center;
+    justify-content: center; position: relative; overflow: hidden;
+    background: var(--fb, #FDEDED); color: var(--fa, #ED1C24);
+    width: 64px; height: 64px; border-radius: 20px; }
   .ficon::before { content: ''; position: absolute; inset: 0;
-    border-radius: inherit;
     background:
-      repeating-linear-gradient(0deg, transparent, transparent 7.25px,
-        color-mix(in srgb, var(--fa, #ED1C24) 8%, transparent) 7.25px,
-        color-mix(in srgb, var(--fa, #ED1C24) 8%, transparent) 8px),
-      repeating-linear-gradient(90deg, transparent, transparent 7.25px,
-        color-mix(in srgb, var(--fa, #ED1C24) 8%, transparent) 7.25px,
-        color-mix(in srgb, var(--fa, #ED1C24) 8%, transparent) 8px); }
-  .ficon svg { width: 60%; height: 60%; position: relative; }
+      repeating-linear-gradient(0deg, transparent, transparent 9.25px,
+        color-mix(in srgb, var(--fa, #ED1C24) 6%, transparent) 9.25px,
+        color-mix(in srgb, var(--fa, #ED1C24) 6%, transparent) 10px),
+      repeating-linear-gradient(90deg, transparent, transparent 9.25px,
+        color-mix(in srgb, var(--fa, #ED1C24) 6%, transparent) 9.25px,
+        color-mix(in srgb, var(--fa, #ED1C24) 6%, transparent) 10px); }
+  .ficon svg { width: 30px; height: 30px; position: relative; }
   /* icon replaces the artwork everywhere on the hub cards */
   #flows .card .thumb, #flows .appshots { display: none !important; }
-  /* desktop card view: the tile sits where the shot sat, right of copy */
-  body:not(.listview) #flows .card .ficon { order: 2; align-self: center; }
-  /* native card view: app-icon header above the copy */
+  /* desktop card view: a tile where the screenshot sat */
+  body:not(.listview) #flows .card .ficon { order: 2; align-self: flex-start; }
+  /* native card view: the wash spans the card as a tall header band */
   body.native:not(.listview) #flows .card .row .ficon { order: 0;
-    margin: 22px 24px 0; }
-  /* list view: compact tile, back on the left (radius stays 22.5%) */
+    align-self: stretch; width: auto; height: 124px; margin: 0;
+    border-radius: 0; }
+  body.native:not(.listview) #flows .card .row .ficon svg {
+    width: 46px; height: 46px; }
+  /* list view: compact chip, back on the left */
   body.listview #flows .card .ficon { order: -1; width: 36px;
-    height: 36px; }
+    height: 36px; border-radius: 11px; }
+  body.listview #flows .card .ficon svg { width: 19px; height: 19px; }
   body.listview #flows .card .desc, body.listview #flows .card .meta,
   body.listview #flows .card .actions, body.listview #flows .card .handoff,
   body.listview #flows .card .appshots { display: none !important; }
@@ -1198,9 +1198,7 @@ function openLogin() {
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {
-      warm.push(f.path + 'index.html');
-      for (const sh of (f.shots || [])) warm.push(sh);
-      if (f.preview) warm.push(f.preview);
+      warm.push(f.path + 'index.html');   /* card artwork retired — icons */
     }
     warm.push(...['m-cheesepastry.jpg', 'm-oatmeal.jpg', 'm-olivesand.jpg', 'm-fingers.jpg',
       'm-machbous.jpg', 'm-thaicurry.jpg', 'm-garfelo.jpg', 'm-pastasalad.jpg',
@@ -1259,29 +1257,29 @@ function openLogin() {
   setTimeout(dismiss, MAX_MS);         /* hard ceiling — never trap the user */
 })();
 
-/* feature glyphs — blueprint line drawings (accent strokes, dashed
-   construction lines) on light-tone grid paper */
+/* feature glyphs — SF-Symbol discipline: one 24 grid, 1.5 stroke,
+   round caps/joins, live area inset 4pt, no overlapping strokes */
 const FLOW_ICONS = {
-  'meal-select': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7" stroke-dasharray="2.2 2.6" opacity=".5"/><path d="M9.1 7.3v9.4M7.4 7.3v2.9a1.7 1.7 0 0 0 3.4 0V7.3"/><path d="M15.3 16.7V7.3c1.4.8 2.2 2.2 2.2 3.7 0 1.2-.7 2.1-2.2 2.4"/></svg>',
-  breathe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.8" stroke-dasharray="2 2.3" opacity=".5"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M12 1.8v1.7M12 20.5v1.7M1.8 12h1.7M20.5 12h1.7" opacity=".55"/></svg>',
-  'plan-quiz': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.6" y="4.3" width="14.8" height="16.9" rx="2.4"/><path d="M9 2.9h6a1 1 0 0 1 1 1v1.3H8V3.9a1 1 0 0 1 1-1z"/><path d="m7.9 10.9 1.1 1.1 2-2"/><path d="M13.3 10.9h3.2"/><circle cx="8.9" cy="16.1" r="1.1" stroke-dasharray="1.4 1.5" opacity=".5"/><path d="M13.3 16.1h3.2" stroke-dasharray="1.8 2" opacity=".5"/></svg>',
-  rewards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.4 8.1c0-.7.6-1.3 1.3-1.3h14.6c.7 0 1.3.6 1.3 1.3v1.6a2.4 2.4 0 0 0 0 4.6v1.6c0 .7-.6 1.3-1.3 1.3H4.7c-.7 0-1.3-.6-1.3-1.3v-1.6a2.4 2.4 0 0 0 0-4.6V8.1z"/><path d="M14.9 7.1v9.8" stroke-dasharray="2 2.4" opacity=".5" stroke-linecap="round"/></svg>',
-  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 10.4 12 4.4l7.4 6"/><path d="M6.2 9.6v9.4a.9.9 0 0 0 .9.9h9.8a.9.9 0 0 0 .9-.9V9.6"/><path d="M10.1 19.9v-4.5a1.1 1.1 0 0 1 1.1-1.1h1.6a1.1 1.1 0 0 1 1.1 1.1v4.5"/><path d="M12 2.4v2M2.7 11.8h1.9M19.4 11.8h1.9" stroke-dasharray="1.7 1.9" opacity=".5"/></svg>',
-  checkout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.2" y="5.6" width="17.6" height="12.8" rx="2.2"/><path d="M3.6 9.7h16.8"/><path d="M6.6 14.9h4.2" stroke-dasharray="1.8 2" opacity=".5"/><circle cx="17" cy="14.9" r="1.3" opacity=".55"/></svg>',
-  account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8.3" r="3.7"/><circle cx="12" cy="8.3" r="5.9" stroke-dasharray="2 2.4" opacity=".45"/><path d="M5.2 20.2a7.2 7.2 0 0 1 13.6 0"/></svg>',
-  auth: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.4" y="10.3" width="13.2" height="9.4" rx="2.2"/><path d="M8.3 10.2V8a3.7 3.7 0 0 1 7.4 0v2.2"/><circle cx="12" cy="14.3" r="1.3"/><path d="M12 15.7v1.5"/><path d="M15.7 4.6a3.8 3.8 0 0 1 1.6 1.9" stroke-dasharray="1.5 1.7" opacity=".5"/></svg>',
-  _: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="6.9" y="2.8" width="10.2" height="18.4" rx="2.6"/><rect x="8.7" y="5.5" width="6.6" height="10.4" rx="1" stroke-dasharray="1.8 2" opacity=".45"/><path d="M10.6 18.6h2.8"/></svg>'
+  'meal-select': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 4.4v4.2a1.8 1.8 0 0 0 3.6 0V4.4"/><path d="M9 10.4v9.2"/><path d="M15.6 19.6v-7"/><path d="M15.6 12.6c1.7-.3 2.6-1.6 2.6-3.4 0-2.1-.9-3.9-2.6-5.1v8.5z"/></svg>',
+  breathe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>',
+  'plan-quiz': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5.4" width="14" height="15.2" rx="2.4"/><path d="M9.4 5.4v-1a2.6 2.6 0 0 1 5.2 0v1" fill="var(--fb, #fff)"/><path d="M8.8 11h6.4"/><path d="M8.8 15h4"/></svg>',
+  rewards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4.2 8.8A1.8 1.8 0 0 1 6 7h12a1.8 1.8 0 0 1 1.8 1.8v1.4a2 2 0 0 0 0 3.6v1.4A1.8 1.8 0 0 1 18 17H6a1.8 1.8 0 0 1-1.8-1.8v-1.4a2 2 0 0 0 0-3.6V8.8z"/><path d="M14.6 7.6v8.8" stroke-dasharray="1.6 2.1" stroke-linecap="round"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4.4l8 6.2"/><path d="M6.2 10.2v8.2a1.4 1.4 0 0 0 1.4 1.4h8.8a1.4 1.4 0 0 0 1.4-1.4v-8.2"/><path d="M10.2 19.8v-4a1.8 1.8 0 0 1 3.6 0v4"/></svg>',
+  checkout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="6" width="16.8" height="12" rx="2.4"/><path d="M3.6 10.2h16.8"/><path d="M7 14.4h3.4"/></svg>',
+  account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.6"/><path d="M5.6 19.8a6.6 6.6 0 0 1 12.8 0"/></svg>',
+  auth: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.4" y="10.4" width="13.2" height="9.4" rx="2.4"/><path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6"/><circle cx="12" cy="15.1" r="1.3"/></svg>',
+  _: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.4" width="10" height="17.2" rx="2.6"/><path d="M10.4 17.8h3.2"/></svg>'
 };
-/* per-flow blueprint tones: [accent ink, light paper] */
+/* per-flow tones: [accent ink, light wash] */
 const FLOW_HUES = {
-  'meal-select': ['#1FA84C', '#EDF8F0'],
-  breathe: ['#1E96DB', '#EBF5FC'],
-  'plan-quiz': ['#8B3FD6', '#F5EEFC'],
-  rewards: ['#E88A00', '#FCF4E6'],
-  home: ['#ED1C24', '#FCEEEE'],
-  checkout: ['#0A63E8', '#ECF2FD'],
-  account: ['#4E4CCB', '#F0F0FB'],
-  auth: ['#0F97AC', '#EAF6F8'],
+  'meal-select': ['#1B9E48', '#EAF7EF'],
+  breathe: ['#1E90D6', '#E9F4FC'],
+  'plan-quiz': ['#8639D0', '#F3ECFC'],
+  rewards: ['#E08600', '#FDF3E3'],
+  home: ['#ED1C24', '#FDEDED'],
+  checkout: ['#0A63E8', '#EBF2FE'],
+  account: ['#4E4CCB', '#EFEFFB'],
+  auth: ['#0F97AC', '#E8F5F8'],
   _: ['#3A3A3E', '#F1F1F3']
 };
 
@@ -1342,7 +1340,6 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
           <p class="desc">${f.description}</p>
           <p class="meta">Updated ${f.updated}</p>
         </div>
-        ${f.preview ? `<a class="thumb" href="${f.path}"><img src="${f.preview}" alt="${f.title} preview"></a>` : ''}
       </div>
       <div class="actions">
         <a class="btn primary" href="${f.path}">Open prototype</a>
@@ -1386,25 +1383,6 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         open();
       });
       btn.remove();                                   /* no Dev handoff in the app */
-      /* animated hero: wireframe phone flipping through the flow's screens */
-      const shots = f.shots && f.shots.length ? f.shots : (f.preview ? [f.preview] : []);
-      if (shots.length) {
-        const hero = document.createElement('div');
-        hero.className = 'appshots';
-        hero.innerHTML = '<div class="wf-phone"><div class="wf-screen">' +
-          shots.map((u, i) => `<img src="${u}" class="${i === 0 ? 'on' : ''}" alt="">`).join('') +
-          '</div><div class="wf-island"></div></div>';
-        card.querySelector('.row').prepend(hero);
-        if (shots.length > 1) {
-          let si = 0;
-          const imgs = hero.querySelectorAll('img');
-          setInterval(() => {
-            imgs[si].classList.remove('on');
-            si = (si + 1) % imgs.length;
-            imgs[si].classList.add('on');
-          }, 2600);
-        }
-      }
     }
     /* dev kits: SwiftUI spec first (native-first, handoff template v2),
        the RN kit stays as the fallback for every other platform */
