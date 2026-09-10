@@ -456,13 +456,33 @@
        WebKit offsets position:sticky by the scroll container's padding
        (Chromium doesn't), so padding-top here pinned the category heads
        hundreds of px too low on device. The spacer is plain content —
-       both engines then stick from the scrollport top. --sheet-pad rides
-       the collapse (0 -> GAP, syncSheet) so the fullscreen resting
-       scroll keeps a full nav of headroom over Breakfast.
-       overflow-anchor off: Chrome's anchoring would fight the ride. */
+       both engines then stick from the scrollport top. */
     padding: 0 0 132px;
     overflow-anchor: none; scrollbar-width: none; }
-  .scroll-pad { height: calc(var(--top-pad) + 66px + var(--sheet-pad, 0px)); }
+  /* THE APP STORE SHEET MODEL (Rashid: "follow Apple's App Store scroll
+     when you open articles"). In UIKit's sheet, a drag first EXPANDS the
+     sheet while its content holds still inside it, and the scroll only
+     takes over once the sheet is large — so the content's speed under
+     your thumb never changes. Two vars reproduce that here:
+
+       --pad-base  the DOCKED nav's pad, constant. The spacer no longer
+                   tracks the animating --top-pad, so the nav growing
+                   during the attach can never swallow the content.
+       --dock-pad  min(scrollTop, SHEET_GAP): grows 1:1 with the scroll
+                   through the attach, then stops.
+
+     Content's offset inside the scrollport is therefore pad-base + 66
+     for the whole attach — dead still relative to the sheet, exactly as
+     Apple does it — so the only thing moving is the sheet, at 1:1. Past
+     the gap --dock-pad is frozen and the content scrolls at 1:1. Same
+     speed on both sides of the dock, no discontinuity anywhere.
+
+     It also fixes the two collisions that made one flick feel like
+     three: the first head can no longer reach the sticky line until
+     10px AFTER the dock (it used to lock on at 10px, ~40% into a ~25px
+     attach), and the fullscreen rest lands the first row just below the
+     bar by construction, which retires the day-turn crop hack. */
+  .scroll-pad { height: calc(var(--pad-base, var(--top-pad)) + 66px + var(--dock-pad, 0px)); }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 16px 20px 12px;
@@ -1374,6 +1394,10 @@ function scrollPadPx() {
   return sp ? sp.offsetHeight
     : (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100);
 }
+/* the DOCKED nav's pad. Every pin/target line is nav-relative, never
+   spacer-relative — the spacer carries the dock pad on top of it. */
+let PAD_BASE = 0;
+function navPadPx() { return PAD_BASE || (scrollPadPx() - 66); }
 let cardSeq = 0;
 function buildScreen() {
   scrollArea.innerHTML = '';
@@ -1788,7 +1812,7 @@ function pursueIntent() {
   /* land with the first thumbnail row fully clear of the docked nav.
      NOTE: --top-pad is an env() expression on device — read the RESOLVED
      scroll padding (top-pad + 66) instead of the raw custom property. */
-  const tp = scrollPadPx() - 66;
+  const tp = navPadPx();
   const target = Math.max(0, Math.min(
     head.offsetTop + head.offsetHeight - (tp + 92) - 12,
     scrollArea.scrollHeight - scrollArea.clientHeight));
@@ -1912,11 +1936,11 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day rides in from its very top (the 9am rule). A
-       fullscreen day parks at the gap WITH the day-turn pad — the one
-       addition Rashid asked for — so Breakfast arrives clear of the
-       nav; a docked day parks at 0 with no pad, the canonical layout. */
-    setDayPad(stayFull ? SHEET_GAP : 0);
+    /* a fresh day rides in from its very top (the 9am rule); a
+       fullscreen day parks at the gap. Breakfast arrives clear of the
+       nav with no special case now — holding the content still inside
+       the expanding sheet puts the first row just below the bar at
+       fullscreen rest, the un-cropped arrival Rashid asked for. */
     scrollArea.scrollTop = stayFull ? collapseEnd() : 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
@@ -2577,7 +2601,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 131';
+const BUILD = 'build 2026-09-10 · 132';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2717,11 +2741,10 @@ function updateCatDock() {
      head PINS at the dock line, riding its own white slab; the next head
      pushes it out. Everything is scroll-linked per frame: no visibility
      swaps, no band handoff — the cat-dock band is retired to an empty
-     white backing strip. NOTE: the resolved scroll padding includes the
-     --sheet-pad headroom ride; the pin line is NAV-relative, so the ride
-     is subtracted back out (the old formula docked GAP px early). */
-  const extra = parseFloat(scrollArea.style.getPropertyValue('--sheet-pad')) || 0;
-  const tp = scrollPadPx() - 66 - extra;
+     white backing strip. NOTE: the pin line is NAV-relative, so it goes
+     through navPadPx() (the docked nav's own pad) — never the spacer,
+     which carries the dock pad on top and would dock GAP px early. */
+  const tp = navPadPx();
   const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
   const secs = Array.from(scrollArea.querySelectorAll('section'));
   let ai = -1;
@@ -2781,37 +2804,27 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
-/* THE 9AM MECHANISM, verbatim (Rashid: "copy the scroll from the build
-   available 9am — and ONLY add the extra offset for when Next is
-   clicked, to avoid cropping breakfast"): the sheet is linked 1:1 to
-   the scroll — y = gap − s — no easing, no speed constants, no settle
-   glide, and the headroom spacer NEVER moves during a gesture. The one
-   addition is dayPad: a day-turn that arrives fullscreen parks at
-   s = gap with the spacer grown by one gap, so Breakfast lands clear
-   of the nav. The pad then folds away invisibly the first time the
-   scroll runs a full gap deep into content (spacer −pad, scrollTop
-   −pad, net zero on screen); if the user instead detaches first, the
-   pad shrinks with s so the sheet glides off over held content and the
-   overlay lands at its canonical layout. Every other gesture is the
-   pure 9am scroll. */
+/* The sheet is a pure 1:1 readout of the scroll — y = gap − s, no
+   easing, no speed constants, no settle glide, nothing that finishes,
+   nudges or re-aims a gesture (the 9am rule, kept). What makes it read
+   as ONE motion rather than three is the content-hold in .scroll-pad
+   above: through the attach the content sits still inside the sheet, so
+   the sheet's rise is the only movement, and past the dock the content
+   scrolls at that same 1:1. See the .scroll-pad comment for the model
+   and for the two collisions it removes. */
 function collapseEnd() { return SHEET_GAP; }
-let dayPad = 0;
-function setDayPad(px) {
-  dayPad = px;
-  scrollArea.style.setProperty('--sheet-pad', px + 'px');
-}
 function syncSheet() {
   if (!sheetLive) return;
-  /* the day-turn pad melts as the sheet is dragged back toward the
-     overlay, so a turned-into day still lands at the canonical layout.
-     It NEVER writes scrollTop: assigning scrollTop from inside a scroll
-     handler cancels WKWebView's deceleration outright, which killed the
-     first flick after every Next — the pad above stays put while you
-     are below it (invisible) and only unwinds on the way home. */
-  if (dayPad > 0 && scrollArea.scrollTop < SHEET_GAP) {
-    setDayPad(Math.min(dayPad, Math.max(0, scrollArea.scrollTop)));
-  }
-  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
+  /* NOTHING here may write scrollTop: assigning it from inside a scroll
+     handler cancels WKWebView's deceleration outright — that killed the
+     first flick after every Next. The sheet is a pure readout.
+     --dock-pad grows 1:1 with the scroll for exactly the attach, which
+     is what holds the content still inside the expanding sheet (see
+     .scroll-pad); past the gap it is frozen and never moves again. */
+  const s = scrollArea.scrollTop;
+  scrollArea.style.setProperty('--dock-pad',
+    Math.min(SHEET_GAP, Math.max(0, s)).toFixed(1) + 'px');
+  const y = Math.max(0, SHEET_GAP - s);
   /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
      miscomputes position:sticky (the category heads) inside a
      transformed ancestor — and translateY(0px) still counts. Safe by
@@ -2830,9 +2843,18 @@ function syncSheet() {
   }
 }
 document.body.classList.add('sheet-mode', 'sheet-enter');
+/* read the resolved pad BEFORE pinning --pad-base (the spacer still
+   falls back to --top-pad at this point) */
+const RESOLVED_PAD = scrollPadPx() - 66;
 SHEET_GAP = EMBED ? REAL_PAD + 16
   : document.body.classList.contains('desktop') ? 56
-  : Math.max(22, scrollPadPx() - 66 - 12);
+  : Math.max(22, RESOLVED_PAD - 12);
+/* pin the spacer to the DOCKED nav pad. In the embed the nav's own
+   --top-pad still rides 14 -> REAL_PAD for the chrome, but the content
+   no longer rides with it: that ride was what let the growing bar eat
+   the first row and drag the sticky line down onto Breakfast mid-attach. */
+PAD_BASE = EMBED ? REAL_PAD : RESOLVED_PAD;
+document.getElementById('phone').style.setProperty('--pad-base', PAD_BASE + 'px');
 setTimeout(() => {
   sheetEl.classList.add('springing');
   document.body.classList.remove('sheet-enter');
