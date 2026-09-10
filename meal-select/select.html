@@ -424,13 +424,20 @@
     overflow-anchor: none; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
-    padding: 16px 20px 12px; }
-  /* JS-sticky pin: the active head rides a full-bleed white slab above
-     the cards while it holds the dock line (transform set per frame by
-     updateCatDock — see there) */
-  .cat-head.pinned { position: relative; z-index: 6; }
-  .cat-head.pinned::before { content: ''; position: absolute;
+    padding: 16px 20px 12px;
+    /* NATIVE sticky (Rashid: the JS pin jittered — scroll events lag the
+       compositor in WKWebView, so a per-frame transform correction reads
+       as up-down shake; position:sticky rides the compositor itself and
+       the section's own end provides the push-out). The white slab makes
+       the stuck head mask the cards passing beneath. */
+    position: -webkit-sticky; position: sticky;
+    top: calc(var(--top-pad) + 56px); z-index: 6; background: #ffffff; }
+  .cat-head::before { content: ''; position: absolute;
     inset: 0 -24px; background: #ffffff; z-index: -1; }
+  /* desktop playground: sticky miscomputes inside the scale()d stage
+     (house gotcha) — the JS pin in updateCatDock takes over there */
+  body.desktop .cat-head { position: relative; top: auto; }
+  body.desktop .cat-head.pinned { z-index: 6; }
   .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
@@ -2481,7 +2488,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 116';
+const BUILD = 'build 2026-09-10 · 117';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2634,10 +2641,17 @@ function updateCatDock() {
   nav.classList.toggle('scrolled', scrollArea.scrollTop > 8);
   nav.classList.toggle('docked', ai >= 0);
   dockedCatId = null;
+  if (ai >= 0) {
+    const of = secs[ai].querySelector('[data-of]');
+    if (of) dockedCatId = of.dataset.of;
+  }
+  /* mobile/native: position:sticky owns the pin (compositor-smooth, no
+     per-frame JS). The JS transform pin survives ONLY for the desktop
+     playground, where sticky miscomputes inside the scaled stage. */
+  if (!document.body.classList.contains('desktop')) return;
   secs.forEach((sec, i) => {
     const h = sec.querySelector('.cat-head');
     if (!h) return;
-    h.style.visibility = '';
     if (i !== ai) { h.style.transform = ''; h.classList.remove('pinned'); return; }
     let y = line - sec.offsetTop;                   /* pin shift */
     const B = secs[i + 1];
@@ -2645,8 +2659,6 @@ function updateCatDock() {
     if (y > 0) {
       h.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
       h.classList.add('pinned');
-      const of = sec.querySelector('[data-of]');
-      if (of) dockedCatId = of.dataset.of;
     } else {
       h.style.transform = ''; h.classList.remove('pinned');
     }
