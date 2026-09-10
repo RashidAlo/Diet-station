@@ -224,7 +224,30 @@ window.DSChromeTap('close');
 // - display-only twins (gauges, badges) pass ALL touches through
 //   (isUserInteractionEnabled = false except real buttons);
 // - the shell must not mutate the live scroll view mid-gesture (no
-//   refresh-control re-seating, no bounce re-assertion) on chrome posts.</pre>
+//   refresh-control re-seating, no bounce re-assertion) on chrome posts.
+
+// ── MATCH A FLAG, NOT A CURVE (2026-09-11) ───────────────────────────
+// Shell obligation: whichever side OWNS a motion must expose a
+// SYNCHRONISATION PRIMITIVE for it. The other side never times against
+// it. Any duration the far side picks is a guess that decays — wrong on
+// the next device, wrong the moment the motion is interrupted
+// mid-flight, and unmatchable in principle when it is a spring rather
+// than a fixed ease.
+//
+// First instance — frame-exact twin teardown:
+webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', /* … */ instant: true });
+// applies the WHOLE post inside a disabled-animation transaction, so an
+// omitted twin is torn down on the exact frame the page takes its
+// element back and the page owns the entire exit in CSS. Scope is the
+// whole post: send it only where nothing else should animate to new
+// geometry.
+//
+// COROLLARY: OVERLAP IS NOT SYNCHRONISATION. A fading twin sitting over
+// a web copy drawing the same thing at the same rect LOOKS correct,
+// passes review, and breaks silently the moment either side's timing
+// shifts. Same failure family as a constant that agrees by coincidence
+// on one device class (see DS-CHROME-TOP above): coincidence is not a
+// contract.</pre>
       <button class="copycode" data-copy="handshake">Copy</button>
     </div>
   </section>
