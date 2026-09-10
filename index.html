@@ -77,9 +77,26 @@
   .count { margin: 0 0 14px; font: 500 12px/1 'Urbane Rounded', sans-serif;
     text-transform: uppercase; letter-spacing: .12em; color: var(--ink-soft); }
 
-  /* ---- card / list view toggle (top right, next to the content) ---- */
-  .flowsbar { display: flex; align-items: center; margin: 0 0 14px; }
-  .flowsbar .count { margin: 0; flex: 1; }
+  /* ---- pane header: big title + explainer, view toggle beside it ---- */
+  .hero { display: none; }               /* per-pane headers replace it */
+  .panehead { display: flex; align-items: flex-start; gap: 16px;
+    margin: 6px 0 18px; }
+  .panehead .ph-copy { flex: 1; min-width: 0; }
+  .panehead h1 { font: 600 26px/1.2 'Urbane Rounded', sans-serif;
+    letter-spacing: -.015em; margin: 0 0 6px; }
+  .panehead p { margin: 0; font: 400 13px/1.5 -apple-system, sans-serif;
+    color: var(--ink-soft); max-width: 52ch; }
+  .panehead .count { margin: 10px 0 0; }
+  .panehead .viewtog { margin-top: 4px; }
+  body.native .panehead { padding: 12px 20px 0; margin-bottom: 14px; }
+  body.native .panehead h1 { font-size: 24px; }
+  /* system pane in list mode: compact cards, previews tucked away */
+  body.listview #pane-system .card { padding: 16px 18px; }
+  body.listview #pane-system .card [class*="peek"],
+  body.listview #pane-system .card .meta { display: none; }
+  body.listview #pane-system .card .desc { display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    font-size: 12.5px; margin-top: 6px; }
   .viewtog { display: flex; margin-left: auto; padding: 3px;
     border: 1px solid rgba(0,0,0,.12); border-radius: 999px; background: #fff; }
   .viewtog button { width: 34px; height: 28px; border: 0; background: none;
@@ -613,20 +630,24 @@
   /* dual-action primary: Prototype launch + settings in one red button */
   .btn.primary.dual { padding: 0; overflow: hidden; }
   .dual .d-main { display: flex; align-items: center; justify-content: center;
-    gap: 6px; flex: 1; padding: 0 14px; height: 100%; min-width: 0;
+    gap: 7px; flex: 1; padding: 0 20px; height: 100%; min-width: 0;
     white-space: nowrap; }
   body.native .dual .d-main { font-size: 13px; letter-spacing: -.01em; }
   body.native .dual .d-main svg { width: 12px; height: 12px; flex: none; }
-  /* admin row is crowded (pencil + power circles) — drop the play glyph so
-     the Prototype label keeps clear air off the button's right edge */
-  body.admin .dual .d-main svg { display: none; }
   .dual .d-div { width: 1px; align-self: stretch; margin: 13px 0;
-    background: rgba(255,255,255,.32); }
+    background: rgba(0,0,0,.12); }
+  /* gear seat: a touch of left inset so the glyph reads optically
+     centered between the pill's curved end and the divider */
   .dual .d-gear { display: flex; align-items: center; justify-content: center;
-    flex: 0 0 auto; width: 48px; height: 100%; cursor: pointer; }
-  body.native .dual .d-gear { width: 50px; }
+    flex: 0 0 auto; width: 52px; height: 100%; cursor: pointer;
+    padding-left: 5px; box-sizing: border-box; }
+  body.native .dual .d-gear { width: 54px; }
+  /* card controls: white surfaces, colored actions (Rashid) — the red
+     lives in the glyphs and label, not the fill */
+  body.native .actions .btn.primary { background: #fff; color: var(--red);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09); }
   .dual .d-gear svg { width: 20px; height: 20px; }
-  .dual .d-gear:active { background: rgba(0,0,0,.14); }
+  .dual .d-gear:active { background: rgba(0,0,0,.06); }
   /* round Live/Offline power button in the action bar (admin) —
      a plain filled circle, power glyph only: green = live, gray = offline */
   .livebtn { display: none; }
@@ -635,9 +656,11 @@
     align-items: center; justify-content: center; cursor: pointer;
     transition: background .28s ease, color .28s ease, box-shadow .28s ease; }
   body.native .livebtn { width: 50px; height: 50px; order: 1; }
-  .livebtn.on { background: #34C759; color: #fff;
-    box-shadow: 0 5px 14px -6px rgba(52,199,89,.55); }
-  .livebtn.off { background: #ececef; color: #8e8e93; }
+  .livebtn.on { background: #fff; color: #34C759;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09),
+      0 5px 14px -6px rgba(52,199,89,.45); }
+  .livebtn.off { background: #fff; color: #8e8e93;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.09); }
   .livebtn > svg:not(.lv-ring) { width: 17px; height: 17px; }
   body.native .livebtn > svg:not(.lv-ring) { width: 18px; height: 18px; }
   /* publishing: a green stroke traces circles around the button's border;
@@ -758,8 +781,13 @@
   </section>
 
   <section class="tabpane on" id="pane-prototypes">
-    <div class="flowsbar">
-      <div class="count" id="count"></div>
+    <div class="panehead">
+      <div class="ph-copy">
+        <h1>Prototypes</h1>
+        <p>Living prototypes of every feature in the works — open a flow to
+          try it on any device, or scan the lab as a list.</p>
+        <div class="count" id="count"></div>
+      </div>
       <div class="viewtog" role="group" aria-label="View">
         <button class="vt-cards on" aria-label="Card view"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/></svg></button>
         <button class="vt-list" aria-label="List view"><svg viewBox="0 0 16 16" fill="none"><path d="M5.5 3.5h8.5M5.5 8h8.5M5.5 12.5h8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.4" cy="3.5" r="1.1" fill="currentColor"/><circle cx="2.4" cy="8" r="1.1" fill="currentColor"/><circle cx="2.4" cy="12.5" r="1.1" fill="currentColor"/></svg></button>
@@ -769,7 +797,18 @@
   </section>
 
   <section class="tabpane" id="pane-system">
-    <div class="count" id="syscount">10 elements</div>
+    <div class="panehead">
+      <div class="ph-copy">
+        <h1>Design System</h1>
+        <p>The shared materials every prototype builds on — dial them once
+          here and every flow on every device follows.</p>
+        <div class="count" id="syscount">10 elements</div>
+      </div>
+      <div class="viewtog" role="group" aria-label="View">
+        <button class="vt-cards on" aria-label="Card view"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/></svg></button>
+        <button class="vt-list" aria-label="List view"><svg viewBox="0 0 16 16" fill="none"><path d="M5.5 3.5h8.5M5.5 8h8.5M5.5 12.5h8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.4" cy="3.5" r="1.1" fill="currentColor"/><circle cx="2.4" cy="8" r="1.1" fill="currentColor"/><circle cx="2.4" cy="12.5" r="1.1" fill="currentColor"/></svg></button>
+      </div>
+    </div>
 
     <section class="card">
       <div class="top">
@@ -1861,16 +1900,20 @@ if (NATIVE) {
 }
 /* ============ card / list view toggle (persisted per device) ============ */
 (function () {
-  const bar = document.querySelector('.viewtog');
-  if (!bar) return;
+  const bars = [...document.querySelectorAll('.viewtog')];
+  if (!bars.length) return;
   const setView = v => {
     document.body.classList.toggle('listview', v === 'list');
-    bar.querySelector('.vt-cards').classList.toggle('on', v !== 'list');
-    bar.querySelector('.vt-list').classList.toggle('on', v === 'list');
+    bars.forEach(bar => {
+      bar.querySelector('.vt-cards').classList.toggle('on', v !== 'list');
+      bar.querySelector('.vt-list').classList.toggle('on', v === 'list');
+    });
     try { localStorage.setItem('ds-hub-view', v); } catch (_) {}
   };
-  bar.querySelector('.vt-cards').addEventListener('click', () => setView('cards'));
-  bar.querySelector('.vt-list').addEventListener('click', () => setView('list'));
+  bars.forEach(bar => {
+    bar.querySelector('.vt-cards').addEventListener('click', () => setView('cards'));
+    bar.querySelector('.vt-list').addEventListener('click', () => setView('list'));
+  });
   let v = 'cards';
   try { v = localStorage.getItem('ds-hub-view') || 'cards'; } catch (_) {}
   if (v === 'list') setView('list');
@@ -2007,6 +2050,12 @@ function setNativeView(view) {
   document.body.classList.toggle('adminview', view === 'admin');
   document.querySelectorAll('#tabbar button').forEach(b =>
     b.classList.toggle('on', b.dataset.tab === view));
+  /* keep the hash honest: a stale #design-system made pull-to-refresh
+     boot into the wrong tab regardless of where the user was */
+  try {
+    history.replaceState(null, '', view === 'sys'
+      ? '#design-system' : location.pathname + location.search);
+  } catch (_) {}
 }
 document.querySelectorAll('#tabbar button').forEach(b =>
   b.addEventListener('click', () => setNativeView(b.dataset.tab)));
