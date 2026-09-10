@@ -1035,7 +1035,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-10 · 18';
+const BUILD = 'home 2026-09-10 · 19';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1611,13 +1611,16 @@ fit();
 applyState();
 document.getElementById('todayDate').textContent = dayDateStr(0);
 
-/* entrance choreography — replica of the native intro: widgets arrive
-   staggered, then the dial depletes clockwise while the number counts
+/* entrance choreography — replica of the native intro: STRUCTURE IS
+   STATIC (Rashid: the white sheet renders instantly), only the content
+   staggers in; then the dial depletes clockwise while the number counts
    30 down to the real days-left with tiny haptic ticks */
 (function intro() {
   const els = [document.querySelector('.toprow'), document.getElementById('gPromo'),
     document.querySelector('.widgets'), document.querySelector('.lo-opts'),
-    document.querySelector('.sheetc')];
+    document.querySelector('.sh-head'), document.getElementById('mealStrip'),
+    document.querySelector('.lo-offer'), document.querySelector('.lo-or')]
+    .concat(Array.from(document.querySelectorAll('.plancard')));
   els.forEach((el, i) => {
     if (!el) return;
     el.style.opacity = '0';

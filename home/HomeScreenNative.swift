@@ -330,8 +330,11 @@ struct HomeScreenNative: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 20)
-                if state.loggedOut { arrival(plansSheet, 4) }
-                else { arrival(mealSheet, 4) }
+                // STRUCTURE IS STATIC (Rashid): the white sheet container
+                // renders instantly on every entrance and tab return — only
+                // the CONTENT inside it staggers in (wrapped within)
+                if state.loggedOut { plansSheet }
+                else { mealSheet }
             }
             .ignoresSafeArea(edges: .bottom)
             .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, y in
@@ -603,15 +606,16 @@ struct HomeScreenNative: View {
 
     private func tabHandler(_ tab: DSTabId) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
-        // Apple's beat: the pill lands first, then the page moves under
-        // the stationary bar
+        // Apple's beat, TIGHTENED (Rashid: quicker tab transitions) — the
+        // pill starts landing, the page swaps under it almost immediately;
+        // structure shows statically, only content staggers in
         if tab == .calendar, !state.calendarOpen, !state.loggedOut {
             selectorUp = false   // stale layer state never hides the bar
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 state.calendarOpen = true
             }
         } else if tab == .home, state.calendarOpen {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 state.calendarOpen = false
                 replayHomeIntro()
             }
@@ -1146,11 +1150,15 @@ struct HomeScreenNative: View {
 
     private var plansSheet: some View {
         VStack(spacing: 0) {
-            summerOffer.padding(.horizontal, 20).padding(.top, 28)
-            orDivider.padding(.horizontal, 20).padding(.vertical, 28)
+            // structure static, content in: the white sheet is instant; the
+            // platter, divider and cards cascade onto it
+            arrival(summerOffer, 2).padding(.horizontal, 20).padding(.top, 28)
+            arrival(orDivider, 2.5).padding(.horizontal, 20).padding(.vertical, 28)
             VStack(spacing: 24) {
                 ForEach(0..<planCards.count, id: \.self) { i in
-                    planCard(planCards[i].0, planCards[i].1)
+                    // stay under index 5 — that's the bar's replay carve-out
+                    arrival(planCard(planCards[i].0, planCards[i].1),
+                            3 + Double(i) * 0.5)
                 }
             }
             .padding(.horizontal, 20)
@@ -1359,37 +1367,8 @@ struct HomeScreenNative: View {
 
     private var mealSheet: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sheetHeader.padding(.top, 30).padding(.horizontal, 24)
-            ScrollViewReader { stripProxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 29) {
-                        ForEach(0..<state.days.count, id: \.self) { i in
-                            if i > 0 {
-                                Rectangle().fill(Color(white: 0.925)).frame(width: 1, height: 135)
-                            }
-                            dayGroup(i)
-                        }
-                    }
-                    .padding(.bottom, 8)
-                }
-                // margins (not HStack padding) so scrollTo(.leading) lands
-                // day groups exactly at the standard 24pt inset
-                .contentMargins(.horizontal, 24, for: .scrollContent)
-                .coordinateSpace(name: "strip")
-                .onGeometryChange(for: CGRect.self) { proxy in
-                    proxy.frame(in: .global)
-                } action: { r in
-                    stripFrame = r   // the dark photo band, tracked live
-                }
-                .onAppear {
-                    stripProxy.scrollTo("day1", anchor: .leading)
-                    // seen once in the sim: the first scrollTo can race layout
-                    // and strand the strip on a far day — re-fire next runloop
-                    DispatchQueue.main.async {
-                        stripProxy.scrollTo("day1", anchor: .leading)
-                    }
-                }
-            }
+            arrival(sheetHeader, 2).padding(.top, 30).padding(.horizontal, 24)
+            arrival(stripCarousel, 3)
             Spacer(minLength: 140)
         }
         .frame(maxWidth: .infinity, minHeight: 520, alignment: .top)
@@ -1402,6 +1381,41 @@ struct HomeScreenNative: View {
         // bottom-overscroll rubber band must show white, never the red page
         .background(alignment: .bottom) {
             Color.white.frame(height: 600).offset(y: 600)
+        }
+    }
+
+    /// the meal carousel, extracted so the entrance can stagger it as
+    /// CONTENT while the sheet structure stays static
+    private var stripCarousel: some View {
+        ScrollViewReader { stripProxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 29) {
+                    ForEach(0..<state.days.count, id: \.self) { i in
+                        if i > 0 {
+                            Rectangle().fill(Color(white: 0.925)).frame(width: 1, height: 135)
+                        }
+                        dayGroup(i)
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            // margins (not HStack padding) so scrollTo(.leading) lands
+            // day groups exactly at the standard 24pt inset
+            .contentMargins(.horizontal, 24, for: .scrollContent)
+            .coordinateSpace(name: "strip")
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { r in
+                stripFrame = r   // the dark photo band, tracked live
+            }
+            .onAppear {
+                stripProxy.scrollTo("day1", anchor: .leading)
+                // seen once in the sim: the first scrollTo can race layout
+                // and strand the strip on a far day — re-fire next runloop
+                DispatchQueue.main.async {
+                    stripProxy.scrollTo("day1", anchor: .leading)
+                }
+            }
         }
     }
 
@@ -2629,7 +2643,7 @@ struct FlowOverlay: View {
                 // returns to the pilot (Apple's beat)
                 DSTabBarHost(initial: .calendar) { tab in
                     if tab == .home {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { onClose() }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { onClose() }
                     }
                 }
                 .padding(.bottom, DS.barBottom)
