@@ -1210,8 +1210,8 @@ function openMealOv(key) {
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
-  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
-    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
+  if (typeof collapseEnd === 'function' && scrollArea.scrollTop < collapseEnd()) {
+    scrollArea.scrollTop = collapseEnd();   /* dock the outer sheet fullscreen */
     syncSheet();
   }
   setTimeout(() => {
@@ -1877,7 +1877,7 @@ function turnDay(dir, target) {
   turning = true;
   /* a sheet at fullscreen STAYS at fullscreen through a day switch —
      content changed, presentation didn't. Captured before the slide-out. */
-  const stayFull = sheetLive && scrollArea.scrollTop >= sheetGap() - 1;
+  const stayFull = sheetLive && scrollArea.scrollTop >= collapseEnd() - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1907,7 +1907,7 @@ function turnDay(dir, target) {
        the gap — the --sheet-pad headroom ride means that position now
        keeps a full nav above Breakfast, so nothing arrives cropped —
        and a docked day parks at 0, re-opening the overlay gap. */
-    scrollArea.scrollTop = stayFull ? sheetGap() : 0;
+    scrollArea.scrollTop = stayFull ? collapseEnd() : 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
@@ -2564,7 +2564,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 123';
+const BUILD = 'build 2026-09-10 · 124';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2768,14 +2768,18 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
+/* the collapse completes in HALF the gap's scroll distance (K=2): the
+   sheet attaches at 2px per scrolled px while the CONTENT moves at a
+   constant 1px/px through the whole gesture — no speed change at the
+   boundary, so one swipe attaches the sheet AND keeps scrolling the
+   meals (Rashid, TF: the old ride froze content during the collapse,
+   which read as a separate 'attach' step). */
+function collapseEnd() { return SHEET_GAP / 2; }
 function syncSheet() {
   if (!sheetLive) return;
-  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
-  /* the headroom ride (Rashid, replaces the ·109 detent latch): scroll
-     padding grows 1px per collapsed px, so the fullscreen resting scroll
-     (scrollTop = GAP) keeps a full nav of headroom above Breakfast —
-     seamless ONE-gesture scroll-link in both directions, docked look
-     untouched, and day-turn arrivals land un-cropped. */
+  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop * 2);
+  /* headroom spacer rides the collapse so the fullscreen resting scroll
+     keeps a full nav above Breakfast; day-turn arrivals land un-cropped */
   scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
   /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
      miscomputes position:sticky (the category heads) inside a
@@ -2820,7 +2824,7 @@ function armSnap() {
   clearTimeout(snapT);
   snapT = setTimeout(() => {
     if (snapFinger || snapping || !sheetLive || turning) return;
-    const gap = sheetGap(), s = scrollArea.scrollTop;
+    const gap = collapseEnd(), s = scrollArea.scrollTop;
     if (s <= 0.5 || s >= gap - 0.5) return;
     snapping = true;
     const to = s > gap * 0.5 ? gap : 0;
@@ -3251,13 +3255,13 @@ if (QS.get('solo') === '1') {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
     sa.addEventListener('scroll', function () {
-      docked = sa.scrollTop >= gapNow() - 0.5;
+      docked = sa.scrollTop >= gapNow() / 2 - 0.5;
       moving = true;
       if (!trackRaf) trackRaf = requestAnimationFrame(postTrack);
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
-    docked = sa.scrollTop >= gapNow() - 0.5;
+    docked = sa.scrollTop >= gapNow() / 2 - 0.5;
     report();
   }
   /* dismissal clears, take 2: the old one-shot transitionstart arm was
