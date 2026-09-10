@@ -192,6 +192,7 @@ private enum DS {
     /// widgets, and the plans list on the sheet (lab Account toggle)
     var loggedOut = false
     var guideOpen = false           // Guide me -> the plan-quiz web flow
+    var authOpen = false            // Sign in -> the auth lane's web flow
     var daysLeft: Int = 19          // 19 / 5 / 0 (expired)
     var showPromo = true
     var showDiscounts = true
@@ -442,6 +443,16 @@ struct HomeScreenNative: View {
             FlowOverlay(path: "plan-quiz") { instant { state.guideOpen = false } }
                 .presentationBackground(Color.black.opacity(0.42))
         }
+        // Sign in = the auth lane's flow (card sheet; ds-close hands back)
+        .fullScreenCover(isPresented: $state.authOpen) {
+            FlowOverlay(path: "auth") { instant { state.authOpen = false } }
+                .presentationBackground(Color.black.opacity(0.42))
+        }
+        // warm the auth webview whenever the signed-out state arrives, so
+        // the Sign in tap presents instantly like every other summon
+        .onChange(of: state.loggedOut) {
+            if state.loggedOut { FlowPreloader.shared.warm(["auth"]) }
+        }
 
         .animation(.spring(duration: 0.45), value: state.loggedOut)
         .animation(.spring(duration: 0.45), value: state.showPromo)
@@ -529,6 +540,7 @@ struct HomeScreenNative: View {
         /* warm the summonable flows while the intro plays — a Discounts or
            calendar tap then presents an already-loaded page instantly */
         FlowPreloader.shared.warm(["rewards", "meal-select", DS.soloDetails])
+        if state.loggedOut { FlowPreloader.shared.warm(["auth"]) }
         try? await Task.sleep(for: .milliseconds(500))
         withAnimation(.easeOut(duration: 0.9)) { dialFrac = Double(state.daysLeft) / 30 }
         while dialNumber > state.daysLeft {
@@ -1023,25 +1035,33 @@ struct HomeScreenNative: View {
 
     // MARK: signed-out home (Figma 16360-78205 "Not logged in")
 
-    /// DS ring greeting + Sign in, one phone dock on the right
+    /// DS ring greeting + Sign in, one phone dock on the right; the whole
+    /// greeting is the door into the auth flow (the auth lane's contract)
     private var loggedOutTopRow: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle().stroke(.white.opacity(0.9), lineWidth: 1.6)
-                    DSLogoMark().fill(.white).frame(width: 26, height: 20)
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                state.authOpen = true
+            } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle().stroke(.white.opacity(0.9), lineWidth: 1.6)
+                        DSLogoMark().fill(.white).frame(width: 26, height: 20)
+                    }
+                    .frame(width: 48, height: 48)
+                    VStack(alignment: .leading, spacing: 1) {
+                        (Text("☀️ ").font(.system(size: 11))
+                         + Text("صبحك الله بالخير").font(DS.avenirWorld(12)))
+                            .foregroundStyle(DS.onColor)
+                            .id("lo-greeting-\(fontTick)")
+                        (Text("Got an account? ").font(DS.urbane(14, .light))
+                         + Text("Sign in").font(DS.urbane(14, .semibold)))
+                            .foregroundStyle(.white)
+                    }
                 }
-                .frame(width: 48, height: 48)
-                VStack(alignment: .leading, spacing: 1) {
-                    (Text("☀️ ").font(.system(size: 11))
-                     + Text("صبحك الله بالخير").font(DS.avenirWorld(12)))
-                        .foregroundStyle(DS.onColor)
-                        .id("lo-greeting-\(fontTick)")
-                    (Text("Got an account? ").font(DS.urbane(14, .light))
-                     + Text("Sign in").font(DS.urbane(14, .semibold)))
-                        .foregroundStyle(.white)
-                }
+                .padding(.leading, 8)   // Figma: the ring sits at the deeper 28
             }
+            .buttonStyle(.plain)
             Spacer()
             dock {
                 Image(systemName: "phone.fill")
@@ -1066,11 +1086,11 @@ struct HomeScreenNative: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 16)
-                .frame(width: 193, height: 76)
+                .frame(width: 193, height: 64)
             }
             .buttonStyle(.plain)
             .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                         in: .rect(cornerRadius: DS.tile(76)))
+                         in: .rect(cornerRadius: DS.tile(64)))
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 state.guideOpen = true
@@ -1080,21 +1100,21 @@ struct HomeScreenNative: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .overlay(alignment: .topLeading) {
-                        sparkle(9, .white.opacity(0.85)).offset(x: 24, y: 13)
+                        sparkle(9, .white.opacity(0.85)).offset(x: 24, y: 10)
                     }
                     .overlay(alignment: .bottomLeading) {
-                        sparkle(6, .white.opacity(0.7)).offset(x: 37, y: -17)
+                        sparkle(6, .white.opacity(0.7)).offset(x: 37, y: -13)
                     }
                     .overlay(alignment: .topTrailing) {
                         sparkle(13, Color(red: 1, green: 197/255, blue: 46/255))
-                            .offset(x: -32, y: 9)
+                            .offset(x: -32, y: 7)
                     }
-                    .overlay(alignment: .trailing) { guideWand.offset(x: -12, y: 15) }
-                    .frame(height: 76)
+                    .overlay(alignment: .trailing) { guideWand.offset(x: -12, y: 12) }
+                    .frame(height: 64)
             }
             .buttonStyle(.plain)
             .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
-                         in: .rect(cornerRadius: DS.tile(76)))
+                         in: .rect(cornerRadius: DS.tile(64)))
         }
     }
 
@@ -1118,14 +1138,14 @@ struct HomeScreenNative: View {
 
     private var plansSheet: some View {
         VStack(spacing: 0) {
-            summerOffer.padding(.horizontal, 19).padding(.top, 24)
-            orDivider.padding(.horizontal, 23).padding(.vertical, 21)
-            VStack(spacing: 18) {
+            summerOffer.padding(.horizontal, 20).padding(.top, 28)
+            orDivider.padding(.horizontal, 20).padding(.vertical, 28)
+            VStack(spacing: 24) {
                 ForEach(0..<planCards.count, id: \.self) { i in
                     planCard(planCards[i].0, planCards[i].1)
                 }
             }
-            .padding(.horizontal, 19)
+            .padding(.horizontal, 20)
             Spacer(minLength: 110)
         }
         .frame(maxWidth: .infinity, alignment: .top)
@@ -1148,8 +1168,8 @@ struct HomeScreenNative: View {
                 // DS monogram — traced approximation, swap for the brand SVG
                 DSPercentMark()
                     .stroke(Color(red: 23/255, green: 23/255, blue: 27/255),
-                            style: StrokeStyle(lineWidth: 7.5, lineCap: .round))
-                    .frame(width: 56, height: 56)
+                            style: StrokeStyle(lineWidth: 6.2, lineCap: .round))
+                    .frame(width: 46, height: 46)
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("Summer Offer").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
@@ -1157,16 +1177,16 @@ struct HomeScreenNative: View {
                         .id("lo-summer-\(fontTick)")
                 }
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color(red: 23/255, green: 23/255, blue: 27/255))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 44, height: 44)
                     .background(.white, in: Circle())
                     .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.28),
                             radius: 9, y: 4)
             }
-            .padding(.leading, 24).padding(.trailing, 16)
+            .padding(.leading, 28).padding(.trailing, 16)
             .frame(maxWidth: .infinity)
-            .frame(height: 109)
+            .frame(height: 100)
             .background(.white, in: RoundedRectangle(cornerRadius: 30))
             .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.16),
                     radius: 15, y: 7)
@@ -1174,16 +1194,17 @@ struct HomeScreenNative: View {
         .buttonStyle(.plain)
     }
 
+    /// straight ~95pt hairlines flanking the label (Figma — the curved
+    /// flanks were an invention, retired on Rashid's call)
     private var orDivider: some View {
         HStack(spacing: 12) {
-            DSFlank().stroke(Color(white: 0.86), lineWidth: 1.2)
-                .frame(height: 12).frame(maxWidth: .infinity)
+            Capsule().fill(Color(white: 0.86)).frame(width: 95, height: 1)
             Text("Or try a different plan").font(DS.proxima(12))
                 .foregroundStyle(Color(red: 142/255, green: 142/255, blue: 147/255))
                 .fixedSize()
-            DSFlank(flip: true).stroke(Color(white: 0.86), lineWidth: 1.2)
-                .frame(height: 12).frame(maxWidth: .infinity)
+            Capsule().fill(Color(white: 0.86)).frame(width: 95, height: 1)
         }
+        .frame(maxWidth: .infinity)
     }
 
     /// DS component 4539-10208 VARIANT A, verbatim: the r32 "Liquid Glass
@@ -1191,7 +1212,9 @@ struct HomeScreenNative: View {
     /// 18pt circle badges, hairline chips, gradient price + the r28
     /// gradient plan pill (Rashid: the card is glass, the pill is glass)
     private func planCard(_ plan: HomeState.Plan, _ price: Int) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        // both columns FIXED to the component's widths (173 / 137) — the card
+        // can never outgrow its proposal, whatever the fonts measure
+        HStack(alignment: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 7.5) {
                 planRow("1", "Breakfast")
                 planRow("2", "Lunch & Dinner")
@@ -1209,9 +1232,9 @@ struct HomeScreenNative: View {
                 .padding(.horizontal, 10).frame(height: 20)
                 .overlay(Capsule().stroke(Color.black.opacity(0.06), lineWidth: 1))
             }
-            .frame(height: 122)
+            .frame(width: 173, height: 122, alignment: .topLeading)
             .lineLimit(1).minimumScaleFactor(0.85)
-            Spacer(minLength: 8)
+            Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 0) {
                 HStack(alignment: .lastTextBaseline, spacing: 0) {
                     Text("KD139").font(DS.proxima(15)).fontWeight(.semibold)
@@ -1237,8 +1260,11 @@ struct HomeScreenNative: View {
                 Spacer(minLength: 8)
                 planPill(plan)
             }
-            .frame(height: 122)
-            .layoutPriority(1)   // the price never wraps; the list scales first
+            // FIXED column per the component (137): the fixedSize price/chip
+            // overflow LEFT into the middle gap instead of widening the card —
+            // an intrinsic-width column here once dragged the whole scroll
+            // column to ~390pt and collapsed every page margin to 6
+            .frame(width: 137, height: 122, alignment: .trailing)
         }
         .padding(EdgeInsets(top: 24, leading: 20, bottom: 20, trailing: 20))
         .frame(maxWidth: .infinity)
@@ -1636,23 +1662,6 @@ private struct DSPercentMark: Shape {
                    control1: CGPoint(x: 38 * s, y: 15.5 * s),
                    control2: CGPoint(x: 22.5 * s, y: 37 * s))
         p.addEllipse(in: CGRect(x: 30.5 * s, y: 31 * s, width: 20 * s, height: 20 * s))
-        return p
-    }
-}
-
-/// The "Or try a different plan" flanks — long shallow arcs that dip away
-/// from the label on their outer ends
-@available(iOS 26.0, *)
-private struct DSFlank: Shape {
-    var flip = false
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        let y0 = flip ? r.height * 0.17 : r.height * 0.83
-        let y1 = flip ? r.height * 0.83 : r.height * 0.17
-        p.move(to: CGPoint(x: 0, y: y0))
-        p.addCurve(to: CGPoint(x: r.width, y: y1),
-                   control1: CGPoint(x: r.width * 0.3, y: y0),
-                   control2: CGPoint(x: r.width * 0.7, y: y1))
         return p
     }
 }
