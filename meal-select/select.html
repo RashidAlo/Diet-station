@@ -2551,7 +2551,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 120';
+const BUILD = 'build 2026-09-10 · 121';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2795,6 +2795,37 @@ setTimeout(() => {
     syncSheet();
   }, 600);
 }, 60);
+
+/* detent settle (Rashid, TF34: "one scroll — one state anchors to the
+   other, no multiple steps"): a scroll that DIES inside the collapse
+   zone glides to the nearest state, so the sheet never rests half-open.
+   Momentum-safe — runs only after scroll goes quiet with no finger
+   down; a fresh grab aborts the glide. The scroll-link itself is
+   untouched: this only finishes what a gesture started. */
+let snapT = null, snapping = false, snapFinger = false;
+function armSnap() {
+  clearTimeout(snapT);
+  snapT = setTimeout(() => {
+    if (snapFinger || snapping || !sheetLive || turning) return;
+    const gap = sheetGap(), s = scrollArea.scrollTop;
+    if (s <= 0.5 || s >= gap - 0.5) return;
+    snapping = true;
+    const to = s > gap * 0.5 ? gap : 0;
+    const from = s, t0 = performance.now(), dur = 240;
+    const tick = now => {
+      if (snapFinger) { snapping = false; return; }   /* user grabbed — yield */
+      const x = Math.min(1, (now - t0) / dur);
+      scrollArea.scrollTop = from + (to - from) * (1 - Math.pow(1 - x, 3));
+      if (x < 1) requestAnimationFrame(tick);
+      else snapping = false;
+    };
+    requestAnimationFrame(tick);
+  }, 140);
+}
+scrollArea.addEventListener('touchstart', () => { snapFinger = true; clearTimeout(snapT); }, { passive: true });
+scrollArea.addEventListener('touchend', () => { snapFinger = false; armSnap(); }, { passive: true });
+scrollArea.addEventListener('touchcancel', () => { snapFinger = false; armSnap(); }, { passive: true });
+scrollArea.addEventListener('scroll', () => { if (!snapping) armSnap(); }, { passive: true });
 fit();
 </script>
 <script>
