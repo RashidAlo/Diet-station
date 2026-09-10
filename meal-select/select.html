@@ -244,10 +244,15 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
     touch-action: none; border-radius: 22px; padding: 0 12px;
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    transition: color .35s ease, text-shadow .35s ease, background .38s ease,
-      box-shadow .38s ease, height .38s cubic-bezier(.32,.72,0,1),
-      padding .38s cubic-bezier(.32,.72,0,1), transform .38s cubic-bezier(.32,.72,0,1),
-      top .38s cubic-bezier(.32,.72,0,1), width .38s cubic-bezier(.32,.72,0,1); }
+    /* base transitions COLOR ONLY — top rides --top-pad every frame of a
+       sheet drag, and a top transition here chases it (Rashid's "date
+       keeps jittering"). The morph curves live on .forming/.scrub/.unforming. */
+    transition: color .35s ease, text-shadow .35s ease; }
+  .nav .ttl.forming, .nav .ttl.unforming { transition: color .35s ease,
+    text-shadow .35s ease, background .38s ease, box-shadow .38s ease,
+    height .38s cubic-bezier(.32,.72,0,1), padding .38s cubic-bezier(.32,.72,0,1),
+    transform .38s cubic-bezier(.32,.72,0,1), top .38s cubic-bezier(.32,.72,0,1),
+    width .38s cubic-bezier(.32,.72,0,1); }
   /* hold-the-date scrubber (Rashid v4): the date inflates into a glass
      pill that is the SAME container as the controls beside it — 44pt
      tall, 22 radius, same glass, same top line. Inside: a mini date
@@ -357,10 +362,10 @@
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
        a soft seat shadow. The vignette ::after finishes the depth. */
-    box-shadow: inset 0 0 0 .8px rgba(255,255,255,.2),
-      inset 0 3px 9px rgba(64,0,2,.5),
-      inset 0 -2px 7px rgba(64,0,2,.32),
-      0 6px 18px -10px rgba(0,0,0,.38); }
+    box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24),
+      inset 0 2px 7px rgba(64,0,2,.3),
+      inset 0 -1px 5px rgba(64,0,2,.18),
+      0 6px 18px -10px rgba(0,0,0,.32); }
   .nav .ttl.scrub.portal .scb .scb-it { height: 64px; padding: 3px 0; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
@@ -384,9 +389,9 @@
      recess — the dates dim INTO the shadow, so the pill reads as a
      peek into the red sheet rather than a surface floating over it */
   .nav .ttl.scrub.portal::after { z-index: 3; background:
-    linear-gradient(90deg, rgba(56,0,2,.62), rgba(56,0,2,0) 16% 84%, rgba(56,0,2,.62)),
-    linear-gradient(180deg, rgba(56,0,2,.3), rgba(56,0,2,0) 26% 72%, rgba(56,0,2,.38)),
-    radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.12), rgba(255,255,255,0) 40%); }
+    linear-gradient(90deg, rgba(56,0,2,.34), rgba(56,0,2,0) 14% 86%, rgba(56,0,2,.34)),
+    linear-gradient(180deg, rgba(56,0,2,.14), rgba(56,0,2,0) 24% 74%, rgba(56,0,2,.18)),
+    radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.16), rgba(255,255,255,0) 42%); }
   .nav .ttl.scrub.portal .scb .scb-it .n { color: #f9f9f9; }
   .nav .ttl.scrub.portal .scb .scb-it .m { color: #ffffff; opacity: .7; }
   .nav .ttl.scrub.portal .scb .scb-it .d { color: #f9f9f9; opacity: .78; }
@@ -420,6 +425,12 @@
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 16px 20px 12px; }
+  /* JS-sticky pin: the active head rides a full-bleed white slab above
+     the cards while it holds the dock line (transform set per frame by
+     updateCatDock — see there) */
+  .cat-head.pinned { position: relative; z-index: 6; }
+  .cat-head.pinned::before { content: ''; position: absolute;
+    inset: 0 -24px; background: #ffffff; z-index: -1; }
   .grid { padding-bottom: 14px; }
   .cat-head h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-head .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
@@ -1989,8 +2000,14 @@ confirmBtn.onclick = () => {
     strip.style.transform = 'translateX(' + (-(disp - winC) * SLOT).toFixed(2) + 'px)';
   }
   const navEl = document.querySelector('.nav');
+  let unformT = null;
   function unform() {
+    /* .unforming carries the reverse morph transitions (the base .ttl
+       transitions color only, so sheet drags can't make it chase) */
     ttl.classList.remove('forming');
+    ttl.classList.add('unforming');
+    clearTimeout(unformT);
+    unformT = setTimeout(() => ttl.classList.remove('unforming'), 420);
     ttl.style.width = '';
     if (navEl) navEl.classList.remove('scrubbing');
     window.DSScrubChrome && DSScrubChrome(false);   /* twins return */
@@ -2002,6 +2019,8 @@ confirmBtn.onclick = () => {
        the label swells into a CONTROL-SIZED glass pill around itself —
        width pinned to its current px first so the inflate animates
        (auto -> px never transitions). Neighbours stay put for now. */
+    clearTimeout(unformT);
+    ttl.classList.remove('unforming');   /* rapid re-grab: fresh morph */
     const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;
@@ -2450,7 +2469,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 111';
+const BUILD = 'build 2026-09-10 · 112';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2585,43 +2604,41 @@ function adaptNav() {
    the incoming section's header pushes the docked title out as it arrives */
 let dockedCatId = null;
 function updateCatDock() {
-  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
+  /* JS-sticky category heads (Rashid: "breakfast should smoothly connect
+     with the header and stay there... continue the scroll") — the active
+     head PINS at the dock line, riding its own white slab; the next head
+     pushes it out. Everything is scroll-linked per frame: no visibility
+     swaps, no band handoff — the cat-dock band is retired to an empty
+     white backing strip. NOTE: the resolved scroll padding includes the
+     --sheet-pad headroom ride; the pin line is NAV-relative, so the ride
+     is subtracted back out (the old formula docked GAP px early). */
+  const extra = parseFloat(scrollArea.style.getPropertyValue('--sheet-pad')) || 0;
+  const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - extra;
   const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
   const secs = Array.from(scrollArea.querySelectorAll('section'));
   let ai = -1;
   secs.forEach((sec, i) => { if (sec.offsetTop <= line) ai = i; });
   const nav = document.querySelector('.nav');
   nav.classList.toggle('scrolled', scrollArea.scrollTop > 8);
-  if (ai < 0) {
-    nav.classList.remove('docked');
-    dockedCatId = null;
-    secs.forEach(sec => {
-      const h = sec.querySelector('.cat-head');
-      if (h) h.style.visibility = '';
-    });
-    return;
-  }
-  nav.classList.add('docked');
-  /* the docked title IS the category title — never show both */
+  nav.classList.toggle('docked', ai >= 0);
+  dockedCatId = null;
   secs.forEach((sec, i) => {
     const h = sec.querySelector('.cat-head');
-    if (h) h.style.visibility =
-      (i <= ai || sec.offsetTop < line + 44) ? 'hidden' : '';
+    if (!h) return;
+    h.style.visibility = '';
+    if (i !== ai) { h.style.transform = ''; h.classList.remove('pinned'); return; }
+    let y = line - sec.offsetTop;                   /* pin shift */
+    const B = secs[i + 1];
+    if (B) y = Math.min(y, B.offsetTop - sec.offsetTop - h.offsetHeight - 10);
+    if (y > 0) {
+      h.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
+      h.classList.add('pinned');
+      const of = sec.querySelector('[data-of]');
+      if (of) dockedCatId = of.dataset.of;
+    } else {
+      h.style.transform = ''; h.classList.remove('pinned');
+    }
   });
-  const A = secs[ai], B = secs[ai + 1];
-  const catA = CATS.find(c => c.id === A.querySelector('[data-of]').dataset.of);
-  dockedCatId = catA.id;
-  document.getElementById('dockTitle').textContent = catA.title;
-  renderOf(document.getElementById('dockOf'), catCount(catA.id), catA.quota);
-  let p = 0;
-  if (B) {
-    p = Math.max(0, Math.min(1, (line + 34 - B.offsetTop) / 34));
-    const catB = CATS.find(c => c.id === B.querySelector('[data-of]').dataset.of);
-    document.getElementById('dockTitle2').textContent = catB.title;
-    renderOf(document.getElementById('dockOf2'), catCount(catB.id), catB.quota);
-  }
-  document.getElementById('dockTrack').style.transform =
-    p > 0 ? 'translateY(' + (-p * 34) + 'px)' : '';
 }
 function syncDockCounter() {
   if (dockedCatId) updateCatDock();
