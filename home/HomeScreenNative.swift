@@ -1961,6 +1961,15 @@ final class FlowPreloader {
                 let flow = body["flow"] as? String
                 let surface = body["surface"] as? String
                 let mode = body["mode"] as? String
+                // instant:true — apply this post with NO animation, so an
+                // omitted twin is torn down on THIS frame instead of fading
+                // out on the 0.42 spring. Lets a page own its own exit in
+                // CSS and guarantee exactly one glass on screen per frame
+                // (C&M: a capsule is a backdrop-filter, so any frame where
+                // it overlaps the returned web label reads as double glass).
+                // Scope is the WHOLE post — send it on a release/deflate
+                // post, not one that also wants other twins to spring.
+                let instant = body["instant"] as? Bool ?? false
                 let frame = message.frameInfo
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
@@ -1995,7 +2004,7 @@ final class FlowPreloader {
                         self.chrome.surface = surface
                         self.chrome.mode = mode
                     }
-                    if sameRects {
+                    if instant || sameRects {
                         var tx = Transaction()
                         tx.disablesAnimations = true
                         withTransaction(tx, apply)
