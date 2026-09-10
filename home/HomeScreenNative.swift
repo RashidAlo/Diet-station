@@ -2267,6 +2267,10 @@ struct TwoFingerHoldGesture: UIGestureRecognizerRepresentable {
         r.minimumPressDuration = 0.4
         r.allowableMovement = 24
         r.cancelsTouchesInView = false
+        // default-TRUE delaysTouchesEnded withheld short precise lifts from
+        // the webview for up to minimumPressDuration (Shell's scroll
+        // forensics) — a hold gesture needs no end delay to recognize
+        r.delaysTouchesEnded = false
         r.delegate = context.coordinator
         return r
     }
@@ -2298,6 +2302,10 @@ struct ThreeFingerHoldGesture: UIGestureRecognizerRepresentable {
         r.minimumPressDuration = 0.4
         r.allowableMovement = 24
         r.cancelsTouchesInView = false
+        // default-TRUE delaysTouchesEnded withheld short precise lifts from
+        // the webview for up to minimumPressDuration (Shell's scroll
+        // forensics) — a hold gesture needs no end delay to recognize
+        r.delaysTouchesEnded = false
         r.delegate = context.coordinator
         return r
     }
@@ -2323,6 +2331,8 @@ struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
 
     func makeUIGestureRecognizer(context: Context) -> TripleTapHoldRecognizer {
         let r = TripleTapHoldRecognizer()
+        r.cancelsTouchesInView = false   // parity with the hold recognizers
+        r.delaysTouchesEnded = false     // same end-delay fix (Shell forensics)
         r.delegate = context.coordinator
         return r
     }
