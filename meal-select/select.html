@@ -179,11 +179,14 @@
   .navbtn:active { transform: scale(.92); }
   .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
   .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease,
-    opacity .28s ease; }
-  /* scrubber takeover: the other actions step aside while the wide glass
-     scrubs (web fallback path; the native twins fade via DSScrubChrome) */
-  .nav.scrubbing .navbtn, .nav.scrubbing .dual { opacity: 0 !important;
-    pointer-events: none; }
+    opacity .28s ease, transform .5s cubic-bezier(.3,1.06,.36,1); will-change: transform; }
+  /* scrubber takeover (Rashid v9): the growing pill PUSHES the other
+     actions out of the screen — the X exits left, the dual capsule exits
+     right — and they ride back in on release. Web path; the native twins
+     ride the same motion via the chrometrack burst in DSScrubChrome. */
+  .nav.scrubbing .navbtn { transform: translateX(-120px); }
+  .nav.scrubbing .dual { transform: translateX(150px); }
+  .nav.scrubbing .navbtn, .nav.scrubbing .dual { pointer-events: none; }
   .navbtn.on-dark, .dual.on-dark { background: rgba(72,72,78,.30); color: #ffffff; }
   .dual.on-dark .sep { background: rgba(255,255,255,.3); }
   .dual.on-dark .dcheck svg .ck-base { stroke: rgba(255,255,255,.55); }
@@ -1084,8 +1087,9 @@ function openMealOv(key) {
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
-  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
-    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
+  if (typeof setAnchor === 'function' && !fullAnchor) {
+    setAnchor(true);   /* pin the outer sheet fullscreen — the anchor keeps
+                          the user's scroll place under the details layer */
     syncSheet();
   }
   setTimeout(() => {
@@ -1738,12 +1742,6 @@ function turnDay(dir, target) {
   if (target !== undefined && target === dayIdx) return;
   if (dir < 0 && dayIdx === 0 && target === undefined) return;
   turning = true;
-  /* fullscreen latch (Rashid): switching days is a CONTENT change, not a
-     presentation change — a sheet the user pulled to full screen stays
-     there through Next / swipes / scrubber commits. Only pulling the
-     sheet down again re-docks it (the scroll-linked gap does that free).
-     Latched before the slide-out so the exit can't drift the reading. */
-  const stayFull = sheetLive && scrollArea.scrollTop >= sheetGap() - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1769,19 +1767,11 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* arrival scroll: docked days ride in from their very top (keeping
-       SHEET_GAP here used to hide the first row under the nav). A
-       FULLSCREEN day instead lands like pursueIntent lands a category —
-       first thumbnail row clear of the docked nav, sheet still at the
-       top — so the fullscreen state carries across the turn. */
-    if (stayFull) {
-      const head = scrollArea.querySelector('.cat-head');
-      const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
-      scrollArea.scrollTop = Math.max(sheetGap(), head
-        ? head.offsetTop + head.offsetHeight - (tp + 92) - 12 : 0);
-    } else {
-      scrollArea.scrollTop = 0;
-    }
+    /* a fresh day always rides in from its very top. The fullscreen
+       DETENT (fullAnchor) keeps the sheet pinned up there through the
+       turn, so an anchored day arrives with Breakfast fully visible —
+       un-cropped (Rashid); a docked day re-opens the overlay gap. */
+    scrollArea.scrollTop = 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
@@ -2385,7 +2375,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 108';
+const BUILD = 'build 2026-09-10 · 109';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2585,10 +2575,26 @@ const sheetEl = document.getElementById('sheet');
 const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
+/* fullscreen is a real DETENT (Rashid): once the sheet reaches the top it
+   ANCHORS — scrolling back to the content top no longer drops it, so a
+   fresh day (or a scroll back up) rests with Breakfast fully visible,
+   un-cropped. Only a deliberate pull-down at the top (wheel-up on
+   desktop) steps back to the overlay detent. The latch flips exactly at
+   the frame y hits 0 either way, so it is invisible when it engages. */
+let fullAnchor = false;
+let sheetYOverride = null;   /* the pull-down drag / detent settle drives y directly */
 function sheetGap() { return SHEET_GAP; }
+function setAnchor(on) {
+  fullAnchor = on;
+  document.body.classList.toggle('full-anchor', on);   /* glasschrome reads the detent */
+}
 function syncSheet() {
   if (!sheetLive) return;
-  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
+  if (!fullAnchor && sheetYOverride === null && scrollArea.scrollTop >= SHEET_GAP)
+    setAnchor(true);
+  const y = sheetYOverride !== null ? sheetYOverride
+    : fullAnchor ? 0
+    : Math.max(0, SHEET_GAP - scrollArea.scrollTop);
   sheetEl.style.transform = 'translateY(' + y + 'px)';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
@@ -2615,6 +2621,66 @@ setTimeout(() => {
     syncSheet();
   }, 600);
 }, 60);
+
+/* pull-down at the top: the deliberate step from the fullscreen detent
+   back to the overlay detent. The sheet rides the finger 1:1 (rubbery
+   past the gap), then a per-frame settle carries it to whichever detent
+   won — radius, calorie bar and nav pad all ride every frame, and each
+   frame dispatches a real scroll event so the glass twins stay glued
+   through the whole maneuver (no CSS-transition shortcuts, no jumps). */
+let shY = null, shX0 = 0, shDy = 0, shOn = false, shAnim = null;
+function driveSheet(y) {
+  sheetYOverride = y; syncSheet();
+  scrollArea.dispatchEvent(new Event('scroll'));
+}
+function settleSheet(to, anchorAfter) {
+  const from = sheetYOverride === null ? 0 : sheetYOverride;
+  cancelAnimationFrame(shAnim);
+  const t0 = performance.now(), dur = 520;
+  const tick = now => {
+    const x = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - x, 3.2);          /* the house settle */
+    driveSheet(from + (to - from) * e);
+    if (x < 1) { shAnim = requestAnimationFrame(tick); return; }
+    shAnim = null; sheetYOverride = null;
+    setAnchor(anchorAfter);
+    syncSheet();
+    scrollArea.dispatchEvent(new Event('scroll'));
+  };
+  shAnim = requestAnimationFrame(tick);
+}
+scrollArea.addEventListener('touchstart', e => {
+  shY = (fullAnchor && sheetYOverride === null && scrollArea.scrollTop <= 0)
+    ? e.touches[0].clientY : null;
+  shX0 = e.touches[0].clientX; shDy = 0; shOn = false;
+}, { passive: true });
+scrollArea.addEventListener('touchmove', e => {
+  if (shY === null) return;
+  const dy = e.touches[0].clientY - shY, dx = e.touches[0].clientX - shX0;
+  if (!shOn) {
+    /* engage only on a clearly vertical downward pull from the very top;
+       sideways = the day swipe, upward = a normal scroll */
+    if (dy > 6 && dy > Math.abs(dx) * 1.2 && scrollArea.scrollTop <= 0) shOn = true;
+    else if (dy < -6 || Math.abs(dx) > 12) { shY = null; return; }
+    else return;
+  }
+  e.preventDefault();
+  shDy = dy;
+  const gap = sheetGap();
+  driveSheet(dy <= gap ? dy : gap + (dy - gap) * 0.18);
+}, { passive: false });
+scrollArea.addEventListener('touchend', () => {
+  if (shY === null || !shOn) { shY = null; return; }
+  shY = null;
+  const gap = sheetGap();
+  if (shDy > Math.min(64, gap * 0.55)) { vibrate(8); settleSheet(gap, false); }
+  else settleSheet(0, true);
+});
+/* desktop has no pull: a firm wheel-up nudge at the top steps back */
+scrollArea.addEventListener('wheel', e => {
+  if (fullAnchor && sheetYOverride === null && scrollArea.scrollTop <= 0 && e.deltaY < -40)
+    settleSheet(sheetGap(), false);
+}, { passive: true });
 fit();
 </script>
 <script>
@@ -2749,7 +2815,8 @@ if (QS.get('solo') === '1') {
   };
   var restoreT = null;
   function report() {
-    if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
+    if (moving || layerUp || scrubHold) return;   /* twins only at rest, topmost
+                                                     layer only, never mid-scrub */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
@@ -2794,10 +2861,27 @@ if (QS.get('solo') === '1') {
     var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
-  /* the date scrubber's full-width takeover: the native action twins fade
-     while the wide glass scrubs, and return on release */
+  /* the date scrubber's full-width takeover (Rashid v9): the growing pill
+     PUSHES the action twins out of the screen — X exits left, the dual
+     exits right — and they ride back in on release. The web buttons
+     animate the push (CSS transforms) and a per-frame chrometrack burst
+     keeps the native twins glued to that exact motion; scrubHold parks
+     rest-reports so nothing re-anchors the twins mid-scrub. */
+  var scrubHold = false, scrubRaf = null, scrubT0 = 0;
+  function trackBurst(ms) {
+    scrubT0 = performance.now();
+    if (scrubRaf) cancelAnimationFrame(scrubRaf);
+    var step = function () {
+      postTrack();
+      if (performance.now() - scrubT0 < ms) scrubRaf = requestAnimationFrame(step);
+      else scrubRaf = null;
+    };
+    scrubRaf = requestAnimationFrame(step);
+  }
   window.DSScrubChrome = function (on) {
-    if (on) { clearChrome(); } else if (!moving && !layerUp) { report(); }
+    scrubHold = on;
+    trackBurst(560);                       /* twins ride the push / the return */
+    if (!on) setTimeout(function () { report(); }, 600);   /* exact anchor after the ride */
   };
   addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
 
@@ -2942,14 +3026,18 @@ if (QS.get('solo') === '1') {
   function watchDock() {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
+    var atDock = function () {
+      return sa.scrollTop >= gapNow() - 0.5 ||
+        document.body.classList.contains('full-anchor');   /* the detent */
+    };
     sa.addEventListener('scroll', function () {
-      docked = sa.scrollTop >= gapNow() - 0.5;
+      docked = atDock();
       moving = true;
       if (!trackRaf) trackRaf = requestAnimationFrame(postTrack);
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
-    docked = sa.scrollTop >= gapNow() - 0.5;
+    docked = atDock();
     report();
   }
   /* dismissal clears, take 2: the old one-shot transitionstart arm was
