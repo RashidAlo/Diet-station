@@ -1544,7 +1544,7 @@ struct HomeScreenNative: View {
                     Toggle("Promo banner", isOn: $state.showPromo)
                     Toggle("Discounts", isOn: $state.showDiscounts)
                     Toggle("Consultation", isOn: $state.showConsult)
-                    Toggle("Dynamic tab bar (Music)", isOn: $state.tabBarDynamic)
+                    Toggle("Dynamic tab bar", isOn: $state.tabBarDynamic)
                 }
                 if state.showDiscounts {
                     Section("Discounts state") {
