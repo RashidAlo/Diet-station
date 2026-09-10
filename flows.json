@@ -964,6 +964,13 @@
             "num": "<8 digits>"
           },
           "note": "ctx {step:'otp', num} deep-links straight to OTP for a given number"
+        },
+        {
+          "id": "solo",
+          "params": {
+            "solo": "1"
+          },
+          "note": "native cover — page self-presents per the overlay rule"
         }
       ],
       "exits": [
