@@ -159,12 +159,17 @@ html.ds-native .lab-tabbar { display: none !important; }\
 html.ds-native .lab-back.show { display: flex; }\
 .labshell-veil { position: fixed; inset: 0; z-index: 128; background: rgba(0,0,0,.45);\
   opacity: 0; pointer-events: none; transition: opacity .25s ease; }\
-body.labshell-menu .labshell-veil { opacity: 1; pointer-events: auto; }\
+body.labshell-open .labshell-veil { opacity: 1; pointer-events: auto; }\
+/* OVERLAY RULE: the veil dissolves in place; the sheet travels on the\
+   house spring (labshell-menu mounts it offscreen, labshell-open rides) */\
 body.labshell-menu:not(.desktop) #side { display: block !important; left: 0; right: 0;\
   top: auto; bottom: 0; width: auto; max-height: 76vh; overflow-y: auto;\
   border-radius: 24px 24px 0 0; z-index: 129; background: #fbfbfc;\
   box-shadow: 0 -18px 60px rgba(0,0,0,.28);\
+  transform: translateY(103%);\
+  transition: transform .55s cubic-bezier(.32,.72,0,1);\
   padding: 22px 22px calc(30px + env(safe-area-inset-bottom, 0px)); }\
+body.labshell-open:not(.desktop) #side { transform: translateY(0); }\
 .labshell-topbar { display: none; gap: 10px; margin: 0 0 12px; }\
 body.labshell-menu:not(.desktop) .labshell-topbar { display: flex; }\
 .labshell-topbar button { flex: 1; display: flex; align-items: center;\
@@ -975,12 +980,25 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     done.className = 'labshell-done';
     done.textContent = 'Done';
     side.appendChild(done);
+    var closeT = null;
     function open() {
       if (document.body.classList.contains('desktop')) return;
+      clearTimeout(closeT);
       document.body.classList.add('labshell-menu');
+      /* two-phase so the sheet mounts offscreen, then rides the spring
+         (setTimeout, not rAF — rAF starves in hidden tabs) */
+      setTimeout(function () {
+        document.body.classList.add('labshell-open');
+      }, 20);
       try { navigator.vibrate && navigator.vibrate(12); } catch (_) {}
     }
-    function close() { document.body.classList.remove('labshell-menu'); }
+    function close() {
+      document.body.classList.remove('labshell-open');
+      clearTimeout(closeT);
+      closeT = setTimeout(function () {
+        document.body.classList.remove('labshell-menu');
+      }, 560);
+    }
     veil.addEventListener('click', close);
     done.addEventListener('click', close);
     links.querySelectorAll('button').forEach(function (b) {

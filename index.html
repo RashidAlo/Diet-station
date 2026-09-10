@@ -571,10 +571,13 @@
     cursor: pointer; }
   .gearbtn svg { width: 20px; height: 20px; }
   /* flow sheet: presents from the bottom OVER the untouched launcher */
+  /* OVERLAY RULE: sheets travel on the house spring (entry included) */
   .flow-frame { position: fixed; inset: 0; z-index: 241; border: 0; width: 100%;
-    height: 100%; background: transparent; }
+    height: 100%; background: transparent; transform: translateY(103%);
+    transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .flow-frame.in { transform: translateY(0); }
   .flow-frame.bye { transition: transform .4s cubic-bezier(.5,0,.8,.6);
-    transform: translateY(103%); }
+    transform: translateY(103%) !important; }
   /* intent-router 'push' presentation: slide in from the right */
   .flow-frame.push { transform: translateX(103%);
     transition: transform .38s cubic-bezier(.25,.9,.3,1); }
@@ -1191,7 +1194,7 @@ function openLogin() {
   /* preload: fonts, shared libs, every flow page + its heavy assets */
   /* keep the lab-shell stamp in sync with the flow pages' script tags —
      a bare URL would warm a cache key the flows never request */
-  const warm = ['flows.json', 'lab-shell.js?v=20260909a', 'html2canvas.min.js',
+  const warm = ['flows.json', 'lab-shell.js?v=20260910a', 'html2canvas.min.js',
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {
@@ -2024,8 +2027,7 @@ function presentFlow(f, present, context, from) {
   fr.src = url;
   announceRouter(fr);
   document.body.append(fr);
-  if (present === 'push')
-    setTimeout(() => fr.classList.add('in'), 20);   /* rAF starves in hidden tabs */
+  setTimeout(() => fr.classList.add('in'), 20);     /* rAF starves in hidden tabs */
   flowStack.push({ frame: fr, present: present === 'push' ? 'push' : 'sheet', id: f.id });
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
@@ -2036,6 +2038,7 @@ function openFlowSheet(url, id) {           /* card entry point (legacy shape) *
   fr.src = url + '&embed=1';
   announceRouter(fr);
   document.body.append(fr);
+  setTimeout(() => fr.classList.add('in'), 20);
   flowStack.push({ frame: fr, present: 'sheet', id: id || null });
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
