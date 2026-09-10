@@ -201,6 +201,22 @@ window.DSNativeChrome(['close']);
 window.DSChromeTap('close');
 // guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome
 
+// ── DS-CHROME-TOP — the canonical chrome line (named constant) ───────
+// A device-dependent value can't be shipped as a number, so the DS owns
+// the RULE and both codebases quote it (never re-derive it):
+//
+//     REAL_PAD  = max(28px, env(safe-area-inset-top) − 1px)
+//     chromeTop = REAL_PAD + 9        // nav buttons, dual capsule, twins
+//
+// Web resolves it with a hidden probe div (env() only resolves in CSS);
+// native computes max(28, safeTop − 1) + 9. On notched hardware the old
+// shell constant (safeTop + 8) happened to agree exactly — the two only
+// diverge at the max() floor: iPad (safeTop 24) +5, SE-class (20) +9.
+// Agreement by coincidence on one device class is not agreement; quote
+// the rule. Precondition for any future "twins go hit-test transparent
+// and the web control underneath takes the tap": glass and control must
+// coincide on EVERY device, which only this shared rule guarantees.
+
 // TOUCH LAW (2026-09-10, after the meal-selector dead-zone forensics):
 // a twin must NEVER create a touch dead-zone over scrollable content.
 // - interactive twins hit-test ONLY inside the exact rects the web
