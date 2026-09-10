@@ -2065,7 +2065,10 @@ confirmBtn.onclick = () => {
       const i = winC + k;
       out.push(i < 0 || i > maxIdx ? '' : String(dateFor(i).getDate()));
     }
-    return { dates: out, center: winC, disp: disp };
+    const d = dateFor(winC);
+    return { dates: out, center: winC, disp: disp,
+      monthLabel: MONS[d.getMonth()],
+      dayName: d.toLocaleDateString('en', { weekday: 'long' }) };
   };
   function glide() {
     raf = scrubbing ? requestAnimationFrame(glide) : null;
@@ -2573,7 +2576,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 125';
+const BUILD = 'build 2026-09-10 · 126';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3008,11 +3011,13 @@ if (QS.get('solo') === '1') {
      container-only native Liquid Glass at the pill's live rect; present
      while armed, released by omission from the next glasschrome post.
      mode picks the material: 'glass' (.regular) or 'portal' (red tint). */
-  /* SCRUB TWIN SUSPENDED (Rashid, TF34: dates under ANY native glass are
-     blurred — tint changes color, not blur; readability wins). The twin
-     stays off until the phase-3 renderer draws ALL the dates natively
-     above its own glass. Flip this when that renderer lands (build 35). */
-  var SCRUB_TWIN = false;
+  /* PHASE 3 (ratified 3-lane contract): the twin renders the ENTIRE
+     ladder natively above its own glass — dates[9] ('' pads), center as
+     the FRACTIONAL INDEX INTO THE ARRAY (armed 4.0; track 4 ± fraction;
+     integer crossings re-anchor via a fresh arm-shape post), monthLabel
+     + dayName drawn around the center. Re-enabled now the renderer
+     draws all the dates (canon 026f4b6). */
+  var SCRUB_TWIN = true;
   function scrubEl(off, frac) {
     if (!SCRUB_TWIN) return null;
     var el = document.querySelector('.nav .ttl.scrub');
@@ -3022,12 +3027,12 @@ if (QS.get('solo') === '1') {
     var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
       r: parseFloat(getComputedStyle(el).borderRadius) || r.height / 2,
       mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
-    /* phase 2: the twin draws the center date itself — ladder labels +
-       center index (int on anchor posts, fractional on track frames) */
     if (window.DSScrubState) {
       var st = DSScrubState();
       e.dates = st.dates;
-      e.center = frac ? st.disp : st.center;
+      e.center = frac ? 4 + (st.disp - st.center) : 4.0;
+      e.monthLabel = st.monthLabel;
+      e.dayName = st.dayName;
     }
     return e;
   }
