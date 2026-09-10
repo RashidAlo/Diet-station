@@ -2576,7 +2576,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 127';
+const BUILD = 'build 2026-09-10 · 128';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2948,12 +2948,10 @@ if (QS.get('solo') === '1') {
     '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
-    /* phase 2 yield: the twin draws the CENTER date crisp above the
-       glass — the web center tile + its tick retire under a confirm;
-       the flanks stay web (their softness under the glass is the
-       Rashid-approved look). Mode-aware: applies to glass AND portal. */
-    '.nav .ttl.scrub.ds-native-hidden .scb .scb-it:nth-child(5) .n { ' +
-    '  visibility: hidden !important; animation: none !important; } ' +
+    /* phase 3 yield: the twin draws the ENTIRE ladder natively — the
+       whole web strip retires under a confirm (web ghosts echoed under
+       the material otherwise); red layer/vignette stay per mode. */
+    '.nav .ttl.scrub.ds-native-hidden .scb { visibility: hidden !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
@@ -3022,7 +3020,8 @@ if (QS.get('solo') === '1') {
   /* verification gate: the phase-3 twin stays OFF for users until the
      both-modes tape passes; ?scrubtwin=1 enables it for lane test runs.
      Flip the default to true in the tape-pass commit. */
-  var SCRUB_TWIN = /[?&]scrubtwin=1/.test(location.search);
+  var SCRUB_TWIN = true;   /* tape-passed both modes 2026-09-10; ?scrubtwin=0 opts out */
+  if (/[?&]scrubtwin=0/.test(location.search)) SCRUB_TWIN = false;
   function scrubEl(off, frac) {
     if (!SCRUB_TWIN) return null;
     var el = document.querySelector('.nav .ttl.scrub');
