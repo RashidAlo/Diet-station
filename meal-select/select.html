@@ -320,6 +320,19 @@
       background .34s ease, box-shadow .34s ease; }
   .nav .ttl.scrub.closing .glassbg { opacity: 0;
     transition: opacity .3s ease .12s; }
+  /* The END of the exit was the awkward part: the ladder shrank to a
+     cropped "14 15" fragment and then the label POPPED in over it (it is
+     display:none under .scrub, so it can only pop), with the native
+     capsule still fading on top of it. So the whole handover now happens
+     DURING the collapse instead of at the end of it — the ladder
+     dissolves, the label cross-fades in over it, and by the time the
+     capsule lands there is nothing left to swap. */
+  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .22s ease; }
+  .nav .ttl.scrub.closing #dayLabel { display: inline-block !important;
+    position: absolute; left: 50%; top: 50%; z-index: 2;
+    transform: translate(-50%, -50%); white-space: nowrap;
+    opacity: 0; animation: lblback .26s ease .17s forwards; }
+  @keyframes lblback { to { opacity: 1; } }
   /* the glass keeps its scale through the collapse, then eases out over
      the final deflate so the pill doesn't pop off the label */
   .nav .ttl.unforming .glassbg { opacity: 0; transition: opacity .3s ease .04s; }
@@ -2143,25 +2156,26 @@ confirmBtn.onclick = () => {
        that overlap is a blurred double image, since the capsule blurs
        whatever is beneath it. By the time the class is shed the twin is
        gone, and the label fades in over the vacated rect. */
-    ttl.classList.remove('forming', 'scrub', 'closing', 'portal');
+    /* pure cleanup: the ladder has already dissolved, the label has
+       already faded in, and the twin was released back at the start of the
+       collapse — nothing here changes anything on screen. */
+    ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
-    /* 40ms was not enough — a tape showed the ladder still ghosting behind
-       the label, so the shell does not drop the capsule on the omit frame,
-       it animates it away. Hold the label back far enough that its own
-       fade-in overlaps the capsule's fade-out as a dissolve rather than
-       landing under a capsule at full strength. */
-    unformT = setTimeout(() => ttl.classList.remove('ds-native-hidden'), 180);
   }
   function unform() {
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
-      /* ONE motion home, with .scrub still on so the native twin keeps
-         tracking the shrinking rect the whole way. It is released by the
-         omit-post inside DSScrubChrome(false), timed to land as the
-         capsule arrives rather than as it leaves. */
+      /* Hand the capsule to the WEB before the collapse starts, not after
+         it ends. The shell's release is not instantaneous — it animates
+         the twin away — so releasing at the end left it fading on top of
+         the returned label. Released here, that fade happens while the web
+         is drawing the same capsule at the same rect, and the last third
+         of the gesture is web-only and fully deterministic. */
+      window.DSScrubRelease && DSScrubRelease();
+      ttl.classList.remove('ds-native-hidden');
       ttl.style.setProperty('--close-w', (formW0 || 96) + 'px');
       ttl.style.setProperty('--close-h', (formH0 || 28) + 'px');
       ttl.classList.add('closing');
@@ -2656,7 +2670,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 138 (scrub release crossfade)';
+const BUILD = 'build 2026-09-11 · 139 (scrub exit handover)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3062,8 +3076,12 @@ if (QS.get('solo') === '1') {
      Flip the default to true in the tape-pass commit. */
   var SCRUB_TWIN = true;   /* tape-passed both modes 2026-09-10; ?scrubtwin=0 opts out */
   if (/[?&]scrubtwin=0/.test(location.search)) SCRUB_TWIN = false;
+  /* set the moment the exit begins: the capsule is handed back to the web
+     for the whole collapse, so nothing native is still fading when the
+     label lands. Cleared when the next gesture arms. */
+  var scrubHold = false;
   function scrubEl(off, frac) {
-    if (!SCRUB_TWIN) return null;
+    if (!SCRUB_TWIN || scrubHold) return null;
     var el = document.querySelector('.nav .ttl.scrub');
     if (!el) return null;
     var r = el.getBoundingClientRect();
@@ -3157,7 +3175,18 @@ if (QS.get('solo') === '1') {
     scrubRaf = requestAnimationFrame(step);
   }
   var scrubConfirmed = false, scrubFbT = null;
+  /* hand the capsule back to the web AT THE START of the exit: this post
+     omits the scrub el, so the shell releases the twin and whatever exit
+     animation it runs happens while the web is still drawing the same
+     capsule at the same rect — not on top of the label at the end, which
+     is where it read as an awkward leftover. */
+  window.DSScrubRelease = function () {
+    scrubHold = true;
+    clearTimeout(scrubFbT);
+    report();
+  };
   window.DSScrubChrome = function (on) {
+    if (on) scrubHold = false;
     trackBurst(760);           /* twins ride the push / return; scrub rides the grow AND the collapse */
     if (on) {
       report();                /* anchor post WITH the scrub twin = it appears */
