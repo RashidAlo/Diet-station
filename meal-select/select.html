@@ -1802,7 +1802,8 @@ confirmBtn.onclick = () => {
   if (!ttl) return;
   const STEP = 34;              /* px of drag per day step — finer = more sensitive */
   const CADENCE = 60;           /* ms floor between steps — the scrub speed */
-  const maxIdx = 60;            /* scrubbing crosses month boundaries freely */
+  const maxIdx = 30;            /* the subscription window — one swipe spans it;
+                                   still crosses the month boundary freely */
 
   const strip = document.createElement('div');
   strip.className = 'scb';
@@ -2305,7 +2306,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 103';
+const BUILD = 'build 2026-09-10 · 104';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
