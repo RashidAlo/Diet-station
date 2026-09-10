@@ -1853,6 +1853,34 @@ function dayLabelFor(idx) {
   return MONS[d.getMonth()] + ' ' + ordinal(d.getDate());
 }
 let turning = false;
+/* ---- day-turn arrival offset (Rashid: "offset/padding only, minimise the
+   extra space") ----
+   Pure geometry, applied ONCE on the arrival frame and never touched again:
+   nothing here runs during a scroll, so it cannot affect the feel. It rides
+   on the FIRST SECTION's margin rather than the scroller's padding, because
+   padding-top is what SHEET_GAP and the dock line are both derived from —
+   changing it would move the sheet's own maths. The margin only pushes
+   content, which is all we want.
+   The amount is measured, not chosen: whatever the first card is short of
+   clearing the bar (plus a hairline 6px), and zero if it already clears. */
+function firstSection() { return scrollArea.querySelector('section'); }
+function applyDayOffset(stayFull) {
+  const sec = firstSection();
+  if (!sec) return;
+  sec.style.marginTop = '';
+  if (!stayFull) return;                 /* arriving at the top needs nothing */
+  const card = sec.querySelector('.card');
+  if (!card) return;
+  const navEl = document.querySelector('.nav');
+  const dockEl = document.querySelector('.cat-dock');
+  /* the bar's real bottom edge: the dock band extends it while docked */
+  let barBottom = navEl.getBoundingClientRect().bottom;
+  if (dockEl && parseFloat(getComputedStyle(dockEl).opacity) > 0) {
+    barBottom = Math.max(barBottom, dockEl.getBoundingClientRect().bottom);
+  }
+  const shortfall = (barBottom + 6) - card.getBoundingClientRect().top;
+  if (shortfall > 0.5) sec.style.marginTop = Math.round(shortfall) + 'px';
+}
 function turnDay(dir, target) {
   /* page turn either direction: current day exits, the target day rides in
      from the opposite side, at the top, with a soft stagger bounce.
@@ -1861,6 +1889,9 @@ function turnDay(dir, target) {
   if (target !== undefined && target === dayIdx) return;
   if (dir < 0 && dayIdx === 0 && target === undefined) return;
   turning = true;
+  /* a sheet at fullscreen STAYS at fullscreen through a day switch —
+     content changed, presentation didn't. Captured before the slide-out. */
+  const stayFull = sheetLive && scrollArea.scrollTop >= SHEET_GAP - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1886,12 +1917,20 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day always rides in from its very top — keeping the docked
-       scrollTop (SHEET_GAP) hid the first row under the nav, because the
-       sheet collapse consumes exactly that many pixels of scroll */
-    scrollArea.scrollTop = 0;
+    /* A day turned into while fullscreen ARRIVES fullscreen (Rashid). The
+       docked scrollTop is SHEET_GAP, and the sheet's collapse has already
+       eaten exactly that many pixels of scroll, so the first thumbnail row
+       would sit under the bar. The fix is an OFFSET ONLY — no mechanism,
+       nothing that moves during a gesture: dayOffset() measures the real
+       shortfall on the arrival frame and pushes the first section down by
+       exactly that much, so it is the minimum by construction rather than
+       a guessed constant, and it re-derives itself per device and per
+       docked/undocked state. A non-fullscreen arrival parks at the top
+       and clears the offset. */
+    scrollArea.scrollTop = stayFull ? SHEET_GAP : 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
+    applyDayOffset(stayFull);
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
     scrollArea.classList.add('stagger');
     setTimeout(() => {
@@ -2549,7 +2588,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 133 (pre-3pm scroll)';
+const BUILD = 'build 2026-09-11 · 134 (pre-3pm scroll + day offset)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
