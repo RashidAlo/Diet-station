@@ -2802,14 +2802,14 @@ function setDayPad(px) {
 }
 function syncSheet() {
   if (!sheetLive) return;
-  if (dayPad > 0) {
-    const s = scrollArea.scrollTop;
-    if (s >= SHEET_GAP + dayPad) {         /* deep in content: fold the pad away, invisible */
-      const p = dayPad; setDayPad(0);
-      scrollArea.scrollTop = s - p;
-      return syncSheet();
-    }
-    if (s < SHEET_GAP) setDayPad(Math.min(dayPad, Math.max(0, s)));
+  /* the day-turn pad melts as the sheet is dragged back toward the
+     overlay, so a turned-into day still lands at the canonical layout.
+     It NEVER writes scrollTop: assigning scrollTop from inside a scroll
+     handler cancels WKWebView's deceleration outright, which killed the
+     first flick after every Next — the pad above stays put while you
+     are below it (invisible) and only unwinds on the way home. */
+  if (dayPad > 0 && scrollArea.scrollTop < SHEET_GAP) {
+    setDayPad(Math.min(dayPad, Math.max(0, scrollArea.scrollTop)));
   }
   const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
   /* at fullscreen rest the transform is REMOVED, not zeroed: WebKit
@@ -3232,7 +3232,18 @@ if (QS.get('solo') === '1') {
      the same glass to its new geometry. Web chrome renders only where
      twins never confirm (iOS<26, desktop). */
   var docked = false, moving = false, restT = null;
-  function gapNow() { return (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22; }
+  /* the dock line is the SHEET's own collapse end — never a local copy.
+     ·124 hardcoded gapNow()/2 here and that residue outlived two full
+     restores of the sheet math (·129, ·130), flipping the chrome to
+     'page' mode — which re-anchors the native glass to the canonical
+     top line — HALFWAY through every swipe, while the sheet was still
+     rising. That mid-gesture jump of the whole top bar is what kept
+     reading as a step. Route through collapseEnd() so the two can
+     never drift apart again. */
+  function gapNow() {
+    return (typeof collapseEnd === 'function') ? collapseEnd()
+      : (typeof SHEET_GAP !== 'undefined') ? SHEET_GAP : 22;
+  }
   /* continuous follow (Rashid: the buttons must RIDE the drag, then anchor
      at the dock — settle-then-jump is out): while the sheet moves, stream
      verbatim rects one per frame; the shell applies them with no animation
@@ -3264,13 +3275,13 @@ if (QS.get('solo') === '1') {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
     sa.addEventListener('scroll', function () {
-      docked = sa.scrollTop >= gapNow() / 2 - 0.5;
+      docked = sa.scrollTop >= gapNow() - 0.5;
       moving = true;
       if (!trackRaf) trackRaf = requestAnimationFrame(postTrack);
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
-    docked = sa.scrollTop >= gapNow() / 2 - 0.5;
+    docked = sa.scrollTop >= gapNow() - 0.5;
     report();
   }
   /* dismissal clears, take 2: the old one-shot transitionstart arm was
