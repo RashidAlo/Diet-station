@@ -188,6 +188,10 @@ private enum DS {
     }
 
     var plan: Plan = .lifestyle
+    /// Figma 16360-78205 "Not logged in": Sign-in greeting, Book/Guide
+    /// widgets, and the plans list on the sheet (lab Account toggle)
+    var loggedOut = false
+    var guideOpen = false           // Guide me -> the plan-quiz web flow
     var daysLeft: Int = 19          // 19 / 5 / 0 (expired)
     var showPromo = true
     var showDiscounts = true
@@ -287,6 +291,9 @@ struct HomeScreenNative: View {
     /// + glyphs adapt, exactly like the system tab bar over dark content
     private var barIsOverDark: Bool {
         guard tabSel == .home, !state.calendarOpen, barFrame.height > 0 else { return false }
+        // signed-out home has no photo strip; a stale strip rect must not
+        // darken the bar — only the red page above the plans sheet counts
+        if state.loggedOut { return sheetFrame.minY > barFrame.midY }
         if sheetFrame.minY > barFrame.midY { return true }   // white sheet not here yet: red page
         return barFrame.intersection(stripFrame).height > barFrame.height * 0.5
     }
@@ -306,15 +313,21 @@ struct HomeScreenNative: View {
             DS.red.ignoresSafeArea()
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: DS.gap) {
-                    arrival(topRow, 0)
-                    if urgent { arrival(urgentBanner, 1) }
-                    else if state.showPromo { arrival(promoBanner, 1) }
-                    widgetGrid
+                    if state.loggedOut {
+                        arrival(loggedOutTopRow, 0)
+                        arrival(optionsRow, 1)
+                    } else {
+                        arrival(topRow, 0)
+                        if urgent { arrival(urgentBanner, 1) }
+                        else if state.showPromo { arrival(promoBanner, 1) }
+                        widgetGrid
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 20)
-                arrival(mealSheet, 4)
+                if state.loggedOut { arrival(plansSheet, 4) }
+                else { arrival(mealSheet, 4) }
             }
             .ignoresSafeArea(edges: .bottom)
             .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, y in
@@ -424,7 +437,13 @@ struct HomeScreenNative: View {
             FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
                 .presentationBackground(Color.black.opacity(0.42))
         }
+        // signed-out Guide me = the Guide Me experience (plan-quiz web flow)
+        .fullScreenCover(isPresented: $state.guideOpen) {
+            FlowOverlay(path: "plan-quiz") { instant { state.guideOpen = false } }
+                .presentationBackground(Color.black.opacity(0.42))
+        }
 
+        .animation(.spring(duration: 0.45), value: state.loggedOut)
         .animation(.spring(duration: 0.45), value: state.showPromo)
         .animation(.spring(duration: 0.45), value: state.showDiscounts)
         .animation(.spring(duration: 0.45), value: state.showConsult)
@@ -473,6 +492,11 @@ struct HomeScreenNative: View {
             // sheet toggles resist scripted taps, so QA flips it here
             if ProcessInfo.processInfo.environment["DSLAB_DYNBAR"] != nil {
                 state.tabBarDynamic = true
+            }
+            // SIMCTL_CHILD_DSLAB_LOGGEDOUT=1 boots the signed-out home for
+            // the headless sim loop
+            if ProcessInfo.processInfo.environment["DSLAB_LOGGEDOUT"] != nil {
+                state.loggedOut = true
             }
         }
         #endif
@@ -563,7 +587,7 @@ struct HomeScreenNative: View {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = tab }
         // Apple's beat: the pill lands first, then the page moves under
         // the stationary bar
-        if tab == .calendar, !state.calendarOpen {
+        if tab == .calendar, !state.calendarOpen, !state.loggedOut {
             selectorUp = false   // stale layer state never hides the bar
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
                 state.calendarOpen = true
@@ -577,14 +601,15 @@ struct HomeScreenNative: View {
     }
 
     private var tabBar: some View {
-        DSTabBar(selected: tabSel, onSelect: tabHandler)
+        DSTabBar(selected: tabSel, onSelect: tabHandler, forkMiddle: state.loggedOut)
     }
 
     /// Music-style modular bar (lab experiment, Rashid 2026-09-09): at rest
     /// the kcal module rides IN the bar row; scrolling disconnects it into
     /// its own glass macros row above — one matched-geometry morph.
     private var dynamicOn: Bool {
-        state.tabBarDynamic && tabSel == .home && !state.calendarOpen
+        // signed-out home has no calorie data — the bar absorbs the full 370
+        state.tabBarDynamic && tabSel == .home && !state.calendarOpen && !state.loggedOut
     }
 
     @ViewBuilder private var bottomBar: some View {
@@ -599,7 +624,8 @@ struct HomeScreenNative: View {
                 if dynamicOn && homeScrolled { kcalCapsule }
                 HStack(spacing: 10) {
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
-                             width: dynamicOn && !homeScrolled ? 256 : 370)
+                             width: dynamicOn && !homeScrolled ? 256 : 370,
+                             forkMiddle: state.loggedOut)
                     if dynamicOn && !homeScrolled {
                         kcalCapsule.transition(.opacity)
                     }
@@ -995,6 +1021,271 @@ struct HomeScreenNative: View {
         .frame(width: 28, height: 28)
     }
 
+    // MARK: signed-out home (Figma 16360-78205 "Not logged in")
+
+    /// DS ring greeting + Sign in, one phone dock on the right
+    private var loggedOutTopRow: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().stroke(.white.opacity(0.9), lineWidth: 1.6)
+                    DSLogoMark().fill(.white).frame(width: 26, height: 20)
+                }
+                .frame(width: 48, height: 48)
+                VStack(alignment: .leading, spacing: 1) {
+                    (Text("☀️ ").font(.system(size: 11))
+                     + Text("صبحك الله بالخير").font(DS.avenirWorld(12)))
+                        .foregroundStyle(DS.onColor)
+                        .id("lo-greeting-\(fontTick)")
+                    (Text("Got an account? ").font(DS.urbane(14, .light))
+                     + Text("Sign in").font(DS.urbane(14, .semibold)))
+                        .foregroundStyle(.white)
+                }
+            }
+            Spacer()
+            dock {
+                Image(systemName: "phone.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+        }
+        .frame(height: 68)
+    }
+
+    /// Book Consultation + Guide me — the widget grid's own 193/153 columns
+    private var optionsRow: some View {
+        HStack(spacing: DS.gap) {
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                HStack(spacing: 12) {
+                    consultIcon
+                    Text("Book\nConsultation")
+                        .font(DS.urbane(14, .semibold)).foregroundStyle(DS.onColor)
+                        .multilineTextAlignment(.leading).lineSpacing(2)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .frame(width: 193, height: 76)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
+                         in: .rect(cornerRadius: DS.tile(76)))
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                state.guideOpen = true
+            } label: {
+                (Text("Guide ").font(DS.urbane(16, .light))
+                 + Text("me").font(DS.urbane(16, .semibold)))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .topLeading) {
+                        sparkle(9, .white.opacity(0.85)).offset(x: 24, y: 13)
+                    }
+                    .overlay(alignment: .bottomLeading) {
+                        sparkle(6, .white.opacity(0.7)).offset(x: 37, y: -17)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        sparkle(13, Color(red: 1, green: 197/255, blue: 46/255))
+                            .offset(x: -32, y: 9)
+                    }
+                    .overlay(alignment: .trailing) { guideWand.offset(x: -12, y: 15) }
+                    .frame(height: 76)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.clear.tint(DS.red.opacity(0.15)).interactive(),
+                         in: .rect(cornerRadius: DS.tile(76)))
+        }
+    }
+
+    private func sparkle(_ size: CGFloat, _ color: Color) -> some View {
+        DSSparkle().fill(color).frame(width: size, height: size)
+    }
+
+    private var guideWand: some View {
+        VStack(spacing: 1.5) {
+            Capsule().fill(Color(red: 1, green: 227/255, blue: 224/255))
+                .frame(width: 5, height: 8)
+            Capsule().fill(.white).frame(width: 5, height: 24)
+        }
+        .rotationEffect(.degrees(-40))
+    }
+
+    // MARK: signed-out plans sheet
+
+    private let planCards: [(HomeState.Plan, Int)] =
+        [(.diet, 99), (.lifestyle, 109), (.body, 149), (.kids, 99)]
+
+    private var plansSheet: some View {
+        VStack(spacing: 0) {
+            summerOffer.padding(.horizontal, 19).padding(.top, 24)
+            orDivider.padding(.horizontal, 23).padding(.vertical, 21)
+            VStack(spacing: 18) {
+                ForEach(0..<planCards.count, id: \.self) { i in
+                    planCard(planCards[i].0, planCards[i].1)
+                }
+            }
+            .padding(.horizontal, 19)
+            Spacer(minLength: 110)
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { r in
+            sheetFrame = r   // the adaptive bar reads the white here too
+        }
+        .background(.white, in: UnevenRoundedRectangle(topLeadingRadius: 38, topTrailingRadius: 38))
+        .background(alignment: .bottom) {
+            Color.white.frame(height: 600).offset(y: 600)
+        }
+    }
+
+    private var summerOffer: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            HStack(spacing: 16) {
+                // DS monogram — traced approximation, swap for the brand SVG
+                DSPercentMark()
+                    .stroke(Color(red: 23/255, green: 23/255, blue: 27/255),
+                            style: StrokeStyle(lineWidth: 7.5, lineCap: .round))
+                    .frame(width: 56, height: 56)
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Summer Offer").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
+                    Text("عروض الصيــــف").font(DS.avenirWorld(15)).foregroundStyle(DS.ink)
+                        .id("lo-summer-\(fontTick)")
+                }
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color(red: 23/255, green: 23/255, blue: 27/255))
+                    .frame(width: 48, height: 48)
+                    .background(.white, in: Circle())
+                    .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.28),
+                            radius: 9, y: 4)
+            }
+            .padding(.leading, 24).padding(.trailing, 16)
+            .frame(maxWidth: .infinity)
+            .frame(height: 109)
+            .background(.white, in: RoundedRectangle(cornerRadius: 30))
+            .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.16),
+                    radius: 15, y: 7)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: 12) {
+            DSFlank().stroke(Color(white: 0.86), lineWidth: 1.2)
+                .frame(height: 12).frame(maxWidth: .infinity)
+            Text("Or try a different plan").font(DS.proxima(12))
+                .foregroundStyle(Color(red: 142/255, green: 142/255, blue: 147/255))
+                .fixedSize()
+            DSFlank(flip: true).stroke(Color(white: 0.86), lineWidth: 1.2)
+                .frame(height: 12).frame(maxWidth: .infinity)
+        }
+    }
+
+    /// LIQUID GLASS subscription card (Rashid): a frosted glass platter on
+    /// the white sheet, cradling a glass theme-gradient plan pill
+    private func planCard(_ plan: HomeState.Plan, _ price: Int) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
+                planRow("1", "Breakfast")
+                planRow("2", "Lunch & Dinner")
+                planRow("5", "Salad & Soup")
+                planRow("1", "Snack")
+                HStack(spacing: 5) {
+                    Text("~1200 kcal").font(DS.urbane(11.5, .semibold)).foregroundStyle(DS.ink)
+                    Text("|").font(DS.proxima(11.5)).foregroundStyle(Color(white: 0.78))
+                    Text("100g macros").font(DS.proxima(11.5)).foregroundStyle(DS.caption)
+                }
+                .lineLimit(1).fixedSize()
+                .padding(.horizontal, 9).frame(height: 26)
+                .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color(white: 0.89), lineWidth: 1))
+                .padding(.top, 12)
+            }
+            .lineLimit(1).minimumScaleFactor(0.85)
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 10) {
+                HStack(alignment: .lastTextBaseline, spacing: 3) {
+                    Text("KD139").font(DS.urbane(12))
+                        .strikethrough(true, color: DS.red.opacity(0.8))
+                        .foregroundStyle(Color(white: 0.73))
+                    (Text("KD").font(DS.urbane(14, .semibold))
+                     + Text(verbatim: "\(price)").font(DS.urbane(33, .semibold)))
+                        .foregroundStyle(plan.priceColor)
+                    Text("/mo").font(DS.proxima(12)).foregroundStyle(DS.caption)
+                }
+                .lineLimit(1).fixedSize()
+                dealChip
+                planPill(plan)
+            }
+            .layoutPriority(1)   // the price never wraps; the list scales first
+        }
+        .padding(19)
+        .frame(maxWidth: .infinity)
+        // real material on white: the card IS glass, not a painted white box
+        .glassEffect(.regular, in: .rect(cornerRadius: 38))
+        .shadow(color: Color(red: 56/255, green: 64/255, blue: 74/255).opacity(0.14),
+                radius: 16, y: 8)
+        .onTapGesture { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    }
+
+    private func planRow(_ n: String, _ label: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(n).font(DS.urbane(12, .semibold))
+                .foregroundStyle(Color(red: 185/255, green: 188/255, blue: 194/255))
+                .frame(width: 10)
+            Text(label).font(DS.urbane(14)).foregroundStyle(DS.ink)
+        }
+        .frame(height: 26, alignment: .center)
+    }
+
+    private var dealChip: some View {
+        (Text("خصم ").font(DS.avenirWorld(11.5))
+            .foregroundColor(Color(red: 58/255, green: 58/255, blue: 63/255))
+         + Text("KD 40 ").font(DS.urbane(11, .semibold)).foregroundColor(DS.red)
+         + Text("🔥 ").font(.system(size: 10))
+         + Text("اشترك الحين").font(DS.avenirWorld(11.5))
+            .foregroundColor(Color(red: 58/255, green: 58/255, blue: 63/255)))
+            .lineLimit(1).fixedSize()
+            .padding(.horizontal, 10).frame(height: 28)
+            .background(Color(red: 244/255, green: 244/255, blue: 246/255), in: Capsule())
+            .id("lo-deal-\(fontTick)")
+    }
+
+    /// glass pill over the plan's theme gradient — gradient clipped BEFORE
+    /// the glass (the house bleed rule)
+    private func planPill(_ plan: HomeState.Plan) -> some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            planPillLabel(plan)
+                .padding(.horizontal, 22).frame(height: 44)
+                .background(plan.solidGradient)
+                .clipShape(Capsule())
+                .glassEffect(.clear, in: .capsule)
+                .shadow(color: DS.ink.opacity(0.28), radius: 10, y: 5)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func planPillLabel(_ plan: HomeState.Plan) -> Text {
+        switch plan {
+        case .body:
+            return Text("BODY").font(DS.urbane(15, .semibold)).foregroundColor(.white)
+                 + Text("Building").font(DS.urbane(15, .semibold))
+                    .foregroundColor(Color(red: 242/255, green: 84/255, blue: 61/255))
+        case .kids:
+            return Text("Kids").font(DS.urbane(15, .semibold)).foregroundColor(.white)
+        default:
+            let (a, b) = plan.words
+            return Text(a).font(DS.urbane(15, .light)).foregroundColor(.white.opacity(0.75))
+                 + Text(b).font(DS.urbane(15, .semibold)).foregroundColor(.white)
+        }
+    }
+
     // MARK: meal sheet
 
     private var mealSheet: some View {
@@ -1170,6 +1461,13 @@ struct HomeScreenNative: View {
     private var labSheet: some View {
         NavigationStack {
             Form {
+                Section("Account") {
+                    Picker("Account", selection: $state.loggedOut) {
+                        Text("Logged in").tag(false)
+                        Text("Logged out").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                }
                 Section("Subscription plan") {
                     Picker("Plan", selection: $state.plan) {
                         ForEach(HomeState.Plan.allCases) { Text($0.label).tag($0) }
@@ -1236,6 +1534,95 @@ private struct DSConsultCalShape: Shape {
                                  cornerSize: CGSize(width: 0.937 * s, height: 0.937 * s))
             }
         }
+        return p
+    }
+}
+
+// MARK: - Signed-out plans: theme colors + small shapes
+
+@available(iOS 26.0, *)
+extension HomeState.Plan {
+    /// the big price figure wears the plan's identity color
+    var priceColor: Color {
+        switch self {
+        case .diet: return Color(red: 108/255, green: 58/255, blue: 205/255)
+        case .lifestyle: return DS.red
+        case .body: return Color(red: 29/255, green: 29/255, blue: 58/255)
+        case .kids: return Color(red: 1, green: 63/255, blue: 85/255)
+        }
+    }
+    /// full-opacity siblings of the plan-widget gradients — the same Design
+    /// System families, solid enough to live on the white sheet
+    var solidGradient: LinearGradient {
+        func g(_ c1: Color, _ c2: Color) -> LinearGradient {
+            LinearGradient(colors: [c1, c2], startPoint: .topTrailing, endPoint: .bottomLeading)
+        }
+        switch self {
+        case .diet:
+            return g(Color(red: 138/255, green: 86/255, blue: 232/255),
+                     Color(red: 95/255, green: 46/255, blue: 194/255))
+        case .lifestyle:
+            return g(Color(red: 247/255, green: 154/255, blue: 75/255),
+                     Color(red: 238/255, green: 82/255, blue: 40/255))
+        case .body:
+            return g(Color(red: 42/255, green: 42/255, blue: 82/255),
+                     Color(red: 21/255, green: 21/255, blue: 46/255))
+        case .kids:
+            return g(Color(red: 1, green: 106/255, blue: 84/255),
+                     Color(red: 1, green: 50/255, blue: 135/255))
+        }
+    }
+}
+
+/// Four-point sparkle (the Guide me stars — web's 16-grid path)
+@available(iOS 26.0, *)
+private struct DSSparkle: Shape {
+    func path(in r: CGRect) -> Path {
+        let w = r.width, h = r.height
+        var p = Path()
+        p.move(to: CGPoint(x: w * 0.5, y: 0))
+        p.addLine(to: CGPoint(x: w * 0.6125, y: h * 0.3875))
+        p.addLine(to: CGPoint(x: w, y: h * 0.5))
+        p.addLine(to: CGPoint(x: w * 0.6125, y: h * 0.6125))
+        p.addLine(to: CGPoint(x: w * 0.5, y: h))
+        p.addLine(to: CGPoint(x: w * 0.3875, y: h * 0.6125))
+        p.addLine(to: CGPoint(x: 0, y: h * 0.5))
+        p.addLine(to: CGPoint(x: w * 0.3875, y: h * 0.3875))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// DS "%" monogram — traced approximation of the brand mark (two stroked
+/// rings + a swooshing slash); stroke it with round caps
+@available(iOS 26.0, *)
+private struct DSPercentMark: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = rect.width / 56
+        var p = Path()
+        p.addEllipse(in: CGRect(x: 5.5 * s, y: 5 * s, width: 20 * s, height: 20 * s))
+        p.move(to: CGPoint(x: 45.5 * s, y: 5.5 * s))
+        p.addCurve(to: CGPoint(x: 11.5 * s, y: 50.5 * s),
+                   control1: CGPoint(x: 38 * s, y: 15.5 * s),
+                   control2: CGPoint(x: 22.5 * s, y: 37 * s))
+        p.addEllipse(in: CGRect(x: 30.5 * s, y: 31 * s, width: 20 * s, height: 20 * s))
+        return p
+    }
+}
+
+/// The "Or try a different plan" flanks — long shallow arcs that dip away
+/// from the label on their outer ends
+@available(iOS 26.0, *)
+private struct DSFlank: Shape {
+    var flip = false
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        let y0 = flip ? r.height * 0.17 : r.height * 0.83
+        let y1 = flip ? r.height * 0.83 : r.height * 0.17
+        p.move(to: CGPoint(x: 0, y: y0))
+        p.addCurve(to: CGPoint(x: r.width, y: y1),
+                   control1: CGPoint(x: r.width * 0.3, y: y0),
+                   control2: CGPoint(x: r.width * 0.7, y: y1))
         return p
     }
 }
@@ -1364,6 +1751,9 @@ struct DSTabBar: View {
     /// the dynamic-bar experiment narrows the capsule to make room for an
     /// inline module; every other host keeps the canonical 314
     var width: CGFloat = 314
+    /// signed-out home: the middle tab browses meals, not the calendar —
+    /// SF placeholder for now (Shell to trace the Figma fork-knife)
+    var forkMiddle = false
     /// adaptive bar: the host flips this subtree's colorScheme from the
     /// content behind the bar (Apple's way) — glyphs and pill follow
     @Environment(\.colorScheme) private var scheme
@@ -1381,9 +1771,15 @@ struct DSTabBar: View {
                     .frame(width: 26, height: 20)
             }
             item(.calendar) { sel in
-                DSTabCalendarIcon()
-                    .fill(sel ? DS.red : resting)
-                    .frame(width: 24, height: 24)
+                if forkMiddle {
+                    Image(systemName: "fork.knife")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(sel ? DS.red : resting)
+                } else {
+                    DSTabCalendarIcon()
+                        .fill(sel ? DS.red : resting)
+                        .frame(width: 24, height: 24)
+                }
             }
             item(.person) { sel in
                 DSTabPersonIcon()
