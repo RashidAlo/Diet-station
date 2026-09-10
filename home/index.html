@@ -463,67 +463,72 @@
     font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93;
     white-space: nowrap; }
   .lo-or svg { flex: 1; height: 12px; min-width: 0; }
-  /* subscription plan card — LIQUID GLASS: frosted white platter, rim + sheen,
-     and the plan-name pill inside is glass over its theme gradient */
-  .plancard { position: relative; border-radius: 38px; padding: 19px;
+  /* subscription plan card — Design System 4539-10208 VARIANT A verbatim:
+     the "Liquid Glass - Regular - Medium" platter (r32, hairline #dbdbdb ring,
+     0 8 37 shadow) holding meal rows w/ 18px circle badges, the transparent
+     hairline chips, gradient price + the r28 gradient plan pill */
+  .plancard { position: relative; border-radius: 32px; padding: 24px 20px 20px;
     margin-bottom: 18px; cursor: pointer; overflow: hidden;
-    background: rgba(255,255,255,.62);
+    background: rgba(255,255,255,.7);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     backdrop-filter: blur(14px) saturate(140%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.9),
-      inset 0 0 0 1px rgba(255,255,255,.55),
-      0 1px 0 rgba(0,0,0,.03),
-      0 16px 40px -26px rgba(56,64,74,.45);
+    box-shadow: 0 0 0 .5px #dbdbdb,
+      inset 0 1px 1px rgba(255,255,255,.9),
+      0 8px 37px rgba(0,0,0,.08);
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
   .plancard:active { transform: scale(.98); }
-  .plancard::before { content: ''; position: absolute; inset: 0;
-    border-radius: inherit; pointer-events: none; z-index: 1;
-    background: linear-gradient(160deg, rgba(255,255,255,.7),
-      rgba(255,255,255,0) 38%, rgba(255,255,255,0) 70%, rgba(255,255,255,.25));
-    opacity: .8; }
-  .pc-cols { position: relative; z-index: 2; display: flex; gap: 12px; }
-  .pc-list { flex: 1; min-width: 0; }
-  .pc-row { display: flex; gap: 12px; align-items: baseline; height: 26px; }
-  .pc-row i { font: 600 12px/26px 'Urbane Rounded', sans-serif; color: #b9bcc2;
-    font-style: normal; width: 10px; text-align: center; flex: none; }
-  .pc-row span { font: 500 14px/26px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .pc-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px;
-    margin-top: 12px; padding: 0 10px; border-radius: 9px;
-    border: 1px solid #e3e3e6; white-space: nowrap; }
-  .pc-chip b { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .pc-chip span { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
+  .pc-cols { position: relative; z-index: 2; display: flex; gap: 12px;
+    height: 122px; }
+  .pc-list { flex: 1; min-width: 0; display: flex; flex-direction: column;
+    justify-content: space-between; align-items: flex-start; }
+  .pc-row { display: flex; gap: 6px; align-items: center; height: 18px; }
+  .pc-row i { width: 18px; height: 18px; border-radius: 50%; flex: none;
+    background: rgba(244,244,244,.6);
+    display: flex; align-items: center; justify-content: center;
+    font: 600 12px/16px 'Proxima Nova', sans-serif; color: #0b0e12;
+    font-style: normal; }
+  .pc-row span { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .pc-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px;
+    padding: 2px 10px; border-radius: 300px; box-sizing: border-box;
+    border: 1px solid rgba(0,0,0,.06); white-space: nowrap; color: #0b0e12; }
+  .pc-chip b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
+  .pc-chip span { font: 400 12px/16px 'Proxima Nova', sans-serif; }
+  .pc-chip span b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
   .pc-right { flex: none; display: flex; flex-direction: column;
-    align-items: flex-end; gap: 10px; }
-  .pc-price { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-  .pc-was { font: 500 13px/16px 'Urbane Rounded', sans-serif; color: #b9bcc2;
-    text-decoration: line-through; text-decoration-color: rgba(237,28,36,.8);
-    margin-right: 2px; }
-  .pc-kd { font: 600 15px/18px 'Urbane Rounded', sans-serif; }
-  .pc-num { font: 600 36px/36px 'Urbane Rounded', sans-serif; letter-spacing: -.5px; }
-  .pc-mo { font: 400 13px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
-  .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 4px;
-    height: 28px; padding: 0 12px; border-radius: 999px; background: #f4f4f6;
-    font: 500 12.5px/28px 'Avenir Next World', 'Proxima Nova', sans-serif;
-    color: #3a3a3f; white-space: nowrap; }
-  .pc-deal b { font-weight: 600; color: #ED1C24;
-    font-family: 'Urbane Rounded', sans-serif; font-size: 12px; }
-  /* the glass plan pill: theme gradient under a liquid-glass skin */
-  .pc-pill { position: relative; height: 44px; border-radius: 999px; border: none;
-    cursor: pointer; padding: 0 22px; overflow: hidden; background-color: transparent;
-    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-    display: flex; align-items: baseline; justify-content: center;
-    font-size: 15px; line-height: 44px; color: #fff; white-space: nowrap;
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.45),
-      inset 0 0 0 .8px rgba(255,255,255,.22),
-      0 8px 20px -8px rgba(11,14,18,.35);
+    align-items: flex-end; justify-content: space-between; padding-top: 3px; }
+  .pc-price { display: flex; align-items: flex-start; white-space: nowrap; }
+  .pc-was { position: relative; padding-right: 4px;
+    font: 600 15px/16px 'Proxima Nova', sans-serif; color: #999;
+    text-decoration: line-through; }
+  /* the red diagonal strike (Figma Line 79, ~170deg) rides over the text */
+  .pc-was::after { content: ''; position: absolute; left: -2px; right: 2px;
+    top: 50%; height: 1.6px; border-radius: 2px; background: #ED1C24;
+    transform: rotate(-9.9deg); }
+  .pc-kd { font: 700 15px/22px 'Proxima Nova', sans-serif;
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pc-num { font: 600 30px/19px 'Urbane Rounded', sans-serif; margin-top: -2px;
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pc-mo { font: 500 15px/22px 'Proxima Nova', sans-serif; color: #999; }
+  .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 3px;
+    height: 24px; padding: 2px 10px; border-radius: 300px; background: transparent;
+    box-sizing: border-box; border: 1px solid rgba(0,0,0,.06);
+    font: 600 12px/16px 'Avenir Next World', 'Proxima Nova', sans-serif;
+    white-space: nowrap; }
+  /* gradient lives on the TEXT spans only — the fire emoji keeps its color */
+  .pc-deal .gt {
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* the plan pill — variant-A card wears the style-B gradient pill: r28,
+     hairline #e3e3e3, theme gradient, Light+Demi two-tone */
+  .pc-pill { position: relative; height: 40px; border-radius: 28px;
+    cursor: pointer; padding: 4px 20px; overflow: hidden;
+    background-color: transparent; border: 1px solid #e3e3e3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; line-height: 22.4px; color: #fff; white-space: nowrap;
     transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
   .pc-pill:active { transform: scale(.94); }
-  .pc-pill::before { content: ''; position: absolute; inset: 0;
-    border-radius: inherit; pointer-events: none;
-    background: linear-gradient(165deg, rgba(255,255,255,.4),
-      rgba(255,255,255,0) 45%, rgba(255,255,255,0) 72%, rgba(255,255,255,.14)); }
-  .pc-pill .a { font-weight: 300; opacity: .75; position: relative; }
-  .pc-pill .b { font-weight: 600; position: relative; }
+  .pc-pill .a { font-weight: 300; opacity: .6; position: relative; }
+  .pc-pill .b { font-weight: 600; position: relative;
+    text-shadow: 0 1px 4px rgba(0,0,0,.1); }
   .home.logged-out .sheetc { min-height: 0;
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
@@ -1020,7 +1025,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-10 · 15';
+const BUILD = 'home 2026-09-10 · 16';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1536,15 +1541,18 @@ document.getElementById('gDisc').style.cursor = 'pointer';
 /* ============ logged-out: the subscription plans (Figma 16360-78205) ======
    full-opacity siblings of the plan-widget THEMES gradients — the same
    Design System families, solid enough to live on the white sheet */
+/* gradients: TheDiet + LifeStyle verbatim from the DS component (get_design_
+   context); Body + Kids traced from their instances — swap when their tokens
+   are readable */
 const PLANS = [
-  { key: 'diet', a: 'The', b: 'Diet', price: 99, was: 139, color: '#6C3ACD',
-    grad: 'linear-gradient(250deg, #8A56E8 0%, #5F2EC2 100%)' },
-  { key: 'lifestyle', a: 'Life', b: 'Style', price: 109, was: 139, color: '#ED1C24',
-    grad: 'linear-gradient(250deg, #F79A4B 0%, #EE5228 100%)' },
-  { key: 'body', a: 'BODY', b: 'Building', price: 149, was: 139, color: '#1D1D3A',
-    grad: 'linear-gradient(250deg, #2A2A52 0%, #15152E 100%)' },
-  { key: 'kids', a: 'Kids', b: '', price: 99, was: 139, color: '#FF3F55',
-    grad: 'linear-gradient(250deg, #FF6A54 0%, #FF3287 100%)' },
+  { key: 'diet', a: 'The', b: 'Diet', price: 99,
+    grad: 'linear-gradient(115.8deg, #82459C 5.44%, #5525B5 102.11%)' },
+  { key: 'lifestyle', a: 'Life', b: 'Style', price: 109,
+    grad: 'linear-gradient(111.3deg, #FF963E 53.4%, #FF0505 141.76%)' },
+  { key: 'body', a: 'BODY', b: 'Building', price: 149,
+    grad: 'linear-gradient(115.8deg, #2A2A52 5.44%, #15152E 102.11%)' },
+  { key: 'kids', a: 'Kids', b: '', price: 99,
+    grad: 'linear-gradient(115.8deg, #FF6A54 5.44%, #FF3287 102.11%)' },
 ];
 const PLAN_ITEMS = [['1', 'Breakfast'], ['2', 'Lunch & Dinner'],
   ['5', 'Salad & Soup'], ['1', 'Snack']];
@@ -1556,15 +1564,16 @@ const PLAN_ITEMS = [['1', 'Breakfast'], ['2', 'Lunch & Dinner'],
       ? '<span class="a" style="font-weight:600;opacity:1">BODY</span><span class="b" style="color:#F2543D">Building</span>'
       : p.b ? '<span class="a">' + p.a + '</span><span class="b">' + p.b + '</span>'
             : '<span class="b">' + p.a + '</span>';
+    const g = 'style="background-image:' + p.grad + '"';
     return '<div class="plancard" data-plan="' + p.key + '">' +
       '<div class="pc-cols"><div class="pc-list">' + rows +
-        '<div class="pc-chip"><b>~1200 kcal</b><span>|</span><span>100g macros</span></div>' +
+        '<div class="pc-chip"><b>~1200 kcal</b><span>|</span><span><b>100g</b> macros</span></div>' +
       '</div><div class="pc-right">' +
         '<span class="pc-price"><span class="pc-was">KD139</span>' +
-          '<span class="pc-kd" style="color:' + p.color + '">KD</span>' +
-          '<span class="pc-num" style="color:' + p.color + '">' + p.price + '</span>' +
+          '<span class="pc-kd" ' + g + '>KD</span>' +
+          '<span class="pc-num" ' + g + '>' + p.price + '</span>' +
           '<span class="pc-mo">/mo</span></span>' +
-        '<span class="pc-deal">خصم <b>KD 40</b> 🔥 اشترك الحين</span>' +
+        '<span class="pc-deal"><span class="gt" ' + g + '>خصم KD 40</span>🔥<span class="gt" ' + g + '>اشترك الحين</span></span>' +
         '<button class="pc-pill" style="background-image:' + p.grad + '">' + name + '</button>' +
       '</div></div></div>';
   }).join('');
