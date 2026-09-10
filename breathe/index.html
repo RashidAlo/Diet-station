@@ -204,6 +204,27 @@
     overlay = $('overlay'), canvas = $('rive');
   let r = null;
 
+  /* ---- ds-nav intent router (Sprint-0 contract) ----
+     Cross-flow jumps are INTENTS posted to the parent:
+     {t:'ds-nav', to, context, present}. The hub router announces itself
+     with {t:'ds-router'}; until it does, dsNav falls back to direct
+     navigation with zero delay, so this page behaves identically
+     standalone / current hub / future hub. Listener installs at parse. */
+  let DS_ROUTER = false;
+  addEventListener('message', e => {
+    if (e.data && e.data.t === 'ds-router') DS_ROUTER = true;
+  });
+  const EMBED = /[?&]embed=1/.test(location.search);
+  function dsNav(to, present, context, fallback) {
+    if (DS_ROUTER && window.parent !== window) {
+      try {
+        parent.postMessage({ t: 'ds-nav', to: to, context: context || {}, present: present }, '*');
+        return;
+      } catch (_) {}
+    }
+    fallback();
+  }
+
   /* ---- liquid glass plumbing (liquid-glass-js) ---- */
   const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
   /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
@@ -292,6 +313,13 @@
     const cta = makeGlass('cta', 27);
     cta.element.insertAdjacentHTML('beforeend',
       '<span class="ctalabel" style="display:contents">Let\u2019s get Started<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></span>');
+    /* funnel entry: the CTA opens the Guide Me questionnaire (plan-quiz) */
+    cta.element.addEventListener('click', () => {
+      try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+      dsNav('plan-quiz', 'push', { src: 'breathe-cta' }, () => {
+        location.href = '../plan-quiz/' + (EMBED ? '?embed=1&v=' : '?v=') + Date.now();
+      });
+    });
     chrome.appendChild(cta.element);
     setTimeout(adaptGlassContrast, 900);   // after the snapshot lands
   }
