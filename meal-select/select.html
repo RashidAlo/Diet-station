@@ -2046,6 +2046,18 @@ confirmBtn.onclick = () => {
     const vw = document.documentElement.clientWidth || window.innerWidth || 402;
     stepBack = Math.min(STEP, Math.max(12, (vw - EDGE - x) / Math.max(1, target || 1)));
   }
+  /* phase-2 twin state (Home contract): the native glass draws the CENTER
+     date itself, crisp above the material — this exposes the ladder's
+     display labels + the center index (int at arm, fractional on track
+     frames — 15.4 reads "between 15 and 16", native flips at .5) */
+  window.DSScrubState = function () {
+    const out = [];
+    for (let k = -4; k <= 4; k++) {
+      const i = winC + k;
+      out.push(i < 0 || i > maxIdx ? '' : String(dateFor(i).getDate()));
+    }
+    return { dates: out, center: winC, disp: disp };
+  };
   function glide() {
     raf = scrubbing ? requestAnimationFrame(glide) : null;
     if (!scrubbing) return;
@@ -2055,6 +2067,7 @@ confirmBtn.onclick = () => {
     if (c !== winC) {
       winC = c;
       paintStrip(c);                            /* re-window on center crossing */
+      window.DSScrubRepost && DSScrubRepost();  /* fresh dates/center to the twin */
       vibrate(4);                               /* soft per-day tick */
       if (c === 0 && target === 0 && !latched && baseIdx !== 0) {
         /* home detent: gliding home STOPS the wheel — fresh stroke re-arms */
@@ -2551,7 +2564,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 121';
+const BUILD = 'build 2026-09-10 · 122';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2917,6 +2930,12 @@ if (QS.get('solo') === '1') {
     '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
+    /* phase 2 yield: the twin draws the CENTER date crisp above the
+       glass — the web center tile + its tick retire under a confirm;
+       the flanks stay web (their softness under the glass is the
+       Rashid-approved look). Mode-aware: applies to glass AND portal. */
+    '.nav .ttl.scrub.ds-native-hidden .scb .scb-it:nth-child(5) .n { ' +
+    '  visibility: hidden !important; animation: none !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
@@ -2976,15 +2995,25 @@ if (QS.get('solo') === '1') {
      container-only native Liquid Glass at the pill's live rect; present
      while armed, released by omission from the next glasschrome post.
      mode picks the material: 'glass' (.regular) or 'portal' (red tint). */
-  function scrubEl(off) {
+  function scrubEl(off, frac) {
     var el = document.querySelector('.nav .ttl.scrub');
     if (!el) return null;
     var r = el.getBoundingClientRect();
     if (!r.width || !r.height) return null;
-    return { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+    var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
       r: parseFloat(getComputedStyle(el).borderRadius) || r.height / 2,
       mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
+    /* phase 2: the twin draws the center date itself — ladder labels +
+       center index (int on anchor posts, fractional on track frames) */
+    if (window.DSScrubState) {
+      var st = DSScrubState();
+      e.dates = st.dates;
+      e.center = frac ? st.disp : st.center;
+    }
+    return e;
   }
+  /* a ladder re-window mid-scrub posts fresh dates/center to the twin */
+  window.DSScrubRepost = function () { if (!layerUp) report(); };
   function report() {
     if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     prehide();
@@ -3205,7 +3234,7 @@ if (QS.get('solo') === '1') {
          ride live SIZE changes (the scrub grow morph), not just position */
       els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height });
     });
-    var se = scrubEl(off);
+    var se = scrubEl(off, true);   /* track frames carry the FRACTIONAL center */
     if (se) els.push(se);
     if (!els.length) return;
     try {
