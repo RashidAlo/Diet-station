@@ -239,28 +239,38 @@
     <p class="spec">Drag tracking kills the transition (<code>.drag</code> class); release
       snaps to the nearest state on the house spring. Expanding snap points: rest height and
       full screen (top inset ~10px). All thresholds below.</p>
-    <p class="spec"><b>Scroll-driven expanding</b> (reference: the meal selection screen,
-      settled at &middot;132 — Rashid named the model himself: <b>Apple's App Store article
-      sheet</b>). The gesture EXPANDS the sheet while the content <b>holds still inside
-      it</b>; the scroll takes over only once docked — so the speed under the thumb never
-      changes. Web recipe: frame <code>y = gap − s</code>, radius riding y, and a spacer pad
-      <code>--dock-pad = min(s, gap)</code> growing 1:1 through the attach to absorb the
-      sheet's travel (headroom pinned once at init, never tracking animated chrome).
-      Measured: uniform steps before and after the dock, zero discontinuity — <i>taken on
-      the pre-fix shell (bounce gate still present); a retest on the corrected shell is
-      pending</i>. Accepted trade: fullscreen rest carries ~46pt of clear air above the
-      first category — constant velocity + never-cropped forces it.
-      <b>Status: model ADOPTED; resolution PENDING</b> — the shell retest and Rashid's
-      device verdict decide whether this chapter closes or the parked nav-dock lever
-      (9am: titles dock into the bar, no position:sticky) gets played.</p>
-    <p class="spec"><b>Two laws for any scroll-driven sheet:</b> (1) <b>never write
-      scrollTop from inside a scroll handler</b> — it cancels WKWebView's deceleration
-      outright; the sheet is a pure readout of the scroll. (2) if the scroll container
-      lives <b>inside the transformed sheet</b>, content speed under the finger is the SUM
-      of both motions — the spacer must absorb the sheet's travel or the user feels a speed
-      change at the dock. Rejected along the way (six variants, recorded so nobody re-walks
-      them): two-detent, detent-settle glide, K=2 frame, eased attach, always-riding pad,
-      day-pad fold.</p>
+    <p class="spec"><b>Scroll-driven expanding</b> — settled at &middot;133 by full
+      retraction to &middot;107, the last state before the scroll was touched. Reference:
+      the meal selection screen. The mechanism is the <b>nav-dock</b>:
+      the sheet rides the scroll (<code>y = gap − s</code>, radius <code>min(44, y+8)</code>,
+      transform written unconditionally), headroom is plain constant scroller
+      <code>padding-top</code> — no spacer, no riding pads — category heads are
+      <b>static</b>, and the active category's title <b>docks into the nav bar</b>, where
+      the incoming section pushes it out over a 34px scroll-linked handoff while passed
+      heads hide. The docked title lives in the nav, <i>outside</i> the scroller, so it
+      cannot jitter. One swipe attaches, docks and keeps scrolling; the reverse mirrors
+      it.</p>
+    <p class="spec"><b>Category &ldquo;stickiness&rdquo; here means the dock, not
+      <code>position: sticky</code>.</b> Real sticky heads were tried and retracted along
+      with everything else built on them. Their WebKit constraints — headroom must be a
+      spacer element because the scroll container's padding offsets sticky; a transformed
+      ancestor miscomputes sticky, so the transform had to be removed rather than zeroed at
+      rest — are <b>historical</b>, recorded for the next time sticky is proposed, not live
+      system rules.</p>
+    <p class="spec"><b>One law:</b> never write <code>scrollTop</code> from inside a scroll
+      handler — it cancels WKWebView's deceleration outright. The sheet is a pure readout of
+      the scroll.<br>
+      <b>One known property, deliberately left alone:</b> the scroll container lives inside
+      the transformed sheet, so content speed under the finger is the sum of both motions
+      (measured 1.17px per scrolled px through the attach, 0.70 after). Neutralizing that —
+      holding content still inside the expanding sheet for a dead-constant 1:1 — was built,
+      measured clean, and <b>rejected on feel</b>. Know it; don't "fix" it without a
+      verdict.</p>
+    <p class="spec"><b>Rejected, recorded so nobody re-walks them</b> (eight): two-detent,
+      detent-settle glide, K=2 frame, eased attach, always-riding pad, day-pad fold, the
+      App Store article-sheet model (content held still inside the expanding sheet), and
+      the whole <code>position: sticky</code> heads era with its spacer and
+      transform-removal machinery.</p>
     <p class="spec"><b>Causes were concurrent, not ranked.</b> Web and shell defects ran at
       the same time and the split between them is <i>not yet known</i>: web — a chrome flip
       hardcoded at half the gap (re-anchoring native twins mid-rise, invisible outside a
@@ -274,6 +284,22 @@
       <b>a scroll that &ldquo;sticks&rdquo; is as likely to be the host mutating the scroll
       view mid-gesture as it is the page's math</b> — never re-seat subviews or re-assert
       physics on a live scroll view.</p>
+
+    <h3>What this cost, and the rule it bought</h3>
+    <p class="desc" style="font-size:13.5px">Eight rejected mechanisms over two days, five
+      &ldquo;still bad&rdquo; verdicts, and a full retraction to the state before any of it
+      began. Every candidate measured <i>clean</i> on device — constant velocity, no
+      discontinuity, uniform frame steps — and every one was still wrong to the person using
+      it. The instruments proved the properties we chose to measure; they never proved the
+      thing he was feeling.</p>
+    <p class="desc" style="font-size:13.5px; background:var(--red-soft); border-radius:12px;
+      padding:14px 16px; color:#7F1D1D; max-width:none">
+      <b style="font-family:'Urbane Rounded',sans-serif">When a measurement says fixed and
+      the person says broken, the person is right and the metric is wrong.</b>
+      Motion is judged by the hand, not the trace. Instrument to <i>locate</i> a defect once
+      someone reports it — never to argue that it isn't there, and never as evidence a feel
+      is solved. And when a build is named as good, the fastest honest path is to restore
+      it, not to reconstruct what made it good.</p>
   </section>
 
   <section class="card">
