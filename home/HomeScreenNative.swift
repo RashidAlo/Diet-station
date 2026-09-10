@@ -2405,10 +2405,16 @@ struct DSGaugeGlassView: View {
             warnCenter
                 .opacity(model.state == "warn" ? 1 : 0)
         }
-        .overlay(alignment: .trailing) { dockView }
         // THE one glass — it never unmounts, never swaps for a web bar:
         // every state above is a crossfade INSIDE the same material
         .glassEffect(.regular, in: .capsule)
+        // TOUCH LAW (system/platform.html, 2026-09-10): a display-only twin
+        // must never create a dead zone over scrollable content — the bar
+        // and its glass pass every touch through to the page. The dock is
+        // the ONE real button, so it is layered ON TOP of this disable
+        // (same draw order as before: glass is a background, dock above it).
+        .allowsHitTesting(false)
+        .overlay(alignment: .trailing) { dockView }
         .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
         .animation(.easeOut(duration: 0.25), value: model.state)
         .modifier(DSShakeEffect(travel: shakes))
