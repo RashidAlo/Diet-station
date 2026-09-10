@@ -88,8 +88,19 @@
     width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
 
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
-    background: #a6a6a6; }
+    background: transparent; }
   body.desktop .phone { border-radius: 46px; box-shadow: 0 0 0 1.5px #111114; }
+
+  /* THE OVERLAY RULE (lab standard, Rashid 2026-09-10): the scrim never
+     moves — it DISSOLVES in place; only the sheet travels (spring below).
+     Standalone: the gray mock backdrop dissolves in. Solo (native cover over
+     the live home): a true scrim dissolves over the transparent webview.
+     Embed (web summon): the HOST's veil dissolves — ours stays hidden. */
+  .backdrop { position: absolute; inset: 0; background: #a6a6a6; opacity: 0;
+    transition: opacity .32s ease; pointer-events: none; }
+  html.bd-on .backdrop { opacity: 1; }
+  html.embed .backdrop { display: none; }
+  html.solo .backdrop { display: block; background: rgba(11,14,18,.45); }
 
   .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
     width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
@@ -98,12 +109,12 @@
 
   /* ================= the sign-in sheet (Figma 16360:78682) ================= */
   .sheet { position: absolute; left: 0; bottom: 0; width: 402px; height: 782px;
-    border-radius: 38px 38px 0 0; overflow: hidden; background: #ffffff; }
-  /* embedded in the app launcher: hub/home shows through, sheet springs up */
+    border-radius: 38px 38px 0 0; overflow: hidden; background: #ffffff;
+    transition: transform .55s cubic-bezier(.32,.72,0,1); }   /* house spring — every boot */
+  html.sheet-enter .sheet { transform: translateY(103%); }
+  /* embedded/solo: hub, home, or the native cover shows through */
   html.embed, html.embed body, html.embed #stage, html.embed .device,
   html.embed .phone { background: transparent !important; }
-  html.embed .sheet { transition: transform .55s cubic-bezier(.32,.72,0,1); }
-  html.embed.sheet-enter .sheet { transform: translateY(103%); }
 
   /* --- sheet header (Top Page Navigation) --- */
   .topnav { position: absolute; left: 0; right: 0; top: 0; height: 72px; z-index: 20;
@@ -278,11 +289,11 @@
   .fid-label { font: 500 14px/1 -apple-system, system-ui, sans-serif; color: #fff; }
 
   /* --- branded later-sprint toast (password path) --- */
-  .sprint-toast { position: absolute; left: 50%; bottom: 340px; transform: translate(-50%, 16px);
+  .sprint-toast { position: absolute; left: 50%; bottom: 340px; transform: translate(-50%, 0);
     z-index: 55; background: #0b0e12; color: #f9f9f9; border-radius: 16px;
     padding: 14px 20px; width: 300px; text-align: center;
-    opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease; }
-  .sprint-toast.on { opacity: 1; transform: translate(-50%, 0); }
+    opacity: 0; pointer-events: none; transition: opacity .25s ease; }   /* dissolve only — the rule */
+  .sprint-toast.on { opacity: 1; }
   .sprint-toast .st-k { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
     text-transform: uppercase; color: #ED1C24; margin-bottom: 4px; }
   .sprint-toast .st-t { font: 500 14px/20px 'Urbane Rounded', sans-serif; }
@@ -290,6 +301,7 @@
   /* mobile: controls live in the triple-tap lab menu; no devbar */
   .devbar { display: none !important; }
 </style>
+<script>document.documentElement.classList.add('sheet-enter');</script>
 </head>
 <body>
 
@@ -351,6 +363,7 @@
 <div id="stage">
   <div class="device" id="device">
     <div class="phone" id="phone">
+      <div class="backdrop"></div>
       <div class="sheet" id="sheet">
 
         <div class="topnav">
@@ -684,12 +697,15 @@ document.getElementById('btnPwd').addEventListener('click', () => {
 
 /* ---------------- close / exit + success hand-back to home ---------------- */
 window.DS_EMBED = /[?&]embed=1/.test(location.search);
+window.DS_SOLO = /[?&]solo=1/.test(location.search);
 function exitFlow() {
-  if (window.DS_EMBED) {
-    document.documentElement.classList.add('sheet-enter');
+  /* the rule, reversed: sheet slides down, scrim dissolves out in place */
+  document.documentElement.classList.add('sheet-enter');
+  document.documentElement.classList.remove('bd-on');
+  if (window.DS_EMBED || window.DS_SOLO) {
     setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 420);
   } else {
-    location.href = '../';
+    setTimeout(() => { location.href = '../'; }, 430);
   }
 }
 document.getElementById('closeBtn').addEventListener('click', exitFlow);
@@ -810,11 +826,18 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', fit)
 addEventListener('orientationchange', () => setTimeout(fit, 250));
 fit();
 
-/* app-launcher embed: present as a sheet over the untouched hub/home */
-if (window.DS_EMBED) {
-  document.documentElement.classList.add('embed', 'sheet-enter');
-  setTimeout(() => document.documentElement.classList.remove('sheet-enter'), 90);
-}
+/* THE OVERLAY RULE entrance — identical on every presentation:
+   scrim dissolves in place, sheet springs up. sheet-enter was set at parse
+   (head script) so the first paint is off-screen. Hosts:
+   embed=1 (hub/home web summon: host veil dissolves, ours hidden),
+   solo=1 (native cover: our scrim dissolves over the live home),
+   standalone (the gray mock backdrop dissolves). */
+if (window.DS_EMBED || window.DS_SOLO) document.documentElement.classList.add('embed');
+if (window.DS_SOLO) document.documentElement.classList.add('solo');
+setTimeout(() => {
+  document.documentElement.classList.remove('sheet-enter');
+  document.documentElement.classList.add('bd-on');
+}, 90);
 </script>
 <script>
 /* Lab-menu access workaround (2026-09-08 pattern from rewards): lab-shell's
