@@ -157,11 +157,11 @@
   /* the docked extension IS the cat-dock band: it brings its own white,
      so nothing animates height. Appears atomically with the title swap
      (the head hides the same instant); fades out on undock. */
-  .cat-dock { position: absolute; left: 0; right: 0;
-    top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
-    overflow: hidden; pointer-events: none; background: #ffffff;
-    opacity: 0; transition: opacity .15s ease; }
-  .nav.docked .cat-dock { opacity: 1; transition: opacity 0s; }
+  /* RETIRED (·113): the docked band is gone — the JS-sticky pinned head
+     carries the title on its own white slab. The empty opaque band was
+     invisibly sitting over the pin line and shaved the title's top half
+     (Rashid's device). Markup kept; never shown. */
+  .cat-dock { display: none; }
   .dock-row { height: 34px; display: flex; align-items: center;
     justify-content: space-between; padding: 0 20px; }
   .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
@@ -2469,7 +2469,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 112';
+const BUILD = 'build 2026-09-10 · 113';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
