@@ -247,7 +247,7 @@
      red; neighbours faded numbers). Crossing a month boundary flips the
      month. A full backward pull snaps home and latches. */
   .nav .ttl { top: calc(var(--top-pad) + 20px); }   /* explicit: same optical line as now */
-  .nav .ttl.scrub { width: 224px; height: 44px; padding: 0;
+  .nav .ttl.scrub { width: 152px; height: 44px; padding: 0;
     top: calc(var(--top-pad) + 9px);   /* THE controls' top line */
     border-radius: 22px; overflow: hidden;
     transform: translateX(-50%);
@@ -262,17 +262,26 @@
   .nav .ttl.scrub .scb { display: flex; align-items: center; width: 240px; flex: none; }
   .scb .scb-it { width: 48px; height: 44px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 0; }
-  .scb .scb-it .m { font: 600 8.5px/10px 'Urbane Rounded', sans-serif;
-    letter-spacing: .04em; text-transform: uppercase; opacity: .55; }
-  .scb .scb-it .n { font: 600 18px/20px 'Urbane Rounded', sans-serif; }
+  /* hierarchy (Rashid): month TINY on top (it rarely changes), the number,
+     then the DAY NAME at the bottom — all inside the 44pt pill */
+  .scb .scb-it .m { font: 600 8px/9px 'Urbane Rounded', sans-serif;
+    letter-spacing: .05em; text-transform: uppercase; opacity: .5; }
+  .scb .scb-it .n { font: 600 16px/18px 'Urbane Rounded', sans-serif; }
+  .scb .scb-it .d { font: 500 8px/10px 'Urbane Rounded', sans-serif; opacity: .55;
+    max-width: 47px; overflow: hidden; }
   /* the day you're on reads RED — the tactile center */
   .scb .scb-it:nth-child(3) .n { color: #ed1c24; }
   /* staggered fade: center full, neighbours dim, edges whispers */
   .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(5) { opacity: .14; }
   .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(4) { opacity: .42; }
-  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 15px; }
-  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 13px; }
-  .scb.slide { transition: transform .075s ease-out; }
+  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 14px; }
+  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 12px; }
+  /* wheel feel (Rashid): each step lands with a springy overshoot, and
+     the center figures pop as the day snaps in */
+  .scb.slide { transition: transform .16s cubic-bezier(.25, 1.55, .45, 1); }
+  .scb .scb-it:nth-child(3) .n { animation: scbpop .18s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes scbpop { 0% { transform: scale(.82); } 60% { transform: scale(1.1); }
+    100% { transform: scale(1); } }
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
   @keyframes scbsnap { 0% { transform: translateX(-30px); opacity: .4; }
     100% { transform: translateX(0); opacity: 1; } }
@@ -1797,10 +1806,13 @@ confirmBtn.onclick = () => {
   function itemHTML(idx, center) {
     if (idx < 0 || idx > maxIdx) return '<div class="scb-it"></div>';
     const d = dateFor(idx);
-    /* the month lives ON the center day and flips at the boundary */
+    /* center hierarchy: month tiny on top (flips at the boundary), the
+       number, the DAY NAME at the bottom */
     return '<div class="scb-it">' +
       (center ? '<span class="m">' + MONS[d.getMonth()] + '</span>' : '') +
-      '<span class="n">' + d.getDate() + '</span></div>';
+      '<span class="n">' + d.getDate() + '</span>' +
+      (center ? '<span class="d">' + d.toLocaleDateString('en', { weekday: 'long' }) + '</span>' : '') +
+      '</div>';
   }
   function paintStrip(idx) {
     let h = '';
@@ -1819,7 +1831,7 @@ confirmBtn.onclick = () => {
     void strip.offsetWidth;
     strip.classList.add('slide');
     strip.style.transform = '';
-    slideT = setTimeout(() => strip.classList.remove('slide'), 80);
+    slideT = setTimeout(() => strip.classList.remove('slide'), 170);
   }
   function settleStrip(idx) {
     /* kill any in-flight slide so it can't fight a snap */
@@ -1881,7 +1893,7 @@ confirmBtn.onclick = () => {
     scrubIdx += dir;                       /* one beat per step, wheel-like */
     anchorX -= dir * STEP;                 /* re-anchor so holds keep stepping */
     slideStep(scrubIdx, dir);
-    vibrate(6);
+    vibrate(8);              /* the snap-into-a-day tick */
   });
   const endScrub = () => {
     clearTimeout(holdT);
@@ -2272,7 +2284,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 99';
+const BUILD = 'build 2026-09-10 · 100';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
