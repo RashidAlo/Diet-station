@@ -283,7 +283,7 @@
      doesn't). ALL glass (tint, backdrop blur, lens, sheen, vignette)
      lives on .glassbg — a SIBLING below the strip — so no renderer can
      ever blur the dates. The ttl itself carries only geometry+shadows. */
-  .nav .ttl.forming, .nav .ttl.scrub { padding: 0; overflow: hidden;
+  .nav .ttl.forming, .nav .ttl.scrub, .nav .ttl.unforming { padding: 0; overflow: hidden;
     transform: translateX(-50%);
     box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.62),
       inset 0 -1px 1.2px rgba(255,255,255,.28),
@@ -291,12 +291,33 @@
       0 10px 28px -12px rgba(0,0,0,.34),
       0 2px 8px -5px rgba(0,0,0,.18); }
   .ttl .glassbg { display: none; }
-  .nav .ttl.forming .glassbg, .nav .ttl.scrub .glassbg { display: block;
+  .nav .ttl.forming .glassbg, .nav .ttl.scrub .glassbg,
+  .nav .ttl.unforming .glassbg { display: block;
     position: absolute; inset: 0; border-radius: inherit; z-index: 0;
     pointer-events: none;
     background: rgba(255,255,255,.12);
     -webkit-backdrop-filter: blur(3px) saturate(190%);
     backdrop-filter: blur(3px) saturate(190%); }
+  /* EXIT stage 1 (Rashid: "it exits abruptly"). The old exit dropped
+     .scrub, which did TWO abrupt things at once: the width fell back to
+     auto (auto never transitions, so the pill snapped) and the native
+     twin — which only tracks while .scrub exists — vanished the same
+     frame. .closing keeps .scrub ON and overrides the geometry instead,
+     so the capsule COLLAPSES home on a spring and the twin rides the
+     shrinking rect all the way down with it. Mirror image of the grow. */
+  .nav .ttl.scrub.closing { height: 44px; top: calc(var(--top-pad) + 9px);
+    border-radius: 22px; width: var(--close-w, 120px) !important;
+    transition: width .44s cubic-bezier(.32,1.24,.4,1),
+      height .44s cubic-bezier(.32,1.24,.4,1),
+      top .44s cubic-bezier(.32,1.24,.4,1),
+      border-radius .44s cubic-bezier(.32,1.24,.4,1),
+      background .34s ease, box-shadow .34s ease; }
+  /* the glass keeps its scale through the collapse, then eases out over
+     the final deflate so the pill doesn't pop off the label */
+  .nav .ttl.unforming .glassbg { opacity: 0; transition: opacity .3s ease .04s; }
+  /* the deflating pill keeps the label's own padding so the text doesn't
+     squeeze on the way home, and sheds the pill shadow as the glass goes */
+  .nav .ttl.unforming { box-shadow: none; padding: 0 12px; }
   /* stage 1: the neighbours' own container, formed around the label */
   .nav .ttl.forming { height: 44px; top: calc(var(--top-pad) + 9px);
     border-radius: 22px;
@@ -2102,16 +2123,36 @@ confirmBtn.onclick = () => {
     strip.style.transform = 'translateX(' + (-(disp - winC) * SLOT).toFixed(2) + 'px)';
   }
   const navEl = document.querySelector('.nav');
-  let unformT = null;
-  function unform() {
-    /* .unforming carries the reverse morph transitions (the base .ttl
-       transitions color only, so sheet drags can't make it chase) */
-    ttl.classList.remove('forming');
+  let unformT = null, closeT = null;
+  let formW0 = 0, formH0 = 0;          /* the label's own size, pre-morph */
+  /* stage 2 of the exit: the control pill deflates back into the plain
+     label. Explicit px both ends — auto never transitions, which is what
+     made the old exit snap. */
+  function deflate() {
+    clearTimeout(closeT); clearTimeout(unformT);
+    ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
     ttl.classList.add('unforming');
-    clearTimeout(unformT);
-    unformT = setTimeout(() => ttl.classList.remove('unforming'), 420);
-    ttl.style.width = '';
+    ttl.style.removeProperty('--close-w');
+    if (formW0) { ttl.style.width = formW0 + 'px'; ttl.style.height = formH0 + 'px'; }
+    unformT = setTimeout(() => {
+      ttl.classList.remove('unforming');
+      ttl.style.width = ''; ttl.style.height = '';
+    }, 360);
+  }
+  function unform() {
+    clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
+    if (ttl.classList.contains('scrub')) {
+      /* ARMED exit: collapse the full capsule home FIRST, with .scrub still
+         on so the native twin keeps tracking it, then deflate. The twin is
+         released by the omit-post inside DSScrubChrome(false), timed to
+         land as the collapse finishes rather than at the first frame. */
+      ttl.style.setProperty('--close-w', Math.max(96, formW0 + 26) + 'px');
+      ttl.classList.add('closing');
+      closeT = setTimeout(deflate, 380);
+    } else {
+      deflate();                        /* early lift: never armed, just undo */
+    }
     window.DSScrubChrome && DSScrubChrome(false);   /* twins return */
   }
   ttl.addEventListener('pointerdown', e => {
@@ -2121,9 +2162,12 @@ confirmBtn.onclick = () => {
        the label swells into a CONTROL-SIZED glass pill around itself —
        width pinned to its current px first so the inflate animates
        (auto -> px never transitions). Neighbours stay put for now. */
-    clearTimeout(unformT);
-    ttl.classList.remove('unforming');   /* rapid re-grab: fresh morph */
+    clearTimeout(unformT); clearTimeout(closeT);
+    ttl.classList.remove('unforming', 'closing');   /* rapid re-grab: fresh morph */
+    ttl.style.width = ''; ttl.style.height = '';
+    void ttl.offsetWidth;                /* re-measure the bare label */
     const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
+    formW0 = w0; formH0 = h0;            /* the size the exit comes home to */
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;
     /* A/B: portal mode reveals the red layer when the pill arms */
@@ -2179,10 +2223,12 @@ confirmBtn.onclick = () => {
     scrubIdx = Math.round(target);
     paintStrip(scrubIdx);
     strip.style.transform = '';
-    /* ds-native-hidden: a confirmed scrub twin suppressed the web glass —
-       the twin releases with the next report, so the web pill's own look
-       must return for the next gesture */
-    ttl.classList.remove('scrub', 'portal', 'ds-native-hidden');
+    /* the scrub/portal/ds-native-hidden classes are NOT torn off here —
+       unform() carries them through the collapse and drops them in
+       deflate(). Removing them on this frame is what used to end the
+       gesture twice over: the pill snapped to auto width AND the twin
+       lost its tracking element, so the native glass blinked out on top
+       of a web pill that had already jumped home. */
     if (scrubIdx !== dayIdx) {
       turnDay(scrubIdx > dayIdx ? 1 : -1, scrubIdx);   /* ONE commit turn */
       vibrate(12);
@@ -2588,7 +2634,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 134 (pre-3pm scroll + day offset)';
+const BUILD = 'build 2026-09-11 · 135 (scrub entry/exit)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2910,11 +2956,15 @@ if (QS.get('solo') === '1') {
     '  box-shadow: none !important; } ' +
     '.nav .ttl.scrub.ds-native-hidden .glassbg { display: none !important; } ' +
     '.nav .ttl.scrub.ds-native-hidden::before, .nav .ttl.scrub.ds-native-hidden::after { display: none !important; } ' +
-    /* PORTAL under the native twin: web keeps red + dates + vignette,
-       native adds the lensing — only the web lens (::before) yields */
+    /* PORTAL under the native twin: the web keeps the RED and the vignette
+       (the native capsule supplies neither) but must not also be GLASS —
+       a backdrop-filtered web layer under a Liquid Glass twin is two
+       lenses stacked on the same rect, which is Rashid's "double liquid
+       glass". Exactly one layer blurs, and it is the native one. */
     '.nav .ttl.scrub.portal.ds-native-hidden { ' +
     '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
-    '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; } ' +
+    '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; ' +
+    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
     '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
     /* phase 3 yield: the twin draws the ENTIRE ladder natively — the
        whole web strip retires under a confirm (web ghosts echoed under
@@ -3049,6 +3099,7 @@ if (QS.get('solo') === '1') {
     /* scrub confirm applies in ANY sheet state — the twin only exists
        while armed, and the web pill must yield its glass immediately */
     if (ids.indexOf('scrub') >= 0) {
+      scrubConfirmed = true;
       var sc = document.querySelector('.nav .ttl.scrub');
       if (sc) sc.classList.add('ds-native-hidden');
     }
@@ -3083,14 +3134,34 @@ if (QS.get('solo') === '1') {
     };
     scrubRaf = requestAnimationFrame(step);
   }
+  var scrubConfirmed = false, scrubFbT = null;
   window.DSScrubChrome = function (on) {
-    trackBurst(560);           /* twins ride the push / return; scrub rides the grow */
+    trackBurst(760);           /* twins ride the push / return; scrub rides the grow AND the collapse */
     if (on) {
       report();                /* anchor post WITH the scrub twin = it appears */
+      /* Hand the glass over on the SAME frame we ask for the twin. Waiting
+         for the shell's confirm leaves a window where the web pill and the
+         arriving native capsule are both drawn — two glasses on one rect,
+         the entry half of Rashid's "double liquid glass". Only pre-empt
+         when this shell has confirmed chrome before, and hand the look
+         straight back if the scrub twin never lands. */
+      if (nativeConfirmed) {
+        scrubConfirmed = false;
+        var sc = document.querySelector('.nav .ttl.scrub');
+        if (sc) sc.classList.add('ds-native-hidden');
+        clearTimeout(scrubFbT);
+        scrubFbT = setTimeout(function () {
+          if (scrubConfirmed) return;
+          var el = document.querySelector('.nav .ttl.scrub');
+          if (el) el.classList.remove('ds-native-hidden');
+        }, 320);
+      }
     } else {
-      /* release: the class is gone by the next tick, so this report omits
-         the scrub entry — the shell releases the twin; close/dual re-anchor */
-      setTimeout(function () { report(); }, 600);
+      /* release: .scrub survives the collapse now, so the omit-post has to
+         wait for deflate() to drop it — time it to land as the capsule
+         finishes coming home instead of on the first frame of the exit */
+      clearTimeout(scrubFbT);
+      setTimeout(function () { report(); }, 420);
     }
   };
   addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
