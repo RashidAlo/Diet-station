@@ -1953,7 +1953,9 @@ final class FlowPreloader {
                                              on: (e["on"] as? Bool) ?? false,
                                              mode: e["mode"] as? String,
                                              dates: e["dates"] as? [String],
-                                             center: (e["center"] as? NSNumber)?.doubleValue))
+                                             center: (e["center"] as? NSNumber)?.doubleValue,
+                                             monthLabel: e["monthLabel"] as? String,
+                                             dayName: e["dayName"] as? String))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
@@ -1963,13 +1965,32 @@ final class FlowPreloader {
                 DispatchQueue.main.async {
                     self.chrome.frame = frame
                     // chrome v2: twins persist and TRAVEL — a re-report after
-                    // a dock flip springs the same glass to its new geometry
-                    withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
+                    // a dock flip springs the same glass to its new geometry.
+                    // Seam killer (scrub phase 3): a re-arm whose rects are ALL
+                    // unchanged is a pure MODEL swap (fresh dates/center at an
+                    // integer crossing) — springing it would tween the ladder
+                    // offset jump against the re-anchored content and wobble
+                    let sameRects = !els.isEmpty &&
+                        els.count == self.chrome.els.count &&
+                        els.allSatisfy { new in
+                            self.chrome.els.first(where: { $0.id == new.id })
+                                .map { $0.x == new.x && $0.y == new.y &&
+                                       $0.w == new.w && $0.h == new.h } ?? false
+                        }
+                    let apply = {
                         self.chrome.els = els
                         self.chrome.bar = bar
                         self.chrome.flow = flow
                         self.chrome.surface = surface
                         self.chrome.mode = mode
+                    }
+                    if sameRects {
+                        var tx = Transaction()
+                        tx.disablesAnimations = true
+                        withTransaction(tx, apply)
+                    } else {
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.8),
+                                      apply)
                     }
                     if !els.isEmpty, let wv = self.chrome.webView {
                         let ids = els.map { "'\($0.id)'" }.joined(separator: ",")
@@ -2020,7 +2041,9 @@ final class FlowPreloader {
                                                  w: d?.w ?? el.w, h: d?.h ?? el.h,
                                                  r: el.r, on: el.on, mode: el.mode,
                                                  dates: el.dates,
-                                                 center: ctr[el.id] ?? el.center)
+                                                 center: ctr[el.id] ?? el.center,
+                                                 monthLabel: el.monthLabel,
+                                                 dayName: el.dayName)
                         }
                     }
                 }
