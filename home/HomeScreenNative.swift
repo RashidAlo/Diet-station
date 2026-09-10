@@ -1961,10 +1961,15 @@ final class FlowPreloader {
                 let flow = body["flow"] as? String
                 let surface = body["surface"] as? String
                 let mode = body["mode"] as? String
-                // instant:true — apply this post with NO animation, so an
-                // omitted twin is torn down on THIS frame instead of fading
-                // out on the 0.42 spring. Lets a page own its own exit in
-                // CSS and guarantee exactly one glass on screen per frame
+                // instant:true — MATCH A FLAG, NOT A CURVE
+                // (system/platform.html): whichever side owns a motion must
+                // expose a synchronisation primitive; the far side never
+                // times against it. THIS IS THAT PRIMITIVE — don't remove or
+                // narrow it without reading the rule. Applies the post with
+                // NO animation, so an omitted twin is torn down on THIS
+                // frame instead of fading out on the 0.42 spring. Lets a
+                // page own its own exit in CSS and guarantee exactly one
+                // glass on screen per frame
                 // (C&M: a capsule is a backdrop-filter, so any frame where
                 // it overlaps the returned web label reads as double glass).
                 // Scope is the WHOLE post — send it on a release/deflate
