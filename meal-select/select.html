@@ -306,8 +306,8 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 56px; top: calc(var(--top-pad) + 3px);
-    border-radius: 28px;
+  .nav .ttl.scrub { height: 64px; top: calc(var(--top-pad) - 1px);
+    border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
       box-shadow .3s ease, width .48s cubic-bezier(.3,1.22,.36,1),
@@ -338,9 +338,18 @@
     position: relative; z-index: 1;
     animation: scbin .36s cubic-bezier(.3,1.2,.4,1); }   /* dates ride the grow in */
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
-  .scb .scb-it { width: 48px; height: 56px; flex: none; display: flex;
+  .scb .scb-it { width: 48px; height: 64px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    padding: 8px 0; box-sizing: border-box; }   /* air above and below the stack */
+    padding: 3px 0; box-sizing: border-box; }   /* air above and below the stack */
+  /* Safari-tab-group-switcher grammar (Rashid's reference): the selection
+     reads as a LOZENGE the held finger owns — ours holds center while the
+     dates travel through it. Glass mode gets the soft white capsule;
+     portal keeps its red Figma tile (defined below). */
+  .nav .ttl.scrub:not(.portal) .scb .scb-it:nth-child(5) .n {
+    width: 34px; height: 34px; flex: none; display: flex; align-items: center;
+    justify-content: center; border-radius: 10px;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 1px 5px rgba(0,0,0,.14), inset 0 0 0 .6px rgba(0,0,0,.05); }
   /* hierarchy (Rashid): month TINY on top (it rarely changes), the number,
      then the DAY NAME at the bottom */
   .scb .scb-it .m { font: 600 8.5px/10px 'Urbane Rounded', sans-serif;
@@ -2564,7 +2573,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 124';
+const BUILD = 'build 2026-09-10 · 125';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
