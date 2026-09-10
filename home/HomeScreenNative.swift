@@ -1970,12 +1970,23 @@ final class FlowPreloader {
                     // unchanged is a pure MODEL swap (fresh dates/center at an
                     // integer crossing) — springing it would tween the ladder
                     // offset jump against the re-anchored content and wobble
+                    // ...and the same transaction kills the REST-REPORT
+                    // DRIFT: after a tracked gesture the rest post re-anchors
+                    // the twin to the canonical top line, and springing a
+                    // sub-10pt correction reads as a second motion once the
+                    // finger has stopped (C&M measured ~9pt over ~0.5s — the
+                    // 0.42s spring — and Rashid calls that "multistep").
+                    // Anything within SNAP_EPS applies instantly; real
+                    // re-anchoring (dock flips, sheet transitions) still springs.
+                    let SNAP_EPS: CGFloat = 12
                     let sameRects = !els.isEmpty &&
                         els.count == self.chrome.els.count &&
                         els.allSatisfy { new in
                             self.chrome.els.first(where: { $0.id == new.id })
-                                .map { $0.x == new.x && $0.y == new.y &&
-                                       $0.w == new.w && $0.h == new.h } ?? false
+                                .map { abs($0.x - new.x) <= SNAP_EPS &&
+                                       abs($0.y - new.y) <= SNAP_EPS &&
+                                       abs($0.w - new.w) <= SNAP_EPS &&
+                                       abs($0.h - new.h) <= SNAP_EPS } ?? false
                         }
                     let apply = {
                         self.chrome.els = els
