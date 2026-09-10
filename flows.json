@@ -317,6 +317,214 @@
       ]
     },
     {
+      "id": "rewards",
+      "title": "Vouchers & Loyalty",
+      "status": "in-progress",
+      "updated": "2026-09-03",
+      "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. The perforation is punched holes: pull the stub and they pop one by one with an elastic recoil and a haptic tick (Android), each ejecting its punched-out disc, until the tab rips free with confetti and heals into the redeemed card with the promo code. Desktop opens the full playground; mobile is fullscreen.",
+      "path": "rewards/",
+      "handoff": {
+        "Design source": "Figma · Diet Station 4.0 · Rewards states (section 17137-76380; Gold frame 17137-75698)",
+        "Level themes": "Sheet gradients — Bronze #D5BB9F→#C9A682 (to bottom) · Silver #E5E7EB→#D1D5DB (to bottom) · Gold #E4A70F→#FFBC2A (to top) · VIP #270F0F→#0F0E0D (to bottom)",
+        "Text colors": "Gold/VIP: heading #F9F9F9, body white · Bronze: heading #0B0E12, secondary #5C3F21 · Silver: heading #0B0E12, secondary #7A7A7A",
+        "Badge pills": "No visible ring (the Figma renders show the spec'd stroke blends into the fill): 24pt pill, per-tier 45/55 two-stop gradient, soft top bevel (inset 0 1.5 1 rgba(255,255,255,.35)) + the Figma drop-shadow stack. Text: Gold #C59300 · Bronze rgba(76,64,51,.42) · Silver rgba(82,82,91,.46) · VIP white.",
+        "Gesture": "Pull stub right · travel = 96px·tanh(drag/90) elastic resistance · tears at 62px · below threshold springs back with overshoot wobble · haptic navigator.vibrate(25) where supported",
+        "Redeemed state": "Tab rips free with white confetti; the card heals full-width (clip-path inset, .55s) into: 'Redeemed' + sub-line + dashed promo-code chip, with a white Checkout CTA on the right (white pill, #ED1C24 text, radius 60, 42pt, gel press). No check mark. The theme-tinted shadow resizes with the card (width transition — never clip-path, which crops outer box-shadows).",
+        "Layout": "402pt design width · sheet 806pt, top radius 38 · vouchers 368×125 radius 24 · stub 90pt · perforation 110pt dashed 8/8",
+        "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder)",
+        "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()",
+        "Coupon material": "Exact Figma fill stack (component 17137-75573): per-theme tint (red rgba(237,28,36,.35), gold rgba(240,168,60,.35), others none) + rgba(173,173,173,.12) plus-lighter (Silver .06) blending with the SHEET, + on Red and VIP the voucher ambient shadow 0 0 12 rgba(56,64,74,.12). CRITICAL: the shadow must be an outer box-shadow on a transparent underlay — a CSS filter/drop-shadow on the coupon creates a stacking context that isolates the plus-lighter blend and washes the fills (this exact bug shipped twice). Optional frost dial 0-30px, default 0.",
+        "Viewport behavior": "Desktop (>500px, fine pointer): sidebar + framed device. Mobile: fullscreen fit, sidebar hidden.",
+        "Rip mechanic": "Punched-hole perforation with edge notches: two half-moon notches (r7) bitten into the top and bottom edges at the seam (x=243) — the real-coupon grip — with 7 punched holes (r3, y 18..107) evenly between, all true cutouts via one even-odd SVG alpha mask so each splits into half-moons as the tab moves. Tab peels around the topmost intact hole; holes pop top-down at staggered thresholds (30-100% of tear point): ring burst + ejected disc + card recoil + vibrate(8) each, [14,40,22] on the final rip; clip-path inset heals the card to the redeemed state. A released partial pull springs back and fully resets the coupon (holes re-arm). The grabbed tab reads slightly lighter (flat rgba(255,255,255,.15) overlay).",
+        "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar.",
+        "Nav glass": "X button = liquid-glass-js Container (radius 20, tintOpacity 0.14, blur 5). Adaptive contrast: page-snapshot luminance behind the button > 0.5 flips icon/text dark (#0B0E12), else white — so Bronze/Silver themes get a dark X, Gold/VIP keep white.",
+        "Themes": "Two themes x four tiers. Tiered: whole sheet takes the tier's Figma variant. Red (Figma 16842-87694): flat brand red #ED1C24 sheet, coupon tint rgba(237,28,36,.35) + rgba(173,173,173,.12) plus-lighter, voucher drop-shadow 0 0 12 rgba(56,64,74,.12), white text — only the loyalty badge pill reflects the tier. Toggle in the playground sidebar (desktop) or the Red chip (mobile).",
+        "Backdrop": "Strip behind the sheet: #A6A6A6 on Gold and Red themes, #FFFFFF on Bronze/Silver/VIP (per the Figma frames).",
+        "Pull tab": "Widened to 125pt (from Figma's 90pt) for comfortable thumb reach — Rashid 2026-09-03. Seam/perforation at x=243.",
+        "Type scale": "Coupon headline reduced for breathing room next to the 125pt tab: big 26/34, mid 17/24, tail 16/24 (from 30/20/18).",
+        "Presentation": "Red is the main theme (Figma 16842-87694). Presents in the app as a sheet over the untouched launcher (embed mode, Apple sheet curve); the level/theme changer strip is gone — all state controls live in the triple-tap-and-hold menu"
+      },
+      "downloads": [
+        {
+          "label": "Prototype source (index.html)",
+          "href": "rewards/index.html"
+        }
+      ],
+      "platform": "iOS",
+      "area": "Loyalty",
+      "preview": "rewards/preview.png",
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "Everything in this flow is reproducible with four libraries. Skia is the load-bearing one — it gives you the real plus-lighter blend and even-odd hole punching that plain RN styles can't do.",
+          "code": "npx expo install react-native-gesture-handler react-native-reanimated\nnpx expo install @shopify/react-native-skia expo-haptics expo-linear-gradient"
+        },
+        {
+          "t": "Design tokens",
+          "note": "Figma-exact, from section 17137-76380 (tiers) and 16842-87694 (red theme). All sizes are pt on a 402pt design width — scale by width/402.",
+          "code": "// tokens.ts — Figma-exact tier themes\nexport const TIERS = {\n  bronze: { sheet: ['#D5BB9F', '#C9A682'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#5C3F21', tint: null,   lighter: 0.12, shadow: null },\n  silver: { sheet: ['#E5E7EB', '#D1D5DB'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#7A7A7A', tint: null,   lighter: 0.06, shadow: null },\n  gold:   { sheet: ['#E4A70F', '#FFBC2A'], sheetDir: 'up',   backdrop: '#A6A6A6',\n            heading: '#F9F9F9', secondary: '#FFFFFF',\n            tint: 'rgba(240,168,60,0.35)',  lighter: 0.12, shadow: null },\n  vip:    { sheet: ['#270F0F', '#0F0E0D'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#F9F9F9', secondary: '#FFFFFF', tint: null,   lighter: 0.12,\n            shadow: 'rgba(56,64,74,0.12)' },\n  // Red theme: flat brand red sheet; ONLY the loyalty badge reflects the tier\n  red:    { sheet: ['#ED1C24', '#ED1C24'], sheetDir: 'down', backdrop: '#A6A6A6',\n            heading: '#FFFFFF', secondary: '#FFFFFF',\n            tint: 'rgba(237,28,36,0.35)',   lighter: 0.12, shadow: 'rgba(56,64,74,0.12)' },\n} as const;\n\nexport const SHEET  = { height: 806, topRadius: 38 };\nexport const COUPON = {\n  w: 368, h: 125, radius: 24,\n  seam: 243,          // perforation x — everything right of it is the pull tab (125pt)\n  holeR: 3, notchR: 7,\n  holes: Array.from({ length: 7 }, (_, i) => 18 + i * (89 / 6)),  // y of each punched hole\n};\nexport const GESTURE = { tearAt: 62, stretch: 96, resistance: 90, confetti: 14 };\n// Type scale (Urbane Rounded): headline 26/34 DemiBold, mid 17/24 Medium, tail 16/24 Light"
+        },
+        {
+          "t": "Coupon material (Skia)",
+          "note": "The coupon is two fills blended against the SHEET — a per-tier tint plus a gray plus-lighter layer (Skia BlendMode 'plus'). Draw the sheet gradient and the coupon in ONE canvas so the blend has the sheet to add against. The VIP/Red ambient shadow must be its own layer painted underneath — never a filter/mask on the coupon group, which isolates the blend and washes the fills (this exact bug shipped twice in the web prototype).",
+          "code": "import { Canvas, RoundedRect, Group, Path, Skia, Shadow } from '@shopify/react-native-skia';\n\n// Perforation: rounded card MINUS 7 holes + 2 edge half-moon notches (even-odd)\nexport function couponPath({ w, h, radius, seam, holes, holeR, notchR }) {\n  const p = Skia.Path.Make();\n  p.addRRect(Skia.RRectXY(Skia.XYWHRect(0, 0, w, h), radius, radius));\n  p.addCircle(seam, 0, notchR);   // top grip notch\n  p.addCircle(seam, h, notchR);   // bottom grip notch\n  holes.forEach(y => p.addCircle(seam, y, holeR));\n  p.setFillType(1 /* FillType.EvenOdd */);\n  return p;\n}\n\n// Inside the sheet <Canvas>:\n// 1. (VIP/Red) ambient shadow UNDER the coupon — separate transparent rect\n// 2. clip to couponPath, then:\n<Group clip={couponPath(COUPON)}>\n  {tier.tint && <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h}\n                             r={COUPON.radius} color={tier.tint} />}\n  <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h} r={COUPON.radius}\n               color={`rgba(173,173,173,${tier.lighter})`} blendMode=\"plus\" />\n</Group>\n// The pull tab is the same fills clipped right of the seam, transformed by the gesture."
+        },
+        {
+          "t": "Rip gesture (Reanimated)",
+          "note": "Elastic pull with staggered hole pops. Travel is tanh-damped; holes pop top-down between 30% and 100% of the tear point; the tab hinges around the topmost intact hole. A released half-pull springs back and re-arms every hole.",
+          "code": "const N = COUPON.holes.length;                       // 7\nconst travel = (dx: number) =>\n  GESTURE.stretch * Math.tanh(dx / GESTURE.resistance);       // elastic resistance\nconst popAt = (i: number) =>\n  GESTURE.tearAt * (0.30 + 0.70 * (i / (N - 1)));             // staggered thresholds\n\nconst pan = Gesture.Pan()\n  .onUpdate(e => {\n    const d = travel(Math.max(0, e.translationX));\n    drag.value = d;\n    for (let i = popped.value; i < N; i++) {\n      if (d < popAt(i)) break;\n      popped.value = i + 1;                 // hole i splits into half-moons\n      runOnJS(popFx)(i);                    // ring burst + ejected disc + 2px card recoil\n    }\n    if (popped.value === N) runOnJS(tear)(); // fly-off + WHITE confetti + heal\n  })\n  .onEnd(() => {\n    if (!torn.value) {                      // partial pull -> spring back, RESET holes\n      popped.value = 0;\n      drag.value = withSpring(0, { damping: 12, stiffness: 180 }); // overshoot wobble\n    }\n  });\n\n// Tab transform while holes remain (hinge = seam x, y of topmost intact hole):\nconst tabStyle = useAnimatedStyle(() => ({\n  transformOrigin: `${COUPON.seam}px ${hingeY(popped.value)}px`,\n  transform: [\n    { translateX: drag.value * 0.10 },\n    { rotate: `${drag.value * 0.26}deg` },\n  ],\n}));\n// Heal after tear: animate the card's clip inset back to full width over 550ms.\n// Redeemed face: 'Redeemed' + dashed promo chip + white Checkout pill\n// (white bg, #ED1C24 text, radius 60, height 42) — no check mark."
+        },
+        {
+          "t": "Haptics",
+          "note": "The web prototype could only vibrate on Android — on RN you get the real iOS haptics, which is the intended feel.",
+          "code": "import * as Haptics from 'expo-haptics';\nconst popFx  = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);  // each hole\nconst tearFx = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);"
+        },
+        {
+          "t": "Materials & type",
+          "note": "The close button is the global Liquid Glass material — implementation and the live recipe live in the Design System tab (Glass Lab handoff). Adaptive contrast: Bronze/Silver get a dark #0B0E12 icon, Gold/VIP/Red white. Fonts: DietStation uses Urbane Rounded + Proxima Nova (licensed, in this folder); the dot brand font ships from the Type Lab.",
+          "code": null
+        }
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "sheet",
+            "t": "Rewards sheet",
+            "kind": "screen",
+            "note": "Tier-themed coupons — Bronze / Silver / Gold / VIP · Red"
+          },
+          {
+            "id": "grab",
+            "t": "Grab the stub",
+            "kind": "screen",
+            "note": "Pull right against elastic resistance"
+          },
+          {
+            "id": "pops",
+            "t": "Holes pop",
+            "kind": "screen",
+            "note": "Top-down, 30–100% of tear point, haptic ticks"
+          },
+          {
+            "id": "release",
+            "t": "Released early?",
+            "kind": "decision",
+            "note": "Below the tear point"
+          },
+          {
+            "id": "spring",
+            "t": "Spring back",
+            "kind": "module",
+            "note": "Overshoot wobble — holes re-arm"
+          },
+          {
+            "id": "tear",
+            "t": "Rip!",
+            "kind": "screen",
+            "note": "Tab flies off + white confetti"
+          },
+          {
+            "id": "redeemed",
+            "t": "Redeemed card",
+            "kind": "screen",
+            "note": "Heals full-width, promo code chip"
+          },
+          {
+            "id": "checkout",
+            "t": "Checkout",
+            "kind": "end",
+            "note": "White pill CTA"
+          }
+        ],
+        "edges": [
+          [
+            "sheet",
+            "grab",
+            "drag"
+          ],
+          [
+            "grab",
+            "pops"
+          ],
+          [
+            "pops",
+            "release",
+            "let go"
+          ],
+          [
+            "release",
+            "spring",
+            "yes"
+          ],
+          [
+            "release",
+            "tear",
+            "past tear point"
+          ],
+          [
+            "spring",
+            "grab",
+            "try again"
+          ],
+          [
+            "tear",
+            "redeemed"
+          ],
+          [
+            "redeemed",
+            "checkout"
+          ]
+        ]
+      },
+      "shots": [
+        "rewards/shots/1.jpg",
+        "rewards/shots/2.jpg"
+      ],
+      "settings": [
+        {
+          "key": "tearAt",
+          "label": "Tear point",
+          "type": "range",
+          "min": 30,
+          "max": 90,
+          "step": 1,
+          "default": 62,
+          "unit": "%",
+          "note": "How far you pull before the tab rips"
+        },
+        {
+          "key": "stretch",
+          "label": "Stretch",
+          "type": "range",
+          "min": 40,
+          "max": 160,
+          "step": 1,
+          "default": 96,
+          "unit": "px",
+          "note": "Elastic travel of the coupon stub"
+        },
+        {
+          "key": "confetti",
+          "label": "Confetti",
+          "type": "range",
+          "min": 6,
+          "max": 26,
+          "step": 1,
+          "default": 14,
+          "unit": "",
+          "note": "Burst size on redeem"
+        }
+      ],
+      "sheet": true,
+      "hidden": false,
+      "entries": [
+        {
+          "id": "default",
+          "note": "Usually presented as a sheet; context {src} identifies the opener"
+        }
+      ]
+    },
+    {
       "id": "breathe",
       "title": "Guide Me Intro",
       "status": "in-progress",
@@ -717,214 +925,6 @@
         {
           "id": "default",
           "note": "Boots fresh — no context"
-        }
-      ]
-    },
-    {
-      "id": "rewards",
-      "title": "Vouchers & Loyalty",
-      "status": "in-progress",
-      "updated": "2026-09-03",
-      "description": "Loyalty coupon redeem sheet with four Figma-exact member tiers. The perforation is punched holes: pull the stub and they pop one by one with an elastic recoil and a haptic tick (Android), each ejecting its punched-out disc, until the tab rips free with confetti and heals into the redeemed card with the promo code. Desktop opens the full playground; mobile is fullscreen.",
-      "path": "rewards/",
-      "handoff": {
-        "Design source": "Figma · Diet Station 4.0 · Rewards states (section 17137-76380; Gold frame 17137-75698)",
-        "Level themes": "Sheet gradients — Bronze #D5BB9F→#C9A682 (to bottom) · Silver #E5E7EB→#D1D5DB (to bottom) · Gold #E4A70F→#FFBC2A (to top) · VIP #270F0F→#0F0E0D (to bottom)",
-        "Text colors": "Gold/VIP: heading #F9F9F9, body white · Bronze: heading #0B0E12, secondary #5C3F21 · Silver: heading #0B0E12, secondary #7A7A7A",
-        "Badge pills": "No visible ring (the Figma renders show the spec'd stroke blends into the fill): 24pt pill, per-tier 45/55 two-stop gradient, soft top bevel (inset 0 1.5 1 rgba(255,255,255,.35)) + the Figma drop-shadow stack. Text: Gold #C59300 · Bronze rgba(76,64,51,.42) · Silver rgba(82,82,91,.46) · VIP white.",
-        "Gesture": "Pull stub right · travel = 96px·tanh(drag/90) elastic resistance · tears at 62px · below threshold springs back with overshoot wobble · haptic navigator.vibrate(25) where supported",
-        "Redeemed state": "Tab rips free with white confetti; the card heals full-width (clip-path inset, .55s) into: 'Redeemed' + sub-line + dashed promo-code chip, with a white Checkout CTA on the right (white pill, #ED1C24 text, radius 60, 42pt, gel press). No check mark. The theme-tinted shadow resizes with the card (width transition — never clip-path, which crops outer box-shadows).",
-        "Layout": "402pt design width · sheet 806pt, top radius 38 · vouchers 368×125 radius 24 · stub 90pt · perforation 110pt dashed 8/8",
-        "Type": "Urbane Rounded Light/Medium/DemiBold · Proxima Nova Regular (files in this folder)",
-        "Nav buttons": "Liquid Glass (iOS 26) close in CSS backdrop-filter; native SwiftUI equivalent = .glassEffect()",
-        "Coupon material": "Exact Figma fill stack (component 17137-75573): per-theme tint (red rgba(237,28,36,.35), gold rgba(240,168,60,.35), others none) + rgba(173,173,173,.12) plus-lighter (Silver .06) blending with the SHEET, + on Red and VIP the voucher ambient shadow 0 0 12 rgba(56,64,74,.12). CRITICAL: the shadow must be an outer box-shadow on a transparent underlay — a CSS filter/drop-shadow on the coupon creates a stacking context that isolates the plus-lighter blend and washes the fills (this exact bug shipped twice). Optional frost dial 0-30px, default 0.",
-        "Viewport behavior": "Desktop (>500px, fine pointer): sidebar + framed device. Mobile: fullscreen fit, sidebar hidden.",
-        "Rip mechanic": "Punched-hole perforation with edge notches: two half-moon notches (r7) bitten into the top and bottom edges at the seam (x=243) — the real-coupon grip — with 7 punched holes (r3, y 18..107) evenly between, all true cutouts via one even-odd SVG alpha mask so each splits into half-moons as the tab moves. Tab peels around the topmost intact hole; holes pop top-down at staggered thresholds (30-100% of tear point): ring burst + ejected disc + card recoil + vibrate(8) each, [14,40,22] on the final rip; clip-path inset heals the card to the redeemed state. A released partial pull springs back and fully resets the coupon (holes re-arm). The grabbed tab reads slightly lighter (flat rgba(255,255,255,.15) overlay).",
-        "Playground": "Desktop: sidebar playground (standard) — description, level selector, live modifiers (tear point 40-90px, stretch 60-140px, confetti 0-30, glass frost 0-0.4, blur 1-12) + Copy values; device frame with Dynamic Island. Mobile: fullscreen with floating level bar.",
-        "Nav glass": "X button = liquid-glass-js Container (radius 20, tintOpacity 0.14, blur 5). Adaptive contrast: page-snapshot luminance behind the button > 0.5 flips icon/text dark (#0B0E12), else white — so Bronze/Silver themes get a dark X, Gold/VIP keep white.",
-        "Themes": "Two themes x four tiers. Tiered: whole sheet takes the tier's Figma variant. Red (Figma 16842-87694): flat brand red #ED1C24 sheet, coupon tint rgba(237,28,36,.35) + rgba(173,173,173,.12) plus-lighter, voucher drop-shadow 0 0 12 rgba(56,64,74,.12), white text — only the loyalty badge pill reflects the tier. Toggle in the playground sidebar (desktop) or the Red chip (mobile).",
-        "Backdrop": "Strip behind the sheet: #A6A6A6 on Gold and Red themes, #FFFFFF on Bronze/Silver/VIP (per the Figma frames).",
-        "Pull tab": "Widened to 125pt (from Figma's 90pt) for comfortable thumb reach — Rashid 2026-09-03. Seam/perforation at x=243.",
-        "Type scale": "Coupon headline reduced for breathing room next to the 125pt tab: big 26/34, mid 17/24, tail 16/24 (from 30/20/18).",
-        "Presentation": "Red is the main theme (Figma 16842-87694). Presents in the app as a sheet over the untouched launcher (embed mode, Apple sheet curve); the level/theme changer strip is gone — all state controls live in the triple-tap-and-hold menu"
-      },
-      "downloads": [
-        {
-          "label": "Prototype source (index.html)",
-          "href": "rewards/index.html"
-        }
-      ],
-      "platform": "iOS",
-      "area": "Loyalty",
-      "preview": "rewards/preview.png",
-      "rn": [
-        {
-          "t": "Stack",
-          "note": "Everything in this flow is reproducible with four libraries. Skia is the load-bearing one — it gives you the real plus-lighter blend and even-odd hole punching that plain RN styles can't do.",
-          "code": "npx expo install react-native-gesture-handler react-native-reanimated\nnpx expo install @shopify/react-native-skia expo-haptics expo-linear-gradient"
-        },
-        {
-          "t": "Design tokens",
-          "note": "Figma-exact, from section 17137-76380 (tiers) and 16842-87694 (red theme). All sizes are pt on a 402pt design width — scale by width/402.",
-          "code": "// tokens.ts — Figma-exact tier themes\nexport const TIERS = {\n  bronze: { sheet: ['#D5BB9F', '#C9A682'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#5C3F21', tint: null,   lighter: 0.12, shadow: null },\n  silver: { sheet: ['#E5E7EB', '#D1D5DB'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#0B0E12', secondary: '#7A7A7A', tint: null,   lighter: 0.06, shadow: null },\n  gold:   { sheet: ['#E4A70F', '#FFBC2A'], sheetDir: 'up',   backdrop: '#A6A6A6',\n            heading: '#F9F9F9', secondary: '#FFFFFF',\n            tint: 'rgba(240,168,60,0.35)',  lighter: 0.12, shadow: null },\n  vip:    { sheet: ['#270F0F', '#0F0E0D'], sheetDir: 'down', backdrop: '#FFFFFF',\n            heading: '#F9F9F9', secondary: '#FFFFFF', tint: null,   lighter: 0.12,\n            shadow: 'rgba(56,64,74,0.12)' },\n  // Red theme: flat brand red sheet; ONLY the loyalty badge reflects the tier\n  red:    { sheet: ['#ED1C24', '#ED1C24'], sheetDir: 'down', backdrop: '#A6A6A6',\n            heading: '#FFFFFF', secondary: '#FFFFFF',\n            tint: 'rgba(237,28,36,0.35)',   lighter: 0.12, shadow: 'rgba(56,64,74,0.12)' },\n} as const;\n\nexport const SHEET  = { height: 806, topRadius: 38 };\nexport const COUPON = {\n  w: 368, h: 125, radius: 24,\n  seam: 243,          // perforation x — everything right of it is the pull tab (125pt)\n  holeR: 3, notchR: 7,\n  holes: Array.from({ length: 7 }, (_, i) => 18 + i * (89 / 6)),  // y of each punched hole\n};\nexport const GESTURE = { tearAt: 62, stretch: 96, resistance: 90, confetti: 14 };\n// Type scale (Urbane Rounded): headline 26/34 DemiBold, mid 17/24 Medium, tail 16/24 Light"
-        },
-        {
-          "t": "Coupon material (Skia)",
-          "note": "The coupon is two fills blended against the SHEET — a per-tier tint plus a gray plus-lighter layer (Skia BlendMode 'plus'). Draw the sheet gradient and the coupon in ONE canvas so the blend has the sheet to add against. The VIP/Red ambient shadow must be its own layer painted underneath — never a filter/mask on the coupon group, which isolates the blend and washes the fills (this exact bug shipped twice in the web prototype).",
-          "code": "import { Canvas, RoundedRect, Group, Path, Skia, Shadow } from '@shopify/react-native-skia';\n\n// Perforation: rounded card MINUS 7 holes + 2 edge half-moon notches (even-odd)\nexport function couponPath({ w, h, radius, seam, holes, holeR, notchR }) {\n  const p = Skia.Path.Make();\n  p.addRRect(Skia.RRectXY(Skia.XYWHRect(0, 0, w, h), radius, radius));\n  p.addCircle(seam, 0, notchR);   // top grip notch\n  p.addCircle(seam, h, notchR);   // bottom grip notch\n  holes.forEach(y => p.addCircle(seam, y, holeR));\n  p.setFillType(1 /* FillType.EvenOdd */);\n  return p;\n}\n\n// Inside the sheet <Canvas>:\n// 1. (VIP/Red) ambient shadow UNDER the coupon — separate transparent rect\n// 2. clip to couponPath, then:\n<Group clip={couponPath(COUPON)}>\n  {tier.tint && <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h}\n                             r={COUPON.radius} color={tier.tint} />}\n  <RoundedRect x={0} y={0} width={COUPON.w} height={COUPON.h} r={COUPON.radius}\n               color={`rgba(173,173,173,${tier.lighter})`} blendMode=\"plus\" />\n</Group>\n// The pull tab is the same fills clipped right of the seam, transformed by the gesture."
-        },
-        {
-          "t": "Rip gesture (Reanimated)",
-          "note": "Elastic pull with staggered hole pops. Travel is tanh-damped; holes pop top-down between 30% and 100% of the tear point; the tab hinges around the topmost intact hole. A released half-pull springs back and re-arms every hole.",
-          "code": "const N = COUPON.holes.length;                       // 7\nconst travel = (dx: number) =>\n  GESTURE.stretch * Math.tanh(dx / GESTURE.resistance);       // elastic resistance\nconst popAt = (i: number) =>\n  GESTURE.tearAt * (0.30 + 0.70 * (i / (N - 1)));             // staggered thresholds\n\nconst pan = Gesture.Pan()\n  .onUpdate(e => {\n    const d = travel(Math.max(0, e.translationX));\n    drag.value = d;\n    for (let i = popped.value; i < N; i++) {\n      if (d < popAt(i)) break;\n      popped.value = i + 1;                 // hole i splits into half-moons\n      runOnJS(popFx)(i);                    // ring burst + ejected disc + 2px card recoil\n    }\n    if (popped.value === N) runOnJS(tear)(); // fly-off + WHITE confetti + heal\n  })\n  .onEnd(() => {\n    if (!torn.value) {                      // partial pull -> spring back, RESET holes\n      popped.value = 0;\n      drag.value = withSpring(0, { damping: 12, stiffness: 180 }); // overshoot wobble\n    }\n  });\n\n// Tab transform while holes remain (hinge = seam x, y of topmost intact hole):\nconst tabStyle = useAnimatedStyle(() => ({\n  transformOrigin: `${COUPON.seam}px ${hingeY(popped.value)}px`,\n  transform: [\n    { translateX: drag.value * 0.10 },\n    { rotate: `${drag.value * 0.26}deg` },\n  ],\n}));\n// Heal after tear: animate the card's clip inset back to full width over 550ms.\n// Redeemed face: 'Redeemed' + dashed promo chip + white Checkout pill\n// (white bg, #ED1C24 text, radius 60, height 42) — no check mark."
-        },
-        {
-          "t": "Haptics",
-          "note": "The web prototype could only vibrate on Android — on RN you get the real iOS haptics, which is the intended feel.",
-          "code": "import * as Haptics from 'expo-haptics';\nconst popFx  = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);  // each hole\nconst tearFx = () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);"
-        },
-        {
-          "t": "Materials & type",
-          "note": "The close button is the global Liquid Glass material — implementation and the live recipe live in the Design System tab (Glass Lab handoff). Adaptive contrast: Bronze/Silver get a dark #0B0E12 icon, Gold/VIP/Red white. Fonts: DietStation uses Urbane Rounded + Proxima Nova (licensed, in this folder); the dot brand font ships from the Type Lab.",
-          "code": null
-        }
-      ],
-      "flow": {
-        "nodes": [
-          {
-            "id": "sheet",
-            "t": "Rewards sheet",
-            "kind": "screen",
-            "note": "Tier-themed coupons — Bronze / Silver / Gold / VIP · Red"
-          },
-          {
-            "id": "grab",
-            "t": "Grab the stub",
-            "kind": "screen",
-            "note": "Pull right against elastic resistance"
-          },
-          {
-            "id": "pops",
-            "t": "Holes pop",
-            "kind": "screen",
-            "note": "Top-down, 30–100% of tear point, haptic ticks"
-          },
-          {
-            "id": "release",
-            "t": "Released early?",
-            "kind": "decision",
-            "note": "Below the tear point"
-          },
-          {
-            "id": "spring",
-            "t": "Spring back",
-            "kind": "module",
-            "note": "Overshoot wobble — holes re-arm"
-          },
-          {
-            "id": "tear",
-            "t": "Rip!",
-            "kind": "screen",
-            "note": "Tab flies off + white confetti"
-          },
-          {
-            "id": "redeemed",
-            "t": "Redeemed card",
-            "kind": "screen",
-            "note": "Heals full-width, promo code chip"
-          },
-          {
-            "id": "checkout",
-            "t": "Checkout",
-            "kind": "end",
-            "note": "White pill CTA"
-          }
-        ],
-        "edges": [
-          [
-            "sheet",
-            "grab",
-            "drag"
-          ],
-          [
-            "grab",
-            "pops"
-          ],
-          [
-            "pops",
-            "release",
-            "let go"
-          ],
-          [
-            "release",
-            "spring",
-            "yes"
-          ],
-          [
-            "release",
-            "tear",
-            "past tear point"
-          ],
-          [
-            "spring",
-            "grab",
-            "try again"
-          ],
-          [
-            "tear",
-            "redeemed"
-          ],
-          [
-            "redeemed",
-            "checkout"
-          ]
-        ]
-      },
-      "shots": [
-        "rewards/shots/1.jpg",
-        "rewards/shots/2.jpg"
-      ],
-      "settings": [
-        {
-          "key": "tearAt",
-          "label": "Tear point",
-          "type": "range",
-          "min": 30,
-          "max": 90,
-          "step": 1,
-          "default": 62,
-          "unit": "%",
-          "note": "How far you pull before the tab rips"
-        },
-        {
-          "key": "stretch",
-          "label": "Stretch",
-          "type": "range",
-          "min": 40,
-          "max": 160,
-          "step": 1,
-          "default": 96,
-          "unit": "px",
-          "note": "Elastic travel of the coupon stub"
-        },
-        {
-          "key": "confetti",
-          "label": "Confetti",
-          "type": "range",
-          "min": 6,
-          "max": 26,
-          "step": 1,
-          "default": 14,
-          "unit": "",
-          "note": "Burst size on redeem"
-        }
-      ],
-      "sheet": true,
-      "hidden": false,
-      "entries": [
-        {
-          "id": "default",
-          "note": "Usually presented as a sheet; context {src} identifies the opener"
         }
       ]
     }
