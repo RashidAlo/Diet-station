@@ -327,11 +327,15 @@
      DURING the collapse instead of at the end of it — the ladder
      dissolves, the label cross-fades in over it, and by the time the
      capsule lands there is nothing left to swap. */
-  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .22s ease; }
+  /* the two fades OVERLAP deliberately: at .17s delay the tape showed a
+     beat where the ladder had gone and the label had not arrived — a
+     near-empty pill, which is its own small awkward state. The label now
+     starts while the ladder is still going, so one reads as the other. */
+  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .24s ease; }
   .nav .ttl.scrub.closing #dayLabel { display: inline-block !important;
     position: absolute; left: 50%; top: 50%; z-index: 2;
     transform: translate(-50%, -50%); white-space: nowrap;
-    opacity: 0; animation: lblback .26s ease .17s forwards; }
+    opacity: 0; animation: lblback .26s ease .09s forwards; }
   @keyframes lblback { to { opacity: 1; } }
   /* the glass keeps its scale through the collapse, then eases out over
      the final deflate so the pill doesn't pop off the label */
@@ -2670,7 +2674,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 140 (scrub instant release)';
+const BUILD = 'build 2026-09-11 · 141 (scrub exit crossfade)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
