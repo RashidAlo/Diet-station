@@ -2670,7 +2670,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 139 (scrub exit handover)';
+const BUILD = 'build 2026-09-11 · 140 (scrub instant release)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3100,7 +3100,7 @@ if (QS.get('solo') === '1') {
   }
   /* a ladder re-window mid-scrub posts fresh dates/center to the twin */
   window.DSScrubRepost = function () { if (!layerUp) report(); };
-  function report() {
+  function report(instant) {
     if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
@@ -3123,8 +3123,15 @@ if (QS.get('solo') === '1') {
     var se = scrubEl(off);
     if (se) els.push(se);
     try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: currentMode(), els: els });
+      var msg = { t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: currentMode(), els: els };
+      /* instant: apply the WHOLE post with animation disabled (Shell). An
+         omitted el is torn down on that frame instead of springing away,
+         which is the only way to guarantee one glass per frame at a
+         handover. Scope is the whole post, so only send it where nothing
+         else is meant to animate to new geometry. */
+      if (instant) msg.instant = true;
+      webkit.messageHandlers.ds.postMessage(msg);
     } catch (_) {}
   }
   function clearChrome() {
@@ -3175,15 +3182,21 @@ if (QS.get('solo') === '1') {
     scrubRaf = requestAnimationFrame(step);
   }
   var scrubConfirmed = false, scrubFbT = null;
-  /* hand the capsule back to the web AT THE START of the exit: this post
-     omits the scrub el, so the shell releases the twin and whatever exit
-     animation it runs happens while the web is still drawing the same
-     capsule at the same rect — not on top of the label at the end, which
-     is where it read as an awkward leftover. */
+  /* Hand the capsule back to the web at the START of the exit, TORN DOWN
+     ON THAT FRAME. Shell's default release is opacity on a spring
+     (response .42, damping .8) — perceptibly gone ~250ms, settled
+     ~450-500ms — so without the flag the capsule spends the whole
+     collapse fading over the web copy. That looked acceptable only
+     because the two happened to coincide; `instant` makes it a guarantee
+     instead of a coincidence, and the exit becomes pure CSS from here.
+     Sent as its own post precisely because the flag's scope is the whole
+     message: close/dual are riding back at this moment and must keep
+     their spring, so they are re-anchored by the ordinary report that
+     follows. */
   window.DSScrubRelease = function () {
     scrubHold = true;
     clearTimeout(scrubFbT);
-    report();
+    report(true);
   };
   window.DSScrubChrome = function (on) {
     if (on) scrubHold = false;
