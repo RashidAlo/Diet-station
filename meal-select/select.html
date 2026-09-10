@@ -238,15 +238,19 @@
     display: flex; align-items: center; justify-content: center; gap: 12px;
     transition: color .35s ease, text-shadow .35s ease, background .28s ease,
       box-shadow .28s ease, height .28s cubic-bezier(.3,.8,.3,1),
-      padding .28s cubic-bezier(.3,.8,.3,1), transform .28s cubic-bezier(.3,.8,.3,1); }
-  /* hold-the-date scrubber (Rashid v3): the date inflates into a wide
-     glass PILL holding a mini date carousel — the current day centered
-     (number big, weekday under), neighbours faded left and right — and
-     the held drag PULLS the strip through at a stepped cadence. A full
-     backward pull snaps home to the earliest selectable day and latches. */
-  .nav .ttl.scrub { width: 208px; height: 54px; padding: 0;
-    border-radius: 27px; overflow: hidden;
-    transform: translateX(-50%) translateY(-16px);
+      padding .28s cubic-bezier(.3,.8,.3,1), transform .28s cubic-bezier(.3,.8,.3,1),
+      top .28s cubic-bezier(.3,.8,.3,1), width .28s cubic-bezier(.3,.8,.3,1); }
+  /* hold-the-date scrubber (Rashid v4): the date inflates into a glass
+     pill that is the SAME container as the controls beside it — 44pt
+     tall, 22 radius, same glass, same top line. Inside: a mini date
+     carousel (month above the number on the CENTER day, which reads
+     red; neighbours faded numbers). Crossing a month boundary flips the
+     month. A full backward pull snaps home and latches. */
+  .nav .ttl { top: calc(var(--top-pad) + 20px); }   /* explicit: same optical line as now */
+  .nav .ttl.scrub { width: 224px; height: 44px; padding: 0;
+    top: calc(var(--top-pad) + 9px);   /* THE controls' top line */
+    border-radius: 22px; overflow: hidden;
+    transform: translateX(-50%);
     background: rgba(255,255,255,.34);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
@@ -255,19 +259,22 @@
   .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
   .scb { display: none; }
-  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 280px; flex: none; }
-  .scb .scb-it { width: 56px; flex: none; display: flex; flex-direction: column;
-    align-items: center; gap: 0; }
-  .scb .scb-it .n { font: 600 19px/22px 'Urbane Rounded', sans-serif; }
-  .scb .scb-it .d { font: 500 9px/12px 'Urbane Rounded', sans-serif; opacity: .6; }
+  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 240px; flex: none; }
+  .scb .scb-it { width: 48px; height: 44px; flex: none; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+  .scb .scb-it .m { font: 600 8.5px/10px 'Urbane Rounded', sans-serif;
+    letter-spacing: .04em; text-transform: uppercase; opacity: .55; }
+  .scb .scb-it .n { font: 600 18px/20px 'Urbane Rounded', sans-serif; }
+  /* the day you're on reads RED — the tactile center */
+  .scb .scb-it:nth-child(3) .n { color: #ed1c24; }
   /* staggered fade: center full, neighbours dim, edges whispers */
   .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(5) { opacity: .14; }
   .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(4) { opacity: .42; }
-  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 16px; }
-  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 14px; }
-  .scb.slide { transition: transform .09s ease-out; }
+  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 15px; }
+  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 13px; }
+  .scb.slide { transition: transform .075s ease-out; }
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
-  @keyframes scbsnap { 0% { transform: translateX(-34px); opacity: .4; }
+  @keyframes scbsnap { 0% { transform: translateX(-30px); opacity: .4; }
     100% { transform: translateX(0); opacity: 1; } }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
@@ -1644,6 +1651,16 @@ function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
+/* real-date math so the scrubber can cross month boundaries: Date rolls
+   the overflow, the header label follows ("Sep 30th" → "Oct 1st") */
+const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function dateFor(idx) {
+  return new Date(new Date().getFullYear(), Math.max(0, MONS.indexOf(MON_LBL)), DAY_START + idx);
+}
+function dayLabelFor(idx) {
+  const d = dateFor(idx);
+  return MONS[d.getMonth()] + ' ' + ordinal(d.getDate());
+}
 let turning = false;
 function turnDay(dir, target) {
   /* page turn either direction: current day exits, the target day rides in
@@ -1666,7 +1683,7 @@ function turnDay(dir, target) {
     lbl.style.transition = 'transform .26s ease, opacity .22s ease';
     lbl.style.transform = 'translateX(' + (-28 * dir) + 'px)'; lbl.style.opacity = '0';
     setTimeout(() => {
-      lbl.textContent = MON_LBL + ' ' + ordinal(DAY_START + dayIdx);
+      lbl.textContent = dayLabelFor(dayIdx);   /* month-aware past the boundary */
       lbl.style.transition = 'none';
       lbl.style.transform = 'translateX(' + (28 * dir) + 'px)';
       setTimeout(() => {
@@ -1770,23 +1787,20 @@ confirmBtn.onclick = () => {
 (function () {
   const ttl = document.querySelector('.nav .ttl');
   if (!ttl) return;
-  const STEP = 44;              /* px of drag per day step */
-  const CADENCE = 80;           /* ms floor between steps — the scrub speed */
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const monIdx = Math.max(0, MONTHS.indexOf(MON_LBL));
-  const monthDays = new Date(new Date().getFullYear(), monIdx + 1, 0).getDate();
-  const maxIdx = Math.max(0, monthDays - DAY_START);
+  const STEP = 34;              /* px of drag per day step — finer = more sensitive */
+  const CADENCE = 60;           /* ms floor between steps — the scrub speed */
+  const maxIdx = 60;            /* scrubbing crosses month boundaries freely */
 
   const strip = document.createElement('div');
   strip.className = 'scb';
   ttl.appendChild(strip);
   function itemHTML(idx, center) {
-    const d = DAY_START + idx;
-    if (idx < 0 || d > monthDays) return '<div class="scb-it"></div>';
-    const wd = new Date(new Date().getFullYear(), monIdx, d)
-      .toLocaleDateString('en', { weekday: center ? 'long' : 'short' });
-    return '<div class="scb-it"><span class="n">' + d + '</span>' +
-      '<span class="d">' + wd + '</span></div>';
+    if (idx < 0 || idx > maxIdx) return '<div class="scb-it"></div>';
+    const d = dateFor(idx);
+    /* the month lives ON the center day and flips at the boundary */
+    return '<div class="scb-it">' +
+      (center ? '<span class="m">' + MONS[d.getMonth()] + '</span>' : '') +
+      '<span class="n">' + d.getDate() + '</span></div>';
   }
   function paintStrip(idx) {
     let h = '';
@@ -1795,19 +1809,20 @@ confirmBtn.onclick = () => {
   }
   let slideT = null;
   function slideStep(idx, dir) {
-    /* carousel pull: the strip glides one slot toward the drag, then the
-       window re-centres — reads as pulling dates through the pill */
+    /* carousel pull: the NEW window paints immediately (fast scrubs never
+       show stale dates), starts displaced one slot toward the old window,
+       and glides to rest — reads as pulling dates through the pill */
     clearTimeout(slideT);
+    strip.classList.remove('slide');
+    paintStrip(idx);
+    strip.style.transform = 'translateX(' + (dir * 48) + 'px)';
+    void strip.offsetWidth;
     strip.classList.add('slide');
-    strip.style.transform = 'translateX(' + (-dir * 56) + 'px)';
-    slideT = setTimeout(() => {
-      strip.classList.remove('slide');
-      strip.style.transform = '';
-      paintStrip(idx);
-    }, 95);
+    strip.style.transform = '';
+    slideT = setTimeout(() => strip.classList.remove('slide'), 80);
   }
   function settleStrip(idx) {
-    /* kill any in-flight slide so it can't repaint over a snap */
+    /* kill any in-flight slide so it can't fight a snap */
     clearTimeout(slideT);
     strip.classList.remove('slide');
     strip.style.transform = '';
@@ -2257,7 +2272,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 98';
+const BUILD = 'build 2026-09-10 · 99';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
