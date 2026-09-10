@@ -178,7 +178,12 @@
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .navbtn:active { transform: scale(.92); }
   .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
-  .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease; }
+  .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease,
+    opacity .28s ease; }
+  /* scrubber takeover: the other actions step aside while the wide glass
+     scrubs (web fallback path; the native twins fade via DSScrubChrome) */
+  .nav.scrubbing .navbtn, .nav.scrubbing .dual { opacity: 0 !important;
+    pointer-events: none; }
   .navbtn.on-dark, .dual.on-dark { background: rgba(72,72,78,.30); color: #ffffff; }
   .dual.on-dark .sep { background: rgba(255,255,255,.3); }
   .dual.on-dark .dcheck svg .ck-base { stroke: rgba(255,255,255,.55); }
@@ -236,10 +241,10 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
     touch-action: none; border-radius: 22px; padding: 0 12px;
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    transition: color .35s ease, text-shadow .35s ease, background .28s ease,
-      box-shadow .28s ease, height .28s cubic-bezier(.3,.8,.3,1),
-      padding .28s cubic-bezier(.3,.8,.3,1), transform .28s cubic-bezier(.3,.8,.3,1),
-      top .28s cubic-bezier(.3,.8,.3,1), width .28s cubic-bezier(.3,.8,.3,1); }
+    transition: color .35s ease, text-shadow .35s ease, background .38s ease,
+      box-shadow .38s ease, height .38s cubic-bezier(.32,.72,0,1),
+      padding .38s cubic-bezier(.32,.72,0,1), transform .38s cubic-bezier(.32,.72,0,1),
+      top .38s cubic-bezier(.32,.72,0,1), width .38s cubic-bezier(.32,.72,0,1); }
   /* hold-the-date scrubber (Rashid v4): the date inflates into a glass
      pill that is the SAME container as the controls beside it — 44pt
      tall, 22 radius, same glass, same top line. Inside: a mini date
@@ -247,43 +252,58 @@
      red; neighbours faded numbers). Crossing a month boundary flips the
      month. A full backward pull snaps home and latches. */
   .nav .ttl { top: calc(var(--top-pad) + 20px); }   /* explicit: same optical line as now */
-  /* fatter but CENTERED (Rashid): +12pt height split around the controls'
-     centre line (their centre = top-pad + 31), so it swells evenly and
-     never pokes out of the header zone */
-  .nav .ttl.scrub { width: 152px; height: 56px; padding: 0;
+  /* the scrubber pill v7 (Rashid): FORMS the moment the finger lands (no
+     dead hold-pause — .forming grows it across the hold window), then
+     locks armed (.scrub) and takes FULL WIDTH while the other actions
+     fade away — more dates, slower px/day, smoother scan. Glass = the
+     HOUSE Apple-glass recipe verbatim (the sanctioned fallback; real
+     Liquid Glass is shell-chrome only). Centred on the controls' line. */
+  .nav .ttl.forming, .nav .ttl.scrub { height: 56px; padding: 0;
+    width: min(370px, calc(100vw - 32px));
     top: calc(var(--top-pad) + 3px);
     border-radius: 28px; overflow: hidden;
     transform: translateX(-50%);
     background: rgba(255,255,255,.34);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22); }
-  .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
+    -webkit-backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    backdrop-filter: blur(30px) saturate(200%) contrast(1.06);
+    box-shadow: inset 0 1.2px 1px rgba(255,255,255,.55),
+      inset 0 0 0 .6px rgba(255,255,255,.42),
+      0 6px 20px -10px rgba(0,0,0,.28); }
+  /* the Apple-glass sheen, under the content */
+  .nav .ttl.forming::after, .nav .ttl.scrub::after { content: '';
+    position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+    background: linear-gradient(115deg, rgba(255,255,255,.32), rgba(255,255,255,0) 42%);
+    pointer-events: none; }
+  .nav .ttl.forming.on-dark, .nav .ttl.scrub.on-dark { background: rgba(72,72,78,.30); }
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
   .scb { display: none; }
-  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 240px; flex: none; }
+  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 432px; flex: none;
+    position: relative; z-index: 1; }
   .scb .scb-it { width: 48px; height: 56px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     padding: 8px 0; box-sizing: border-box; }   /* air above and below the stack */
   /* hierarchy (Rashid): month TINY on top (it rarely changes), the number,
-     then the DAY NAME at the bottom — roomy inside the fatter pill */
+     then the DAY NAME at the bottom */
   .scb .scb-it .m { font: 600 8.5px/10px 'Urbane Rounded', sans-serif;
     letter-spacing: .05em; text-transform: uppercase; opacity: .5; }
   .scb .scb-it .n { font: 600 17px/19px 'Urbane Rounded', sans-serif; }
   .scb .scb-it .d { font: 500 8.5px/11px 'Urbane Rounded', sans-serif; opacity: .55;
     max-width: 47px; overflow: hidden; }
-  /* the day you're on reads RED — the tactile center */
-  .scb .scb-it:nth-child(3) .n { color: #ed1c24; }
-  /* staggered fade: center full, neighbours dim, edges whispers */
-  .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(5) { opacity: .14; }
-  .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(4) { opacity: .42; }
-  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(4) .n { font-size: 14px; }
-  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(5) .n { font-size: 12px; }
+  /* the day you're on reads RED — the tactile center (slot 5 of 9) */
+  .scb .scb-it:nth-child(5) .n { color: #ed1c24; }
+  /* staggered fade ladder outward from the center */
+  .scb .scb-it:nth-child(4), .scb .scb-it:nth-child(6) { opacity: .55; }
+  .scb .scb-it:nth-child(3), .scb .scb-it:nth-child(7) { opacity: .32; }
+  .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(8) { opacity: .16; }
+  .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(9) { opacity: .08; }
+  .scb .scb-it:nth-child(4) .n, .scb .scb-it:nth-child(6) .n { font-size: 15px; }
+  .scb .scb-it:nth-child(3) .n, .scb .scb-it:nth-child(7) .n { font-size: 14px; }
+  .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(8) .n,
+  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(9) .n { font-size: 12px; }
   /* wheel feel (Rashid): each step lands with a springy overshoot, and
      the center figures pop as the day snaps in */
   .scb.slide { transition: transform .16s cubic-bezier(.25, 1.55, .45, 1); }
-  .scb .scb-it:nth-child(3) .n { animation: scbpop .18s cubic-bezier(.3,1.4,.5,1); }
+  .scb .scb-it:nth-child(5) .n { animation: scbpop .18s cubic-bezier(.3,1.4,.5,1); }
   @keyframes scbpop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); }
     100% { transform: scale(1); } }
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
@@ -1823,7 +1843,7 @@ confirmBtn.onclick = () => {
   }
   function paintStrip(idx) {
     let h = '';
-    for (let k = -2; k <= 2; k++) h += itemHTML(idx + k, k === 0);
+    for (let k = -4; k <= 4; k++) h += itemHTML(idx + k, k === 0);   /* 9 slots wide */
     strip.innerHTML = h;
   }
   /* continuous glide (Rashid v6): no snapping — the strip's position is
@@ -1841,9 +1861,9 @@ confirmBtn.onclick = () => {
 
   function calibrate(x) {
     engageX = x; baseIdx = target;
-    stepFwd = Math.min(STEP, Math.max(8, (x - EDGE) / Math.max(1, maxIdx - target)));
+    stepFwd = Math.min(STEP, Math.max(12, (x - EDGE) / Math.max(1, maxIdx - target)));
     const vw = document.documentElement.clientWidth || window.innerWidth || 402;
-    stepBack = Math.min(STEP, Math.max(8, (vw - EDGE - x) / Math.max(1, target || 1)));
+    stepBack = Math.min(STEP, Math.max(12, (vw - EDGE - x) / Math.max(1, target || 1)));
   }
   function glide() {
     raf = scrubbing ? requestAnimationFrame(glide) : null;
@@ -1863,9 +1883,20 @@ confirmBtn.onclick = () => {
     }
     strip.style.transform = 'translateX(' + (-(disp - winC) * SLOT).toFixed(2) + 'px)';
   }
+  const navEl = document.querySelector('.nav');
+  function unform() {
+    ttl.classList.remove('forming');
+    if (navEl) navEl.classList.remove('scrubbing');
+    window.DSScrubChrome && DSScrubChrome(false);   /* twins return */
+  }
   ttl.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY;
     clearTimeout(holdT);
+    /* the glass FORMS the moment the finger lands (Rashid: no dead
+       pause) — the grow spans the hold window; the other actions fade */
+    ttl.classList.add('forming');
+    if (navEl) navEl.classList.add('scrubbing');
+    window.DSScrubChrome && DSScrubChrome(true);
     holdT = setTimeout(() => {
       scrubbing = true;
       lastX = downX;
@@ -1873,7 +1904,7 @@ confirmBtn.onclick = () => {
       calibrate(downX);
       paintStrip(winC);
       strip.style.transform = '';
-      ttl.classList.add('scrub');
+      ttl.classList.add('scrub');            /* armed: dates in, label out */
       try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
       vibrate(10);
       cancelAnimationFrame(raf);
@@ -1883,7 +1914,10 @@ confirmBtn.onclick = () => {
   ttl.addEventListener('pointermove', e => {
     if (!scrubbing) {
       /* a drift before the hold lands is a scroll, not a scrub */
-      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) clearTimeout(holdT);
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) {
+        clearTimeout(holdT);
+        unform();
+      }
       return;
     }
     const mx = e.clientX - lastX;
@@ -1899,8 +1933,9 @@ confirmBtn.onclick = () => {
   });
   const endScrub = () => {
     clearTimeout(holdT);
-    if (!scrubbing) return;
+    if (!scrubbing) { unform(); return; }   /* early lift: reverse the form */
     scrubbing = false;
+    unform();
     cancelAnimationFrame(raf); raf = null;
     scrubIdx = Math.round(target);
     paintStrip(scrubIdx);
@@ -2290,7 +2325,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 106';
+const BUILD = 'build 2026-09-10 · 107';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2698,6 +2733,11 @@ if (QS.get('solo') === '1') {
     var sel = TAPS[id] || ELS[id];
     var el = sel && document.querySelector(sel);
     if (el) el.click();
+  };
+  /* the date scrubber's full-width takeover: the native action twins fade
+     while the wide glass scrubs, and return on release */
+  window.DSScrubChrome = function (on) {
+    if (on) { clearChrome(); } else if (!moving && !layerUp) { report(); }
   };
   addEventListener('resize', function () { setTimeout(report, 350); setTimeout(postGauge, 360); });
 
