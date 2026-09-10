@@ -352,12 +352,16 @@
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
   .nav .ttl.scrub.portal { background: #ed1c24;
+    height: 64px; top: calc(var(--top-pad) - 1px); border-radius: 30px;
     -webkit-backdrop-filter: none; backdrop-filter: none;
-    box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.34),
-      inset 0 -1px 1.2px rgba(255,255,255,.14),
-      inset 0 0 0 .8px rgba(255,255,255,.26),
-      0 10px 26px -12px rgba(202,0,2,.42),
-      0 2px 9px -5px rgba(0,0,0,.25); }
+    /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
+       the rim instead of a bright convex highlight, no outer glow, just
+       a soft seat shadow. The vignette ::after finishes the depth. */
+    box-shadow: inset 0 0 0 .8px rgba(255,255,255,.2),
+      inset 0 3px 9px rgba(64,0,2,.5),
+      inset 0 -2px 7px rgba(64,0,2,.32),
+      0 6px 18px -10px rgba(0,0,0,.38); }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 64px; padding: 3px 0; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -370,19 +374,27 @@
   /* the side refraction: the lens rides ABOVE the red and the dates,
      smearing them stylistically at the edges while scrubbing */
   .nav .ttl.scrub.portal::before { z-index: 2; padding: 0;
-    -webkit-backdrop-filter: blur(5px) saturate(170%) brightness(1.16);
-    backdrop-filter: blur(5px) saturate(170%) brightness(1.16);
+    -webkit-backdrop-filter: blur(4px) saturate(160%);
+    backdrop-filter: blur(4px) saturate(160%);
     -webkit-mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
     -webkit-mask-composite: source-over;
     mask: linear-gradient(90deg, #000 0 12%, transparent 27% 73%, #000 88% 100%);
     mask-composite: add; }
+  /* the vignette: edges darken toward the rim like the inside of a
+     recess — the dates dim INTO the shadow, so the pill reads as a
+     peek into the red sheet rather than a surface floating over it */
+  .nav .ttl.scrub.portal::after { z-index: 3; background:
+    linear-gradient(90deg, rgba(56,0,2,.62), rgba(56,0,2,0) 16% 84%, rgba(56,0,2,.62)),
+    linear-gradient(180deg, rgba(56,0,2,.3), rgba(56,0,2,0) 26% 72%, rgba(56,0,2,.38)),
+    radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.12), rgba(255,255,255,0) 40%); }
   .nav .ttl.scrub.portal .scb .scb-it .n { color: #f9f9f9; }
   .nav .ttl.scrub.portal .scb .scb-it .m { color: #ffffff; opacity: .7; }
   .nav .ttl.scrub.portal .scb .scb-it .d { color: #f9f9f9; opacity: .78; }
-  /* the current day = the Figma tile, compact 30pt */
+  /* the current day = the Figma tile, SQUARED (Rashid) — full 34pt,
+     crisper corners; the taller portal pill gives it room */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(5) .n { color: #f9f9f9;
-    width: 30px; height: 30px; display: flex; align-items: center;
-    justify-content: center; border-radius: 9px; background: #ed1c24;
+    width: 34px; height: 34px; flex: none; display: flex; align-items: center;
+    justify-content: center; border-radius: 8px; background: #ed1c24;
     border: 1px solid #f53a3a; box-sizing: border-box;
     box-shadow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55); }
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
@@ -397,7 +409,14 @@
   /* ---- scroll area ---- */
   .scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
     touch-action: pan-y; overscroll-behavior: contain;
-    padding: calc(var(--top-pad) + 66px) 0 132px; scrollbar-width: none; }
+    /* --sheet-pad rides the sheet collapse (0 -> GAP, set by syncSheet):
+       at the fullscreen resting scroll the content keeps a full nav of
+       headroom, so day-turn arrivals land Breakfast un-cropped — while
+       the docked look and the one-gesture scroll-link stay identical.
+       overflow-anchor off: Chrome's scroll anchoring would fight the
+       live padding ride (WebKit has none). */
+    padding: calc(var(--top-pad) + 66px + var(--sheet-pad, 0px)) 0 132px;
+    overflow-anchor: none; scrollbar-width: none; }
   .scroll::-webkit-scrollbar { display: none; }
   .cat-head { display: flex; align-items: baseline; justify-content: space-between;
     padding: 16px 20px 12px; }
@@ -1132,9 +1151,8 @@ function openMealOv(key) {
   mealOv.style.transform = '';
   document.getElementById('moVeil').classList.add('show');
   mealOv.classList.add('open');
-  if (typeof setAnchor === 'function' && !fullAnchor) {
-    setAnchor(true);   /* pin the outer sheet fullscreen — the anchor keeps
-                          the user's scroll place under the details layer */
+  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
+    scrollArea.scrollTop = SHEET_GAP;   /* dock the outer sheet fullscreen */
     syncSheet();
   }
   setTimeout(() => {
@@ -1787,6 +1805,9 @@ function turnDay(dir, target) {
   if (target !== undefined && target === dayIdx) return;
   if (dir < 0 && dayIdx === 0 && target === undefined) return;
   turning = true;
+  /* a sheet at fullscreen STAYS at fullscreen through a day switch —
+     content changed, presentation didn't. Captured before the slide-out. */
+  const stayFull = sheetLive && scrollArea.scrollTop >= sheetGap() - 1;
   vibrate(25);
   dock.onclick = null;
   glideCanceled = true; scrollIntent = null;
@@ -1812,11 +1833,11 @@ function turnDay(dir, target) {
     scrollArea.style.transition = 'none';
     scrollArea.style.transform = 'translateX(' + (44 * dir) + '%)';
     applyDay(dayIdx);
-    /* a fresh day always rides in from its very top. The fullscreen
-       DETENT (fullAnchor) keeps the sheet pinned up there through the
-       turn, so an anchored day arrives with Breakfast fully visible —
-       un-cropped (Rashid); a docked day re-opens the overlay gap. */
-    scrollArea.scrollTop = 0;
+    /* a fresh day rides in from its very top. A fullscreen day parks at
+       the gap — the --sheet-pad headroom ride means that position now
+       keeps a full nav above Breakfast, so nothing arrives cropped —
+       and a docked day parks at 0, re-opening the overlay gap. */
+    scrollArea.scrollTop = stayFull ? sheetGap() : 0;
     syncSheet();
     updateCatDock();   /* dock band + title must be right on the arrival frame */
     void scrollArea.offsetWidth;   /* commit the park (rAF starves in hidden tabs) */
@@ -2429,7 +2450,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 110';
+const BUILD = 'build 2026-09-10 · 111';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2629,26 +2650,16 @@ const sheetEl = document.getElementById('sheet');
 const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
-/* fullscreen is a real DETENT (Rashid): once the sheet reaches the top it
-   ANCHORS — scrolling back to the content top no longer drops it, so a
-   fresh day (or a scroll back up) rests with Breakfast fully visible,
-   un-cropped. Only a deliberate pull-down at the top (wheel-up on
-   desktop) steps back to the overlay detent. The latch flips exactly at
-   the frame y hits 0 either way, so it is invisible when it engages. */
-let fullAnchor = false;
-let sheetYOverride = null;   /* the pull-down drag / detent settle drives y directly */
 function sheetGap() { return SHEET_GAP; }
-function setAnchor(on) {
-  fullAnchor = on;
-  document.body.classList.toggle('full-anchor', on);   /* glasschrome reads the detent */
-}
 function syncSheet() {
   if (!sheetLive) return;
-  if (!fullAnchor && sheetYOverride === null && scrollArea.scrollTop >= SHEET_GAP)
-    setAnchor(true);
-  const y = sheetYOverride !== null ? sheetYOverride
-    : fullAnchor ? 0
-    : Math.max(0, SHEET_GAP - scrollArea.scrollTop);
+  const y = Math.max(0, SHEET_GAP - scrollArea.scrollTop);
+  /* the headroom ride (Rashid, replaces the ·109 detent latch): scroll
+     padding grows 1px per collapsed px, so the fullscreen resting scroll
+     (scrollTop = GAP) keeps a full nav of headroom above Breakfast —
+     seamless ONE-gesture scroll-link in both directions, docked look
+     untouched, and day-turn arrivals land un-cropped. */
+  scrollArea.style.setProperty('--sheet-pad', (SHEET_GAP - y) + 'px');
   sheetEl.style.transform = 'translateY(' + y + 'px)';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
@@ -2675,66 +2686,6 @@ setTimeout(() => {
     syncSheet();
   }, 600);
 }, 60);
-
-/* pull-down at the top: the deliberate step from the fullscreen detent
-   back to the overlay detent. The sheet rides the finger 1:1 (rubbery
-   past the gap), then a per-frame settle carries it to whichever detent
-   won — radius, calorie bar and nav pad all ride every frame, and each
-   frame dispatches a real scroll event so the glass twins stay glued
-   through the whole maneuver (no CSS-transition shortcuts, no jumps). */
-let shY = null, shX0 = 0, shDy = 0, shOn = false, shAnim = null;
-function driveSheet(y) {
-  sheetYOverride = y; syncSheet();
-  scrollArea.dispatchEvent(new Event('scroll'));
-}
-function settleSheet(to, anchorAfter) {
-  const from = sheetYOverride === null ? 0 : sheetYOverride;
-  cancelAnimationFrame(shAnim);
-  const t0 = performance.now(), dur = 520;
-  const tick = now => {
-    const x = Math.min(1, (now - t0) / dur);
-    const e = 1 - Math.pow(1 - x, 3.2);          /* the house settle */
-    driveSheet(from + (to - from) * e);
-    if (x < 1) { shAnim = requestAnimationFrame(tick); return; }
-    shAnim = null; sheetYOverride = null;
-    setAnchor(anchorAfter);
-    syncSheet();
-    scrollArea.dispatchEvent(new Event('scroll'));
-  };
-  shAnim = requestAnimationFrame(tick);
-}
-scrollArea.addEventListener('touchstart', e => {
-  shY = (fullAnchor && sheetYOverride === null && scrollArea.scrollTop <= 0)
-    ? e.touches[0].clientY : null;
-  shX0 = e.touches[0].clientX; shDy = 0; shOn = false;
-}, { passive: true });
-scrollArea.addEventListener('touchmove', e => {
-  if (shY === null) return;
-  const dy = e.touches[0].clientY - shY, dx = e.touches[0].clientX - shX0;
-  if (!shOn) {
-    /* engage only on a clearly vertical downward pull from the very top;
-       sideways = the day swipe, upward = a normal scroll */
-    if (dy > 6 && dy > Math.abs(dx) * 1.2 && scrollArea.scrollTop <= 0) shOn = true;
-    else if (dy < -6 || Math.abs(dx) > 12) { shY = null; return; }
-    else return;
-  }
-  e.preventDefault();
-  shDy = dy;
-  const gap = sheetGap();
-  driveSheet(dy <= gap ? dy : gap + (dy - gap) * 0.18);
-}, { passive: false });
-scrollArea.addEventListener('touchend', () => {
-  if (shY === null || !shOn) { shY = null; return; }
-  shY = null;
-  const gap = sheetGap();
-  if (shDy > Math.min(64, gap * 0.55)) { vibrate(8); settleSheet(gap, false); }
-  else settleSheet(0, true);
-});
-/* desktop has no pull: a firm wheel-up nudge at the top steps back */
-scrollArea.addEventListener('wheel', e => {
-  if (fullAnchor && sheetYOverride === null && scrollArea.scrollTop <= 0 && e.deltaY < -40)
-    settleSheet(sheetGap(), false);
-}, { passive: true });
 fit();
 </script>
 <script>
@@ -3080,18 +3031,14 @@ if (QS.get('solo') === '1') {
   function watchDock() {
     var sa = document.getElementById('scrollArea');
     if (!sa) return;
-    var atDock = function () {
-      return sa.scrollTop >= gapNow() - 0.5 ||
-        document.body.classList.contains('full-anchor');   /* the detent */
-    };
     sa.addEventListener('scroll', function () {
-      docked = atDock();
+      docked = sa.scrollTop >= gapNow() - 0.5;
       moving = true;
       if (!trackRaf) trackRaf = requestAnimationFrame(postTrack);
       clearTimeout(restT);
       restT = setTimeout(function () { moving = false; report(); }, 180);
     }, { passive: true });
-    docked = atDock();
+    docked = sa.scrollTop >= gapNow() - 0.5;
     report();
   }
   /* dismissal clears, take 2: the old one-shot transitionstart arm was
