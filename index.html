@@ -1194,7 +1194,7 @@ function openLogin() {
   /* preload: fonts, shared libs, every flow page + its heavy assets */
   /* keep the lab-shell stamp in sync with the flow pages' script tags —
      a bare URL would warm a cache key the flows never request */
-  const warm = ['flows.json', 'lab-shell.js?v=20260910a', 'html2canvas.min.js',
+  const warm = ['flows.json', 'lab-shell.js?v=20260910b', 'html2canvas.min.js',
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {

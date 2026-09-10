@@ -983,7 +983,7 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     var closeT = null;
     function open() {
       if (document.body.classList.contains('desktop')) return;
-      clearTimeout(closeT);
+      clearTimeout(closeT); closeT = null;
       document.body.classList.add('labshell-menu');
       /* two-phase so the sheet mounts offscreen, then rides the spring
          (setTimeout, not rAF — rAF starves in hidden tabs) */
@@ -996,9 +996,23 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       document.body.classList.remove('labshell-open');
       clearTimeout(closeT);
       closeT = setTimeout(function () {
+        closeT = null;
         document.body.classList.remove('labshell-menu');
       }, 560);
     }
+    /* legacy openers (flow-page backup detectors) add labshell-menu
+       directly — lift them onto the two-phase spring automatically,
+       but never while a close is mid-travel */
+    new MutationObserver(function () {
+      if (closeT === null &&
+          document.body.classList.contains('labshell-menu') &&
+          !document.body.classList.contains('labshell-open'))
+        setTimeout(function () {
+          if (closeT === null &&
+              document.body.classList.contains('labshell-menu'))
+            document.body.classList.add('labshell-open');
+        }, 20);
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     veil.addEventListener('click', close);
     done.addEventListener('click', close);
     links.querySelectorAll('button').forEach(function (b) {
