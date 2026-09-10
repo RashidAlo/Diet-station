@@ -1772,9 +1772,9 @@ struct DSTabBar: View {
             }
             item(.calendar) { sel in
                 if forkMiddle {
-                    Image(systemName: "fork.knife")
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(sel ? DS.red : resting)
+                    DSForkKnifeIcon()
+                        .fill(sel ? DS.red : resting)
+                        .frame(width: 23, height: 23)
                 } else {
                     DSTabCalendarIcon()
                         .fill(sel ? DS.red : resting)
@@ -2606,6 +2606,51 @@ private struct FlowWebView: UIViewRepresentable {
 }
 
 // MARK: - Figma icon shapes (traced from the home flow's SVG exports)
+
+/// Figma export: home/ic-restaurant.svg — the fork-knife (23-grid)
+struct DSForkKnifeIcon: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: 15.333, y: 5.750))
+        p.addLine(to: CGPoint(x: 15.333, y: 11.500))
+        p.addCurve(to: CGPoint(x: 17.250, y: 13.417), control1: CGPoint(x: 15.333, y: 12.554), control2: CGPoint(x: 16.196, y: 13.417))
+        p.addLine(to: CGPoint(x: 18.208, y: 13.417))
+        p.addLine(to: CGPoint(x: 18.208, y: 20.125))
+        p.addCurve(to: CGPoint(x: 19.167, y: 21.083), control1: CGPoint(x: 18.208, y: 20.652), control2: CGPoint(x: 18.640, y: 21.083))
+        p.addCurve(to: CGPoint(x: 20.125, y: 20.125), control1: CGPoint(x: 19.694, y: 21.083), control2: CGPoint(x: 20.125, y: 20.652))
+        p.addLine(to: CGPoint(x: 20.125, y: 3.000))
+        p.addCurve(to: CGPoint(x: 18.937, y: 2.060), control1: CGPoint(x: 20.125, y: 2.377), control2: CGPoint(x: 19.540, y: 1.917))
+        p.addCurve(to: CGPoint(x: 15.333, y: 5.750), control1: CGPoint(x: 16.867, y: 2.568), control2: CGPoint(x: 15.333, y: 4.322))
+        p.closeSubpath()
+        p.move(to: CGPoint(x: 10.542, y: 8.625))
+        p.addLine(to: CGPoint(x: 8.625, y: 8.625))
+        p.addLine(to: CGPoint(x: 8.625, y: 2.875))
+        p.addCurve(to: CGPoint(x: 7.667, y: 1.917), control1: CGPoint(x: 8.625, y: 2.348), control2: CGPoint(x: 8.194, y: 1.917))
+        p.addCurve(to: CGPoint(x: 6.708, y: 2.875), control1: CGPoint(x: 7.140, y: 1.917), control2: CGPoint(x: 6.708, y: 2.348))
+        p.addLine(to: CGPoint(x: 6.708, y: 8.625))
+        p.addLine(to: CGPoint(x: 4.792, y: 8.625))
+        p.addLine(to: CGPoint(x: 4.792, y: 2.875))
+        p.addCurve(to: CGPoint(x: 3.833, y: 1.917), control1: CGPoint(x: 4.792, y: 2.348), control2: CGPoint(x: 4.360, y: 1.917))
+        p.addCurve(to: CGPoint(x: 2.875, y: 2.875), control1: CGPoint(x: 3.306, y: 1.917), control2: CGPoint(x: 2.875, y: 2.348))
+        p.addLine(to: CGPoint(x: 2.875, y: 8.625))
+        p.addCurve(to: CGPoint(x: 6.708, y: 12.458), control1: CGPoint(x: 2.875, y: 10.743), control2: CGPoint(x: 4.590, y: 12.458))
+        p.addLine(to: CGPoint(x: 6.708, y: 20.125))
+        p.addCurve(to: CGPoint(x: 7.667, y: 21.083), control1: CGPoint(x: 6.708, y: 20.652), control2: CGPoint(x: 7.140, y: 21.083))
+        p.addCurve(to: CGPoint(x: 8.625, y: 20.125), control1: CGPoint(x: 8.194, y: 21.083), control2: CGPoint(x: 8.625, y: 20.652))
+        p.addLine(to: CGPoint(x: 8.625, y: 12.458))
+        p.addCurve(to: CGPoint(x: 12.458, y: 8.625), control1: CGPoint(x: 10.743, y: 12.458), control2: CGPoint(x: 12.458, y: 10.743))
+        p.addLine(to: CGPoint(x: 12.458, y: 2.875))
+        p.addCurve(to: CGPoint(x: 11.500, y: 1.917), control1: CGPoint(x: 12.458, y: 2.348), control2: CGPoint(x: 12.027, y: 1.917))
+        p.addCurve(to: CGPoint(x: 10.542, y: 2.875), control1: CGPoint(x: 10.973, y: 1.917), control2: CGPoint(x: 10.542, y: 2.348))
+        p.addLine(to: CGPoint(x: 10.542, y: 8.625))
+        p.closeSubpath()
+        let s = min(rect.width / 23, rect.height / 23)
+        let t = CGAffineTransform(translationX: rect.midX - 23 * s / 2,
+                                  y: rect.midY - 23 * s / 2)
+            .scaledBy(x: s, y: s)
+        return p.applying(t)
+    }
+}
 
 /// Figma export: home/cal-tabcal.svg
 struct DSTabCalendarIcon: Shape {
