@@ -2481,7 +2481,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-10 · 115';
+const BUILD = 'build 2026-09-10 · 116';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -2800,6 +2800,12 @@ if (QS.get('solo') === '1') {
     '  background: transparent !important; box-shadow: none !important; ' +
     '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
     '.nav .ttl.scrub.ds-native-hidden::before, .nav .ttl.scrub.ds-native-hidden::after { display: none !important; } ' +
+    /* PORTAL under the native twin: the agreed split is web = red layer +
+       dates + vignette, native = lensing only — so portal keeps its red
+       and its vignette; only the web lens (::before) yields */
+    '.nav .ttl.scrub.portal.ds-native-hidden { background: #ed1c24 !important; ' +
+    '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
+    '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
