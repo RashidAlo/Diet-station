@@ -240,14 +240,15 @@
       snaps to the nearest state on the house spring. Expanding snap points: rest height and
       full screen (top inset ~10px). All thresholds below.</p>
     <p class="spec"><b>Scroll-driven expanding</b> (reference: the meal selection screen,
-      Rashid's settled mechanism) — when the sheet's own content scroll drives the docking,
-      sheet and content travel <b>as one piece, 1:1 with the finger</b>
-      (<code>y = gap − s</code>, radius riding y, a headroom pad keeping content glued to
-      the frame) until the frame docks; content then keeps scrolling. The only velocity
-      event is the natural arrest at the top — the same stop a native sheet makes at its
-      detent. A scroll that dies mid-zone detents to the nearest state after momentum ends.
-      Iteration history (recorded in the flow): content-freeze and eased-frame profiles were
-      both tried and superseded by this 1:1 one-piece feel — his taste call.</p>
+      Rashid's settled &ldquo;9am&rdquo; mechanism, verbatim) — a <b>pure 1:1 scroll-link</b>:
+      <code>y = gap − s</code>, radius riding y, native momentum only — no settle glide, no
+      easing, no pad riding the gesture. The frame tracks the finger to the natural arrest
+      at the top; content keeps scrolling. The one permitted extra is a
+      <b>day-turn arrival offset</b>: set on a fullscreen day switch so the first category
+      lands un-cropped, folded away invisibly once the scroll runs deep (or shrunk 1:1 on an
+      immediate detach) — it never moves during any other gesture. Iteration history
+      (recorded in the flow): content-freeze, constant-K, eased-frame and always-riding-pad
+      variants were all tried and rejected — the pure link is his taste call.</p>
   </section>
 
   <section class="card">
