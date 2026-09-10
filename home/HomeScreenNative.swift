@@ -2267,9 +2267,13 @@ struct TwoFingerHoldGesture: UIGestureRecognizerRepresentable {
         r.minimumPressDuration = 0.4
         r.allowableMovement = 24
         r.cancelsTouchesInView = false
-        // default-TRUE delaysTouchesEnded withheld short precise lifts from
-        // the webview for up to minimumPressDuration (Shell's scroll
-        // forensics) — a hold gesture needs no end delay to recognize
+        // TOUCH LAW (system/platform.html): lab gestures never delay
+        // touches under a web surface — delaysTouchesBegan/Ended both
+        // false. (END defaults TRUE: it withheld a short swipe's
+        // touch-end up to minimumPressDuration, eating quick sub-24pt
+        // flicks; long flicks fail the recognizer instantly, which is
+        // why it hid through every verification burst.)
+        r.delaysTouchesBegan = false
         r.delaysTouchesEnded = false
         r.delegate = context.coordinator
         return r
@@ -2302,9 +2306,13 @@ struct ThreeFingerHoldGesture: UIGestureRecognizerRepresentable {
         r.minimumPressDuration = 0.4
         r.allowableMovement = 24
         r.cancelsTouchesInView = false
-        // default-TRUE delaysTouchesEnded withheld short precise lifts from
-        // the webview for up to minimumPressDuration (Shell's scroll
-        // forensics) — a hold gesture needs no end delay to recognize
+        // TOUCH LAW (system/platform.html): lab gestures never delay
+        // touches under a web surface — delaysTouchesBegan/Ended both
+        // false. (END defaults TRUE: it withheld a short swipe's
+        // touch-end up to minimumPressDuration, eating quick sub-24pt
+        // flicks; long flicks fail the recognizer instantly, which is
+        // why it hid through every verification burst.)
+        r.delaysTouchesBegan = false
         r.delaysTouchesEnded = false
         r.delegate = context.coordinator
         return r
@@ -2332,7 +2340,14 @@ struct TripleTapHoldGesture: UIGestureRecognizerRepresentable {
     func makeUIGestureRecognizer(context: Context) -> TripleTapHoldRecognizer {
         let r = TripleTapHoldRecognizer()
         r.cancelsTouchesInView = false   // parity with the hold recognizers
-        r.delaysTouchesEnded = false     // same end-delay fix (Shell forensics)
+        // TOUCH LAW (system/platform.html): lab gestures never delay
+        // touches under a web surface — delaysTouchesBegan/Ended both
+        // false. (END defaults TRUE: it withheld a short swipe's
+        // touch-end up to minimumPressDuration, eating quick sub-24pt
+        // flicks; long flicks fail the recognizer instantly, which is
+        // why it hid through every verification burst.)
+        r.delaysTouchesBegan = false
+        r.delaysTouchesEnded = false
         r.delegate = context.coordinator
         return r
     }
