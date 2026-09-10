@@ -662,6 +662,14 @@
           "id": "default",
           "note": "Boots fresh — no context"
         }
+      ],
+      "exits": [
+        {
+          "intent": "open-plan-quiz",
+          "to": "plan-quiz",
+          "present": "push",
+          "note": "“Let’s get Started” CTA — context {src:'breathe-cta'}"
+        }
       ]
     },
     {
@@ -937,6 +945,10 @@
         {
           "id": "default",
           "note": "Boots fresh — no context"
+        },
+        {
+          "id": "from-breathe",
+          "note": "Entered from the Breathe intro CTA — ds-nav push, context {src:'breathe-cta'}; boots fresh per reset policy"
         }
       ]
     },
