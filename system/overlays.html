@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overlays &amp; Sheets — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  .closex { position: fixed; z-index: 60;
+    top: calc(env(safe-area-inset-top, 10px) + 8px); right: 14px;
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d1d1f; background: rgba(255,255,255,.5);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1.5px 1px rgba(255,255,255,.75),
+      inset 0 0 0 .8px rgba(255,255,255,.5),
+      0 8px 24px -10px rgba(0,0,0,.3);
+    text-decoration: none; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 56ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .btn { font: 500 14px/1 'Urbane Rounded', sans-serif; text-decoration: none; cursor: pointer;
+    border-radius: 999px; padding: 12px 20px; border: none; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: #d4141c; }
+  .btn.ghost { background: var(--ground); color: var(--ink); }
+  .btn.ghost:hover { background: #e9e9ec; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+  .spec { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; line-height: 1.55; }
+  .spec code { font: 11.5px/1.5 ui-monospace, Menlo, monospace; }
+
+  /* ---- live demo stages ---- */
+  .stages { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 620px) { .stages { grid-template-columns: 1fr; } }
+  .stagecol .slbl { font: 600 12px/1.4 'Urbane Rounded', sans-serif; margin-bottom: 8px;
+    display: flex; align-items: baseline; gap: 8px; }
+  .stagecol .slbl small { font: 400 11px/1.4 'Proxima Nova', sans-serif; color: var(--ink-soft); }
+  .ovstage { position: relative; height: 430px; border-radius: 22px; overflow: hidden;
+    background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.07); }
+  .fakeapp { position: absolute; inset: 0; padding: 20px; }
+  .fakeapp .fk-t { height: 14px; width: 55%; border-radius: 7px; background: #ececef; margin-bottom: 12px; }
+  .fakeapp .fk-c { height: 84px; border-radius: 16px; background: var(--ground); margin-bottom: 10px; }
+  .fakeapp .present { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); }
+  .ovveil { position: absolute; inset: 0; z-index: 4; background: rgba(11,14,18,.45);
+    opacity: 0; pointer-events: none; transition: opacity .32s ease; }
+  .ovveil.show { opacity: 1; pointer-events: auto; }
+  .ovsheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: #fff; border-radius: 24px 24px 0 0;
+    box-shadow: 0 -14px 44px rgba(0,0,0,.24);
+    transform: translateY(103%);
+    transition: transform .55s cubic-bezier(.32,.72,0,1), height .55s cubic-bezier(.32,.72,0,1),
+      border-radius .3s ease;
+    touch-action: none; }
+  .ovsheet.open { transform: none; }
+  .ovsheet.drag { transition: none; }
+  #exSheet { height: 58%; }
+  #exSheet.full { height: calc(100% - 10px); border-radius: 44px 44px 0 0; }
+  #stSheet { height: 46%; }
+  .ovbar { display: flex; align-items: center; height: 58px; padding: 10px 12px 0 20px; }
+  .ovbar .grab { position: absolute; left: 50%; top: 7px; transform: translateX(-50%);
+    width: 36px; height: 5px; border-radius: 3px; background: #e2e2e6; }
+  .ovbar .ottl { font: 600 15px/1.3 'Urbane Rounded', sans-serif; }
+  .ovbar .spacer { flex: 1; }
+  .oxb { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #e5e5e5;
+    background: #fff; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; color: var(--ink);
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .oxb:active { transform: scale(.92); }
+  .odual { display: flex; align-items: center; height: 40px; border-radius: 20px;
+    overflow: hidden; background: rgba(240,240,242,.9);
+    box-shadow: inset 0 0 0 .6px rgba(0,0,0,.06); }
+  .odual button { width: 44px; height: 40px; border: none; background: transparent;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .odual button:active { transform: scale(.9); }
+  .odual .sep { width: 1px; height: 20px; background: rgba(11,14,18,.16); }
+  .ovbody { padding: 8px 20px; }
+  .ovbody .fk-t { height: 12px; width: 62%; border-radius: 6px; background: #ececef; margin: 10px 0; }
+  .ovbody .fk-c { height: 58px; border-radius: 14px; background: var(--ground); margin-bottom: 10px; }
+  .hintline { font: 500 11px/1.5 'Urbane Rounded', sans-serif; color: var(--ink-soft);
+    text-align: center; padding-top: 4px; }
+
+  /* ---- action bar law figures ---- */
+  .barfig { border-radius: 14px; background: var(--ground); padding: 14px 16px; margin-top: 10px;
+    display: flex; align-items: center; gap: 10px; }
+  .barfig .bf-t { font: 600 13px/1.4 'Urbane Rounded', sans-serif; }
+  .barfig .spacer { flex: 1; }
+  .barfig .lbl { font: 500 10px/1.4 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--ink-soft); }
+
+  /* ---- adoption matrix ---- */
+  .mrow { display: flex; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--line);
+    align-items: baseline; flex-wrap: wrap; }
+  .mrow:last-child { border-bottom: 0; }
+  .mrow .mn { flex: none; width: 120px; font: 600 13.5px/1.4 'Urbane Rounded', sans-serif; }
+  .mrow .mt { flex: 1; min-width: 220px; font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+  .badge { flex: none; font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .07em; padding: 6px 10px 5px; border-radius: 999px; }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.todo { background: var(--red-soft); color: var(--red); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+  <a class="closex" href="../#design-system" aria-label="Close">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </a>
+</header>
+
+<div class="hero wrap">
+  <h1>Overlays &amp; Sheets</h1>
+  <p>One structure for every surface that presents over a screen — how it arrives, how it's
+    driven, where its actions live, and how it leaves. Meal selection is the reference
+    implementation; the demos below are live.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The contract</h2>
+    <p class="desc">Every overlay presents the same way: it <b>slides in from the bottom</b>
+      while the screen behind darkens under a diffuse, transitioned dark layer. Per
+      <a href="motion.html" style="color:var(--red)">the overlay rule</a>, that scrim never
+      travels — it dissolves in place; only the sheet moves, on the house spring. Exit
+      reverses both.</p>
+    <p class="spec">scrim <code>rgba(11,14,18,.42&ndash;.45)</code>, opacity only,
+      <code>.32s ease</code> &middot; sheet <code>translateY(103%) &rarr; 0</code>,
+      <code>.55s cubic-bezier(.32,.72,0,1)</code> &middot; radius: partial sheets
+      <code>24 24 0 0</code>, near-fullscreen overlays <code>44 44 0 0</code> &middot;
+      sheet shadow <code>0 -14px 44px rgba(0,0,0,.24)</code>.</p>
+  </section>
+
+  <section class="card">
+    <h2>Two modes of interaction</h2>
+    <p class="desc"><b>Static</b> sits where it presents. <b>Expanding</b> can be swiped up —
+      it travels with the finger and snaps into full screen (corners growing 24&rarr;44 as it
+      docks). Try both; drag the sheets by their headers.</p>
+    <div class="stages">
+      <div class="stagecol">
+        <div class="slbl">Static <small>+ drag-to-close trait</small></div>
+        <div class="ovstage" id="stStage">
+          <div class="fakeapp">
+            <div class="fk-t"></div><div class="fk-c"></div><div class="fk-c"></div><div class="fk-c"></div>
+            <button class="btn primary present" data-open="st">Present</button>
+          </div>
+          <div class="ovveil" id="stVeil"></div>
+          <div class="ovsheet" id="stSheet">
+            <div class="ovbar" id="stBar">
+              <span class="grab"></span>
+              <span class="ottl">Sign in</span>
+              <span class="spacer"></span>
+              <button class="oxb" data-close="st" aria-label="Close">
+                <svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="ovbody"><div class="fk-t"></div><div class="fk-c"></div><div class="fk-t" style="width:40%"></div></div>
+            <div class="hintline">drag down &gt; 195px to close</div>
+          </div>
+        </div>
+      </div>
+      <div class="stagecol">
+        <div class="slbl">Expanding <small>swipes up, snaps full screen</small></div>
+        <div class="ovstage" id="exStage">
+          <div class="fakeapp">
+            <div class="fk-t"></div><div class="fk-c"></div><div class="fk-c"></div><div class="fk-c"></div>
+            <button class="btn primary present" data-open="ex">Present</button>
+          </div>
+          <div class="ovveil" id="exVeil"></div>
+          <div class="ovsheet" id="exSheet">
+            <div class="ovbar" id="exBar">
+              <span class="grab"></span>
+              <span class="ottl">Meal details</span>
+              <span class="spacer"></span>
+              <div class="odual">
+                <button aria-label="Confirm"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><path d="M3.2 9.6l3.6 3.6 8-8.4" stroke="#ED1C24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <span class="sep"></span>
+                <button data-close="ex" aria-label="Clear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#1d1d1f" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>
+            <div class="ovbody"><div class="fk-t"></div><div class="fk-c"></div><div class="fk-c"></div><div class="fk-t" style="width:44%"></div></div>
+            <div class="hintline">drag up to snap full &middot; drag down to shrink / close</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="spec">Drag tracking kills the transition (<code>.drag</code> class); release
+      snaps to the nearest state on the house spring. Expanding snap points: rest height and
+      full screen (top inset ~10px). All thresholds below.</p>
+  </section>
+
+  <section class="card">
+    <h2>The action bar</h2>
+    <p class="desc">Every overlay carries a top action bar. Its content is feature-dependent
+      — but placement is law: <b>actions live on the right.</b></p>
+    <h3>With controls</h3>
+    <p class="desc" style="font-size:13.5px">When the overlay has simple controls, they form
+      the Apple-style dual capsule — confirm (check) and clear (X), divider between — pinned
+      right. Reference: meal selection's capsule at <code>right: 16px</code>, 44px tall,
+      radius 22, frosted glass.</p>
+    <div class="barfig"><span class="bf-t">Select meals</span><span class="spacer"></span>
+      <span class="lbl">check &middot; clear &rarr;</span>
+      <div class="odual"><button aria-label="Confirm"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><path d="M3.2 9.6l3.6 3.6 8-8.4" stroke="#ED1C24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="sep"></span><button aria-label="Clear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#1d1d1f" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>
+    </div>
+    <h3>Without controls</h3>
+    <p class="desc" style="font-size:13.5px">When an overlay has nothing to confirm, the lone
+      X takes the same right-side seat. Never left, never floating elsewhere.</p>
+    <div class="barfig"><span class="bf-t">Sign in</span><span class="spacer"></span>
+      <span class="lbl">x &rarr;</span>
+      <button class="oxb" aria-label="Close"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <p class="meta">Over imagery the bar sits on a top gradient
+      (<code>rgba(0,0,0,.22) &rarr; 0</code>) with a glass X (blur 12 + saturate 160%) —
+      meal details is the reference. Navigation steps, titles and feature controls fill the
+      left and center as each feature needs.</p>
+  </section>
+
+  <section class="card">
+    <h2>Optional trait: drag-to-close</h2>
+    <p class="desc">Sheets whose exit needs no confirmation may close by pulling down — an
+      opt-in trait, granted per screen. Values from the meal-details reference:</p>
+    <p class="spec">tracks only when the sheet's scroller is at the top
+      (<code>scrollTop &le; 0</code>) &middot; the sheet follows the finger with rubber-band
+      resistance <code>&times;0.42</code> &middot; release past <code>195px</code> closes;
+      short of it, the sheet springs back &middot; during tracking the transition is off
+      (<code>.drag</code>), so the sheet is glued to the finger &middot; one scroller chains
+      content scroll, header collapse and the dismiss pull in a single gesture — no separate
+      grab zones.</p>
+    <p class="meta">Granted: meal details (reference) &middot; recommended: sign-in / auth
+      (no unsaved state) &middot; withheld where closing loses work — those sheets keep the
+      X as the only exit, optionally with a confirm alert.</p>
+  </section>
+
+  <section class="card">
+    <h2>Adoption</h2>
+    <p class="desc">Where every overlay-class screen stands against the system. Asks are
+      dispatched to the owning lanes; this page tracks status.</p>
+    <div style="margin-top:8px">
+      <div class="mrow"><span class="mn">Meal selection</span><span class="badge ok">Reference</span>
+        <span class="mt">Both modes shipped: static day sheet + expanding meal details with
+        drag-to-close; dual capsule right at 16px; scrim and spring per contract.</span></div>
+      <div class="mrow"><span class="mn">Sign in (auth)</span><span class="badge todo">Adopt trait</span>
+        <span class="mt">Static mode ✓, X on the right ✓ (<code>margin-left: auto</code>),
+        contract scrim/spring ✓. To adopt: drag-to-close (no unsaved state — Rashid names it
+        a fit). Auth lane.</span></div>
+      <div class="mrow"><span class="mn">Coupons (rewards)</span><span class="badge todo">Move X right</span>
+        <span class="mt">Close button currently sits at <code>left: 24px</code> — the one
+        placement violation found. Move to the right seat per the action-bar law; overlay is
+        static, no trait needed. Flows lane.</span></div>
+      <div class="mrow"><span class="mn">Hub flow sheets</span><span class="badge ok">Compliant</span>
+        <span class="mt">Present per the contract via the intent router (sheet/push); flows
+        inside own their action bars.</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <div class="codewrap">
+      <pre id="ovKit">// ── Native (SwiftUI) ──────────────────────────────────────────────
+// static sheet:
+.sheet(isPresented: $show) { SignIn() }
+  .presentationDetents([.height(420)])          // one detent = static
+  .presentationCornerRadius(24)
+// expanding sheet (two snap points, corners grow as it docks):
+  .presentationDetents([.medium, .large])
+// drag-to-close trait:
+  .interactiveDismissDisabled(false)            // granted
+  .interactiveDismissDisabled(true)             // withheld (X only)
+// scrim: system dimming already dissolves in place — never animate a cover;
+// a cover presenting a WEB surface stays transparent + non-animated (solo=1).
+
+// ── Web ──────────────────────────────────────────────────────────
+// scrim:  rgba(11,14,18,.45); opacity 0→1, .32s ease  (NEVER transform)
+// sheet:  translateY(103%)→0, .55s cubic-bezier(.32,.72,0,1)
+//         radius 24 partial · 44 near-fullscreen · shadow 0 -14px 44px rgba(0,0,0,.24)
+// expanding: track drag with transition off; on release snap to nearest of
+//         [rest height, full (top −10px)] on the house spring
+// drag-to-close (opt-in): only when scrollTop <= 0; follow at dy*0.42;
+//         release > 195px → close, else spring back
+// action bar: actions RIGHT — dual capsule (confirm|clear, 44h r22, frost)
+//         when controls exist; lone X right otherwise; top gradient over imagery</pre>
+      <button class="copycode" data-copy="ovKit">Copy</button>
+    </div>
+    <p class="meta">Values extracted from meal-select/select.html (meal details overlay +
+      dual capsule) and auth/index.html — the shipping implementations.</p>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+
+  function wireSheet(key, opts) {
+    const veil = document.getElementById(key + 'Veil');
+    const sheet = document.getElementById(key + 'Sheet');
+    const bar = document.getElementById(key + 'Bar');
+    const stage = sheet.parentElement;
+    let full = false;
+    const setOpen = on => {
+      veil.classList.toggle('show', on);
+      sheet.classList.toggle('open', on);
+      if (!on) { full = false; sheet.classList.remove('full'); }
+    };
+    stage.querySelector('[data-open]').addEventListener('click', () => setOpen(true));
+    sheet.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => setOpen(false)));
+    veil.addEventListener('click', () => setOpen(false));
+
+    /* drag: pointer events on the bar (the demo's grab region) */
+    let py = null, dy = 0;
+    bar.addEventListener('pointerdown', e => {
+      if (!sheet.classList.contains('open')) return;
+      if (e.target.closest('button')) return;
+      py = e.clientY; dy = 0;
+      sheet.classList.add('drag');
+      try { bar.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    bar.addEventListener('pointermove', e => {
+      if (py === null) return;
+      dy = e.clientY - py;
+      if (dy > 0) {                                   /* downward: rubber-band */
+        sheet.style.transform = 'translateY(' + (dy * 0.42).toFixed(1) + 'px)';
+      } else if (opts.expanding && !full) {           /* upward: travel toward full */
+        const range = stage.clientHeight * (1 - opts.restPct / 100) - 10;
+        const up = Math.min(-dy, Math.max(range, 0));
+        sheet.style.transform = 'translateY(0)';
+        sheet.style.height = 'calc(' + opts.restPct + '% + ' + up.toFixed(1) + 'px)';
+      }
+    });
+    const release = () => {
+      if (py === null) return;
+      sheet.classList.remove('drag');
+      if (dy > 195) {                                 /* pull past threshold = close */
+        if (opts.dragClose) { sheet.style.transform = ''; sheet.style.height = ''; setOpen(false); }
+        else { sheet.style.transform = ''; sheet.style.height = ''; }
+      } else if (opts.expanding && dy < -60) {        /* upward fling = snap full */
+        full = true;
+        sheet.style.transform = ''; sheet.style.height = '';
+        sheet.classList.add('full');
+      } else {
+        sheet.style.transform = ''; sheet.style.height = '';
+        if (opts.expanding && full && dy > 60) { full = false; sheet.classList.remove('full'); }
+      }
+      py = null; dy = 0;
+    };
+    bar.addEventListener('pointerup', release);
+    bar.addEventListener('pointercancel', release);
+  }
+
+  wireSheet('st', { dragClose: true, expanding: false, restPct: 46 });
+  wireSheet('ex', { dragClose: true, expanding: true, restPct: 58 });
+})();
+</script>
+</body>
+</html>
