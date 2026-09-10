@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DS Lab">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>DietStation — Sign in / OTP / Face ID</title>
+<script>class Button {}</script>
+<script src="html2canvas.min.js"></script>
+<script src="liquid-glass-container.js"></script>
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+  html, body { height: 100%; overflow: hidden; background: #f5f5f7; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
+    touch-action: none; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; }
+
+  /* ================= playground shell (desktop) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #fbfbfc; border-right: 1px solid rgba(0,0,0,.08);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y;
+    display: none; }
+  body.desktop #side { display: block; }
+
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ED1C24; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #1d1d1f; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: #6e6e73;
+    margin-bottom: 26px; }
+
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: #1d1d1f; margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: #8e8e93;
+    margin-bottom: 12px; }
+
+  .jump-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .jump-grid button { display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 12px; background: #ffffff;
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #6e6e73;
+    transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .jump-grid button:hover { background: #f0f0f2; }
+  .jump-grid button.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ED1C24; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
+
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif;
+    transition: filter .15s ease, background .15s ease; }
+  #sReset { background: #ED1C24; color: #fff; }
+  #sReset:hover { filter: brightness(1.08); }
+  #sCopy { background: #ececef; color: #1d1d1f; }
+  #sCopy:hover { background: #e2e2e6; }
+
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
+
+  /* ================= stage + device frame ================= */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body.desktop #stage { left: 316px; }
+
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: transparent;
+    border: 2.5px solid #111114; }
+  body.desktop .device::before { content: ''; position: absolute; left: -7px; top: 190px;
+    width: 5px; height: 128px; border-radius: 3px 0 0 3px; background: #111114;
+    box-shadow: 0 -70px 0 #111114; }
+  body.desktop .device::after { content: ''; position: absolute; right: -7px; top: 240px;
+    width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
+
+  .phone { position: relative; width: 402px; height: 874px; overflow: hidden;
+    background: #a6a6a6; }
+  body.desktop .phone { border-radius: 46px; box-shadow: 0 0 0 1.5px #111114; }
+
+  .island { display: none; position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+    width: 112px; height: 32px; border-radius: 20px; background: #09090b; z-index: 40;
+    pointer-events: none; }
+  body.desktop .island { display: block; }
+
+  /* ================= the sign-in sheet (Figma 16360:78682) ================= */
+  .sheet { position: absolute; left: 0; bottom: 0; width: 402px; height: 782px;
+    border-radius: 38px 38px 0 0; overflow: hidden; background: #ffffff; }
+  /* embedded in the app launcher: hub/home shows through, sheet springs up */
+  html.embed, html.embed body, html.embed #stage, html.embed .device,
+  html.embed .phone { background: transparent !important; }
+  html.embed .sheet { transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  html.embed.sheet-enter .sheet { transform: translateY(103%); }
+
+  /* --- sheet header (Top Page Navigation) --- */
+  .topnav { position: absolute; left: 0; right: 0; top: 0; height: 72px; z-index: 20;
+    display: flex; align-items: center; padding: 16px; }
+  .topnav .title { position: absolute; left: 0; right: 0; text-align: center;
+    font: 600 22px/32px 'Urbane Rounded', sans-serif; color: #0b0e12; pointer-events: none; }
+  .authx { margin-left: auto; width: 40px; height: 40px; border-radius: 100px;
+    border: 1px solid #e5e5e5; background: #fff; cursor: pointer; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s cubic-bezier(.3,.8,.3,1), background .15s ease; }
+  .authx:active { transform: scale(.92); background: #f5f5f5; }
+  .authx img { width: 20px; height: 20px; }
+
+  /* --- sliding screens (iOS push inside the sheet) --- */
+  .scr { position: absolute; left: 0; right: 0; top: 72px; bottom: 0;
+    transition: transform .46s cubic-bezier(.32,.72,0,1), opacity .46s ease;
+    will-change: transform; }
+  body.snap .scr { transition: none !important; }
+  .scr.off-r { transform: translateX(100%); opacity: 0; pointer-events: none; }
+  .scr.off-l { transform: translateX(-28%); opacity: 0; pointer-events: none; }
+  .scr.onstage { transform: translateX(0); opacity: 1; }
+
+  /* --- sign-in screen (Figma 16360:78789) --- */
+  .signin-col { position: absolute; left: 0; right: 0; top: 8px;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 20px 22px; height: 387px; justify-content: space-between; }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .brand .logo { height: 30px; }
+  .brand h1 { font: 600 24px/32px 'Urbane Rounded', sans-serif; color: #ed1c24; text-align: center; }
+
+  .phone-block { width: 100%; padding: 0 13px; }
+  .phone-field { display: flex; align-items: center; gap: 10px; padding-right: 12px;
+    border-bottom: 1px solid #e5e5e5; height: 48px;
+    transition: border-color .25s ease; }
+  .phone-field.err { border-color: #ed1c24; }
+  .pretab { display: flex; align-items: center; gap: 10px; padding: 0 10px; height: 36px;
+    cursor: default; }
+  .pretab .cc { font: 300 22px/28px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .pretab img { width: 20px; height: 20px; }
+  .phone-num { flex: 1; display: flex; align-items: center; min-width: 0;
+    font: 300 22px/28px 'Urbane Rounded', sans-serif; color: #ed1c24; letter-spacing: .5px;
+    white-space: nowrap; overflow: hidden; }
+  .caret { width: 2px; height: 26px; margin-left: 1px; background: #ed1c24; border-radius: 1px;
+    animation: blink 1.06s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .phone-hint { margin-top: 8px; min-height: 20px;
+    font: 400 14px/20px 'Proxima Nova', sans-serif; color: #ed1c24; text-align: right;
+    opacity: 0; transition: opacity .2s ease; }
+  .phone-hint.on { opacity: 1; }
+  @keyframes shake { 0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); } 40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+  .shake { animation: shake .38s cubic-bezier(.36,.07,.19,.97); }
+
+  .cta-col { width: 100%; display: flex; flex-direction: column; gap: 19px; }
+  .btn { width: 100%; height: 53px; border-radius: 1024px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font: 500 16px/1 'Urbane Rounded', sans-serif;
+    transition: transform .16s cubic-bezier(.3,.8,.3,1), filter .15s ease; }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: #ed1c24; color: #fff; }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.outline { background: #fff; border: 1px solid #ee2023; color: #0b0e12; }
+  .btn.outline img { width: 24px; height: 24px; }
+
+  /* --- OTP screen (Figma 16360:79075) --- */
+  .otp-col { position: absolute; left: 50%; transform: translateX(-50%); top: 8px;
+    width: 395px; padding: 0 36px; display: flex; flex-direction: column;
+    align-items: center; gap: 36px; }
+  .otp-head { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+  .otp-head .bubble { width: 30px; height: 30px; }
+  .otp-head h1 { font: 600 30px/40px 'Urbane Rounded', sans-serif; color: #ed1c24;
+    text-align: center; width: 100%; }
+  .otp-head .sent { font: 400 18px/28px 'Proxima Nova', sans-serif; color: #0b0e12;
+    text-align: center; width: 100%; margin-top: -4px; }
+  .otp-head .alt { margin-top: 12px; background: none; border: none; cursor: pointer;
+    font: 500 12px/1 'Urbane Rounded', sans-serif; color: #5e5e5e;
+    text-decoration: underline; text-underline-position: from-font; }
+
+  .otp-row { display: flex; gap: 18px; align-items: center; }
+  .otp-cell { width: 44px; height: 44px; border-radius: 1024px; border: 2px solid #e5e5e5;
+    display: flex; align-items: center; justify-content: center;
+    font: 400 15px/22px 'Proxima Nova', sans-serif; color: #0d0d0d;
+    transition: border-color .2s ease, transform .2s ease; }
+  .otp-cell.filled { border-color: #454545; }
+  .otp-cell.err { border-color: #ed1c24; }
+  .otp-cell .pipe { animation: blink 1.06s steps(1) infinite; }
+  .otp-row.verifying .otp-cell { border-color: #454545; animation: otpPulse 0.7s ease infinite; }
+  @keyframes otpPulse { 50% { transform: scale(1.07); } }
+
+  .resend { font: 400 15px/22px 'Proxima Nova', sans-serif; color: #0d0d0d; text-align: center;
+    background: none; border: none; }
+  .resend b { font: inherit; font-weight: 400; }
+  .resend.ready b { color: #ed1c24; text-decoration: underline; cursor: pointer; }
+
+  /* --- success screen --- */
+  .done-col { position: absolute; left: 0; right: 0; top: 96px;
+    display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 0 40px; }
+  .tickwrap { width: 88px; height: 88px; border-radius: 50%; background: #ed1c24;
+    display: flex; align-items: center; justify-content: center;
+    transform: scale(.4); opacity: 0;
+    transition: transform .5s cubic-bezier(.2,1.4,.35,1), opacity .3s ease; }
+  .scr.onstage .tickwrap { transform: scale(1); opacity: 1; }
+  .tickwrap svg { width: 42px; height: 42px; }
+  .tickwrap path { stroke: #fff; stroke-width: 3.4; fill: none;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 30; stroke-dashoffset: 30; }
+  .scr.onstage .tickwrap path { animation: draw .45s .3s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .done-col h1 { font: 600 24px/32px 'Urbane Rounded', sans-serif; color: #ed1c24; text-align: center; }
+  .done-col .who { font: 400 15px/22px 'Proxima Nova', sans-serif; color: #5e5e5e;
+    text-align: center; margin-top: -10px; }
+  .done-col .btn.primary { margin-top: 16px; }
+
+  /* --- the iOS numeric keyboard (Figma Keyboard / Numbers and Punctuation) --- */
+  .kbd { position: absolute; left: 0; right: 0; bottom: 0; z-index: 15;
+    padding: 24px 7.67px 76px; border-radius: 27px 27px 0 0; background: #e6e9ed;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: transform .4s cubic-bezier(.32,.72,0,1); }
+  .kbd.hide { transform: translateY(110%); }
+  .kbd .krow { display: flex; gap: 6px; }
+  .kbd .key { flex: 1; height: 50px; border-radius: 8.5px; border: none; cursor: pointer;
+    background: #fff; box-shadow: 0 1px 0 rgba(137,138,143,.45);
+    font: 400 23px/28px -apple-system, 'SF Compact', system-ui, sans-serif; color: #000;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .06s ease; touch-action: manipulation; }
+  .kbd .key:active { background: #cfd3d9; }
+  .kbd .key.ghost { background: transparent; box-shadow: none; cursor: default; }
+  .kbd .key.del { background: transparent; box-shadow: none; color: #595959; font-size: 22px; }
+  .kbd .key.del:active { color: #000; }
+
+  /* --- Face ID simulation overlay --- */
+  .fid-ov { position: absolute; inset: 0; z-index: 50; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(11,14,18,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+  .fid-ov.on { opacity: 1; pointer-events: auto; }
+  .fid-card { width: 152px; height: 152px; border-radius: 34px;
+    background: rgba(28,28,30,.82);
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+    box-shadow: 0 18px 50px -12px rgba(0,0,0,.5), inset 0 0 0 .6px rgba(255,255,255,.14);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    transform: scale(.86); transition: transform .3s cubic-bezier(.2,1.3,.4,1); }
+  .fid-ov.on .fid-card { transform: scale(1); }
+  .fid-glyph { width: 64px; height: 64px; position: relative; }
+  .fid-glyph .g { position: absolute; inset: 0;
+    background: #fff; -webkit-mask: url('auth-faceid.svg') center/contain no-repeat;
+    mask: url('auth-faceid.svg') center/contain no-repeat; }
+  .fid-ov.scanning .fid-glyph { animation: fidPulse 1s ease infinite; }
+  @keyframes fidPulse { 50% { transform: scale(1.08); } }
+  .fid-tick { position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; }
+  .fid-tick svg { width: 54px; height: 54px; }
+  .fid-tick circle { stroke: #fff; stroke-width: 3; fill: none;
+    stroke-dasharray: 151; stroke-dashoffset: 151; }
+  .fid-tick path { stroke: #fff; stroke-width: 3.4; fill: none;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 30; stroke-dashoffset: 30; }
+  .fid-ov.ok .fid-glyph .g { display: none; }
+  .fid-ov.ok .fid-tick { display: flex; }
+  .fid-ov.ok .fid-tick circle { animation: drawc .4s ease forwards; }
+  .fid-ov.ok .fid-tick path { animation: draw .35s .28s ease forwards; }
+  @keyframes drawc { to { stroke-dashoffset: 0; } }
+  .fid-label { font: 500 14px/1 -apple-system, system-ui, sans-serif; color: #fff; }
+
+  /* --- branded later-sprint toast (password path) --- */
+  .sprint-toast { position: absolute; left: 50%; bottom: 340px; transform: translate(-50%, 16px);
+    z-index: 55; background: #0b0e12; color: #f9f9f9; border-radius: 16px;
+    padding: 14px 20px; width: 300px; text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease; }
+  .sprint-toast.on { opacity: 1; transform: translate(-50%, 0); }
+  .sprint-toast .st-k { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ED1C24; margin-bottom: 4px; }
+  .sprint-toast .st-t { font: 500 14px/20px 'Urbane Rounded', sans-serif; }
+
+  /* mobile: controls live in the triple-tap lab menu; no devbar */
+  .devbar { display: none !important; }
+</style>
+</head>
+<body>
+
+<aside id="side">
+  <div class="s-kicker">DietStation &middot; Design Lab</div>
+  <h2>Sign in &amp; OTP</h2>
+  <div class="s-desc">The full mock sign-in journey from the logged-out home screen:
+    phone number &rarr; OTP confirmation, or the quick path with Face&nbsp;ID.
+    Everything is fake &mdash; no real authentication &mdash; it demos the interaction
+    patterns (validation, OTP entry, error/success states, haptics) for dev handoff.</div>
+
+  <div class="s-sec">
+    <div class="s-label">Journey</div>
+    <div class="s-note">Jump straight to a step to review it.</div>
+    <div class="jump-grid">
+      <button data-jump="signin" class="on">Sign in</button>
+      <button data-jump="otp">OTP</button>
+      <button data-jump="faceid">Face ID</button>
+      <button data-jump="success">Success</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Feel</div>
+    <div class="s-note">Timing modifiers &mdash; dial the pace of the mock auth beats.</div>
+    <div class="mod">
+      <div class="mod-head"><label>Face ID scan</label><output id="oFace">1400 ms</output></div>
+      <input type="range" id="mFace" min="600" max="2600" step="100" value="1400">
+      <div class="mod-desc">How long the Face ID glyph scans before it confirms.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>OTP verify</label><output id="oVerify">550 ms</output></div>
+      <input type="range" id="mVerify" min="200" max="1500" step="50" value="550">
+      <div class="mod-desc">Pause after the 4th digit while the code &ldquo;verifies&rdquo;.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label>Resend timer</label><output id="oResend">30 s</output></div>
+      <input type="range" id="mResend" min="5" max="60" step="5" value="30">
+      <div class="mod-desc">Countdown before &ldquo;Resend&rdquo; unlocks on the OTP step.</div>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Mock rules</div>
+    <div class="s-note">Any 8-digit number proceeds. OTP <b>0000</b> forces the error
+      state; any other 4-digit code succeeds. Face ID always succeeds.</div>
+  </div>
+
+  <div class="s-actions">
+    <button id="sReset">Reset flow</button>
+    <button id="sCopy">Copy values</button>
+  </div>
+
+  <div class="s-foot">Figma: Diet Station 4.0 &middot; frames 16360-78680 (Sign in)
+    &amp; 16360-78950 (OTP). Copy values puts this recipe on the clipboard &mdash;
+    read it to Claude to bake it in.</div>
+</aside>
+
+<div id="stage">
+  <div class="device" id="device">
+    <div class="phone" id="phone">
+      <div class="sheet" id="sheet">
+
+        <div class="topnav">
+          <div class="title">Sign in</div>
+          <button class="authx" id="closeBtn" title="close"><img src="auth-close.svg" alt=""></button>
+        </div>
+
+        <!-- ============ screen 1: sign in ============ -->
+        <section class="scr onstage" id="scr-signin">
+          <div class="signin-col">
+            <div class="brand">
+              <img class="logo" src="auth-logo.svg" alt="DietStation">
+              <h1>Welcome back!</h1>
+            </div>
+            <div style="width:100%">
+              <div class="phone-block">
+                <div class="phone-field" id="phoneField">
+                  <div class="pretab"><span class="cc">+965</span><img src="auth-chevron.svg" alt=""></div>
+                  <div class="phone-num" id="phoneNum"><span class="caret"></span></div>
+                </div>
+                <div class="phone-hint" id="phoneHint">Enter your 8-digit mobile number</div>
+              </div>
+              <div class="cta-col">
+                <button class="btn primary" id="btnProceed">Proceed with mobile number</button>
+                <button class="btn outline" id="btnFace"><img src="auth-faceid.svg" alt="">Sign in with Face&nbsp;ID</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ screen 2: OTP ============ -->
+        <section class="scr off-r" id="scr-otp">
+          <div class="otp-col">
+            <div class="otp-head">
+              <img class="bubble" src="auth-chat.svg" alt="">
+              <div style="width:100%">
+                <h1>OTP SENT</h1>
+                <div class="sent" id="otpSentTo">OTP has been sent to 97377282</div>
+                <div style="display:flex;justify-content:center">
+                  <button class="alt" id="btnPwd">Sign in with Password instead</button>
+                </div>
+              </div>
+            </div>
+            <div class="otp-row" id="otpRow">
+              <div class="otp-cell" data-i="0"></div>
+              <div class="otp-cell" data-i="1"></div>
+              <div class="otp-cell" data-i="2"></div>
+              <div class="otp-cell" data-i="3"></div>
+            </div>
+            <button class="resend" id="resend">Didn&rsquo;t receive an SMS? <b id="resendB">Resend in 0:30</b></button>
+          </div>
+        </section>
+
+        <!-- ============ screen 3: success ============ -->
+        <section class="scr off-r" id="scr-success">
+          <div class="done-col">
+            <div class="tickwrap">
+              <svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7"/></svg>
+            </div>
+            <h1>Welcome back!</h1>
+            <div class="who" id="whoTxt">Signed in as +965 97377282</div>
+            <button class="btn primary" id="btnHome" style="display:none">Continue to Home</button>
+          </div>
+        </section>
+
+        <!-- shared numeric keyboard -->
+        <div class="kbd" id="kbd">
+          <div class="krow">
+            <button class="key" data-k="1">1</button>
+            <button class="key" data-k="2">2</button>
+            <button class="key" data-k="3">3</button>
+          </div>
+          <div class="krow">
+            <button class="key" data-k="4">4</button>
+            <button class="key" data-k="5">5</button>
+            <button class="key" data-k="6">6</button>
+          </div>
+          <div class="krow">
+            <button class="key" data-k="7">7</button>
+            <button class="key" data-k="8">8</button>
+            <button class="key" data-k="9">9</button>
+          </div>
+          <div class="krow">
+            <span class="key ghost"></span>
+            <button class="key" data-k="0">0</button>
+            <button class="key del" data-k="del">&#9003;</button>
+          </div>
+        </div>
+
+        <!-- Face ID overlay -->
+        <div class="fid-ov" id="fidOv">
+          <div class="fid-card">
+            <div class="fid-glyph">
+              <div class="g"></div>
+              <div class="fid-tick">
+                <svg viewBox="0 0 54 54"><circle cx="27" cy="27" r="24"/><path d="M17 27.5l7 7L38 20"/></svg>
+              </div>
+            </div>
+            <div class="fid-label" id="fidLabel">Face ID</div>
+          </div>
+        </div>
+
+        <div class="sprint-toast" id="sprintToast">
+          <div class="st-k">DietStation &middot; Design Lab</div>
+          <div class="st-t">Password sign-in is coming in a later sprint</div>
+        </div>
+
+      </div>
+      <div class="island"></div>
+    </div>
+  </div>
+</div>
+
+<div id="safeProbe"></div>
+
+<script>
+/* ---------------- modifiers (sidebar-tunable) ---------------- */
+const MODS = { faceMs: 1400, verifyMs: 550, resendS: 30 };
+try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-auth') || '{}')); } catch (_) {}
+const saveMods = () => { try { localStorage.setItem('ds-mods-auth', JSON.stringify(MODS)); } catch (_) {} };
+
+function bindMod(id, key, out, fmt) {
+  const r = document.getElementById(id), o = document.getElementById(out);
+  r.value = MODS[key]; o.textContent = fmt(MODS[key]);
+  r.addEventListener('input', () => { MODS[key] = +r.value; o.textContent = fmt(MODS[key]); saveMods(); });
+}
+bindMod('mFace', 'faceMs', 'oFace', v => v + ' ms');
+bindMod('mVerify', 'verifyMs', 'oVerify', v => v + ' ms');
+bindMod('mResend', 'resendS', 'oResend', v => v + ' s');
+
+/* ---------------- haptics (native bridge first, vibrate fallback) ---------------- */
+function buzz(pat) {
+  try { if (window.webkit && webkit.messageHandlers.ds) {
+    webkit.messageHandlers.ds.postMessage({ t: 'haptic', k: pat === 'ok' ? 'success' : pat === 'err' ? 'error' : 'light' });
+    return; } } catch (_) {}
+  try { navigator.vibrate && navigator.vibrate(pat === 'ok' ? [10, 40, 16] : pat === 'err' ? [24, 60, 24] : 8); } catch (_) {}
+}
+
+/* ---------------- state machine ---------------- */
+const scr = {
+  signin: document.getElementById('scr-signin'),
+  otp: document.getElementById('scr-otp'),
+  success: document.getElementById('scr-success'),
+};
+const ORDER = ['signin', 'otp', 'success'];
+let current = 'signin';
+let phoneDigits = '';
+let otpDigits = '';
+let verifying = false;
+let resendT = null, resendLeft = 0;
+
+const kbd = document.getElementById('kbd');
+const phoneNumEl = document.getElementById('phoneNum');
+const phoneField = document.getElementById('phoneField');
+const phoneHint = document.getElementById('phoneHint');
+const otpRow = document.getElementById('otpRow');
+const otpCells = [...otpRow.querySelectorAll('.otp-cell')];
+const resendEl = document.getElementById('resend');
+const resendB = document.getElementById('resendB');
+
+function go(name) {
+  if (name === current) return;
+  const from = ORDER.indexOf(current), to = ORDER.indexOf(name);
+  scr[current].classList.remove('onstage');
+  scr[current].classList.add(to > from ? 'off-l' : 'off-r');
+  scr[name].classList.remove('off-l', 'off-r');
+  scr[name].classList.add('onstage');
+  current = name;
+  kbd.classList.toggle('hide', name === 'success');
+  document.querySelectorAll('.jump-grid button').forEach(b =>
+    b.classList.toggle('on', b.dataset.jump === name));
+  if (name === 'otp') startResend();
+  if (name === 'success') {
+    stopResend();
+    document.getElementById('whoTxt').textContent =
+      'Signed in as +965 ' + (phoneDigits || '97377282');
+    buzz('ok');
+    finishAuth();
+  }
+}
+
+/* ---------------- phone entry ---------------- */
+function renderPhone() {
+  phoneNumEl.innerHTML = '';
+  if (phoneDigits) {
+    const s = document.createElement('span');
+    s.textContent = phoneDigits;
+    phoneNumEl.appendChild(s);
+  }
+  const c = document.createElement('span'); c.className = 'caret';
+  phoneNumEl.appendChild(c);
+}
+renderPhone();
+
+function phoneKey(k) {
+  if (k === 'del') { phoneDigits = phoneDigits.slice(0, -1); }
+  else if (phoneDigits.length < 8) { phoneDigits += k; }
+  phoneHint.classList.remove('on');
+  phoneField.classList.remove('err');
+  renderPhone();
+}
+
+document.getElementById('btnProceed').addEventListener('click', () => {
+  if (phoneDigits.length < 8) {
+    phoneField.classList.add('err');
+    phoneHint.classList.add('on');
+    phoneField.classList.remove('shake'); void phoneField.offsetWidth;
+    phoneField.classList.add('shake');
+    buzz('err');
+    return;
+  }
+  document.getElementById('otpSentTo').textContent = 'OTP has been sent to ' + phoneDigits;
+  resetOtp();
+  go('otp');
+});
+
+/* ---------------- OTP entry ---------------- */
+function renderOtp() {
+  otpCells.forEach((cell, i) => {
+    cell.classList.remove('err');
+    if (i < otpDigits.length) {
+      cell.classList.add('filled');
+      cell.textContent = otpDigits[i];
+    } else {
+      cell.classList.remove('filled');
+      cell.innerHTML = i === otpDigits.length ? '<span class="pipe">|</span>' : '';
+    }
+  });
+}
+let verifyT = null;
+function resetOtp() { clearTimeout(verifyT); verifyT = null;
+  otpDigits = ''; verifying = false; otpRow.classList.remove('verifying'); renderOtp(); }
+
+function otpKey(k) {
+  if (verifying) return;
+  if (k === 'del') { otpDigits = otpDigits.slice(0, -1); renderOtp(); return; }
+  if (otpDigits.length >= 4) return;
+  otpDigits += k;
+  renderOtp();
+  if (otpDigits.length === 4) {
+    verifying = true;
+    otpRow.classList.add('verifying');
+    verifyT = setTimeout(() => {
+      if (current !== 'otp') return;   /* flow was reset/left while verifying */
+      otpRow.classList.remove('verifying');
+      verifying = false;
+      if (otpDigits === '0000') {           /* mock wrong-code path */
+        otpCells.forEach(c => c.classList.add('err'));
+        otpRow.classList.remove('shake'); void otpRow.offsetWidth;
+        otpRow.classList.add('shake');
+        buzz('err');
+        setTimeout(resetOtp, 650);
+      } else {
+        go('success');
+      }
+    }, MODS.verifyMs);
+  }
+}
+
+/* resend countdown */
+function fmtT(s) { return '0:' + String(s).padStart(2, '0'); }
+function startResend() {
+  stopResend();
+  resendLeft = MODS.resendS;
+  resendEl.classList.remove('ready');
+  resendB.textContent = 'Resend in ' + fmtT(resendLeft);
+  resendT = setInterval(() => {
+    if (--resendLeft <= 0) {
+      stopResend();
+      resendEl.classList.add('ready');
+      resendB.textContent = 'Resend';
+    } else resendB.textContent = 'Resend in ' + fmtT(resendLeft);
+  }, 1000);
+}
+function stopResend() { clearInterval(resendT); resendT = null; }
+resendEl.addEventListener('click', () => {
+  if (!resendEl.classList.contains('ready')) return;
+  buzz();
+  resetOtp();
+  startResend();
+});
+
+/* ---------------- shared keyboard routing ---------------- */
+kbd.addEventListener('click', e => {
+  const key = e.target.closest('.key'); if (!key || !key.dataset.k) return;
+  buzz();
+  if (current === 'signin') phoneKey(key.dataset.k);
+  else if (current === 'otp') otpKey(key.dataset.k);
+});
+/* physical keyboard too (desktop review) */
+addEventListener('keydown', e => {
+  if (/^[0-9]$/.test(e.key)) { current === 'signin' ? phoneKey(e.key) : current === 'otp' && otpKey(e.key); }
+  if (e.key === 'Backspace') { current === 'signin' ? phoneKey('del') : current === 'otp' && otpKey('del'); }
+});
+
+/* ---------------- Face ID simulation ---------------- */
+const fidOv = document.getElementById('fidOv');
+const fidLabel = document.getElementById('fidLabel');
+let fidT = [];
+function runFaceId() {
+  fidT.forEach(clearTimeout); fidT = [];
+  fidOv.classList.remove('ok');
+  fidLabel.textContent = 'Face ID';
+  fidOv.classList.add('on', 'scanning');
+  buzz();
+  fidT.push(setTimeout(() => {
+    fidOv.classList.remove('scanning');
+    fidOv.classList.add('ok');
+    fidLabel.textContent = 'Done';
+    buzz('ok');
+  }, MODS.faceMs));
+  fidT.push(setTimeout(() => {
+    fidOv.classList.remove('on');
+    if (!phoneDigits) phoneDigits = '97377282';   /* mock identity for the quick path */
+    go('success');
+  }, MODS.faceMs + 900));
+}
+document.getElementById('btnFace').addEventListener('click', runFaceId);
+fidOv.addEventListener('click', e => {           /* tap outside card = cancel scan */
+  if (e.target === fidOv && !fidOv.classList.contains('ok')) {
+    fidT.forEach(clearTimeout); fidOv.classList.remove('on', 'scanning');
+  }
+});
+
+/* ---------------- password path: branded later-sprint card ---------------- */
+const toast = document.getElementById('sprintToast');
+let toastT = null;
+document.getElementById('btnPwd').addEventListener('click', () => {
+  toast.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => toast.classList.remove('on'), 2200);
+});
+
+/* ---------------- close / exit + success hand-back to home ---------------- */
+window.DS_EMBED = /[?&]embed=1/.test(location.search);
+function exitFlow() {
+  if (window.DS_EMBED) {
+    document.documentElement.classList.add('sheet-enter');
+    setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 420);
+  } else {
+    location.href = '../';
+  }
+}
+document.getElementById('closeBtn').addEventListener('click', exitFlow);
+addEventListener('message', e => { if (e.data && e.data.t === 'ds-close') exitFlow(); });
+
+/* after success: embedded = hand back to the (signed-in) home behind us;
+   standalone = offer the direct jump to the home flow */
+function finishAuth() {
+  if (window.DS_EMBED) {
+    setTimeout(exitFlow, 1600);
+  } else {
+    document.getElementById('btnHome').style.display = 'flex';
+  }
+}
+document.getElementById('btnHome').addEventListener('click', () =>
+  dsNav('home', 'push', { auth: 'signed-in', num: phoneDigits }, () => { location.href = '../home/'; }));
+
+/* ---- ds-nav intent router (Sprint-0 contract) ----
+   cross-flow jumps post {t:'ds-nav'} to the parent once the hub router has
+   announced itself; until then fall back to direct navigation. */
+let DS_ROUTER = false;
+addEventListener('message', e => { if (e.data && e.data.t === 'ds-router') DS_ROUTER = true; });
+function dsNav(to, present, context, fallback) {
+  if (DS_ROUTER) {
+    try {
+      parent.postMessage({ t: 'ds-nav', to: to, context: context || {}, present: present }, '*');
+      return;
+    } catch (_) {}
+  }
+  fallback && fallback();
+}
+
+/* entry context: home may deep-link straight to a step (&ctx={"step":"otp"}) */
+(function () {
+  try {
+    const m = location.search.match(/[?&]ctx=([^&]+)/);
+    if (!m) return;
+    const ctx = JSON.parse(decodeURIComponent(m[1]));
+    if (ctx.num && /^\d{8}$/.test(ctx.num)) { phoneDigits = ctx.num; renderPhone(); }
+    if (ctx.step === 'otp') {
+      if (!phoneDigits) { phoneDigits = '97377282'; renderPhone(); }
+      document.getElementById('otpSentTo').textContent = 'OTP has been sent to ' + phoneDigits;
+      go('otp');
+    }
+  } catch (_) {}
+})();
+
+/* ---------------- sidebar: jumps + reset + copy ---------------- */
+function resetFlow() {
+  document.body.classList.add('snap');
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.body.classList.remove('snap')));
+  phoneDigits = ''; renderPhone();
+  phoneField.classList.remove('err'); phoneHint.classList.remove('on');
+  resetOtp(); stopResend();
+  fidT.forEach(clearTimeout); fidOv.classList.remove('on', 'scanning', 'ok');
+  document.getElementById('btnHome').style.display = 'none';
+  scr.success.classList.remove('onstage'); scr.otp.classList.remove('onstage');
+  scr.success.classList.add('off-r'); scr.otp.classList.add('off-r');
+  scr.signin.classList.remove('off-l', 'off-r'); scr.signin.classList.add('onstage');
+  current = 'signin';
+  kbd.classList.remove('hide');
+  document.querySelectorAll('.jump-grid button').forEach(b =>
+    b.classList.toggle('on', b.dataset.jump === 'signin'));
+}
+window.resetFlow = resetFlow;   /* lab menu's "Reset flow" hook */
+
+document.querySelectorAll('.jump-grid button').forEach(b => {
+  b.addEventListener('click', () => {
+    const j = b.dataset.jump;
+    if (j === 'faceid') { resetFlow(); runFaceId(); return; }
+    if (j === 'signin') { resetFlow(); return; }
+    if (j === 'otp') {
+      if (!phoneDigits) { phoneDigits = '97377282'; renderPhone(); }
+      document.getElementById('otpSentTo').textContent = 'OTP has been sent to ' + phoneDigits;
+      resetOtp(); go('otp');
+    }
+    if (j === 'success') go('success');
+  });
+});
+document.getElementById('sReset').addEventListener('click', resetFlow);
+document.getElementById('sCopy').addEventListener('click', () => {
+  const s = `auth mods — faceMs:${MODS.faceMs} verifyMs:${MODS.verifyMs} resendS:${MODS.resendS}`;
+  try { navigator.clipboard.writeText(s); } catch (_) {}
+  const btn = document.getElementById('sCopy'); const t = btn.textContent;
+  btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1200);
+});
+
+/* ---------------- shell: desktop vs mobile fit ---------------- */
+const phone = document.getElementById('phone');
+const device = document.getElementById('device');
+const sheetEl = document.getElementById('sheet');
+let stageScale = 1;
+function fit() {
+  const desktop = matchMedia('(min-width: 501px) and (pointer: fine)').matches && innerWidth > 500;
+  if (!desktop) {
+    document.body.classList.remove('desktop');
+    stageScale = innerWidth / 402;
+    const probe = document.getElementById('safeProbe');
+    const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
+    const vh = (window.visualViewport ? window.visualViewport.height : innerHeight);
+    const Hd = vh / stageScale;
+    phone.style.height = Hd + 'px';
+    const strip = Math.max(24, st / stageScale + 10);
+    sheetEl.style.height = Math.min(782, Math.max(640, Hd - strip)) + 'px';
+  } else {
+    document.body.classList.add('desktop');
+    phone.style.height = '874px';
+    sheetEl.style.height = '782px';
+    const availW = innerWidth - 316;
+    const frameW = 402 + 24, frameH = 874 + 24;
+    stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
+  }
+  device.style.transform = `scale(${stageScale})`;
+}
+addEventListener('resize', fit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 250));
+fit();
+
+/* app-launcher embed: present as a sheet over the untouched hub/home */
+if (window.DS_EMBED) {
+  document.documentElement.classList.add('embed', 'sheet-enter');
+  setTimeout(() => document.documentElement.classList.remove('sheet-enter'), 90);
+}
+</script>
+<script>
+/* Lab-menu access workaround (2026-09-08 pattern from rewards): lab-shell's
+   shared window-level triple-tap gesture can silently miss on device; run the
+   proven element-level detector too and open the shared sheet by body class —
+   the sheet content itself is still built and closed by lab-shell. */
+(function () {
+  function attach() {
+    var host = document.getElementById('phone') || document.body;
+    function openSharedMenu() {
+      if (document.body.classList.contains('desktop')) return;
+      document.body.classList.add('labshell-menu');
+      try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+    }
+    var taps = 0, last = 0, hold = null, holdAt = 0, sx = 0, sy = 0;
+    var fire = function () { hold = null; holdAt = 0; openSharedMenu(); };
+    host.addEventListener('touchstart', function (e) {
+      if (document.body.classList.contains('desktop')) return;
+      taps = (e.timeStamp - last < 550) ? taps + 1 : 1;
+      last = e.timeStamp;
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+      if (taps >= 3) { holdAt = e.timeStamp; hold = setTimeout(fire, 420); }
+    }, { passive: true });
+    host.addEventListener('touchmove', function (e) {
+      if (!hold) return;
+      var t = e.touches[0];
+      if (Math.abs(t.clientX - sx) > 16 || Math.abs(t.clientY - sy) > 16) {
+        clearTimeout(hold); hold = null; holdAt = 0;
+      }
+    }, { passive: true });
+    host.addEventListener('touchend', function (e) {
+      if (!hold) return;
+      clearTimeout(hold); hold = null;
+      if (holdAt && e.timeStamp - holdAt >= 420) fire();
+      holdAt = 0;
+    }, { passive: true });
+  }
+  if (document.readyState === 'loading')
+    addEventListener('DOMContentLoaded', attach);
+  else attach();
+})();
+</script>
+<script src="../lab-shell.js?v=20260909a" data-flow="auth" defer></script>
+</body>
+</html>
