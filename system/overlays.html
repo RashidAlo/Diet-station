@@ -182,8 +182,10 @@
     <p class="spec">scrim <code>rgba(11,14,18,.42&ndash;.45)</code>, opacity only,
       <code>.32s ease</code> &middot; sheet <code>translateY(103%) &rarr; 0</code>,
       <code>.55s cubic-bezier(.32,.72,0,1)</code> &middot; radius: partial sheets
-      <code>24 24 0 0</code>, near-fullscreen overlays <code>44 44 0 0</code> &middot;
-      sheet shadow <code>0 -14px 44px rgba(0,0,0,.24)</code>.</p>
+      <code>24 24 0 0</code>, near-fullscreen overlays <code>44 44 0 0</code>
+      <i>(under review: auth's Figma frame draws 38 and ships 38 — whether the radius law
+      or Figma fidelity wins is Rashid's call; don't &ldquo;fix&rdquo; auth to 24
+      meanwhile)</i> &middot; sheet shadow <code>0 -14px 44px rgba(0,0,0,.24)</code>.</p>
   </section>
 
   <section class="card">
@@ -281,9 +283,11 @@
       (<code>.drag</code>), so the sheet is glued to the finger &middot; one scroller chains
       content scroll, header collapse and the dismiss pull in a single gesture — no separate
       grab zones.</p>
-    <p class="meta">Granted: meal details (reference) &middot; recommended: sign-in / auth
-      (no unsaved state) &middot; withheld where closing loses work — those sheets keep the
-      X as the only exit, optionally with a confirm alert.</p>
+    <p class="meta">Granted: meal details (reference), sign-in &middot; withheld where
+      closing loses work or aborts a journey mid-step (auth's OTP screen, auto-closing
+      success) — those keep the X as the only exit, optionally with a confirm alert.
+      <b>The trait is per-screen, not per-flow</b>: one flow can grant it on some screens
+      and withhold it on others, decided by what an accidental pull would cost.</p>
   </section>
 
   <section class="card">
@@ -294,10 +298,12 @@
       <div class="mrow"><span class="mn">Meal selection</span><span class="badge ok">Reference</span>
         <span class="mt">Both modes shipped: static day sheet + expanding meal details with
         drag-to-close; dual capsule right at 16px; scrim and spring per contract.</span></div>
-      <div class="mrow"><span class="mn">Sign in (auth)</span><span class="badge todo">Adopt trait</span>
-        <span class="mt">Static mode ✓, X on the right ✓ (<code>margin-left: auto</code>),
-        contract scrim/spring ✓. To adopt: drag-to-close (no unsaved state — Rashid names it
-        a fit). Auth lane.</span></div>
+      <div class="mrow"><span class="mn">Sign in (auth)</span><span class="badge ok">Adopted</span>
+        <span class="mt">Drag-to-close shipped with the doc's values verbatim (×0.42,
+        195px commit, .drag, house spring-back; exit reverses in all three presentation
+        modes). Deliberately withheld from OTP (mid-journey state — a pull would abort with
+        X one tap away; granting it is on Rashid's review sheet) and the auto-closing
+        success screen. X right ✓, contract ✓.</span></div>
       <div class="mrow"><span class="mn">Coupons (rewards)</span><span class="badge todo">Move X right</span>
         <span class="mt">Close button currently sits at <code>left: 24px</code> — the one
         placement violation found. Move to the right seat per the action-bar law; overlay is
