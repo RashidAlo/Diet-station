@@ -474,7 +474,9 @@
      the "Liquid Glass - Regular - Medium" platter (r32, hairline #dbdbdb ring,
      0 8 37 shadow) holding meal rows w/ 18px circle badges, the transparent
      hairline chips, gradient price + the r28 gradient plan pill */
-  .plancard { position: relative; border-radius: 32px; padding: 24px 20px 20px;
+  /* THE UNIFORM-PADDING LAW (Rashid): cards like these wear ONE padding on
+     all four sides — nothing sits closer to one edge than another */
+  .plancard { position: relative; border-radius: 32px; padding: 20px;
     margin-bottom: 24px; cursor: pointer; overflow: hidden;
     background: rgba(255,255,255,.7);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -539,7 +541,10 @@
   .home.logged-out .sheetc { min-height: 0;
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
-  /* logged-out tab bar: the middle tab browses meals, not the calendar */
+  /* logged-out tab bar: the middle tab browses meals, not the calendar.
+     WIDTH RULE v3 (Rashid): three plain links = the COMPACT 256, centered —
+     the wide footprint belongs only to the dynamic kcal module */
+  .home.logged-out .tabbar { width: 256px; left: calc(50% - 128px); }
   .tb-tab .ic-fork { display: none; }
   .home.logged-out .tb-tab .ic-fork { display: block; }
   /* !important: the inlined Figma svg root carries style="display: block" */
@@ -1030,7 +1035,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-10 · 17';
+const BUILD = 'home 2026-09-10 · 18';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */

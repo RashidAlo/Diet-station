@@ -629,14 +629,15 @@ struct HomeScreenNative: View {
             // trailing-aligned: the pill and the accessory SHARE a right
             // edge, so the morph reads as a pure rise-and-widen (Rashid:
             // no slide) — the left edge does all the growing.
-            // The FOOTPRINT is 370 on EVERY tab (Rashid: no size jumps
-            // between pages): home-at-rest splits it with the module,
-            // everywhere else the bar absorbs the full width
+            // WIDTH RULE v3 (Rashid 2026-09-10, supersedes 370-on-every-tab):
+            // the full 370 footprint belongs ONLY to the dynamic module —
+            // wherever the bar is three plain links (signed-out home, the
+            // calendar page, any other tab) it shrinks to 256 and centers
             VStack(alignment: .trailing, spacing: 10) {
                 if dynamicOn && homeScrolled { kcalCapsule }
                 HStack(spacing: 10) {
                     DSTabBar(selected: tabSel, onSelect: tabHandler,
-                             width: dynamicOn && !homeScrolled ? 256 : 370,
+                             width: dynamicOn && homeScrolled ? 370 : 256,
                              forkMiddle: state.loggedOut)
                     if dynamicOn && !homeScrolled {
                         kcalCapsule.transition(.opacity)
@@ -1266,7 +1267,9 @@ struct HomeScreenNative: View {
             // column to ~390pt and collapsed every page margin to 6
             .frame(width: 137, height: 122, alignment: .trailing)
         }
-        .padding(EdgeInsets(top: 24, leading: 20, bottom: 20, trailing: 20))
+        // THE UNIFORM-PADDING LAW (Rashid): cards like these wear ONE padding
+        // on all four sides — nothing may sit closer to one edge than another
+        .padding(20)
         .frame(maxWidth: .infinity)
         // real material on white: the card IS glass, not a painted white box
         .glassEffect(.regular, in: .rect(cornerRadius: 32))
@@ -1311,7 +1314,11 @@ struct HomeScreenNative: View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
+            // the title always gets its full room (Rashid: comfortable text,
+            // never broken) — the pill overflows the fixed column leftward
+            // into the middle gap rather than squeezing its label
             planPillLabel(plan)
+                .lineLimit(1).fixedSize()
                 .padding(.horizontal, 20).frame(height: 40)
                 .background(plan.solidGradient)
                 .clipShape(Capsule())
@@ -1787,9 +1794,10 @@ struct DSTabBar: View {
     /// optional: a held tab (0.5s) fires this instead of a select — the
     /// wordmark long-press pilot entry rides here
     var onLongPress: ((DSTabId) -> Void)? = nil
-    /// the dynamic-bar experiment narrows the capsule to make room for an
-    /// inline module; every other host keeps the canonical 314
-    var width: CGFloat = 314
+    /// WIDTH RULE v3 (Rashid): a bar of three plain links is the COMPACT
+    /// 256, centered — hosts pass wider only while the dynamic module's
+    /// full footprint is in play
+    var width: CGFloat = 256
     /// signed-out home: the middle tab browses meals, not the calendar —
     /// SF placeholder for now (Shell to trace the Figma fork-knife)
     var forkMiddle = false
