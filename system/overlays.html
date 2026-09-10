@@ -240,15 +240,25 @@
       snaps to the nearest state on the house spring. Expanding snap points: rest height and
       full screen (top inset ~10px). All thresholds below.</p>
     <p class="spec"><b>Scroll-driven expanding</b> (reference: the meal selection screen,
-      Rashid's settled &ldquo;9am&rdquo; mechanism, verbatim) — a <b>pure 1:1 scroll-link</b>:
-      <code>y = gap − s</code>, radius riding y, native momentum only — no settle glide, no
-      easing, no pad riding the gesture. The frame tracks the finger to the natural arrest
-      at the top; content keeps scrolling. The one permitted extra is a
-      <b>day-turn arrival offset</b>: set on a fullscreen day switch so the first category
-      lands un-cropped, folded away invisibly once the scroll runs deep (or shrunk 1:1 on an
-      immediate detach) — it never moves during any other gesture. Iteration history
-      (recorded in the flow): content-freeze, constant-K, eased-frame and always-riding-pad
-      variants were all tried and rejected — the pure link is his taste call.</p>
+      settled at &middot;132 — Rashid named the model himself: <b>Apple's App Store article
+      sheet</b>). The gesture EXPANDS the sheet while the content <b>holds still inside
+      it</b>; the scroll takes over only once docked — so the speed under the thumb never
+      changes. Web recipe: frame <code>y = gap − s</code>, radius riding y, and a spacer pad
+      <code>--dock-pad = min(s, gap)</code> growing 1:1 through the attach to absorb the
+      sheet's travel (headroom pinned once at init, never tracking animated chrome).
+      Device-verified: uniform steps before and after the dock, zero discontinuity. Accepted
+      trade: fullscreen rest carries ~46pt of clear air above the first category — constant
+      velocity + never-cropped forces it.</p>
+    <p class="spec"><b>Two laws for any scroll-driven sheet:</b> (1) <b>never write
+      scrollTop from inside a scroll handler</b> — it cancels WKWebView's deceleration
+      outright; the sheet is a pure readout of the scroll. (2) if the scroll container
+      lives <b>inside the transformed sheet</b>, content speed under the finger is the SUM
+      of both motions — the spacer must absorb the sheet's travel or the user feels a speed
+      change at the dock. Rejected along the way (six variants, recorded so nobody re-walks
+      them): two-detent, detent-settle glide, K=2 frame, eased attach, always-riding pad,
+      day-pad fold — and the stack of shell-side causes (twin re-anchor at half-gap,
+      mid-gesture scroll mutation, gauge dead zone, delayed touch-ends) that hid behind
+      them.</p>
   </section>
 
   <section class="card">
