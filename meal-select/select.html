@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 96px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 92px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -416,7 +416,7 @@
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
   /* 54 = Figma's 34pt tile + 20pt gutter. The extra width is what stops a
      day name touching its neighbour. */
-  .scb .scb-it { width: 54px; height: 82px; flex: none; display: flex;
+  .scb .scb-it { width: 54px; height: 68px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 3px;
     box-sizing: border-box; }
   /* EVERY day wears the tile (Figma), not just the held one — the held day
@@ -427,9 +427,26 @@
     background: var(--sc-tile-bg); border: 1px solid var(--sc-tile-bd);
     color: var(--sc-num);
     font: 600 16px/28px 'Urbane Rounded', sans-serif; }
-  .scb .scb-it .m { font: 600 9px/11px 'Urbane Rounded', sans-serif;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--sc-month);
-    height: 11px; }
+  /* THE HEADLINE IS THE DAY (Rashid). The weekday of the held day stands
+     stationary above the ladder; the month has left the tiles entirely,
+     which is the space this buys back. */
+  .scb-day, .scb-mon { display: none; }
+  .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
+    display: block; position: absolute; left: 50%; top: 9px; z-index: 2;
+    white-space: nowrap; pointer-events: none;
+    font: 600 12.5px/15px 'Urbane Rounded', sans-serif; }
+  .nav .ttl.scrub .scb-day { color: var(--sc-day);
+    transform: translateX(-50%);
+    transition: opacity .16s ease, transform .24s cubic-bezier(.3,1.1,.4,1); }
+  /* the month ANNOUNCES a crossing, then hands the day back */
+  .nav .ttl.scrub .scb-mon { color: var(--sc-sel-num); letter-spacing: .04em;
+    opacity: 0; transform: translate(-50%, -7px);
+    transition: opacity .2s ease, transform .28s cubic-bezier(.3,1.25,.4,1); }
+  .nav .ttl.scrub.month-in .scb-day { opacity: 0;
+    transform: translate(-50%, 6px); }
+  .nav .ttl.scrub.month-in .scb-mon { opacity: 1; transform: translate(-50%, 0); }
+  .nav .ttl.scrub.closing .scb-day, .nav .ttl.scrub.closing .scb-mon {
+    opacity: 0; transition: opacity .15s ease; }
   .scb .scb-it .d { font: 500 11px/13px 'Urbane Rounded', sans-serif;
     color: var(--sc-day); max-width: 52px; overflow: hidden; white-space: nowrap; }
   /* Figma keeps a status row under the day name — same chips the calendar
@@ -451,7 +468,7 @@
     /* the tile centres on the NUMBER row, not the whole stack: the stack is
        month + tile + day + status, so the tile sits above centre by half the
        day/status rows */
-    margin-top: -31px; border-radius: 10px; box-sizing: border-box;
+    margin-top: -34px; border-radius: 10px; box-sizing: border-box;
     background: var(--sc-sel-bg); border: 1px solid var(--sc-sel-bd);
     box-shadow: var(--sc-sel-glow);
     /* z 0: ABOVE the glass, BELOW the strip — the numbers must read on top
@@ -484,7 +501,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 96px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub.portal { height: 92px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -497,7 +514,7 @@
   .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
     -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 82px; }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 68px; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -2147,6 +2164,32 @@ confirmBtn.onclick = () => {
   const selTile = document.createElement('div');
   selTile.className = 'scb-sel';
   ttl.appendChild(selTile);
+  /* THE DAY IS THE HEADLINE (Rashid: "prioritise the day, so Monday instead
+     of September"). The weekday of the held day sits stationary above the
+     ladder; the month is no longer carried by any tile, which is what buys
+     the extra room. */
+  const dayHead = document.createElement('div');
+  dayHead.className = 'scb-day';
+  ttl.appendChild(dayHead);
+  /* the month only ANNOUNCES ITSELF when you scrub across a boundary — it
+     rides in over the weekday, holds, and hands the weekday back. A month
+     printed on every tile was the thing eating the space. */
+  const monHead = document.createElement('div');
+  monHead.className = 'scb-mon';
+  ttl.appendChild(monHead);
+  let monT = null, lastMon = -1;
+  function setHead(idx, announce) {
+    const d = dateFor(idx);
+    dayHead.textContent = d.toLocaleDateString('en', { weekday: 'long' });
+    if (d.getMonth() === lastMon) return;
+    const first = lastMon < 0;
+    lastMon = d.getMonth();
+    if (first || !announce) return;      /* arming is not a crossing */
+    monHead.textContent = d.toLocaleDateString('en', { month: 'long' });
+    ttl.classList.add('month-in');
+    clearTimeout(monT);
+    monT = setTimeout(() => ttl.classList.remove('month-in'), 1150);
+  }
   /* the calendar's own chip vocabulary, reused verbatim so the scrubber and
      the calendar grid can never tell different stories about a day */
   const SCRUB_CHIP = {
@@ -2174,7 +2217,6 @@ confirmBtn.onclick = () => {
        names in a 54pt slot cannot collide. The empty month span on
        non-center slots keeps every stack on the same baseline. */
     return '<div class="scb-it' + (st ? ' st-' + st : '') + '">' +
-      '<span class="m">' + (center ? MONS[d.getMonth()] : '') + '</span>' +
       '<span class="n">' + d.getDate() + '</span>' +
       '<span class="d">' + d.toLocaleDateString('en', { weekday: 'short' }) + '</span>' +
       '<span class="s">' + (SCRUB_CHIP[st] || '') + '</span>' +
@@ -2236,6 +2278,7 @@ confirmBtn.onclick = () => {
     if (c !== winC) {
       winC = c;
       paintStrip(c);                            /* re-window on center crossing */
+      setHead(c, true);                         /* headline day; month if we crossed one */
       window.DSScrubRepost && DSScrubRepost();  /* fresh dates/center to the twin */
       vibrate(4);                               /* soft per-day tick */
       if (c === 0 && target === 0 && !latched && baseIdx !== 0) {
@@ -2316,6 +2359,7 @@ confirmBtn.onclick = () => {
     ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
     target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
     paintStrip(winC);
+    setHead(winC, false);          /* arming is not a crossing — no announce */
     strip.style.transform = '';
     ttl.classList.add('scrub');          /* the whole container, one spring */
     ttl.style.width = ''; ttl.style.height = '';   /* .scrub's own geometry wins */
@@ -2776,7 +2820,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 144 (scrub: stationary held tile)';
+const BUILD = 'build 2026-09-11 · 145 (scrub: day headline, month announce)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
