@@ -142,7 +142,7 @@
     font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }\
   ";
   var style = document.createElement('style');
-  css += '\
+  css += "\
 /* ---- native TestFlight shell + shared triple-tap lab menu ---- */\
 html.ds-native #pill, html.ds-native .lab-chip, html.ds-native .lab-tabs,\
 html.ds-native .lab-tabbar { display: none !important; }\
@@ -208,7 +208,7 @@ body.labshell-menu:not(.desktop) .labshell-links { display: flex; }\
   border-radius: 999px; background: #1d1d1f; color: #fff;\
   font: 600 15px/1 -apple-system, sans-serif; }\
 body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
-';
+";
   style.textContent = css;
   document.head.appendChild(style);
 
