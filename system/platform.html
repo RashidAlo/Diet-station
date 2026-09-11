@@ -247,7 +247,35 @@ webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', /* … */ instant: tru
 // passes review, and breaks silently the moment either side's timing
 // shifts. Same failure family as a constant that agrees by coincidence
 // on one device class (see DS-CHROME-TOP above): coincidence is not a
-// contract.</pre>
+// contract.
+
+// ── ONE GLASS, NEVER TWO (2026-09-11) ────────────────────────────────
+// Overlay controls (the X, action capsules) are REAL Liquid Glass on
+// iPhone and the CSS/WebGL fallback everywhere else. Which one you get
+// is decided by the platform, once — the user must never see the
+// handover, and never both at the same time.
+//
+//   in the shell : the web control must not paint for a SINGLE frame.
+//   off-shell    : the web control is the real control, untouched.
+//
+// SUPPRESS ELEMENT-AGNOSTICALLY. A class applied to the elements that
+// exist at parse loses the race to any control that is later REBUILT
+// (rewards recreates its X per level theme) — the fresh one paints web
+// glass until the twin confirms, which is Rashid's "starts with the web
+// glass, then shifts into Apple liquid glass". Use a root-class rule
+// over the same selectors instead, so it covers every element that
+// exists now or is created later:
+//   html.ds-chrome-native <ELS selectors> { opacity: 0; pointer-events: none }
+// and drop the ROOT CLASS in the no-twins fallback (iOS<26) — forgetting
+// it leaves those shells with no control at all.
+//
+// NEVER REPORT A MOVING RECT. getBoundingClientRect inside a transformed
+// ancestor returns the VISUAL rect, so geometry sampled while a sheet is
+// springing up anchors the twin wherever the element was mid-flight, and
+// it stays there ("it starts in the middle of the screen, not anchored
+// to the top of the overlay"). Report after the motion that owns the
+// element has ended (transitionend), never on a timer racing it — a
+// timer that usually wins is the same coincidence in a third costume.</pre>
       <button class="copycode" data-copy="handshake">Copy</button>
     </div>
   </section>
