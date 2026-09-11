@@ -5,6 +5,7 @@
   "status": "in-progress",
   "updated": "2026-09-11",
   "hidden": true,
+  "sheet": true,
   "sprint": 1,
   "description": "The subscription purchase path, end to end: pick a plan, choose how long, apply a loyalty coupon, then pay. One price engine drives every screen, so redeeming a coupon re-prices the plan cards, the duration rows and the bottom dock together, and the member's tier badge rides the discount all the way to the payment sheet. Coupons above the member's rung render locked, which is what makes the loyalty ladder legible at the moment of purchase. Payment fields are prototype UI on mock data — nothing is ever charged.",
   "path": "checkout/",
