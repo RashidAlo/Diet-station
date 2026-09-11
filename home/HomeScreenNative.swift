@@ -2455,9 +2455,13 @@ struct DSGaugeModel: Equatable {
 
 @available(iOS 26.0, *)
 struct DSGaugeGlassView: View {
-    /// #0b0e12 — the dock's label, glyphs and spinner all share it, so the
-    /// word and the ring can never half-flip
-    static let dockInk = Color(red: 11/255, green: 14/255, blue: 18/255)
+    /// #f9f9f9 — the dock's label, glyphs and spinner all share it, so the
+    /// word and the ring can never half-flip. It is WHITE, and the material
+    /// is what moves: Rashid asked to "lower the glass brightness so the word
+    /// Next and the loader are readable", which names the material as the
+    /// variable and the white ink as a CONSTRAINT. Dark ink was an option we
+    /// invented and he rejected it on sight.
+    static let dockInk = Color(red: 249/255, green: 249/255, blue: 249/255)
     let model: DSGaugeModel
     var onNext: () -> Void
     /// grows by exactly 1 per warn — the shake effect plays t: 0→1 each time
@@ -2540,15 +2544,22 @@ struct DSGaugeGlassView: View {
                 // COMPLETE, so its backdrop is always the fill's bright end.
                 .foregroundStyle(Self.dockInk)
                 .frame(width: model.dock == "next" ? 92 : 53, height: 53)
-                // The Renew/Change recipe is a WHITE tint, and it fails HERE
-                // specifically: this capsule sits on the gauge's own fill,
-                // which runs to near-white yellow at the top of a plan theme
-                // (C&M measured 0.88 luminance beside it, and the capsule
-                // reading +0.18 ABOVE its own backdrop). White text and a
-                // white loader ring cannot survive that. A glass pill over
-                // the brightest thing on screen must DIM what it sits on.
+                // DELIBERATELY HEAVY GLASS. This capsule is the only control
+                // sitting on the brightest part of the bar (the fill runs to
+                // ~0.88 luminance) and it carries WHITE ink, so the material
+                // has to do the whole job: white needs the capsule at or
+                // below ~0.30 to clear 3:1.
+                //
+                // The alpha is DERIVED, not copied from the web's CSS —
+                // SwiftUI glass has no backdrop-brightness, so the tint is the
+                // only lever. Solving against C&M's own measurement of the
+                // previous value (0.74 at alpha 0.16) gives an effective
+                // backdrop of 0.875 through clear glass, and 0.875(1-a) +
+                // 0.03a = 0.30 → a ≈ 0.68. Wants their luminance probe to
+                // confirm; if 0.30 reads too dark it goes back to Rashid
+                // rather than either side splitting the difference quietly.
                 .glassEffect(.clear
-                    .tint(Color(red: 12/255, green: 10/255, blue: 6/255).opacity(0.16))
+                    .tint(Color(red: 10/255, green: 8/255, blue: 4/255).opacity(0.68))
                     .interactive(), in: .capsule)
             }
             .buttonStyle(.plain)
@@ -2670,13 +2681,11 @@ struct DSShakeEffect: GeometryEffect {
 @available(iOS 26.0, *)
 struct DSSpinnerRing: View {
     @State private var spin = false
-    /// Ink, not white — the ring rides the gauge dock's capsule over the
-    /// fill's bright end, and a white spinner beside a dark "Next" is the
-    /// half-flip that would look like a bug.
-    var ink: Color = Color(red: 11/255, green: 14/255, blue: 18/255)
+    /// Shares the dock's ink so the ring and the word can never half-flip.
+    var ink: Color = Color(red: 249/255, green: 249/255, blue: 249/255)
     var body: some View {
         ZStack {
-            Circle().stroke(ink.opacity(0.22), lineWidth: 2.5)
+            Circle().stroke(ink.opacity(0.34), lineWidth: 2.5)
             Circle().trim(from: 0, to: 0.25)
                 .stroke(ink, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(spin ? 360 : 0))
