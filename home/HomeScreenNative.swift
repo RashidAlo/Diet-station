@@ -1948,6 +1948,14 @@ final class FlowPreloader {
                     func n(_ k: String) -> CGFloat {
                         CGFloat((e[k] as? NSNumber)?.doubleValue ?? 0)
                     }
+                    var fromRect: CGRect?
+                    if let f = e["from"] as? [String: Any] {
+                        func fv(_ k: String) -> CGFloat {
+                            CGFloat((f[k] as? NSNumber)?.doubleValue ?? 0)
+                        }
+                        fromRect = CGRect(x: fv("x"), y: fv("y"),
+                                          width: fv("w"), height: fv("h"))
+                    }
                     els.append(GlassChromeEl(id: id, x: n("x"), y: n("y"),
                                              w: n("w"), h: n("h"), r: n("r"),
                                              on: (e["on"] as? Bool) ?? false,
@@ -1957,7 +1965,8 @@ final class FlowPreloader {
                                              monthLabel: e["monthLabel"] as? String,
                                              dayName: e["dayName"] as? String,
                                              dayNames: e["dayNames"] as? [String],
-                                             statuses: e["statuses"] as? [String]))
+                                             statuses: e["statuses"] as? [String],
+                                             from: fromRect))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
@@ -2077,7 +2086,8 @@ final class FlowPreloader {
                                                  // tracked frame (bit us on
                                                  // mode, then month/dayName)
                                                  dayNames: el.dayNames,
-                                                 statuses: el.statuses)
+                                                 statuses: el.statuses,
+                                                 from: el.from)
                         }
                     }
                 }
