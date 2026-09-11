@@ -2317,6 +2317,11 @@ confirmBtn.onclick = () => {
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
+      /* the ARMED rect, taken before .closing exists — see DSScrubClose for
+         why it is unmeasurable afterwards */
+      var armed = ttl.getBoundingClientRect();
+      var fromRect = { left: armed.left, top: armed.top,
+        width: armed.width, height: armed.height };
       ttl.style.setProperty('--close-w', (formW0 || 96) + 'px');
       ttl.style.setProperty('--close-h', (formH0 || 28) + 'px');
       ttl.classList.add('closing');
@@ -2333,7 +2338,7 @@ confirmBtn.onclick = () => {
          geometry. When it is not (Safari, or a shell that never confirmed)
          the web CSS collapse owns the exit and has to run its full .44s. */
       var native = (window.DSScrubClose && formRect)
-        ? DSScrubClose(formRect, CLOSE_MS, deflate) : false;
+        ? DSScrubClose(formRect, CLOSE_MS, deflate, fromRect) : false;
       closeT = setTimeout(deflate, native ? CLOSE_MS + 200 : 470);
     } else {
       deflate();                        /* never armed: nothing to collapse */
@@ -2831,7 +2836,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 157 (scrub: no blob, no parked tail)';
+const BUILD = 'build 2026-09-11 · 158 (scrub: it travels home, not just down)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3414,7 +3419,16 @@ if (QS.get('solo') === '1') {
      has all along. One layer exists at every instant, because only one is
      ever created. */
   var closeRaf = null, closeRect = null;
-  window.DSScrubClose = function (to, ms, done) {
+  /* `from` is passed in by the caller, measured BEFORE .closing is applied.
+     It cannot be measured here. .closing sets width with !important while
+     height is left normal, so the class beats the inline width the morph
+     pinned and loses to the inline height — meaning the instant it lands the
+     element's WIDTH is already home and its height is still armed. Reading
+     the rect at that point yields a from-rect whose width equals the target,
+     so there is nothing left to interpolate on that axis: the capsule jumped
+     to label width in a single frame and then only got shorter. That is
+     Rashid's "forms DOWN", literally — the word was the diagnosis. */
+  window.DSScrubClose = function (to, ms, done, from) {
     var el = document.querySelector('.nav .ttl.scrub');
     cancelAnimationFrame(closeRaf);
     /* no twin on screen means there is no rect to interpolate and the web
@@ -3422,7 +3436,7 @@ if (QS.get('solo') === '1') {
     if (!el || !to || !SCRUB_TWIN || !nativeConfirmed || scrubHold) {
       closeRect = null; return false;
     }
-    var r = el.getBoundingClientRect();
+    var r = from || el.getBoundingClientRect();
     var f = { x: r.left, y: r.top, w: r.width, h: r.height };
     var t0 = 0;
     var tick = function (now) {
