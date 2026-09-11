@@ -275,7 +275,23 @@ webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', /* … */ instant: tru
 // it stays there ("it starts in the middle of the screen, not anchored
 // to the top of the overlay"). Report after the motion that owns the
 // element has ended (transitionend), never on a timer racing it — a
-// timer that usually wins is the same coincidence in a third costume.</pre>
+// timer that usually wins is the same coincidence in a third costume.
+//
+// SHELL SIDE — SILENCE IS PART OF THE PROTOCOL. The page's no-twins
+// fallback fires only when the shell NEVER ANSWERS. That makes silence
+// meaningful: a shell must not answer unless it can deliver what
+// answering promises.
+//   Never send a capability CONFIRM from a code path whose RENDERER
+//   sits behind an availability gate the confirm does not share.
+// Worked case: the app deploys to iOS 16+, twins render only under
+// #available(iOS 26, *), and the confirms fired unconditionally — so on
+// every pre-26 iPhone the page hid its own control, nothing replaced
+// it, and the page's own fallback never ran BECAUSE the shell had
+// already (wrongly) answered. Nine flows carry that handler; all of
+// them would have shown no control at all. The clause above and this
+// one are the same guarantee approached from opposite ends.
+//
+//        ANSWERING WRONGLY IS WORSE THAN NOT ANSWERING.</pre>
       <button class="copycode" data-copy="handshake">Copy</button>
     </div>
   </section>
