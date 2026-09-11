@@ -90,6 +90,47 @@
   .pair .cb { font: 11.5px/1.7 ui-monospace, Menlo, monospace; color: var(--ink);
     overflow-wrap: anywhere; }
   .pair .cb i { font-style: normal; color: var(--ink-soft); }
+
+  /* ---- the law slab ---- */
+  .slab { margin-top: 16px; border-radius: 14px; padding: 16px 18px;
+    background: #1d1d1f; color: #f5f5f7; }
+  .slab .sl { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: #8e8e93; }
+  .slab .sq { font: 600 15.5px/1.45 'Urbane Rounded', sans-serif; margin-top: 9px;
+    letter-spacing: -.005em; }
+  .slab .sb { font-size: 12.5px; line-height: 1.6; color: #b9b9c0; margin-top: 9px; }
+
+  /* ---- semantic control map table ---- */
+  .cmap { margin-top: 14px; border: 0.5px solid var(--line); border-radius: 14px;
+    overflow: hidden; }
+  .cmap .cr { display: grid; grid-template-columns: 132px 1fr 128px; gap: 0; }
+  .cmap .cr + .cr { border-top: 0.5px solid var(--line); }
+  .cmap .cr.hd { background: var(--ground); }
+  .cmap .cr.hd > div { font: 600 10.5px/1 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+    padding: 11px 13px; }
+  .cmap .cr > div { padding: 10px 13px; font-size: 12.5px; line-height: 1.5; }
+  .cmap .cr .a { font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--red);
+    overflow-wrap: anywhere; }
+  .cmap .cr .p { font: 11.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    overflow-wrap: anywhere; }
+  .cmap .cr .d { color: var(--ink); }
+  .cmap .grp { background: var(--ground); font: 600 10.5px/1 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+    padding: 9px 13px; border-top: 0.5px solid var(--line); }
+  @media (max-width: 600px) {
+    .cmap .cr { grid-template-columns: 1fr; }
+    .cmap .cr > div { padding: 3px 13px; }
+    .cmap .cr > div:first-child { padding-top: 11px; }
+    .cmap .cr > div:last-child { padding-bottom: 11px; }
+    .cmap .cr.hd { display: none; }
+  }
+
+  /* ---- adoption strip ---- */
+  .adopt { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+  .adopt span { font: 500 11.5px/1 'Urbane Rounded', sans-serif; border-radius: 999px;
+    padding: 7px 11px; background: var(--ground); color: var(--ink-soft); }
+  .adopt span.on { background: var(--ok-soft); color: var(--ok); }
 </style>
 <script>
   if (/DietStationLab/.test(navigator.userAgent))
@@ -513,6 +554,11 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
 "exits":   [ { "intent": "view rewards", "to": "rewards", "present": "sheet", "note": "coupon chip tap" } ]</pre>
       <button class="copycode" data-copy="dsnavManifest">Copy</button>
     </div>
+    <p class="meta"><b style="color:var(--ink)">Building a new flow?</b> Wire its controls with
+      <code>data-act</code> and one delegated listener from the first commit, and publish the
+      <a href="#controlmap" style="color:var(--red)">semantic control map</a> with its handoff —
+      retrofitting it onto a finished flow costs far more than authoring it as you go, and until
+      it exists the router regression run cannot drive your flow.</p>
     <p class="meta">Native mapping: tab &harr; TabView selection, sheet &harr;
       .sheet/detents, push &harr; NavigationStack push — the intent grammar is
       presentation-agnostic so the shell can route the same messages to real containers.</p>
@@ -546,6 +592,144 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       optional <code>entries</code>/<code>exits</code> manifest renders as
       &ldquo;Integration points&rdquo;. Flows without <code>swift[]</code> render as before —
       kits get authored as each flow settles its native pass.</p>
+  </section>
+
+  <section class="card" id="controlmap" style="scroll-margin-top:80px">
+    <h2>Semantic control map — required in every handoff</h2>
+    <p class="desc">A flow is only <b>regression-drivable</b> if a script can find its controls
+      without reading its labels. Ours can&rsquo;t be read: the house button splits its label
+      across weight spans, so the text a human sees is not the text in the DOM. Verified in the
+      shipping code — two flows, two different breakages:</p>
+
+    <div class="pair">
+      <div class="ph">The same button, two label shapes <small>— neither is safe to match on</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">checkout — index.html:970</div>
+          <div class="cb">&lt;span class="a"&gt;Guide&lt;/span&gt;<br>
+          &lt;span class="b"&gt;me&lt;/span&gt;<br>
+          <i>textContent → "Guideme"</i><br>
+          <i>a search for "Guide me" finds nothing at all</i></div></div>
+        <div class="col"><div class="ct web">home — index.html:948</div>
+          <div class="cb">Guide &lt;b&gt;me&lt;/b&gt;<br>
+          <i>textContent → "Guide me" — reads fine…</i><br>
+          <i>…until a matcher looks at innerHTML, or the</i><br>
+          <i>Arabic mode swaps the string entirely</i></div></div>
+      </div>
+    </div>
+
+    <div class="slab">
+      <div class="sl">The law</div>
+      <div class="sq">A CONTROL IS NAMED BY ITS CONTRACT, NOT BY ITS LABEL.</div>
+      <div class="sb">Labels are design surface. They get restyled, split across spans,
+        shortened, and translated — DietStation ships an Arabic mode, so <i>every</i> label in
+        the product is a moving target by design. <code>data-act</code> is the one name that
+        holds still. Renaming a label is a design change; renaming an act is a breaking change.</div>
+    </div>
+
+    <h3>What the map has to carry</h3>
+    <p class="desc" style="font-size:13.5px">Three columns, not one. An act alone is not enough
+      to drive a control that carries a value: automation can find
+      <code>data-act="plan"</code> but has no way to know <i>which</i> plan it just clicked. The
+      map names the payload attribute alongside the act. Below is checkout&rsquo;s real map,
+      read off its dispatcher — the worked example every other flow copies.</p>
+
+    <div class="cmap">
+      <div class="cr hd"><div>data-act</div><div>What it does</div><div>Payload</div></div>
+      <div class="grp">Navigation &amp; screens</div>
+      <div class="cr"><div class="a">back</div><div class="d">Steps back one screen; at the first screen closes the flow (<code>ds-close</code>)</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">toPayment</div><div class="d">Closes any sheet and advances to the payment screen</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">closeSheet</div><div class="d">Closes any open sheet — also carried by the veil</div><div class="p">—</div></div>
+      <div class="grp">Plan &amp; duration</div>
+      <div class="cr"><div class="a">pickPlan</div><div class="d">Selects a plan from the plans list, clears duration, advances</div><div class="p">data-plan</div></div>
+      <div class="cr"><div class="a">plan</div><div class="d">Re-selects the plan in place, staying on the current screen</div><div class="p">data-plan</div></div>
+      <div class="cr"><div class="a">dur</div><div class="d">Sets the subscription duration and re-prices</div><div class="p">data-dur</div></div>
+      <div class="grp">Modify sheet</div>
+      <div class="cr"><div class="a">modify</div><div class="d">Opens the modify sheet</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">days</div><div class="d">Sets the delivery day pattern</div><div class="p">data-days</div></div>
+      <div class="cr"><div class="a">inc</div><div class="d">Increments one meal&rsquo;s count</div><div class="p">.stepper[data-meal]</div></div>
+      <div class="cr"><div class="a">dec</div><div class="d">Decrements one meal&rsquo;s count, floored at 0</div><div class="p">.stepper[data-meal]</div></div>
+      <div class="grp">Coupons</div>
+      <div class="cr"><div class="a">coupons</div><div class="d">Opens the coupons sheet</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">pickCoupon</div><div class="d">Applies a coupon, or clears it if already applied. Present only on unlocked tiers</div><div class="p">data-cpn, data-tier</div></div>
+      <div class="cr"><div class="a">uncoupon</div><div class="d">Removes the applied coupon from the promo bar</div><div class="p">—</div></div>
+      <div class="grp">Payment</div>
+      <div class="cr"><div class="a">method</div><div class="d">Selects a payment method and re-prices — methods carry different fees</div><div class="p">data-method</div></div>
+      <div class="cr"><div class="a">pay</div><div class="d">Prototype only — toasts the total, takes no payment</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">savings</div><div class="d">Toasts today&rsquo;s saving</div><div class="p">—</div></div>
+      <div class="grp">Cross-flow — assert the intent, not the screen</div>
+      <div class="cr"><div class="a">allRewards</div><div class="d">Emits <code>ds-nav → rewards</code>, present <code>sheet</code></div><div class="p">—</div></div>
+      <div class="cr"><div class="a">guide</div><div class="d">Emits <code>ds-nav → plan-quiz</code>, present <code>push</code></div><div class="p">—</div></div>
+      <div class="grp">Declared, not yet built</div>
+      <div class="cr"><div class="a">consult</div><div class="d">Consultation booking — toasts &ldquo;later sprint&rdquo;</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">summer</div><div class="d">Summer Offer campaign landing — toasts &ldquo;later sprint&rdquo;</div><div class="p">—</div></div>
+      <div class="cr"><div class="a">call</div><div class="d">Calls the diet consultant — toast placeholder</div><div class="p">—</div></div>
+    </div>
+
+    <h3>Authoring rules</h3>
+    <p class="desc" style="font-size:13.5px">
+      <b style="color:var(--ink)">1 · One listener per flow.</b>
+      <code>e.target.closest('[data-act]')</code>, delegated at the phone root
+      (checkout/index.html:1199). Not one handler per button.<br>
+      <b style="color:var(--ink)">2 · Every control that changes state or navigates carries an
+      act.</b> Decorative wrappers, scroll containers and pure-display rows do not — an act on a
+      non-control is a lie in the map.<br>
+      <b style="color:var(--ink)">3 · Name the contract, in camelCase, and keep it stable.</b>
+      <code>pickPlan</code>, not <code>blackBtn2</code>. Restyle and retranslate the label
+      freely; changing the act is a breaking change and gets announced to the lanes.<br>
+      <b style="color:var(--ink)">4 · Value-carrying controls declare their payload.</b> The
+      companion <code>data-*</code> goes in the map&rsquo;s third column — including when it
+      lives on an ancestor, as the steppers&rsquo; <code>data-meal</code> does.<br>
+      <b style="color:var(--ink)">5 · Author the map from the dispatcher, never grep it from
+      markup.</b> Checkout&rsquo;s <code>toPayment</code>, <code>pay</code> and
+      <code>call</code> are produced through template interpolation
+      (<code>data-act="${act}"</code>) and appear nowhere as literal strings — a grep of the
+      markup finds 18 of the 21 acts and silently misses three, one of which is
+      &ldquo;Pay Now&rdquo;.<br>
+      <b style="color:var(--ink)">6 · Cross-flow acts state the intent they emit.</b> A
+      regression run asserts the <code>ds-nav</code> message, not the screen that appears — the
+      target flow may be unbuilt, and dead ends are legal.</p>
+
+    <h3>flows.json content model</h3>
+    <div class="codewrap">
+      <pre id="ctrlmap">// per-flow handoff — REQUIRED section, renders as "Semantic control map"
+"controls": [
+  { "act": "pickPlan", "payload": "data-plan",
+    "does": "Selects a plan, clears duration, advances" },
+  { "act": "dur", "payload": "data-dur",
+    "does": "Sets the subscription duration and re-prices" },
+  { "act": "inc", "payload": ".stepper[data-meal]",
+    "does": "Increments one meal's count" },
+  { "act": "guide", "intent": { "to": "plan-quiz", "present": "push" },
+    "does": "Emits ds-nav → plan-quiz (push)" },
+  { "act": "consult", "status": "stub",
+    "does": "Consultation booking" }
+]
+
+// Renderer ask (Hub session): render controls[] as a three-column table
+// in both handoff surfaces, in authoring order. Show `intent` inline on
+// cross-flow rows, dim rows marked status:"stub", and render a flow with
+// no controls[] exactly as today — this lands before the backports do.</pre>
+      <button class="copycode" data-copy="ctrlmap">Copy</button>
+    </div>
+
+    <h3>Adoption</h3>
+    <div class="adopt">
+      <span class="on">checkout — 21 acts, shipped</span>
+      <span>home — 73 id lookups</span>
+      <span>meal-select — 117</span>
+      <span>auth — 35</span>
+      <span>rewards — 16</span>
+      <span>breathe — 2</span>
+      <span>plan-quiz — 2</span>
+    </div>
+    <p class="meta">Counted at source today. Checkout is the only flow on the pattern — the
+      other six bind by <code>getElementById</code>, which a script can find but which names the
+      <i>element</i> rather than the contract, and which dies on every re-render that rebuilds
+      its markup. <b>Greenfield flows build the map in from the start</b>; existing flows
+      backport at their lane&rsquo;s own pace, heaviest first, since a 117-lookup flow is also
+      the one a regression run most needs to reach. Raised by the Checkout lane after the
+      Hub&rsquo;s router regression run missed two controls three times running; endorsed by
+      Hub, specified here.</p>
   </section>
 
 </div>
