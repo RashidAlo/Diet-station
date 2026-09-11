@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DS Lab">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<title>DietStation — Checkout</title>
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'Avenir Next World'; src: url('AvenirNextWorld-Medium.otf'); font-weight: 500; }
+  @font-face { font-family: 'Avenir Next World'; src: url('AvenirNextWorld-Demi.otf'); font-weight: 600; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+  #dvhProbe { position: fixed; left: 0; top: 0; width: 1px; height: 100vh;
+    height: 100dvh; visibility: hidden; pointer-events: none; }
+  html, body { height: 100%; overflow: hidden; background: #fff; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
+    overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+  body.desktop { background: #f5f5f7; }
+
+  /* ================= playground shell (desktop) ================= */
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: 316px; z-index: 60;
+    background: #fbfbfc; border-right: 1px solid rgba(0,0,0,.08);
+    padding: 28px 24px 24px; overflow-y: auto; touch-action: pan-y; display: none; }
+  body.desktop #side { display: block; }
+  .s-kicker { font: 600 10px/14px 'Urbane Rounded', sans-serif; letter-spacing: 2px;
+    text-transform: uppercase; color: #ED1C24; margin-bottom: 10px; }
+  #side h2 { font: 600 20px/26px 'Urbane Rounded', sans-serif; color: #1d1d1f; margin-bottom: 8px; }
+  .s-desc { font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: #6e6e73; margin-bottom: 26px; }
+  .s-sec { margin-bottom: 26px; }
+  .s-label { font: 600 11px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;
+    text-transform: uppercase; color: #1d1d1f; margin-bottom: 4px; }
+  .s-note { font: 400 11.5px/16px 'Proxima Nova', sans-serif; color: #8e8e93; margin-bottom: 12px; }
+  .mod { margin-bottom: 14px; }
+  .mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mod-head label { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #1d1d1f; }
+  .mod-head output { font: 600 11px/16px 'Urbane Rounded', sans-serif; color: #ED1C24; }
+  .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
+  .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
+  .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg3 { grid-template-columns: 1fr 1fr 1fr; }
+  .seg4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
+    padding: 10px 8px; background: #fff;
+    font: 600 11.5px/15px 'Urbane Rounded', sans-serif; color: #6e6e73; }
+  .seg2 button.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+  .s-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
+    padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
+  #sReset, #sCopy, #sFresh { background: #ececef; color: #1d1d1f; }
+  #sReset:hover, #sCopy:hover, #sFresh:hover { background: #e2e2e6; }
+  .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08);
+    font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
+
+  /* ================= stage + device frame ================= */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  body:not(.desktop) #stage { align-items: flex-start; justify-content: flex-start; }
+  body:not(.desktop) .device { transform-origin: top left; }
+  body.desktop #stage { left: 316px; }
+  .device { position: relative; transform-origin: center center; }
+  body.desktop .device { padding: 12px; border-radius: 58px; background: transparent;
+    border: 2.5px solid #111114; box-shadow: none; }
+  body.desktop .device::before { content: ''; position: absolute; left: -7px; top: 190px;
+    width: 5px; height: 128px; border-radius: 3px 0 0 3px; background: #111114;
+    box-shadow: 0 -70px 0 #111114; }
+  body.desktop .device::after { content: ''; position: absolute; right: -7px; top: 240px;
+    width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
+  .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #fff;
+    --top-pad: 44px; }
+  body:not(.desktop) .phone { width: 402px;
+    height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1)); }
+  body.desktop .phone { border-radius: 46px; }
+  .island { position: absolute; left: 50%; transform: translateX(-50%); top: 11px;
+    width: 125px; height: 36px; border-radius: 20px; background: #000; z-index: 90;
+    pointer-events: none; display: none; }
+  body.desktop .island { display: block; }
+
+  /* ================= DietStation checkout tokens (Figma) ============ */
+  .phone {
+    --surface: #ffffff;
+    --ink: #0b0e12;          /* text/default/heading   */
+    --body: #252b33;         /* text/default/body      */
+    --muted: #999999;        /* text/disabled/default  */
+    --red: #ed1c24;          /* surface|text/secondary */
+    --green: #26a659;        /* surface|text/success   */
+    --amber: #ffc52e;        /* surface/tertiary       */
+    --gold: #ffb800;         /* payment offer badge    */
+    --hair: #e5e5e5;         /* border subtle          */
+    --hair-lt: #ededed;      /* border subtle light    */
+    --hair-md: #d4d4d4;
+    --oncolor: #f9f9f9;
+    --r-card: 24px;          /* duration / promo cards */
+    --r-row: 16px;           /* payment option rows    */
+    --r-round: 1024px;
+    --ease: cubic-bezier(.32,.72,0,1);
+  }
+
+  /* ---- screen stack: push = slide from right (Apple curve) ---- */
+  .scr { position: absolute; inset: 0; background: var(--surface); overflow: hidden;
+    display: flex; flex-direction: column; z-index: 10;
+    transform: translateX(100%); transition: transform .42s var(--ease); will-change: transform; }
+  .scr.on { transform: translateX(0); }
+  .scr.under { transform: translateX(-26%); }
+  .scr[data-scr="plans"] { transform: translateX(0); }
+  .scr[data-scr="plans"].under { transform: translateX(-26%); }
+
+  /* ---- shared header (113px, content bottom-aligned) ---- */
+  .hdr { flex: none; height: 113px; background: var(--surface); display: flex;
+    align-items: flex-end; padding: 16px; z-index: 20; }
+  .hdr-row { flex: 1; display: flex; gap: 12px; align-items: center; min-width: 0; }
+  .icon-btn { width: 40px; height: 40px; flex: none; border-radius: 100px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--hair);
+    display: flex; align-items: center; justify-content: center; padding: 6px 8px; }
+  .icon-btn img { width: 20px; height: 20px; display: block; }
+  .hdr h1 { flex: 1; min-width: 0; font: 600 18px/28px 'Urbane Rounded', sans-serif; color: #000; }
+  .pill-btn { height: 40px; flex: none; border-radius: var(--r-round); cursor: pointer;
+    background: var(--surface); border: 1px solid var(--hair); display: flex; gap: 6px;
+    align-items: center; justify-content: center; padding: 4px 10px;
+    font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .pill-btn img { width: 16px; height: 16px; display: block; }
+
+  /* ---- scroll body ---- */
+  .scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+  /* ================= duration select tabs ================= */
+  .dur-list { display: flex; flex-direction: column; gap: 32px; padding: 16px 0; margin: 0 16px; }
+  .dur { position: relative; cursor: pointer; }
+  .dur-card { background: var(--surface); border: 1px solid var(--hair-lt);
+    border-radius: var(--r-card); padding: 20px 20px 24px; display: flex; gap: 12px;
+    align-items: center; transition: border-color .22s ease, box-shadow .22s ease; }
+  .dur:nth-child(2) .dur-card { border-color: var(--hair-md); }
+  .dur.sel .dur-card { border: 2px solid var(--green); padding: 19px 19px 23px; }
+  .dur-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .dur-title { display: flex; gap: 4px; font: 600 14px/20px 'Urbane Rounded', sans-serif;
+    color: var(--ink); white-space: nowrap; }
+  .dur-sub { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--body); }
+  .dur-price { display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+    justify-content: center; flex: none; }
+  .dur .dur-price { padding-right: 30px; }
+  .dur.sel .dur-price { padding-right: 0; }
+  .price-row { display: flex; align-items: flex-start; }
+  .was { display: flex; align-items: flex-end; padding-right: 4px;
+    font: 600 14px/16px 'Proxima Nova', sans-serif; color: var(--muted);
+    text-decoration: line-through; }
+  .now-kd { font: 700 14px/22px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .now { font: 700 18px/28px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .now-dec { font: 700 12px/24px 'Proxima Nova', sans-serif; color: var(--ink); align-self: flex-end; }
+  .per-mo { display: flex; font: 500 10px/16px 'Proxima Nova', sans-serif; color: var(--muted); }
+  .dur-check { width: 20px; height: 20px; flex: none; opacity: 0; transform: scale(.6);
+    transition: opacity .2s ease, transform .3s var(--ease); }
+  .dur.sel .dur-check { opacity: 1; transform: scale(1); }
+  .save-badge { position: absolute; top: -13px; right: 41px; background: var(--green);
+    border-radius: 24px; padding: 4px 10px; display: flex; gap: 4px; align-items: center;
+    font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
+  .hot-badge { position: absolute; top: -12px; left: 16px; background: var(--amber);
+    border-radius: var(--r-round); padding: 4px 8px;
+    font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
+  .hot-badge.ar { font-family: 'Avenir Next World', 'Proxima Nova', sans-serif; direction: rtl; }
+
+  /* ================= promo code bar ================= */
+  .promo-wrap { padding: 16px 20px; }
+  .promo { width: 100%; min-height: 75px; border: 1px solid var(--hair-lt);
+    border-radius: var(--r-card); background: var(--surface); cursor: pointer;
+    padding: 20px 20px 24px; display: flex; gap: 12px; align-items: center; text-align: left;
+    transition: border-color .22s ease; }
+  .promo:active { border-color: var(--hair-md); }
+  .promo-ico { width: 33.24px; height: 32.38px; flex: none; display: block; }
+  .promo-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .promo-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 22px; }
+  .promo-ttl { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .promo-ends { font: 500 12px/16px 'Avenir Next World', sans-serif; color: var(--muted);
+    white-space: nowrap; }
+  .promo-applied { display: flex; gap: 6px; align-items: center; }
+  .tier-chip { background: var(--green); border-radius: var(--r-round); padding: 4px 8px;
+    display: flex; align-items: center; justify-content: center;
+    font: 400 12px/16px 'Urbane Rounded', sans-serif; color: var(--oncolor); white-space: nowrap; }
+  .promo-off { font: 500 12px/20px 'Urbane Rounded', sans-serif; color: var(--green); white-space: nowrap; }
+  .promo-off b { font-weight: 600; font-size: 16px; }
+  .promo-off span { font-size: 12px; }
+  .promo-check { width: 20px; height: 19px; display: block; }
+  .promo-remove { flex: none; font: 600 12px/16px 'Avenir Next World', sans-serif;
+    color: var(--red); text-align: right; cursor: pointer; }
+  .promo-add { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--ink);
+    display: flex; align-items: center; justify-content: center; position: relative; }
+  .promo-add::before, .promo-add::after { content: ''; position: absolute; background: #fff;
+    border-radius: 1px; }
+  .promo-add::before { width: 11px; height: 1.8px; }
+  .promo-add::after { width: 1.8px; height: 11px; }
+
+  /* ================= payment bar (bottom dock) ================= */
+  .paybar { flex: none; background: var(--surface); border-top: 1px solid var(--hair-lt);
+    padding: 16px 24px 40px; display: flex; flex-direction: column; z-index: 20; }
+  .paybar-row { display: flex; align-items: flex-start; width: 100%; }
+  .pb-price { flex: 1; min-width: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 8px 0 12px; }
+  .pb-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
+  .pb-line { display: flex; height: 22px; align-items: flex-start; }
+  .pb-was { display: flex; align-items: flex-end; padding-right: 4px;
+    font: 600 20px/16px 'Proxima Nova', sans-serif; color: var(--red); }
+  .pb-kd { font: 700 20px/22px 'Proxima Nova', sans-serif; color: var(--ink); align-self: center; }
+  .pb-now { font: 600 30px/19px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .pb-before { position: absolute; left: 0; top: -11px; width: 74px; height: 33px;
+    display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+  .pb-before i { font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
+  /* Figma: a 61px rule rotated 169.61deg over the crossed "Before" price */
+  .pb-before .strike { position: relative; width: 100%; height: 15px; }
+  .pb-before .strike img { position: absolute; left: -1px; top: 9px; width: 61px; height: 1px;
+    display: block; transform: rotate(169.61deg); transform-origin: left center; }
+  .cta { flex: 1; min-width: 0; height: 54px; border: none; cursor: pointer;
+    border-radius: var(--r-round); background: var(--red); color: #fff;
+    display: flex; gap: 6px; align-items: center; justify-content: center; padding: 14px 20px;
+    font: 500 16px/1 'Urbane Rounded', sans-serif; overflow: hidden; position: relative;
+    transition: transform .18s var(--ease), filter .18s ease; }
+  .cta:active { transform: scale(.97); filter: brightness(.95); }
+  .cta img { width: 24px; height: 24px; display: block; }
+  .cta.grad { background: linear-gradient(98.0984deg, rgb(255,150,62) 53.4%, rgb(255,5,5) 141.76%); }
+  .cta.grad::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
+                inset 0 40px 30px -40px #e6e6e6; }
+
+  /* ================= payment method screen ================= */
+  .pay-sec { padding: 12px 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 12px; }
+  .pay-sec > h3 { font: 600 14px/20px 'Proxima Nova', sans-serif; color: #000; }
+  .pay-opt { position: relative; width: 100%; min-height: 50px; background: #fff; cursor: pointer;
+    border: 1px solid var(--hair); border-radius: var(--r-row);
+    padding: 12px 42px 12px 12px; display: flex; gap: 8px; align-items: center; text-align: left;
+    transition: border-color .22s ease; }
+  .pay-opt.sel { border-color: var(--green); }
+  .pay-logo { width: 40px; height: 24px; flex: none; display: flex; align-items: center;
+    justify-content: center; overflow: hidden; }
+  .pay-logo img { max-width: 100%; max-height: 100%; display: block; }
+  .pay-logo.dual { width: 66px; gap: 4px; }
+  .deema-mark { position: relative; width: 32px; height: 32px; display: block;
+    border-radius: 9px; overflow: hidden; border: 1px solid var(--hair-lt); }
+  .deema-mark .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .deema-mark .wm { position: absolute; left: 23.91%; right: 25%; top: 32.61%; bottom: 32.83%;
+    width: auto; height: auto; }
+  .knet-mark { position: relative; width: 40px; height: 24px; border-radius: 3px;
+    background: #0873b9; overflow: hidden; display: block; }
+  .knet-mark > div { position: absolute; left: 17.5%; right: 17.5%; top: 50%;
+    height: 19px; transform: translateY(-50%); }
+  .pay-logo.dual img { width: 28px; height: 20px; object-fit: contain; }
+  .pay-name { flex: 1; min-width: 0; font: 500 14px/20px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .pay-name .sv { color: var(--green); font-weight: 700; }
+  .pay-price { flex: none; display: flex; align-items: flex-start;
+    font: 700 15px/20px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .pay-price .kd { font-size: 12px; line-height: 22px; padding-right: 1px; }
+  .pay-check { position: absolute; right: 11px; top: 50%; transform: translateY(-50%) scale(.6);
+    width: 20px; height: 20px; opacity: 0; transition: opacity .2s ease, transform .3s var(--ease); }
+  .pay-opt.sel .pay-check { opacity: 1; transform: translateY(-50%) scale(1); }
+  .pay-badge { position: absolute; left: 11px; top: -11px; background: var(--gold);
+    border-radius: 38px; padding: 2px 8px;
+    font: 700 12px/16px 'Proxima Nova', sans-serif; color: #fff; white-space: nowrap; }
+
+  /* ---- payment bar: savings list variant ---- */
+  .savings-row { display: flex; gap: 8px; align-items: center; height: 20px; width: 100%;
+    border-radius: 4px; cursor: pointer; }
+  .savings-lbl { font: 600 14px/20px 'Urbane Rounded', sans-serif; white-space: nowrap;
+    background: linear-gradient(to right, #ee2023 66.207%, #ffb800);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .savings-spark { width: 16px; height: 16px; flex: none; display: block;
+    transform: rotate(90deg) scaleY(-1); object-fit: cover; }
+  .savings-chev { width: 16px; height: 16px; flex: none; display: block;
+    transform: rotate(-90deg); }
+  .savings-amt { margin-left: auto; font: 700 15px/20px 'Proxima Nova', sans-serif; color: var(--green);
+    white-space: nowrap; }
+  .total-row { display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0 12px; width: 100%; }
+  .total-lbl { font: 600 20px/28px 'Urbane Rounded', sans-serif; color: var(--ink); }
+
+  /* ================= sheets (modify plan / coupons) ================= */
+  .veil { position: absolute; inset: 0; background: rgba(0,0,0,.38); opacity: 0; z-index: 40;
+    pointer-events: none; transition: opacity .36s var(--ease); }
+  .veil.on { opacity: 1; pointer-events: auto; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff;
+    border-radius: 28px 28px 0 0; display: flex; flex-direction: column; max-height: 92%;
+    transform: translateY(100%); transition: transform .46s var(--ease); will-change: transform; }
+  .sheet.on { transform: translateY(0); }
+  .sheet-hdr { flex: none; display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 20px 12px; }
+  .sheet-hdr h2 { font: 600 18px/28px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .sheet-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair);
+    background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .sheet-x img { width: 18px; height: 18px; display: block; }
+
+  /* ---- plan pills (shared component) ---- */
+  .plan-pill { display: inline-flex; align-items: center; justify-content: center;
+    height: 40px; padding: 0 20px; border-radius: var(--r-round);
+    font: 500 16px/1 'Urbane Rounded', sans-serif; color: #fff; white-space: nowrap; }
+  .plan-pill b { font-weight: 600; }
+  .plan-pill[data-plan="thediet"] { background: linear-gradient(96deg, #7b3fb5 0%, #5b2c86 100%); }
+  .plan-pill[data-plan="lifestyle"] { background: linear-gradient(96deg, #ff963e 0%, #ff4d2d 100%); }
+  .plan-pill[data-plan="bodybuilding"] { background: linear-gradient(96deg, #1f8fe0 0%, #0b5fa8 100%); }
+
+  /* ---- meal stepper (modify sheet) ---- */
+  .meal-row { display: flex; align-items: center; gap: 12px; padding: 0 20px; min-height: 46px; }
+  .meal-row + .meal-row { margin-top: 20px; }
+  .meal-name { flex: 1; min-width: 0; }
+  .meal-name b { display: block; font: 600 16px/22px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .meal-macros { display: flex; gap: 12px; align-items: center;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--body); }
+  .meal-macros i { font-style: normal; color: var(--muted); }
+  .stepper { flex: none; display: flex; align-items: center; gap: 4px; width: 121px; height: 46px;
+    border: 1px solid var(--hair); border-radius: var(--r-round); padding: 0 6px; background: #fff; }
+  .stepper button { flex: 1; border: none; background: none; cursor: pointer; height: 100%;
+    font: 400 22px/1 'Proxima Nova', sans-serif; color: var(--red); }
+  .stepper button[disabled] { color: var(--hair-md); }
+  .stepper output { flex: 1; text-align: center;
+    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .days-seg { display: flex; align-items: stretch; margin: 24px 20px 0; height: 54px;
+    border: 1px solid var(--hair); border-radius: var(--r-card); position: relative; }
+  .days-seg button { flex: 1; border: none; background: none; cursor: pointer; position: relative;
+    font: 500 16px/22px 'Urbane Rounded', sans-serif; color: var(--ink);
+    display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .days-seg button + button { border-left: 1px solid var(--hair-lt); }
+  .days-seg button.on { color: var(--green); font-weight: 600; }
+  .days-seg .best { position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--amber); border-radius: var(--r-round); padding: 2px 10px;
+    font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
+
+  /* ================= coupon picker overlay ================= */
+  .coupon-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 24px;
+    display: flex; flex-direction: column; gap: 12px; }
+  .cpn { position: relative; display: flex; align-items: center; gap: 14px; cursor: pointer;
+    border-radius: 20px; padding: 16px 18px; border: 1px solid var(--hair-lt); background: #fff;
+    transition: border-color .2s ease, transform .2s var(--ease); }
+  .cpn:active { transform: scale(.985); }
+  .cpn.sel { border-color: var(--green); border-width: 2px; padding: 15px 17px; }
+  .cpn.locked { opacity: .5; }
+  .cpn-badge { flex: none; width: 54px; height: 26px; border-radius: var(--r-round);
+    display: flex; align-items: center; justify-content: center;
+    font: 600 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .4px;
+    border: 1px solid var(--badge-border, #fff); }
+  .cpn[data-tier="bronze"] .cpn-badge { background: linear-gradient(to bottom, #d5bb9f 45%, #c9a682 55%);
+    border-color: #ffffff; color: rgba(76,64,51,.72); }
+  .cpn[data-tier="silver"] .cpn-badge { background: linear-gradient(to bottom, #e5e7eb 45%, #d1d5db 55%);
+    border-color: #e4e4e7; color: rgba(82,82,91,.76); }
+  .cpn[data-tier="gold"] .cpn-badge { background: linear-gradient(to top, #f2b90d 45%, #ffca2a 55%);
+    border-color: #fefae7; color: #7a5a00; }
+  .cpn[data-tier="vip"] .cpn-badge { background: linear-gradient(180deg, #270f0f 38.462%, #0f0e0d 65.385%);
+    border-color: #f9f9f9; color: #fff; }
+  .cpn-mid { flex: 1; min-width: 0; }
+  .cpn-val { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .cpn-val span { font-size: 12px; font-weight: 500; color: var(--body); }
+  .cpn-sub { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cpn-code { font: 500 11px/14px 'Avenir Next World', sans-serif; color: var(--body);
+    letter-spacing: .6px; margin-top: 2px; }
+  .cpn-pick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--hair-md);
+    display: flex; align-items: center; justify-content: center; transition: all .22s var(--ease); }
+  .cpn.sel .cpn-pick { border-color: var(--green); background: var(--green); }
+  .cpn-pick img { width: 14px; height: 14px; opacity: 0; transform: scale(.5);
+    transition: opacity .18s ease, transform .28s var(--ease); filter: brightness(0) invert(1); }
+  .cpn.sel .cpn-pick img { opacity: 1; transform: scale(1); }
+  .cpn-lock { position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font: 500 10px/14px 'Avenir Next World', sans-serif; color: var(--muted); }
+  .sheet-foot { flex: none; padding: 8px 20px 34px; }
+  .cpn-more { width: 100%; height: 48px; border-radius: var(--r-round); cursor: pointer;
+    border: 1px solid var(--hair); background: #fff;
+    font: 500 14px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+
+  /* ================= liquid glass (Figma "BG - Small UI" recipe) ==========
+     Glass here floats over LIVE scrolling plan cards, so it is native CSS
+     backdrop-filter rather than a liquid-glass-js Container: the shader
+     refracts a frozen page snapshot and reads fake over moving content. */
+  .glass-btn { position: relative; flex: none; width: 40px; height: 40px; cursor: pointer;
+    border: none; background: none; padding: 6px 8px; border-radius: 1000px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s var(--ease); }
+  .glass-btn:active { transform: scale(.93); }
+  /* Figma stacks a plus-lighter + luminosity pair over the blur; backdrop-filter
+     opens a stacking context, which isolates those blends and turns the button
+     slate-grey (the coupon-compositing trap). Their net effect on a light page
+     is a bright translucent white, so that is what the fallback paints. */
+  .gfill { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
+    background: rgba(255,255,255,.58);
+    backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
+    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0,
+                0 0 0 .5px #e8e8e8, 0 8px 15px 0 rgba(0,0,0,.02); }
+  .gedge { position: absolute; inset: 0; border-radius: 1000px; pointer-events: none;
+    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
+                inset 0 40px 30px -40px #e6e6e6; }
+  .glass-btn img { position: relative; width: 20px; height: 20px; display: block; }
+
+  /* ---- floating coupon FAB (50px round liquid glass, red tag icon) ---- */
+  .fab-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 87px; z-index: 35;
+    display: flex; align-items: center; justify-content: flex-end; padding: 0 24px;
+    pointer-events: none; }
+  .fab { position: relative; width: 50px; height: 50px; flex: none; border: none; padding: 0;
+    background: none; cursor: pointer; border-radius: 53.6px; pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s var(--ease); }
+  .fab:active { transform: scale(.92); }
+  .fab .gfill, .fab .gedge { border-radius: 1000px; }
+  .fab .fico { position: relative; width: 33.24px; height: 32.39px; display: block; }
+  .fab .dot { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px;
+    border-radius: 10px; background: var(--green); border: 2px solid #fff; color: #fff;
+    font: 700 10px/16px 'Proxima Nova', sans-serif; display: flex; align-items: center;
+    justify-content: center; padding: 0 5px; z-index: 2; }
+
+  /* ================= subscribe modal (plan cards) ================= */
+  .scr[data-scr="plans"] { border-radius: 38px; }
+  .sub-nav { position: absolute; left: 0; top: 24px; width: 100%; z-index: 30;
+    display: flex; gap: 8px; align-items: center; padding: 0 24px 0 16px; }
+  .sub-nav .spacer { flex: 1; min-width: 1px; opacity: 0;
+    font: 600 22px/32px 'Urbane Rounded', sans-serif; }
+  .sub-scroll { position: absolute; left: 0; top: 80px; width: 100%; bottom: 0;
+    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain; display: flex; flex-direction: column; gap: 21px;
+    align-items: flex-start; padding: 0 16px 119px; }
+  .edge { position: absolute; left: 0; width: 100%; z-index: 25; pointer-events: none;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+  .edge.t { top: 0; height: 80px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent);
+    mask-image: linear-gradient(to bottom, #000 42%, transparent); }
+  .edge.b { bottom: 0; height: 97px;
+    -webkit-mask-image: linear-gradient(to top, #000 38%, transparent);
+    mask-image: linear-gradient(to top, #000 38%, transparent); }
+  .sub-ctas { display: flex; gap: 16px; height: 54px; align-items: center;
+    justify-content: center; width: 100%; flex: none; }
+  .book-btn { flex: 1; position: relative; height: 54px; cursor: pointer; border-radius: 54px;
+    border: 1px solid var(--hair); background: none;
+    display: flex; align-items: center; justify-content: center; padding: 17px 24px;
+    font: 500 13px/1 'Urbane Rounded', sans-serif; color: var(--ink); white-space: nowrap; }
+  .book-btn .cardbg { position: absolute; inset: 0; border-radius: 32px; border: 1px solid #fff;
+    background: linear-gradient(to right, #fff 18.75%, #f5f5f5); }
+  .book-btn span { position: relative; }
+  .guide-btn { position: relative; width: 175px; height: 54px; flex: none; cursor: pointer;
+    border: none; border-radius: 67px; overflow: hidden;
+    background: linear-gradient(114.756deg, rgb(255,150,62) 53.4%, rgb(255,5,5) 141.76%); }
+  .guide-txt { position: absolute; top: 16px; left: calc(50% - 20px); transform: translateX(-50%);
+    display: flex; gap: 3px; align-items: flex-start; font-size: 16px; color: #fff;
+    white-space: nowrap; }
+  .guide-txt .a { font-weight: 500; opacity: .6; line-height: 22.448px; }
+  .guide-txt .b { font-weight: 700; line-height: 22.448px; text-shadow: 0 1px 5.8px rgba(0,0,0,.1); }
+  .guide-wand { position: absolute; left: 125px; top: 10px; width: 54px; height: 54px;
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(180deg) scaleY(-1); }
+  .guide-wand img { width: 54px; height: 54px; display: block; }
+  .shimmer { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
+    pointer-events: none; }
+  .shimmer i { position: absolute; top: -29px; width: 115px; height: 115px; display: flex;
+    align-items: center; justify-content: center; mix-blend-mode: color-dodge;
+    animation: sweep 3.4s var(--ease) infinite; }
+  .shimmer i img { width: 162.635px; transform: rotate(45deg); display: block; }
+  .shimmer i:nth-child(1) { left: -104px; }
+  .shimmer i:nth-child(1) img { height: 15px; }
+  .shimmer i:nth-child(2) { left: -101px; animation-delay: .18s; }
+  .shimmer i:nth-child(2) img { height: 3px; }
+  @keyframes sweep { 0% { transform: translateX(0); } 55%, 100% { transform: translateX(330px); } }
+
+  .sub-sec { display: flex; flex-direction: column; gap: 21px; align-items: flex-start;
+    width: 100%; padding-bottom: 32px; flex: none; }
+  .summer { width: 100%; height: 110px; flex: none; cursor: pointer; border-radius: 28px;
+    border: 1px solid var(--hair-lt); background: #fff; overflow: hidden;
+    display: flex; gap: 16px; align-items: center; justify-content: flex-end; padding: 16px 20px; }
+  .summer > img.logo { width: 48px; height: 48px; flex: none; display: block; }
+  .summer-txt { width: 186px; height: 60px; flex: none; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: right; font-size: 14px;
+    color: var(--ink); }
+  .summer-txt b { width: 100%; font: 600 14px/28px 'Urbane Rounded', sans-serif; }
+  .summer-txt i { width: 100%; font: 700 14px/16px 'Avenir Next World', sans-serif;
+    font-style: normal; direction: rtl; }
+  .summer-go { width: 50px; height: 50px; flex: none; border-radius: var(--r-round);
+    background: #f5f5f5; display: flex; align-items: center; justify-content: center;
+    padding: 4px 6px; }
+  .summer-go img { width: 26px; height: 26px; display: block; }
+
+  .plans-list { display: flex; flex-direction: column; gap: 24px; width: 100%; }
+  .sep { display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; }
+  .sep .rule { flex: 1; min-width: 1px; height: 1px; background: var(--hair-lt); }
+  .sep span { font: 500 12px/16px 'Proxima Nova', sans-serif; color: var(--muted);
+    white-space: nowrap; }
+
+  .pcard { position: relative; width: 100%; height: 165px; flex: none; cursor: pointer;
+    border: 1px solid var(--hair-md); border-radius: 32px; padding: 24px 20px 20px;
+    display: flex; flex-direction: column; align-items: flex-start;
+    box-shadow: 0 2px 8.9px 0 rgba(26,41,85,.06); background: rgba(0,0,0,0);
+    transition: transform .2s var(--ease), box-shadow .2s ease; }
+  .pcard:active { transform: scale(.985); }
+  .pcard .cardbg { position: absolute; inset: 0; border-radius: 32px; border: 1px solid #fff;
+    background: linear-gradient(to right, #fff 75%, #f5f5f5); }
+  .pcard-row { position: relative; display: flex; gap: 12px; height: 122px;
+    align-items: flex-start; width: 100%; flex: none; }
+  .pcard-meals { flex: 1; min-width: 1px; height: 122px; display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: space-between; }
+  .mrow { display: flex; gap: 6px; align-items: center; width: 100%; }
+  .mnum { width: 18px; height: 18px; flex: none; border-radius: var(--r-round);
+    background: rgba(244,244,244,.2); display: flex; align-items: center; justify-content: center;
+    padding: 4px; font: 600 12px/16px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .mlbl { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: var(--ink); white-space: nowrap; }
+  .kcal { flex: none; display: flex; gap: 4px; align-items: center; justify-content: center;
+    padding: 2px 10px; border-radius: 300px; border: 1px solid rgba(0,0,0,.03);
+    background: rgba(0,0,0,0); color: var(--ink); white-space: nowrap; }
+  .kcal b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
+  .kcal span { font: 400 12px/16px 'Proxima Nova', sans-serif; }
+  .pcard-right { position: relative; height: 100%; flex: none; display: flex;
+    flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
+  .pprice { display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
+    padding-top: 3px; flex: none; }
+  .pprice-row { position: relative; display: flex; height: 26px; align-items: flex-start; }
+  .pw { display: flex; align-items: flex-end; padding-right: 4px;
+    font: 600 15px/16px 'Proxima Nova', sans-serif; color: var(--muted);
+    text-decoration: line-through; }
+  .pkd { font: 700 15px/22px 'Proxima Nova', sans-serif; color: transparent;
+    background-clip: text; -webkit-background-clip: text; }
+  .pbig { font: 600 30px/19px 'Urbane Rounded', sans-serif; color: transparent;
+    background-clip: text; -webkit-background-clip: text; white-space: nowrap; }
+  .pmo { display: flex; align-items: flex-start; font: 500 16px/24px 'Proxima Nova', sans-serif;
+    color: var(--muted); align-self: flex-end; }
+  /* Figma: a 46.69px rule rotated 170.13deg, laid over the crossed list price */
+  .pstrike { position: absolute; top: 4px; width: 46px; height: 8px; pointer-events: none;
+    display: flex; align-items: center; justify-content: center; }
+  .pstrike img { width: 46.69px; height: 1px; display: block; transform: rotate(170.13deg); }
+  .pchip { flex: none; height: 24px; display: flex; align-items: center;
+    justify-content: center; padding: 2px 10px; border-radius: 300px;
+    border: 1px solid rgba(0,0,0,.03); background: rgba(0,0,0,0);
+    font: 600 12px/16px 'Avenir Next World', sans-serif; color: transparent;
+    background-clip: text; -webkit-background-clip: text; white-space: nowrap; direction: rtl; }
+  .ppill { height: 40px; flex: none; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 4px 20px; border-radius: 28px; border: 1px solid #e3e3e3;
+    font-size: 16px; color: #fff; white-space: nowrap; }
+  .ppill .a { font-weight: 300; opacity: .6; line-height: 22.448px; }
+  .ppill .b { font-weight: 600; line-height: 22.448px; text-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+  /* per-plan gradients, first (top) layer from Figma */
+  [data-plan="thediet"] { --g: linear-gradient(116.966deg, rgb(130,69,156) 5.4423%, rgb(85,37,181) 102.11%);
+    --gp: linear-gradient(115.796deg, rgb(130,69,156) 5.4423%, rgb(85,37,181) 102.11%);
+    --gc: linear-gradient(148.957deg, rgb(130,69,156) 5.4423%, rgb(85,37,181) 102.11%); }
+  [data-plan="lifestyle"] { --g: linear-gradient(111.278deg, rgba(255,150,62,.9) 53.4%, rgba(255,5,5,.9) 141.76%);
+    --gp: linear-gradient(111.547deg, rgba(255,150,62,.9) 53.4%, rgba(255,5,5,.9) 141.76%);
+    --gc: linear-gradient(141.821deg, rgba(255,150,62,.9) 53.4%, rgba(255,5,5,.9) 141.76%); }
+  [data-plan="bodybuilding"] { --g: linear-gradient(111.278deg, rgb(73,75,100) 53.4%, rgb(13,9,41) 141.76%);
+    --gp: linear-gradient(118.715deg, rgb(73,75,100) 53.4%, rgb(13,9,41) 141.76%);
+    --gc: linear-gradient(141.821deg, rgb(73,75,100) 53.4%, rgb(13,9,41) 141.76%); }
+  [data-plan="kids"] { --g: linear-gradient(111.278deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%);
+    --gp: linear-gradient(107.753deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%);
+    --gc: linear-gradient(141.821deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%); }
+  .pcard .pkd, .pcard .pbig { background-image: var(--g); }
+  .pcard .pchip { background-image: var(--gc); }
+  .pcard .ppill, .ppill[data-plan]:not(.plan-tab) { background-image: var(--gp); }
+  .plan-tab:not(.on) { background-image: none; }
+  .pcard[data-plan="bodybuilding"] .ppill { border-color: #7293ff; }
+  .pcard[data-plan="bodybuilding"] .ppill .b, .plan-tab[data-plan="bodybuilding"].on .b {
+    color: var(--red); text-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .pcard[data-plan="kids"] .ppill { border-color: #ff8772; width: 90px; }
+  .pcard[data-plan="kids"] .cardbg { display: none; }
+
+  /* ---- renew: the plan comparison tabs above the durations ---- */
+  .plan-tabs { display: flex; gap: 8px; padding: 0 16px 4px; }
+  .plan-tab { cursor: pointer; flex: none; height: 40px; padding: 4px 20px; border-radius: 28px;
+    border: 1px solid var(--hair); background: #fff; color: var(--ink);
+    display: flex; flex-direction: row; align-items: center; justify-content: center;
+    font-size: 15px; white-space: nowrap; transition: all .24s var(--ease); }
+  .plan-tab .a { font-weight: 500; opacity: 1; }
+  .plan-tab .b { font-weight: 600; }
+  .plan-tab.on { color: #fff; border-color: #e3e3e3; background-image: var(--gp); }
+  .plan-tab.on .a { opacity: .6; font-weight: 300; }
+  .plan-detail { margin: 16px; padding: 16px 20px; background: #f7f7f8; border-radius: var(--r-card); }
+  .plan-detail-top { display: flex; justify-content: space-between; align-items: center; }
+  .plan-detail-top b { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .plan-detail-top b i { font-style: normal; font-weight: 400; color: var(--body); }
+  .plan-detail-meals { display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--body); white-space: nowrap; }
+  .plan-detail-meals b { color: var(--ink); }
+  .plan-detail-meals button { margin-left: auto; border: none; background: none; cursor: pointer;
+    font-size: 15px; color: var(--body); }
+
+  /* ---- toast ---- */
+  .toast { position: absolute; left: 50%; bottom: 140px; transform: translate(-50%, 12px);
+    background: rgba(11,14,18,.92); color: #fff; border-radius: 100px; padding: 10px 18px;
+    font: 500 13px/16px 'Urbane Rounded', sans-serif; z-index: 70; opacity: 0;
+    pointer-events: none; transition: opacity .26s ease, transform .34s var(--ease);
+    white-space: nowrap; }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ================= mobile lab menu (triple-tap & hold) ============ */
+  body:not(.desktop) #side { display: none; }
+  body.labmenu-open:not(.desktop) #side { display: block; position: fixed; left: 0; right: 0;
+    top: auto; bottom: 0; width: auto; max-height: 76%; z-index: 200;
+    border-radius: 22px 22px 0 0; border-right: none; box-shadow: 0 -18px 46px rgba(0,0,0,.28); }
+  #labVeil { position: fixed; inset: 0; background: rgba(0,0,0,.36); z-index: 190; display: none; }
+  body.labmenu-open:not(.desktop) #labVeil { display: block; }
+</style>
+</head>
+<body>
+<div id="safeProbe"></div><div id="dvhProbe"></div>
+<script src="html2canvas.min.js"></script>
+
+<aside id="side">
+  <div class="s-kicker">DietStation · Design Lab</div>
+  <h2>Checkout &amp; Payment</h2>
+  <p class="s-desc">The subscription purchase path: pick a plan, choose how long, apply a loyalty
+    coupon, then pay. The coupon button floats over every step — redeeming one re-prices the plan
+    cards, the duration tabs and the total in place, and carries your tier badge through to payment.</p>
+
+  <div class="s-sec">
+    <div class="s-label">Loyalty tier</div>
+    <p class="s-note">Which level this member has reached. Tier decides which coupons are unlocked and
+      what badge rides next to the discount.</p>
+    <div class="seg2 seg4" id="segTier">
+      <button data-tier="bronze">Bronze</button>
+      <button data-tier="silver">Silver</button>
+      <button data-tier="gold">Gold</button>
+      <button data-tier="vip" class="on">VIP</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Entry point</div>
+    <p class="s-note">Signed-out shoppers land on the plan cards; a renewing member arrives from the
+      loyalty page straight into their plan's durations.</p>
+    <div class="seg2" id="segEntry">
+      <button data-entry="plans" class="on">Signed out</button>
+      <button data-entry="renew">Renew (loyalty)</button>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Modifiers</div>
+    <p class="s-note">Live values the prototype reads while you interact.</p>
+    <div class="mod">
+      <div class="mod-head"><label for="mCountdown">Offer countdown</label><output id="oCountdown">2:60:20</output></div>
+      <input type="range" id="mCountdown" min="1" max="240" step="1" value="180">
+      <div class="mod-desc">Minutes left on the promo before the coupon expires.</div>
+    </div>
+    <div class="mod">
+      <div class="mod-head"><label for="mPush">Push duration</label><output id="oPush">420ms</output></div>
+      <input type="range" id="mPush" min="200" max="700" step="10" value="420">
+      <div class="mod-desc">Screen-to-screen slide, on the Apple curve (.32,.72,0,1).</div>
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-label">Actions</div>
+    <div class="s-actions">
+      <button id="sReset">Reset flow</button>
+      <button id="sCopy">Copy values</button>
+    </div>
+  </div>
+  <div class="s-foot" id="buildInfo">checkout ·1</div>
+</aside>
+<div id="labVeil"></div>
+
+<div id="stage">
+  <div class="device" id="device">
+    <div class="phone" id="phone" data-tier="vip">
+      <!-- screens are injected by render() -->
+      <div class="island"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   DietStation — Checkout & Payment
+   Figma: Diet Station 4.0 → section "Checkout" (17304:469649)
+   Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
+           Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
+   ========================================================================== */
+const BUILD = 'checkout ·1';
+
+/* ---------------- modifiers (sidebar-tunable) ---------------- */
+const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
+const MODS = { countdown: 180, push: 420 };
+try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-checkout') || '{}')); } catch (_) {}
+
+/* ---------------- loyalty tiers ----------------
+   Same four-rung ladder the rewards flow themes its sheet with; the gradients
+   below are the Figma badge fills (section 17137:76380) so a coupon reads the
+   same here as it does in the loyalty screen. */
+const TIERS = {
+  bronze: { label: 'Bronze', rank: 1 },
+  silver: { label: 'Silver', rank: 2 },
+  gold:   { label: 'Gold',   rank: 3 },
+  vip:    { label: 'VIP',    rank: 4 },
+};
+
+/* ---------------- coupon wallet ----------------
+   Mock data. `tier` is the rung a coupon belongs to: anything above the
+   member's own rank shows locked, which is what makes the ladder legible
+   at the moment of purchase. */
+const COUPONS = [
+  { id: 'vip40',   tier: 'vip',    kind: 'flat', value: 40, label: 'KD 40', sub: 'On any subscription, this offer only', code: 'DS-VIP40',    mins: 180 },
+  { id: 'gold25',  tier: 'gold',   kind: 'pct',  value: 25, cap: 80, label: '25%', sub: 'Up to KD 80 OFF on any of our subscriptions', code: 'DS-GOLD25', mins: 2880 },
+  { id: 'gym',     tier: 'gold',   kind: 'flat', value: 15, label: 'KD 15', sub: 'GYM subscription add-on', code: 'GYM-GOLD',  mins: 4320 },
+  { id: 'silver10',tier: 'silver', kind: 'flat', value: 10, label: 'KD 10', sub: 'Welcome back offer', code: 'DS-SILVER10', mins: 7200 },
+  { id: 'kids',    tier: 'bronze', kind: 'flat', value: 5,  label: 'KD 5',  sub: 'KIDS subscription', code: 'KIDS-BRONZE', mins: 10080 },
+];
+
+/* ---------------- plans ----------------
+   Prices are per month. `was` is the crossed list price on the card.
+   `pill` splits into the light half + the demibold half, as drawn. */
+const MEALS_STD = [[1, 'Breakfast'], [2, 'Lunch & Dinner'], [5, 'Salad & Soup'], [1, 'Snack']];
+const PLANS = [
+  { id: 'thediet',      pill: ['The', 'Diet'],      was: 139, now: 99,  kcal: '~1200 kcal', macros: '100g macros', meals: MEALS_STD },
+  { id: 'lifestyle',    pill: ['Life', 'Style'],    was: 139, now: 109, kcal: '~1200 kcal', macros: '100g macros', meals: MEALS_STD },
+  { id: 'bodybuilding', pill: ['BODY', 'Building'], was: 139, now: 149, kcal: '~1200 kcal', macros: '100g macros', meals: MEALS_STD },
+  { id: 'kids',         pill: ['', 'Kids'],         was: 139, now: 99,  kcal: '~1200 kcal', macros: '100g macros', meals: MEALS_STD },
+];
+/* Figma's elongated Arabic — 28 tatweel, built rather than retyped */
+const AR_SUMMER = 'عروض الصي' + 'ـ'.repeat(28) + 'ف';
+const AR_CHIP = v => 'خصم KD ' + v + ' 🔥 اشترك الحين';
+
+/* ---------------- durations ----------------
+   Two variants, drawn separately in Figma: the signed-out default-plan list
+   and the tiered renew list on "Level 8". Values are verbatim from the frames. */
+const DURATIONS = {
+  plans: [
+    { id: 'd2f2', title: ['2', 'Months + 2 Months FREE'], sub: '+ 1 FREE Consultation',
+      was: 149, now: 98, perMo: 98, save: 51, hot: '🔥 Highest Saving' },
+    { id: 'd1a', title: ['1', 'Month'], was: 149, now: 99.5, perMo: 98, save: 51 },
+    { id: 'd1b', title: ['1', 'Month'], was: 149, now: 99, perMo: 98, save: 51 },
+  ],
+  renew: [
+    { id: 'r3', title: ['3', 'Months'], sub: '+ 2 FREE Consultation',
+      was: 417, now: 312, perMo: 104, save: 105, hot: 'تــدلـــل: أقوى خصم', hotAr: true },
+    { id: 'r2', title: ['2', 'Months'], sub: '+ 1 FREE Consultation',
+      was: 278, now: 218, perMo: 109, save: 60, hot: '🔥 Highest Saving' },
+    { id: 'r1', title: ['1', 'Month'], was: 139, now: 114, save: 25 },
+  ],
+};
+
+/* ---------------- payment methods ----------------
+   `delta` is what the method takes off the coupon-applied subtotal. KNET and
+   Apple Pay over KNET sit inside the offer; everything else is an alternative. */
+const METHODS = [
+  { id: 'knet',     name: 'KNET',            logo: 'knet',     within: true,  delta: 2 },
+  { id: 'apknet',   name: 'Apple Pay (Knet)', logo: 'applepay', within: true,  delta: 2 },
+  { id: 'apknet2',  name: 'Apple Pay (Knet)', logo: 'applepay', within: false, delta: 0 },
+  { id: 'gpknet',   name: 'Google Pay (Knet)', logo: 'gpay',    within: false, delta: 0 },
+  { id: 'card',     name: 'Visa/Mastercard', logo: 'cards',    within: false, delta: 0 },
+  { id: 'card2',    name: 'Visa/Mastercard', logo: 'cards',    within: false, delta: 0,
+    badge: '+6 Days FREE and Save KD 5' },
+  { id: 'deema',    name: 'deema',           logo: 'deema',    within: false, delta: 0,
+    save: 73, installment: 51 },
+];
+
+/* ---------------- state ---------------- */
+const S = {
+  tier: 'vip',
+  entry: 'plans',        /* plans | renew */
+  plan: 'thediet',
+  duration: null,        /* resolved on boot                       */
+  coupon: 'vip40',       /* applied coupon id, or null             */
+  method: 'card2',       /* matches the Figma payment screenshot   */
+  screen: 'plans',
+  meals: { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 },
+  days: 'No Friday',
+};
+
+/* ============================ price engine ================================
+   Every number on every screen comes from here, so applying a coupon
+   re-prices the plan cards, the duration rows and the dock together:
+
+     list (Before)  = the duration's crossed price
+     subtotal       = the duration's offer price   (list − subtotal = "Save KD…")
+     − coupon       = flat KD, or a capped percentage
+     − method delta = what KNET / Apple Pay over KNET take off inside the offer
+     = total
+
+   NOTE for the design review: Figma's dock reads "Before KD139 → KD96" on
+   every checkout frame while its own duration rows read KD149 → KD98, so the
+   two cannot both be right. The rows are self-consistent (149 − 98 = the
+   "Save KD51" badge), so the engine follows the rows and the dock moves with
+   them. Flagged for Rashid. */
+
+function tierRank(t) { return TIERS[t].rank; }
+function couponById(id) { return COUPONS.find(c => c.id === id) || null; }
+function couponUnlocked(c) { return tierRank(c.tier) <= tierRank(S.tier); }
+
+function couponCut(c, subtotal) {
+  if (!c) return 0;
+  if (c.kind === 'pct') return Math.min(c.cap || Infinity, +(subtotal * c.value / 100).toFixed(3));
+  return Math.min(subtotal, c.value);
+}
+
+function durations() { return DURATIONS[S.entry === 'renew' ? 'renew' : 'plans']; }
+function currentDuration() {
+  const list = durations();
+  return list.find(d => d.id === S.duration) || list[0];
+}
+
+/* the money for a given payment method (null = no method applied yet) */
+function quote(methodId) {
+  const plan = PLANS.find(p => p.id === S.plan);
+  const dur = currentDuration();
+  const list = dur.was;                       /* crossed "Before" price    */
+  const subtotal = dur.now;                   /* after the duration offer  */
+  const c = S.coupon ? couponById(S.coupon) : null;
+  const cut = couponCut(c, subtotal);
+  const afterCoupon = Math.max(0, +(subtotal - cut).toFixed(3));
+  const m = METHODS.find(x => x.id === methodId) || null;
+  const mDelta = m ? m.delta : 0;
+  const total = Math.max(0, +(afterCoupon - mDelta).toFixed(3));
+  return { plan, dur, list, subtotal, coupon: c, cut, afterCoupon, method: m, mDelta, total,
+           saved: +(list - total).toFixed(3) };
+}
+
+/* a plan card's monthly price, re-priced by whatever coupon is applied */
+function planPrice(p) {
+  const c = S.coupon ? couponById(S.coupon) : null;
+  const cut = couponCut(c, p.now);
+  return { was: p.was, now: Math.max(0, +(p.now - cut).toFixed(3)), cut };
+}
+
+/* ---- brand marks: Figma's own exported vectors, composited at the
+   insets Figma gives them (KNET and Google Pay are multi-vector) ---- */
+const LOGO_KNET = `<div style="transform:translateY(-50%);position:absolute;height:19px;left:17.5%;overflow:hidden;right:17.5%;top:50%"><div style="position:absolute;display:contents;inset:2.16% 1%"><div style="position:absolute;display:contents;inset:2.16% 1%"><div style="position:absolute;display:contents;inset:2.16% 1%"><div style="position:absolute;inset:72.97% 1% 2.16% 1%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector1.svg" /></div><div style="position:absolute;inset:2.16% 1% 72.97% 1%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector2.svg" /></div></div><div style="position:absolute;inset:29.19% 1% 28.92% 1%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector3.svg" /></div><div style="position:absolute;display:contents;inset:7.84% 3.06% 76.76% 3%"><div style="position:absolute;inset:7.84% 3.06% 77.03% 57.4%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector4.svg" /></div><div style="position:absolute;inset:20.81% 18.6% 76.76% 79.4%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector5.svg" /></div><div style="position:absolute;inset:20.81% 13.8% 76.76% 84.2%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector5.svg" /></div><div style="position:absolute;inset:9.19% 84.4% 87.3% 12.8%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector6.svg" /></div><div style="position:absolute;inset:9.19% 80.8% 87.3% 16.4%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector7.svg" /></div><div style="position:absolute;inset:9.19% 57.8% 87.3% 39.4%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector8.svg" /></div><div style="position:absolute;inset:14.86% 47.2% 81.62% 45.6%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector9.svg" /></div><div style="position:absolute;inset:7.84% 57% 78.65% 3%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector10.svg" /></div></div><div style="position:absolute;display:contents;inset:74.05% 12.2% 6.49% 12.2%"><div style="position:absolute;display:contents;inset:74.05% 12.2% 6.49% 12.2%"><div style="position:absolute;inset:78.38% 77.2% 7.03% 12.2%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector11.svg" /></div><div style="position:absolute;inset:78.38% 45.2% 6.76% 44%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector12.svg" /></div><div style="position:absolute;inset:74.05% 12.2% 6.49% 81%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector13.svg" /></div></div></div><div style="position:absolute;display:contents;inset:32.43% 14.2% 34.05% 14.2%"><div style="position:absolute;display:contents;inset:32.43% 14.2% 34.05% 14.2%"><div style="position:absolute;display:contents;inset:32.43% 62.6% 34.05% 14.2%"><div style="position:absolute;inset:32.43% 62.6% 34.05% 14.2%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector14.svg" /></div></div><div style="position:absolute;inset:32.7% 14.2% 34.59% 36.6%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/knet-Vector15.svg" /></div></div></div></div></div></div>`;
+const LOGO_GPAY = `<div style="height:27px;overflow:hidden;position:relative;width:40px"><div style="position:absolute;inset:11.54% 0"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-Base1.svg" /></div><div style="position:absolute;inset:11.4% 0.03% 11.67% -0.03%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-Outline.svg" /></div><div style="position:absolute;display:contents;inset:32.78% 15.26% 26.95% 15.1%"><div style="position:absolute;inset:34.92% 15.26% 26.95% 45.05%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-PayTypeface3.svg" /></div><div style="position:absolute;inset:32.78% 62.57% 33.6% 15.1%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-GMark1.svg" /></div></div></div>`;
+
+/* ---------------- money formatting ---------------- */
+function money(n) {
+  const s = (+n).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  const [w, d] = s.split('.');
+  return { whole: w, dec: d ? '.' + d : '' };
+}
+
+/* ============================ countdown =================================== */
+function countdownText() {
+  const mins = MODS.countdown;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h + ':' + String(m).padStart(2, '0') + ':20';
+}
+
+/* ============================ markup helpers ============================== */
+const A = 'assets/';
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
+function priceBlock(was, now, opts) {
+  opts = opts || {};
+  const m = money(now);
+  return `<div class="price-row">
+    ${was ? `<span class="was">KD${was}</span>` : ''}
+    <span class="now-kd">KD</span><span class="now">${m.whole}</span>${m.dec ? `<span class="now-dec">${m.dec}</span>` : ''}
+  </div>`;
+}
+
+function payLogo(kind) {
+  if (kind === 'knet') return `<span class="pay-logo"><span class="knet-mark">${LOGO_KNET}</span></span>`;
+  if (kind === 'applepay') return `<span class="pay-logo"><img src="${A}pay-applepay.svg" alt="Apple Pay"></span>`;
+  if (kind === 'gpay') return `<span class="pay-logo">${LOGO_GPAY}</span>`;
+  if (kind === 'deema') return `<span class="pay-logo"><span class="deema-mark">
+    <img class="bg" src="${A}pay-deema.svg" alt=""><img class="wm" src="${A}pay-deema-mark.svg" alt="deema"></span></span>`;
+  return `<span class="pay-logo dual"><img src="${A}pay-visa.svg" alt="Visa"><img src="${A}pay-mastercard.svg" alt="Mastercard"></span>`;
+}
+
+/* the Figma "BG - Small UI" glass shell, reused by the nav buttons and the FAB */
+function glassBtn(cls, inner, act, extra) {
+  return `<button class="${cls}" data-act="${act}">
+    <span class="gfill"></span><span class="gedge"></span>${inner}${extra || ''}</button>`;
+}
+
+/* ---- the promo bar, shared by every screen that shows one ---- */
+function promoBar() {
+  const c = S.coupon ? couponById(S.coupon) : null;
+  if (!c) {
+    return `<div class="promo-wrap"><button class="promo" data-act="coupons">
+      <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
+      <span class="promo-mid"><span class="promo-top">
+        <span class="promo-ttl">Promo Code</span></span></span>
+      <span class="promo-add"></span>
+    </button></div>`;
+  }
+  const off = c.kind === 'pct' ? `${c.value}%` : `KD ${c.value}`;
+  return `<div class="promo-wrap"><button class="promo" data-act="coupons">
+    <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
+    <span class="promo-mid">
+      <span class="promo-top">
+        <span class="promo-ttl">Promo Code</span>
+        <span class="promo-ends">Ends in ${countdownText()}</span>
+      </span>
+      <span class="promo-applied">
+        <span class="tier-chip">${TIERS[c.tier].label}</span>
+        <span class="promo-off"><b>${off}</b> <span>OFF</span></span>
+        <img class="promo-check" src="${A}check-thin.svg" alt="">
+      </span>
+    </span>
+    <span class="promo-remove" data-act="uncoupon">Remove</span>
+  </button></div>`;
+}
+
+/* ---- the bottom dock: price + CTA ---- */
+function payDock(label, action, opts) {
+  opts = opts || {};
+  const q = quote(opts.withMethod ? S.method : null);
+  const m = money(q.total);
+  return `<div class="paybar">
+    ${opts.savings ? `<div class="savings-row" data-act="savings">
+      <span class="savings-lbl">Your Savings Today</span>
+      <img class="savings-spark" src="${A}sparkle.png" alt="">
+      <img class="savings-chev" src="${A}chevron.svg" alt="">
+      <span class="savings-amt">- KD${money(q.saved).whole}${money(q.saved).dec}</span>
+    </div>` : ''}
+    ${opts.savings ? `<div class="total-row"><span class="total-lbl">Total</span>
+      <div class="pb-stack">
+        <div class="pb-line"><span class="pb-was">KD${q.list}</span>
+          <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
+        <div class="pb-before"><i>Before</i><div class="strike"><img src="${A}strike-line.svg" alt=""></div></div>
+      </div></div>
+      <button class="cta grad" data-act="${action}">${label}</button>`
+    : `<div class="paybar-row">
+        <div class="pb-price"><div class="pb-stack">
+          <div class="pb-line"><span class="pb-was">KD${q.list}</span>
+            <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
+          <div class="pb-before"><i>Before</i><div class="strike"><img src="${A}strike-line.svg" alt=""></div></div>
+        </div></div>
+        <button class="cta" data-act="${action}">${label}
+          <img src="${A}arrow-forward.svg" alt=""></button>
+      </div>`}
+  </div>`;
+}
+
+/* ============================ screens ===================================== */
+/* ---- Subscribe Modal: the signed-out plan picker (Figma 17304:469650) ----
+   Every card re-prices live: applying a coupon cuts the big number and swaps
+   the Arabic chip to the amount that came off. */
+function screenPlans() {
+  const card = p => {
+    const pr = planPrice(p);
+    const m = money(pr.now);
+    const strikeRight = { thediet: 92, lifestyle: 105, bodybuilding: 103, kids: 93 }[p.id];
+    return `<div class="pcard" data-plan="${p.id}" data-act="pickPlan">
+      <div class="cardbg"></div>
+      <div class="pcard-row">
+        <div class="pcard-meals">
+          ${p.meals.map(([n, t]) => `<div class="mrow"><span class="mnum">${n}</span><span class="mlbl">${esc(t)}</span></div>`).join('')}
+          <div class="kcal"><b>${p.kcal}</b><span>|</span><span>${p.macros}</span></div>
+        </div>
+        <div class="pcard-right">
+          <div class="pprice"><div class="pprice-row">
+            <span class="pw">KD${p.was}</span><span class="pkd">KD</span><span class="pbig">${m.whole}${m.dec}</span><span class="pmo">/mo</span>
+            <span class="pstrike" style="right:${strikeRight}px"><img src="${A}strike-plan.svg" alt=""></span>
+          </div></div>
+          ${pr.cut ? `<div class="pchip">${AR_CHIP(pr.cut)}</div>` : ''}
+          <span class="ppill"><span><span class="a">${esc(p.pill[0])}</span><span class="b">${esc(p.pill[1])}</span></span></span>
+        </div>
+      </div>
+    </div>`;
+  };
+  return `<div class="scr" data-scr="plans">
+    <div class="sub-scroll">
+      <div class="sub-ctas">
+        <button class="book-btn" data-act="consult"><span class="cardbg"></span><span>Book Consultation</span></button>
+        <button class="guide-btn" data-act="guide">
+          <span class="shimmer"><i><img src="${A}shimmer-a.svg" alt=""></i><i><img src="${A}shimmer-b.svg" alt=""></i></span>
+          <span class="guide-txt"><span class="a">Guide</span><span class="b">me</span></span>
+          <span class="guide-wand"><img src="${A}magic-wand.svg" alt=""></span>
+        </button>
+      </div>
+      <div class="sub-sec">
+        <div class="summer" data-act="summer">
+          <img class="logo" src="${A}summer-logo.svg" alt="">
+          <span class="summer-txt"><b>Summer Offer</b><i>${AR_SUMMER}</i></span>
+          <span class="summer-go"><img src="${A}east.svg" alt=""></span>
+        </div>
+        <div class="plans-list">
+          <div class="sep"><span class="rule"></span><span>Or try a different plan</span><span class="rule"></span></div>
+          ${PLANS.map(card).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="edge t"></div>
+    <div class="edge b"></div>
+    <div class="sub-nav">
+      ${glassBtn('glass-btn', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
+      <span class="spacer">Subscribe</span>
+      ${glassBtn('glass-btn', `<img src="${A}phone.svg" alt="Call">`, 'call')}
+    </div>
+  </div>`;
+}
+
+function screenDuration() {
+  const list = durations();
+  const cur = currentDuration();
+  const renew = S.entry === 'renew';
+  const plan = PLANS.find(p => p.id === S.plan);
+  return `<div class="scr" data-scr="duration">
+    <div class="hdr"><div class="hdr-row">
+      <button class="icon-btn" data-act="back"><img src="${A}arrow-back.svg" alt="Back"></button>
+      <h1>${renew ? 'Renew Plan' : 'Select Duration'}</h1>
+      ${renew ? '' : `<button class="pill-btn"><img src="${A}expand-more.svg" alt="">Monthly</button>`}
+    </div></div>
+    <div class="scroll">
+      ${renew ? `<div class="plan-tabs">
+        ${PLANS.filter(p => p.id !== 'kids').map(p => `<button class="ppill plan-tab${p.id === S.plan ? ' on' : ''}"
+          data-plan="${p.id}" data-act="plan"
+          ><span class="a">${esc(p.pill[0])}</span><span class="b">${esc(p.pill[1])}</span></button>`).join('')}
+      </div>
+      <div class="plan-detail">
+        <div class="plan-detail-top">
+          <b>Month <i>| ${S.days === 'All days' ? 'All days' : 'No Weekend'}</i></b>
+          <b>900-1300 <i style="font-size:12px">kcal</i></b>
+        </div>
+        <div class="plan-detail-meals">
+          ${plan.meals.map(([n, t]) => `<span><b>${S.meals[t] != null ? S.meals[t] : n}</b> ${esc(t)}</span>`).join('')}
+          <button data-act="modify" aria-label="Edit plan">✎</button>
+        </div>
+      </div>` : ''}
+      <div class="dur-list">
+        ${list.map(d => `<div class="dur${d.id === cur.id ? ' sel' : ''}" data-dur="${d.id}" data-act="dur">
+          <div class="dur-card">
+            <div class="dur-main">
+              <div class="dur-title"><span>${d.title[0]}</span><span>${esc(d.title[1])}</span></div>
+              ${d.sub ? `<div class="dur-sub">${esc(d.sub)}</div>` : ''}
+            </div>
+            <div class="dur-price">
+              ${priceBlock(d.was, d.now)}
+              ${d.perMo ? `<div class="per-mo">KD${d.perMo}/Month</div>` : ''}
+            </div>
+            <img class="dur-check" src="${A}check-circle.svg" alt="">
+          </div>
+          <div class="save-badge">Save <span>KD${d.save}</span></div>
+          ${d.hot ? `<div class="hot-badge${d.hotAr ? ' ar' : ''}">${esc(d.hot)}</div>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>
+    ${promoBar()}
+    ${payDock('Proceed', 'toPayment')}
+  </div>`;
+}
+
+function screenPayment() {
+  const within = METHODS.filter(m => m.within);
+  const alt = METHODS.filter(m => !m.within);
+  const row = m => {
+    const q = quote(m.id);
+    const mm = money(m.installment != null ? m.installment : q.total);
+    return `<button class="pay-opt${m.id === S.method ? ' sel' : ''}" data-method="${m.id}" data-act="method">
+      ${payLogo(m.logo)}
+      <span class="pay-name">${m.save ? `<span class="sv">Save KD${m.save}</span> with ` : ''}${m.logo === 'deema' ? '' : esc(m.name)}${m.logo === 'deema' ? 'deema' : ''}</span>
+      <span class="pay-price"><span class="kd">KD</span>${mm.whole}${mm.dec}</span>
+      <img class="pay-check" src="${A}check-circle.svg" alt="">
+      ${m.badge ? `<span class="pay-badge">${esc(m.badge)}</span>` : ''}
+    </button>`;
+  };
+  return `<div class="scr" data-scr="payment">
+    <div class="hdr"><div class="hdr-row">
+      <button class="icon-btn" data-act="back"><img src="${A}close.svg" alt="Close"></button>
+      <h1>Payment Method</h1>
+    </div></div>
+    <div class="scroll">
+      <div class="pay-sec"><h3>Within this offer</h3>${within.map(row).join('')}</div>
+      <div class="pay-sec"><h3>Alternative offers</h3>${alt.map(row).join('')}</div>
+    </div>
+    ${payDock('Pay Now', 'pay', { withMethod: true, savings: true })}
+  </div>`;
+}
+
+/* ---- modify-plan sheet (Figma: Modify Default Plan Modal) ---- */
+function sheetModify() {
+  const plan = PLANS.find(p => p.id === S.plan);
+  const rows = [
+    ['Breakfast', null],
+    ['Lunch & Dinner', [['Protein', '100g'], ['Carbs', '100g']]],
+    ['Salad & Soup', null],
+    ['Snack', null],
+  ];
+  return `<div class="sheet" data-sheet="modify">
+    <div class="sheet-hdr">
+      <span class="ppill" data-plan="${plan.id}"><span><span class="a">${esc(plan.pill[0])}</span><span class="b">${esc(plan.pill[1])}</span></span></span>
+      <button class="sheet-x" data-act="closeSheet"><img src="${A}close.svg" alt="Close"></button>
+    </div>
+    <div class="scroll" style="padding:12px 0 4px">
+      ${rows.map(([name, macros]) => `<div class="meal-row">
+        <div class="meal-name"><b>${esc(name)}</b>
+          ${macros ? `<div class="meal-macros">${macros.map(([k, v]) => `<span>${k} <i>${v}</i></span>`).join('')}<span style="font-size:13px">✎</span></div>` : ''}
+        </div>
+        <div class="stepper" data-meal="${esc(name)}">
+          <button data-act="dec"${S.meals[name] <= 0 ? ' disabled' : ''}>−</button>
+          <output>${S.meals[name]}</output>
+          <button data-act="inc">+</button>
+        </div>
+      </div>`).join('')}
+      <div class="days-seg">
+        ${['No weekend', 'No Friday', 'All days'].map(d => `<button data-days="${d}" data-act="days"
+          class="${S.days === d ? 'on' : ''}">${d}${S.days === d ? ` <img src="${A}check-thin.svg" style="width:14px;height:14px" alt="">` : ''}
+          ${d === 'No Friday' ? '<span class="best">Best Result</span>' : ''}</button>`).join('')}
+      </div>
+    </div>
+    ${promoBar()}
+    ${payDock('Proceed', 'toPayment')}
+  </div>`;
+}
+
+/* ---- coupon picker (summoned by the floating coupon button) ---- */
+function sheetCoupons() {
+  const sorted = COUPONS.slice().sort((a, b) => tierRank(b.tier) - tierRank(a.tier));
+  return `<div class="sheet" data-sheet="coupons">
+    <div class="sheet-hdr">
+      <h2>Your coupons</h2>
+      <button class="sheet-x" data-act="closeSheet"><img src="${A}close.svg" alt="Close"></button>
+    </div>
+    <div class="coupon-list">
+      ${sorted.map(c => {
+        const open = couponUnlocked(c);
+        return `<div class="cpn${c.id === S.coupon ? ' sel' : ''}${open ? '' : ' locked'}"
+          data-tier="${c.tier}" data-cpn="${c.id}" ${open ? 'data-act="pickCoupon"' : ''}>
+          <span class="cpn-badge">${TIERS[c.tier].label}</span>
+          <span class="cpn-mid">
+            <span class="cpn-val">${c.label} <span>OFF</span></span>
+            <div class="cpn-sub">${esc(c.sub)}</div>
+            <div class="cpn-code">${c.code}</div>
+          </span>
+          ${open ? `<span class="cpn-pick"><img src="${A}check-thin.svg" alt=""></span>`
+                 : `<span class="cpn-lock">${TIERS[c.tier].label} only</span>`}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="sheet-foot">
+      <button class="cpn-more" data-act="allRewards">See all rewards</button>
+    </div>
+  </div>`;
+}
+
+/* ============================ render ====================================== */
+const phone = document.getElementById('phone');
+const device = document.getElementById('device');
+
+function render() {
+  phone.dataset.tier = S.tier;
+  const cur = currentDuration();
+  S.duration = cur.id;
+  phone.innerHTML =
+    screenPlans() +
+    screenDuration() +
+    screenPayment() +
+    `<div class="veil" data-act="closeSheet"></div>` +
+    sheetModify() +
+    sheetCoupons() +
+    `<div class="fab-bar">${glassBtn('fab',
+        `<img class="fico" src="${A}coupon-fab.svg" alt="Coupons">`, 'coupons',
+        S.coupon ? '' : `<span class="dot">${COUPONS.filter(couponUnlocked).length}</span>`)}</div>` +
+    `<div class="toast" id="toast"></div>` +
+    `<div class="island"></div>`;
+  showScreen(S.screen, true);
+  document.documentElement.style.setProperty('--push', MODS.push + 'ms');
+}
+
+function showScreen(name, instant) {
+  S.screen = name;
+  phone.querySelectorAll('.scr').forEach(s => {
+    const me = s.dataset.scr === name;
+    if (instant) s.style.transition = 'none';
+    s.classList.toggle('on', me);
+    s.classList.toggle('under', !me && order(s.dataset.scr) < order(name));
+    if (instant) requestAnimationFrame(() => { s.style.transition = ''; });
+  });
+  /* The floating coupon button belongs to the plan picker, where Figma draws
+     it. On the later steps the promo bar is the coupon entry — it opens the
+     same sheet — and a FAB there would sit on top of the Proceed button. */
+  const bar = phone.querySelector('.fab-bar');
+  if (bar) bar.style.display = name === 'plans' ? '' : 'none';
+}
+function order(n) { return ['plans', 'duration', 'payment'].indexOf(n); }
+
+/* ============================ interactions ================================ */
+function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} }
+let toastT;
+function toast(msg) {
+  const t = phone.querySelector('#toast'); if (!t) return;
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800);
+}
+function openSheet(name) {
+  phone.querySelector('.veil').classList.add('on');
+  const s = phone.querySelector(`.sheet[data-sheet="${name}"]`);
+  if (s) s.classList.add('on');
+  vibrate(8);
+}
+function closeSheets() {
+  phone.querySelector('.veil').classList.remove('on');
+  phone.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
+}
+
+phone.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+
+  if (act === 'coupons') { e.stopPropagation(); openSheet('coupons'); return; }
+  if (act === 'closeSheet') { closeSheets(); return; }
+  if (act === 'uncoupon') { e.stopPropagation(); S.coupon = null; vibrate(8); render(); toast('Coupon removed'); return; }
+
+  if (act === 'pickCoupon') {
+    const id = el.dataset.cpn;
+    S.coupon = (S.coupon === id) ? null : id;
+    vibrate(10);
+    const keep = S.screen;
+    render(); showScreen(keep, true);
+    if (S.coupon) { const c = couponById(S.coupon); toast(`${TIERS[c.tier].label} coupon applied — ${c.label} off`); }
+    else toast('Coupon removed');
+    return;
+  }
+
+  if (act === 'allRewards') {
+    /* cross-flow: browsing the whole wallet is the rewards flow's job */
+    dsNav('rewards', 'sheet', { src: 'checkout-coupons' }, () => toast('Rewards opens from the hub'));
+    return;
+  }
+
+  if (act === 'pickPlan') {
+    S.plan = el.dataset.plan; S.duration = null; vibrate(10);
+    render(); showScreen('duration');
+    return;
+  }
+  if (act === 'consult') { toast('Consultation booking is a later sprint'); return; }
+  if (act === 'guide') { dsNav('plan-quiz', 'push', { src: 'checkout' }, () => toast('Guide me opens the plan quiz')); return; }
+  if (act === 'summer') { toast('Summer Offer — campaign landing, later sprint'); return; }
+  if (act === 'call') { toast('Calls the diet consultant'); return; }
+
+  if (act === 'dur') { S.duration = el.dataset.dur; vibrate(8); const k = S.screen; render(); showScreen(k, true); return; }
+  if (act === 'plan') { S.plan = el.dataset.plan; vibrate(8); const k = S.screen; render(); showScreen(k, true); return; }
+  if (act === 'modify') { openSheet('modify'); return; }
+  if (act === 'days') { S.days = el.dataset.days; vibrate(8); const k = S.screen; render(); showScreen(k, true); openSheet('modify'); return; }
+
+  if (act === 'inc' || act === 'dec') {
+    const name = el.closest('.stepper').dataset.meal;
+    S.meals[name] = Math.max(0, S.meals[name] + (act === 'inc' ? 1 : -1));
+    vibrate(6);
+    const k = S.screen; render(); showScreen(k, true); openSheet('modify');
+    return;
+  }
+
+  if (act === 'toPayment') { closeSheets(); vibrate(8); showScreen('payment'); return; }
+  if (act === 'method') { S.method = el.dataset.method; vibrate(8); render(); showScreen('payment', true); return; }
+  if (act === 'pay') {
+    const q = quote(S.method);
+    vibrate(14);
+    toast(`Prototype only — no payment taken (KD${money(q.total).whole}${money(q.total).dec})`);
+    return;
+  }
+  if (act === 'savings') { toast(`You saved KD${money(quote(S.method).saved).whole} today`); return; }
+
+  if (act === 'back') {
+    if (S.screen === 'payment') { showScreen('duration'); return; }
+    if (S.screen === 'duration' && S.entry === 'plans') { showScreen('plans'); return; }
+    dsClose();
+    return;
+  }
+});
+
+/* ---- ds-nav intent router (Sprint-0 contract) ----
+   Cross-flow jumps are INTENTS posted to the parent:
+   {t:'ds-nav', to, context, present:'tab'|'sheet'|'push'}. The hub announces
+   itself with {t:'ds-router'}; until it does, dsNav falls back with zero delay
+   so this page behaves identically standalone. */
+let DS_ROUTER = false;
+addEventListener('message', e => {
+  if (e.data && e.data.t === 'ds-router') DS_ROUTER = true;
+  /* accepted entry: an opener may preselect a plan / duration / tier */
+  if (e.data && e.data.t === 'ds-context' && e.data.ctx) applyContext(e.data.ctx);
+});
+function dsNav(to, present, context, fallback) {
+  if (DS_ROUTER && window.parent !== window) {
+    vibrate(8);
+    try { parent.postMessage({ t: 'ds-nav', to: to, context: context || {}, present: present }, '*'); return; }
+    catch (_) {}
+  }
+  fallback();
+}
+const EMBED = /[?&]embed=1/.test(location.search);
+function dsClose() {
+  if (window.parent !== window) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
+  location.href = '../?v=' + Date.now();
+}
+
+/* ---- incoming context (query or postMessage): overrides only, never a
+   dependency — the flow boots standalone on mock data either way ---- */
+function applyContext(ctx) {
+  if (!ctx) return;
+  if (ctx.plan && PLANS.some(p => p.id === ctx.plan)) S.plan = ctx.plan;
+  if (ctx.tier && TIERS[ctx.tier]) S.tier = ctx.tier;
+  if (ctx.entry === 'renew' || ctx.entry === 'plans') S.entry = ctx.entry;
+  if (ctx.coupon === null || ctx.coupon) S.coupon = ctx.coupon;
+  if (ctx.screen) S.screen = ctx.screen;
+  S.duration = null;
+  render();
+}
+(function bootContext() {
+  const q = new URLSearchParams(location.search);
+  const raw = q.get('ctx');
+  if (raw) { try { applyContext(JSON.parse(decodeURIComponent(raw))); return; } catch (_) {} }
+  const ctx = {};
+  if (q.get('tier')) ctx.tier = q.get('tier');
+  if (q.get('plan')) ctx.plan = q.get('plan');
+  if (q.get('entry')) ctx.entry = q.get('entry');
+  if (Object.keys(ctx).length) applyContext(ctx);
+})();
+
+/* ============================ stage scaling =============================== */
+let stageScale = 1;
+function fit() {
+  const mobile = matchMedia('(max-width: 500px)').matches ||
+    (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  if (mobile) {
+    document.body.classList.remove('desktop');
+    const de = document.documentElement;
+    const vw = de.clientWidth;
+    const cands = [de.clientHeight, innerHeight,
+      document.getElementById('dvhProbe').offsetHeight,
+      window.visualViewport ? window.visualViewport.height : 0,
+      navigator.standalone === true ? screen.height : 0
+    ].filter(v => v > 500 && v < 1500);
+    const vh = Math.max.apply(null, cands);
+    stageScale = vw / 402;
+    phone.style.setProperty('--s', stageScale);
+    phone.style.height = (vh / stageScale) + 'px';
+    device.style.transform = 'scale(' + stageScale + ')';
+    return;
+  }
+  document.body.classList.add('desktop');
+  phone.style.height = '874px';
+  const availW = innerWidth - 316;
+  const frameW = 402 + 24, frameH = 874 + 24;
+  stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
+  device.style.transform = 'scale(' + stageScale + ')';
+}
+addEventListener('resize', fit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 250));
+[300, 900, 2000].forEach(ms => setTimeout(fit, ms));
+
+/* ============================ sidebar wiring ============================== */
+function bindSeg(id, key, after) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    wrap.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S[key] = b.dataset[key];
+    if (after) after();
+    S.duration = null;
+    render();
+  });
+}
+bindSeg('segTier', 'tier', () => {
+  /* a downgraded member loses coupons above their rung */
+  const c = S.coupon ? couponById(S.coupon) : null;
+  if (c && !couponUnlocked(c)) S.coupon = null;
+});
+bindSeg('segEntry', 'entry', () => { S.screen = 'duration'; });
+
+function bindRange(id, out, key, fmt) {
+  const r = document.getElementById(id), o = document.getElementById(out);
+  if (!r) return;
+  r.value = MODS[key];
+  const paint = () => { o.textContent = fmt(+r.value); };
+  r.addEventListener('input', () => {
+    MODS[key] = +r.value; paint();
+    try { localStorage.setItem('ds-mods-checkout', JSON.stringify(MODS)); } catch (_) {}
+    render();
+  });
+  paint();
+}
+bindRange('mCountdown', 'oCountdown', 'countdown', v => {
+  const h = Math.floor(v / 60), m = v % 60; return h + ':' + String(m).padStart(2, '0') + ':20';
+});
+bindRange('mPush', 'oPush', 'push', v => v + 'ms');
+
+document.getElementById('sReset').onclick = () => {
+  S.tier = 'vip'; S.entry = 'plans'; S.plan = 'thediet'; S.coupon = 'vip40';
+  S.method = 'card2'; S.screen = 'duration'; S.duration = null;
+  S.meals = { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 };
+  S.days = 'No Friday';
+  document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === 'vip'));
+  document.querySelectorAll('#segEntry button').forEach(b => b.classList.toggle('on', b.dataset.entry === 'plans'));
+  render();
+};
+document.getElementById('sCopy').onclick = () => {
+  const q = quote(S.method);
+  const txt = `checkout — tier ${S.tier} · ${S.entry} · plan ${S.plan} · ${currentDuration().id}\n` +
+    `list KD${q.list} · subtotal KD${q.subtotal} · coupon ${q.coupon ? q.coupon.code + ' −KD' + q.cut : 'none'} · ` +
+    `method ${S.method} −KD${q.mDelta} · total KD${q.total} · saved KD${q.saved}`;
+  navigator.clipboard && navigator.clipboard.writeText(txt);
+  toast('Values copied');
+};
+
+/* ---- lab menu (the shared gesture lives in lab-shell.js) ---- */
+window.dsOwnLabMenu = true;
+window.openLabMenu = function () {
+  document.body.classList.add('labmenu-open');
+  document.getElementById('buildInfo').textContent =
+    BUILD + ' · ' + document.documentElement.clientWidth + 'x' + document.documentElement.clientHeight +
+    ' · s ' + (+stageScale.toFixed(3));
+  vibrate(12);
+};
+document.getElementById('labVeil').onclick = () => document.body.classList.remove('labmenu-open');
+
+/* ---- boot ---- */
+if (!S.screen || S.screen === 'plans') S.screen = S.entry === 'renew' ? 'duration' : 'plans';
+render();
+fit();
+</script>
+<script src="../lab-shell.js?v=20260909a" data-flow="checkout" defer></script>
+</body>
+</html>
