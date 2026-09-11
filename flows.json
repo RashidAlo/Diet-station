@@ -1194,6 +1194,278 @@
         }
       ],
       "downloads": []
+    },
+    {
+      "id": "checkout",
+      "title": "Checkout & Payment",
+      "status": "in-progress",
+      "updated": "2026-09-11",
+      "hidden": true,
+      "sprint": 1,
+      "description": "The subscription purchase path, end to end: pick a plan, choose how long, apply a loyalty coupon, then pay. One price engine drives every screen, so redeeming a coupon re-prices the plan cards, the duration rows and the bottom dock together, and the member's tier badge rides the discount all the way to the payment sheet. Coupons above the member's rung render locked, which is what makes the loyalty ladder legible at the moment of purchase. Payment fields are prototype UI on mock data — nothing is ever charged.",
+      "path": "checkout/",
+      "platform": "iOS",
+      "area": "Checkout",
+      "preview": "checkout/preview.png",
+      "entries": [
+        {
+          "id": "default",
+          "params": {
+            "plan": "thediet|lifestyle|bodybuilding|kids",
+            "tier": "bronze|silver|gold|vip",
+            "entry": "plans|renew"
+          },
+          "note": "Boots the signed-out plan picker on mock data. Every param is an optional override, never a dependency: 'plan' preselects a card, 'tier' sets the loyalty rung that gates the coupon wallet, and entry=renew opens straight into the tiered Renew Plan durations. Also accepted as a ctx JSON blob or a {t:'ds-context'} postMessage."
+        },
+        {
+          "id": "renew",
+          "params": {
+            "entry": "renew",
+            "plan": "<id>",
+            "tier": "<tier>"
+          },
+          "note": "The loyalty-page route: a member tapping Checkout lands on their plan's duration list with the tier already applied."
+        }
+      ],
+      "exits": [
+        {
+          "intent": "open-rewards",
+          "to": "rewards",
+          "present": "sheet",
+          "note": "\"See all rewards\" at the foot of the coupon wallet — context {src:'checkout-coupons'}"
+        },
+        {
+          "intent": "open-plan-quiz",
+          "to": "plan-quiz",
+          "present": "push",
+          "note": "The \"Guide me\" button on the plan picker — context {src:'checkout'}"
+        }
+      ],
+      "flow": {
+        "nodes": [
+          {
+            "id": "plans",
+            "t": "Plan cards",
+            "kind": "screen",
+            "note": "Subscribe Modal — signed-out entry. Prices re-price live under an applied coupon."
+          },
+          {
+            "id": "renew",
+            "t": "Renew Plan",
+            "kind": "screen",
+            "note": "Tiered entry from the loyalty page: plan comparison tabs + the member's current plan detail."
+          },
+          {
+            "id": "duration",
+            "t": "Select duration",
+            "kind": "screen",
+            "note": "Duration cards with Save badges and the Highest Saving flag."
+          },
+          {
+            "id": "modify",
+            "t": "Modify plan",
+            "kind": "module",
+            "note": "Sheet: meal steppers + delivery-day segment."
+          },
+          {
+            "id": "wallet",
+            "t": "Coupon wallet",
+            "kind": "module",
+            "note": "Sheet summoned by the floating coupon button or the promo bar."
+          },
+          {
+            "id": "unlocked",
+            "t": "Tier unlocks it?",
+            "kind": "decision",
+            "note": "Coupons above the member's rung stay locked."
+          },
+          {
+            "id": "payment",
+            "t": "Payment method",
+            "kind": "screen",
+            "note": "Within-this-offer methods vs alternatives; savings total."
+          },
+          {
+            "id": "done",
+            "t": "Order placed",
+            "kind": "end",
+            "note": "NOT YET IN FIGMA — the prototype currently ends at Pay Now with a mock-only confirmation toast."
+          }
+        ],
+        "edges": [
+          [
+            "plans",
+            "duration",
+            "pick a plan"
+          ],
+          [
+            "renew",
+            "duration",
+            "from loyalty"
+          ],
+          [
+            "duration",
+            "modify",
+            "edit meals"
+          ],
+          [
+            "modify",
+            "duration",
+            "done"
+          ],
+          [
+            "plans",
+            "wallet",
+            "coupon button"
+          ],
+          [
+            "duration",
+            "wallet",
+            "promo bar"
+          ],
+          [
+            "wallet",
+            "unlocked",
+            ""
+          ],
+          [
+            "unlocked",
+            "duration",
+            "applied — re-price"
+          ],
+          [
+            "unlocked",
+            "wallet",
+            "locked"
+          ],
+          [
+            "wallet",
+            "rewards",
+            "see all"
+          ],
+          [
+            "duration",
+            "payment",
+            "proceed"
+          ],
+          [
+            "payment",
+            "done",
+            "pay now"
+          ]
+        ]
+      },
+      "handoff": {
+        "Figma source": "Diet Station 4.0 → section Checkout (17304:469649)",
+        "Frames built": "Subscribe Modal · Duration Select (default plans) · Level 8 / Renew Plan · Modify Default Plan Modal · Payment options (Visa) · Promo Code (applied + empty)",
+        "Price engine": "list = duration.was · subtotal = duration.now · − coupon (flat KD, or percentage capped at coupon.cap) · − method delta · = total. Savings shown = list − total.",
+        "Coupon tiers": "bronze → silver → gold → VIP. A coupon is selectable only when its tier rank ≤ the member's rank; downgrading the member drops an now-locked applied coupon automatically.",
+        "Tier badge": "Applied coupons wear the Figma green chip with the tier name. Inside the wallet each coupon wears its tier's own Figma badge gradient, matched to the rewards flow (section 17137:76380).",
+        "Screen motion": "push = translateX(100%) → 0 over 420ms cubic-bezier(.32,.72,0,1), outgoing screen parks at −26%. Sheets = translateY(100%) → 0 over 460ms on the same curve.",
+        "Glass": "Nav buttons and the coupon FAB use CSS backdrop-filter (blur 14 / saturate 180) rather than liquid-glass-js: they float over live scrolling content, which the shader's frozen page snapshot cannot track. Native equivalent is .glassEffect().",
+        "Payment": "PROTOTYPE UI ONLY — mock data, no processing, no card entry, nothing charged. Pay Now raises a confirmation toast.",
+        "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
+        "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
+        "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy."
+      },
+      "swift": [
+        {
+          "t": "Price engine",
+          "note": "One source of truth for every number on every screen — the reason a coupon re-prices cards, rows and dock together.",
+          "code": "struct Quote {\n    let list: Decimal        // crossed \"Before\" price\n    let subtotal: Decimal    // after the duration offer\n    let couponCut: Decimal\n    let methodDelta: Decimal\n    var total: Decimal { max(0, subtotal - couponCut - methodDelta) }\n    var saved: Decimal { list - total }\n}\n\nfunc quote(duration: Duration, coupon: Coupon?, method: PayMethod?) -> Quote {\n    let sub = duration.now\n    let cut: Decimal = {\n        guard let c = coupon else { return 0 }\n        switch c.kind {\n        case .flat(let v):          return min(sub, v)\n        case .percent(let p, let cap): return min(cap, sub * p / 100)\n        }\n    }()\n    return Quote(list: duration.was, subtotal: sub,\n                 couponCut: cut, methodDelta: method?.delta ?? 0)\n}"
+        },
+        {
+          "t": "Loyalty tiers + gating",
+          "note": "Rank comparison is the whole rule; a downgrade silently drops a coupon the member can no longer use.",
+          "code": "enum Tier: Int, CaseIterable { case bronze = 1, silver, gold, vip\n    var label: String { \"\\(self)\".capitalized }\n}\n\nextension Coupon { func unlocked(for member: Tier) -> Bool { tier.rawValue <= member.rawValue } }\n\n// on tier change\nif let c = applied, !c.unlocked(for: member) { applied = nil }"
+        },
+        {
+          "t": "Duration card",
+          "note": "Selection is a 2pt success border; the Save badge and Highest Saving flag straddle the top edge.",
+          "code": "struct DurationCard: View {\n    let d: Duration; let selected: Bool\n    var body: some View {\n        HStack(spacing: 12) { /* title + price */ }\n            .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 24)\n            .background(.white, in: RoundedRectangle(cornerRadius: 24))\n            .overlay(RoundedRectangle(cornerRadius: 24)\n                .strokeBorder(selected ? Color(hex: 0x26A659) : Color(hex: 0xEDEDED),\n                              lineWidth: selected ? 2 : 1))\n            .overlay(alignment: .topTrailing) { SaveBadge(d.save).offset(x: -41, y: -13) }\n            .overlay(alignment: .topLeading) { if let h = d.hot { HotBadge(h).offset(x: 16, y: -12) } }\n    }\n}"
+        },
+        {
+          "t": "Motion",
+          "note": "The house Apple curve; matches the web twin exactly.",
+          "code": "// push between checkout steps\n.transition(.move(edge: .trailing))\n.animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: step)\n\n// sheets (modify plan, coupon wallet)\n.presentationDetents([.large])\n.presentationCornerRadius(28)"
+        },
+        {
+          "t": "Tokens",
+          "note": "Straight from the Figma variable set for this section.",
+          "code": "enum DS {\n    static let ink     = Color(hex: 0x0B0E12)   // text/default/heading\n    static let body    = Color(hex: 0x252B33)   // text/default/body\n    static let muted   = Color(hex: 0x999999)   // text/disabled/default\n    static let red     = Color(hex: 0xED1C24)   // surface|text/secondary\n    static let green   = Color(hex: 0x26A659)   // surface|text/success\n    static let amber   = Color(hex: 0xFFC52E)   // surface/tertiary\n    static let gold    = Color(hex: 0xFFB800)   // payment offer badge\n    static let hair    = Color(hex: 0xE5E5E5)\n    static let hairLt  = Color(hex: 0xEDEDED)\n    // Pay Now\n    static let payNow = LinearGradient(stops: [.init(color: Color(red: 1, green: 0.588, blue: 0.243), location: 0.534),\n                                               .init(color: Color(red: 1, green: 0.02, blue: 0.02), location: 1.4176)],\n                                       startPoint: .leading, endPoint: .trailing)\n}"
+        }
+      ],
+      "rn": [
+        {
+          "t": "Stack",
+          "note": "React fallback for non-iOS targets.",
+          "code": "react-native-reanimated  // push + sheet springs\n@gorhom/bottom-sheet     // modify plan, coupon wallet\nexpo-haptics             // selection + success\nexpo-linear-gradient     // Pay Now, plan pills, gradient price text (MaskedView)\n@react-native-masked-view/masked-view  // background-clip:text equivalent"
+        },
+        {
+          "t": "Gradient price text",
+          "note": "The web uses background-clip:text; RN needs a mask.",
+          "code": "<MaskedView maskElement={<Text style={styles.big}>{price}</Text>}>\n  <LinearGradient colors={['#8245 9C', '#5525B5']} start={{x:0,y:0}} end={{x:1,y:1}} />\n</MaskedView>"
+        },
+        {
+          "t": "Motion constants",
+          "note": "Verbatim from the prototype.",
+          "code": "const PUSH = { duration: 420, easing: Easing.bezier(0.32, 0.72, 0, 1) };\nconst SHEET = { duration: 460, easing: Easing.bezier(0.32, 0.72, 0, 1) };\nconst UNDER_PARK = '-26%';   // outgoing screen offset"
+        }
+      ],
+      "downloads": [
+        {
+          "label": "Prototype source (index.html)",
+          "href": "checkout/index.html"
+        }
+      ],
+      "settings": [
+        {
+          "key": "tier",
+          "label": "Loyalty tier",
+          "type": "select",
+          "options": [
+            "bronze",
+            "silver",
+            "gold",
+            "vip"
+          ],
+          "default": "vip",
+          "note": "Which coupons are unlocked, and which badge rides the discount"
+        },
+        {
+          "key": "entry",
+          "label": "Entry point",
+          "type": "select",
+          "options": [
+            "plans",
+            "renew"
+          ],
+          "default": "plans",
+          "note": "Signed-out plan picker, or the loyalty page's renew route"
+        },
+        {
+          "key": "countdown",
+          "label": "Offer countdown",
+          "type": "range",
+          "min": 1,
+          "max": 240,
+          "step": 1,
+          "default": 180,
+          "unit": " min",
+          "note": "Minutes left on the promo before the coupon expires"
+        },
+        {
+          "key": "push",
+          "label": "Push duration",
+          "type": "range",
+          "min": 200,
+          "max": 700,
+          "step": 10,
+          "default": 420,
+          "unit": "ms",
+          "note": "Screen-to-screen slide on the Apple curve"
+        }
+      ]
     }
   ]
 }

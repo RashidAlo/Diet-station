@@ -2164,7 +2164,9 @@ function openPrimer(f) {
   primerEl.innerHTML = '<h3>' + f.title + '</h3>' +
     '<p class="p-sub">Tune the prototype before you open it — changes apply on launch.</p>' +
     f.settings.map(st => {
-      if (st.type === 'choice') {
+      /* 'select' is accepted as an alias of 'choice' — same {options}
+         shape; anything unrecognised falls through to a range slider */
+      if (st.type === 'choice' || st.type === 'select') {
         return '<div class="p-row" data-key="' + st.key + '"><div class="p-top"><label>' + st.label + '</label></div>' +
           '<div class="p-choice">' + st.options.map(o =>
             '<button data-v="' + o + '" class="' + (val(st) === o ? 'on' : '') + '">' + o + '</button>').join('') + '</div>' +
