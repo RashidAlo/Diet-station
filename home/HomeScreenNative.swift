@@ -2030,8 +2030,16 @@ final class FlowPreloader {
                     }
                     if !els.isEmpty, let wv = self.chrome.webView {
                         let ids = els.map { "'\($0.id)'" }.joined(separator: ",")
+                        // CAPABILITY ANNOUNCEMENT, not an assumption. The
+                        // web deploys continuously; this renderer ships
+                        // discretely — so a page must never presume what the
+                        // shell can do. scrubMotion says "this renderer drives
+                        // the capsule from el.from with its own spring", which
+                        // is what lets the page stop morphing its pill and
+                        // send a DESTINATION instead of a path. A build
+                        // without it keeps the web morph and still works.
                         wv.evaluateJavaScript(
-                            "window.DSNativeChrome && DSNativeChrome([\(ids)])",
+                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true })",
                             in: frame, in: .page, completionHandler: nil)
                     }
                 }
