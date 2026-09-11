@@ -318,25 +318,25 @@
       top .44s cubic-bezier(.32,1.2,.42,1),
       border-radius .44s cubic-bezier(.32,1.2,.42,1),
       background .34s ease, box-shadow .34s ease; }
+  /* EXIT ORDER (Rashid: "the container should morph down, and the new date
+     animates in"). Strictly SEQUENTIAL, never overlapping. Cross-fading
+     the label over the dissolving ladder is what read as "it morphs into
+     something weird", and leaving glass on at the end is the "smaller pill
+     thing". So the ladder goes first, the glass and the pill shadow are
+     fully gone by the time the container lands, and only THEN does the
+     date animate in — on its own, rising slightly, so it is an entrance
+     rather than a pop. */
+  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .15s ease; }
   .nav .ttl.scrub.closing .glassbg { opacity: 0;
-    transition: opacity .3s ease .12s; }
-  /* The END of the exit was the awkward part: the ladder shrank to a
-     cropped "14 15" fragment and then the label POPPED in over it (it is
-     display:none under .scrub, so it can only pop), with the native
-     capsule still fading on top of it. So the whole handover now happens
-     DURING the collapse instead of at the end of it — the ladder
-     dissolves, the label cross-fades in over it, and by the time the
-     capsule lands there is nothing left to swap. */
-  /* the two fades OVERLAP deliberately: at .17s delay the tape showed a
-     beat where the ladder had gone and the label had not arrived — a
-     near-empty pill, which is its own small awkward state. The label now
-     starts while the ladder is still going, so one reads as the other. */
-  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .24s ease; }
+    transition: opacity .24s ease .02s; }
+  .nav .ttl.scrub.closing { box-shadow: none !important; }
   .nav .ttl.scrub.closing #dayLabel { display: inline-block !important;
-    position: absolute; left: 50%; top: 50%; z-index: 2;
-    transform: translate(-50%, -50%); white-space: nowrap;
-    opacity: 0; animation: lblback .26s ease .09s forwards; }
-  @keyframes lblback { to { opacity: 1; } }
+    position: absolute; left: 50%; top: 50%; z-index: 2; white-space: nowrap;
+    opacity: 0; transform: translate(-50%, -50%);
+    animation: lblback .3s cubic-bezier(.32,1.16,.4,1) .33s forwards; }
+  @keyframes lblback {
+    from { opacity: 0; transform: translate(-50%, calc(-50% + 5px)) scale(.94); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
   /* the glass keeps its scale through the collapse, then eases out over
      the final deflate so the pill doesn't pop off the label */
   .nav .ttl.unforming .glassbg { opacity: 0; transition: opacity .3s ease .04s; }
@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 64px; top: calc(var(--top-pad) - 1px);
+  .nav .ttl.scrub { height: 80px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -380,31 +380,60 @@
   .nav .ttl #dayLabel { position: relative; z-index: 1; }  /* above .glassbg */
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
   .scb { display: none; }
-  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 432px; flex: none;
+  /* ONE LADDER DESIGN, TWO COLOUR SCHEMES (Rashid: "make both red portal
+     and the glass one the same design just different colour schemes").
+     Geometry, type and rhythm are shared; only these variables differ, so
+     the two modes can never drift apart again. Sizes follow the Figma
+     Calendar Strip (4091-134124): a 34x34 tile at radius 10 holding a 16px
+     number, then the day name beneath it — NOT crammed inside the tile,
+     which is what made the text collide with the container. */
+  .nav .ttl.scrub .scb {
+    --sc-num:      #0b0e12;                  /* resting day number      */
+    --sc-day:      rgba(11,14,18,.55);       /* day name under the tile */
+    --sc-month:    rgba(11,14,18,.45);
+    --sc-tile-bg:  transparent;              /* resting tile            */
+    --sc-tile-bd:  transparent;
+    --sc-sel-bg:   rgba(255,255,255,.82);    /* the held day            */
+    --sc-sel-bd:   rgba(0,0,0,.06);
+    --sc-sel-glow: 0 1px 5px rgba(0,0,0,.14);
+    --sc-sel-num:  #ed1c24;
+    display: flex; align-items: center; width: 486px; flex: none;
     position: relative; z-index: 1;
     animation: scbin .36s cubic-bezier(.3,1.2,.4,1); }   /* dates ride the grow in */
+  /* portal = the same ladder in the Figma red scheme */
+  .nav .ttl.scrub.portal .scb {
+    --sc-num:      #f9f9f9;
+    --sc-day:      rgba(249,249,249,.82);
+    --sc-month:    rgba(255,255,255,.72);
+    --sc-tile-bg:  transparent;
+    --sc-tile-bd:  rgba(255,255,255,.20);
+    --sc-sel-bg:   #ed1c24;
+    --sc-sel-bd:   #f53a3a;
+    --sc-sel-glow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55);
+    --sc-sel-num:  #f9f9f9; }
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
-  .scb .scb-it { width: 48px; height: 64px; flex: none; display: flex;
-    flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    padding: 3px 0; box-sizing: border-box; }   /* air above and below the stack */
-  /* Safari-tab-group-switcher grammar (Rashid's reference): the selection
-     reads as a LOZENGE the held finger owns — ours holds center while the
-     dates travel through it. Glass mode gets the soft white capsule;
-     portal keeps its red Figma tile (defined below). */
-  .nav .ttl.scrub:not(.portal) .scb .scb-it:nth-child(5) .n {
-    width: 34px; height: 34px; flex: none; display: flex; align-items: center;
-    justify-content: center; border-radius: 10px;
-    background: rgba(255,255,255,.78);
-    box-shadow: 0 1px 5px rgba(0,0,0,.14), inset 0 0 0 .6px rgba(0,0,0,.05); }
-  /* hierarchy (Rashid): month TINY on top (it rarely changes), the number,
-     then the DAY NAME at the bottom */
-  .scb .scb-it .m { font: 600 8.5px/10px 'Urbane Rounded', sans-serif;
-    letter-spacing: .05em; text-transform: uppercase; opacity: .5; }
-  .scb .scb-it .n { font: 600 17px/19px 'Urbane Rounded', sans-serif; }
-  .scb .scb-it .d { font: 500 8.5px/11px 'Urbane Rounded', sans-serif; opacity: .55;
-    max-width: 47px; overflow: hidden; }
-  /* the day you're on reads RED — the tactile center (slot 5 of 9) */
-  .scb .scb-it:nth-child(5) .n { color: #ed1c24; }
+  /* 54 = Figma's 34pt tile + 20pt gutter. The extra width is what stops a
+     day name touching its neighbour. */
+  .scb .scb-it { width: 54px; height: 64px; flex: none; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    box-sizing: border-box; }
+  /* EVERY day wears the tile (Figma), not just the held one — the held day
+     is distinguished by scheme, not by being the only one with a container */
+  .scb .scb-it .n { width: 34px; height: 34px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; box-sizing: border-box;
+    background: var(--sc-tile-bg); border: 1px solid var(--sc-tile-bd);
+    color: var(--sc-num);
+    font: 600 16px/28px 'Urbane Rounded', sans-serif; }
+  .scb .scb-it .m { font: 600 9px/11px 'Urbane Rounded', sans-serif;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--sc-month);
+    height: 11px; }
+  .scb .scb-it .d { font: 500 11px/13px 'Urbane Rounded', sans-serif;
+    color: var(--sc-day); max-width: 52px; overflow: hidden; white-space: nowrap; }
+  /* the held day (slot 5 of 9) */
+  .scb .scb-it:nth-child(5) .n { background: var(--sc-sel-bg);
+    border-color: var(--sc-sel-bd); box-shadow: var(--sc-sel-glow);
+    color: var(--sc-sel-num); }
   /* staggered fade ladder outward from the center */
   .scb .scb-it:nth-child(4), .scb .scb-it:nth-child(6) { opacity: .55; }
   .scb .scb-it:nth-child(3), .scb .scb-it:nth-child(7) { opacity: .32; }
@@ -429,7 +458,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 64px; top: calc(var(--top-pad) - 1px);
+  .nav .ttl.scrub.portal { height: 80px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -442,7 +471,7 @@
   .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
     -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 64px; padding: 3px 0; }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 64px; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -476,16 +505,9 @@
     linear-gradient(90deg, rgba(56,0,2,.34), rgba(56,0,2,0) 14% 86%, rgba(56,0,2,.34)),
     linear-gradient(180deg, rgba(56,0,2,.14), rgba(56,0,2,0) 24% 74%, rgba(56,0,2,.18)),
     radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.16), rgba(255,255,255,0) 42%); }
-  .nav .ttl.scrub.portal .scb .scb-it .n { color: #f9f9f9; }
-  .nav .ttl.scrub.portal .scb .scb-it .m { color: #ffffff; opacity: .7; }
-  .nav .ttl.scrub.portal .scb .scb-it .d { color: #f9f9f9; opacity: .78; }
-  /* the current day = the Figma tile, SQUARED (Rashid) — full 34pt,
-     crisper corners; the taller portal pill gives it room */
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(5) .n { color: #f9f9f9;
-    width: 34px; height: 34px; flex: none; display: flex; align-items: center;
-    justify-content: center; border-radius: 8px; background: #ed1c24;
-    border: 1px solid #f53a3a; box-sizing: border-box;
-    box-shadow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55); }
+  /* portal's per-element colour overrides are gone: the scheme now lives
+     entirely in the --sc-* variables on .scb, so both modes share one set
+     of geometry rules and cannot drift apart */
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
   .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
@@ -2081,12 +2103,17 @@ confirmBtn.onclick = () => {
   function itemHTML(idx, center) {
     if (idx < 0 || idx > maxIdx) return '<div class="scb-it"></div>';
     const d = dateFor(idx);
-    /* center hierarchy: month tiny on top (flips at the boundary), the
-       number, the DAY NAME at the bottom */
+    /* Figma's Calendar Strip: EVERY day carries its own short weekday under
+       the tile, and the month sits on the center only (it is the one that
+       flips at a boundary). The old layout put a FULL weekday under a 48pt
+       slot on the center alone — "Wednesday" is wider than the slot, which
+       is exactly the text-overlapping-the-container Rashid reported. Short
+       names in a 54pt slot cannot collide. The empty month span on
+       non-center slots keeps every stack on the same baseline. */
     return '<div class="scb-it">' +
-      (center ? '<span class="m">' + MONS[d.getMonth()] + '</span>' : '') +
+      '<span class="m">' + (center ? MONS[d.getMonth()] : '') + '</span>' +
       '<span class="n">' + d.getDate() + '</span>' +
-      (center ? '<span class="d">' + d.toLocaleDateString('en', { weekday: 'long' }) + '</span>' : '') +
+      '<span class="d">' + d.toLocaleDateString('en', { weekday: 'short' }) + '</span>' +
       '</div>';
   }
   function paintStrip(idx) {
@@ -2101,7 +2128,7 @@ confirmBtn.onclick = () => {
      the strip and ticks. One-swipe reach calibration kept, floor eased. */
   const EDGE = 16;                              /* travel map margin */
   const FOLLOW = 0.2;                           /* smoothing — lower = softer */
-  const SLOT = 48;                              /* strip slot width */
+  const SLOT = 54;                              /* strip slot width (Figma: 34pt tile + 20pt gutter) */
   let holdT = null, scrubbing = false, downX = 0, downY = 0;
   let engageX = 0, baseIdx = 0, target = 0, scrubIdx = 0;
   let disp = 0, winC = 0;                       /* displayed fraction + window center */
@@ -2183,7 +2210,10 @@ confirmBtn.onclick = () => {
       ttl.style.setProperty('--close-w', (formW0 || 96) + 'px');
       ttl.style.setProperty('--close-h', (formH0 || 28) + 'px');
       ttl.classList.add('closing');
-      closeT = setTimeout(deflate, 430);
+      /* long enough for the date's entrance (.33s delay + .3s) to finish —
+         deflate drops .closing, so ending early would snap the label out
+         of its animated state mid-rise */
+      closeT = setTimeout(deflate, 680);
     } else {
       deflate();                        /* never armed: nothing to collapse */
     }
@@ -2674,7 +2704,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 141 (scrub exit crossfade)';
+const BUILD = 'build 2026-09-11 · 142 (scrub: one design, Figma sizing, sequential exit)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
