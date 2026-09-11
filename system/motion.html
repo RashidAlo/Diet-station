@@ -270,10 +270,11 @@
         haptic: light impact, intensity .4, per tick</div>
     </div>
 
-    <p class="meta"><b>Open inconsistency, flagged for Rashid:</b> on native the macros roll
-      with the calories; on web only the calorie number counts and C/P/F snap. Native is the
-      standard, so the web twin is the side that should change — one line each, whenever the
-      Home lane next touches that file.</p>
+    <p class="meta"><b>Canonical implementation:</b> <code>countTo(el, to)</code> in
+      <code>home/index.html</code> — one shared function driving calories and all three
+      macros, matching native's <code>thinPair</code>. (It previously counted only the
+      calories while C/P/F snapped; brought in line when this pattern was written up, so web
+      and native now roll together.)</p>
   </section>
 
   <section class="card">
@@ -316,7 +317,8 @@ export const bounce = { damping: 12, stiffness: 180, mass: 0.9 }; // withSpring
     </div>
     <div class="codewrap">
       <pre id="countKit">// Counting numbers — the shipped home recipe
-// Web: 420ms, cubic ease-out, counted FROM THE DISPLAYED VALUE
+// Canonical web implementation: countTo() in home/index.html
+// 420ms, cubic ease-out, counted FROM THE DISPLAYED VALUE
 function countTo(el, to) {
   const from = +el.textContent;          // on-screen, not the last target
   if (from === to) return;
