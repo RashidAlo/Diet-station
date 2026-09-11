@@ -816,7 +816,12 @@
        theme — so a LIGHT tint plus a bright inset rim left white-on-white.
        Tinting dark and taking brightness below 1 means the contrast comes from
        the material rather than from whatever happens to be behind it, on every
-       theme, including the brightest. */
+       theme, including the brightest.
+       SCOPE: this is the WEB FALLBACK ONLY. In the shell the whole navigator
+       is Shell's native gauge — taped 2026-09-11: editing this rule moved zero
+       pixels on device, and a 1.4s press on Next never produced the .94 scale
+       below, so what Rashid photographed is the native twin, not this. The
+       same correction has to be made there or the app is unchanged. */
     background: rgba(12,10,6,.16);
     -webkit-backdrop-filter: blur(8px) saturate(115%) brightness(.78);
     backdrop-filter: blur(8px) saturate(115%) brightness(.78);
