@@ -709,12 +709,20 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
     "does": "Consultation booking" }
 ]
 
-// Renderer ask (Hub session): render controls[] as a three-column table
-// in both handoff surfaces, in authoring order. Show `intent` inline on
-// cross-flow rows, dim rows marked status:"stub", and render a flow with
-// no controls[] exactly as today — this lands before the backports do.</pre>
+// SHIPPED (Hub, 92b68e1) — both handoff surfaces render controls[] as
+// "Semantic control map": three columns on desktop, STACKED one block per
+// control below 640px (a 447px table inside a 283px card would scroll
+// sideways on the phone Rashid reviews on); authoring order preserved and
+// never sorted; `intent` inline as a red chip (→ target · presentation);
+// status:"stub" rows dimmed; values HTML-escaped, since the content comes
+// from other lanes' files; a flow with no controls[] renders as before.</pre>
       <button class="copycode" data-copy="ctrlmap">Copy</button>
     </div>
+    <p class="meta">Both surfaces render the act as a <b>paste-ready selector</b> —
+      <code>[data-act="pickPlan"]</code>, not the bare name — so a control goes from the handoff
+      into a script without being retyped. Hub&rsquo;s call, and a better one than my spec;
+      adopted. The stacking breakpoint is the same decision this page makes at 600px, so the
+      map reads identically in all three places it appears.</p>
 
     <h3>Arriving is not acting</h3>
     <p class="desc" style="font-size:13.5px">A flow can also be <b>booted straight into a
@@ -747,9 +755,12 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       the one a regression run most needs to reach. <b>Found by the Hub&rsquo;s router
       regression run</b> — it missed checkout&rsquo;s buttons three times running, which is how
       the unmatchable labels came to light at all; raised as a standard by the Checkout lane,
-      endorsed by Hub, specified here. Checkout&rsquo;s <code>controls[]</code> is authored and
-      shipped — verified against its dispatcher in both directions: nothing handled is missing
-      from the map, nothing in the map is unhandled.</p>
+      endorsed by Hub, specified here. Checkout&rsquo;s <code>controls[]</code> is authored —
+      verified against its dispatcher in both directions: nothing handled is missing from the
+      map, nothing in the map is unhandled. It lives in
+      <code>checkout/flows-entry.json</code> and reaches the handoff surfaces once Hub merges
+      that entry into <code>flows.json</code>, which carries no <code>controls[]</code> yet;
+      until then the renderer is live and correctly showing nothing.</p>
   </section>
 
 </div>
