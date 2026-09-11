@@ -2268,7 +2268,7 @@ confirmBtn.onclick = () => {
       stats.push(DAY_STATUS[dd.getDate() + ':' + dd.getMonth()] || '');
     }
     const d = dateFor(winC);
-    return { dates: out, dayNames: days, statuses: stats,
+    return { dates: out, dayNames: days, statuses: stats, from: formRect,
       center: winC, disp: disp,
       monthLabel: MONS[d.getMonth()],
       dayName: d.toLocaleDateString('en', { weekday: 'short' }) };   /* abbreviated: the headline is quiet, not the hero */
@@ -2295,7 +2295,7 @@ confirmBtn.onclick = () => {
   }
   const navEl = document.querySelector('.nav');
   let unformT = null, closeT = null;
-  let formW0 = 0, formH0 = 0;          /* the label's own size, pre-morph */
+  let formW0 = 0, formH0 = 0, formRect = null;          /* the label's own size, pre-morph */
   /* the collapse has already carried the capsule to the label's exact size
      by the time this runs, so it is pure cleanup — no second visual step */
   function deflate() {
@@ -2358,6 +2358,11 @@ confirmBtn.onclick = () => {
     void ttl.offsetWidth;                /* re-measure the bare label */
     const w0 = ttl.offsetWidth, h0 = ttl.offsetHeight;
     formW0 = w0; formH0 = h0;            /* the size the exit comes home to */
+    /* the label's rect, so the native capsule can grow FROM the date rather
+       than from nothing — a matchedGeometryEffect cannot cross the bridge
+       (no shared namespace), so the origin has to be reported instead */
+    const r0 = ttl.getBoundingClientRect();
+    formRect = { x: r0.left, y: r0.top, w: r0.width, h: r0.height };
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;                /* commit the start of the morph */
     ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
@@ -2824,7 +2829,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 149 (scrub: total yield, abbreviated headline)';
+const BUILD = 'build 2026-09-11 · 150 (scrub: motion is iOS's, origin reported)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3157,6 +3162,15 @@ if (QS.get('solo') === '1') {
        not absent. */
     '.nav .ttl.scrub.ds-native-hidden { opacity: 0 !important; ' +
     '  pointer-events: auto !important; box-shadow: none !important; } ' +
+    /* ...AND IT MUST NOT MORPH EITHER. The pill is invisible but still laid
+       out, so its CSS grow/collapse was still being streamed as chrometrack
+       geometry — which meant the native capsule was faithfully following my
+       curve and the "native spring" was half a fiction (Shell caught this).
+       In-shell the pill snaps straight to its armed geometry, so the rects
+       carry a destination rather than a path, and the motion between the
+       label and that destination is entirely iOS's to choose. */
+    '.nav .ttl.scrub.ds-native-hidden, .nav .ttl.scrub.ds-native-hidden * { ' +
+    '  transition: none !important; animation: none !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
@@ -3243,6 +3257,11 @@ if (QS.get('solo') === '1') {
     if (window.DSScrubState) {
       var st = DSScrubState();
       e.dates = st.dates;
+      /* where the capsule should come FROM: the date label's own rect, in
+         screen coords. matchedGeometryEffect can't cross the bridge, so the
+         origin is reported instead and the spring is native either way. */
+      if (st.from) e.from = { x: st.from.x + off.x, y: st.from.y + off.y,
+        w: st.from.w, h: st.from.h };
       /* new in ·143 — additive, so an older renderer ignores them and keeps
          drawing exactly what it drew before */
       e.dayNames = st.dayNames;
@@ -3351,7 +3370,14 @@ if (QS.get('solo') === '1') {
   window.DSScrubRelease = function () {
     scrubHold = true;
     clearTimeout(scrubFbT);
-    report(true);
+    /* NOT instant any more (Shell): that flag applies the post with
+       animations disabled, which was right when the WEB owned the exit and
+       the capsule had to vanish on a frame so my CSS could carry the
+       collapse. After ·149 the web draws nothing, so the only exit left is
+       the native one — and disabling animation would make the capsule
+       blink out instead of collapsing. The primitive stays useful
+       elsewhere; it is simply the wrong tool for this call now. */
+    report();
   };
   window.DSScrubChrome = function (on) {
     if (on) scrubHold = false;
