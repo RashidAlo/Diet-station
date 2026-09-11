@@ -2530,9 +2530,16 @@ struct DSGaugeGlassView: View {
                 }
                 .foregroundStyle(.white)
                 .frame(width: model.dock == "next" ? 92 : 53, height: 53)
-                // the house glass pill (same recipe as Renew/Change):
-                // visibly liquid over the gold fill (Rashid)
-                .glassEffect(.clear.tint(.white.opacity(0.2)).interactive(), in: .capsule)
+                // The Renew/Change recipe is a WHITE tint, and it fails HERE
+                // specifically: this capsule sits on the gauge's own fill,
+                // which runs to near-white yellow at the top of a plan theme
+                // (C&M measured 0.88 luminance beside it, and the capsule
+                // reading +0.18 ABOVE its own backdrop). White text and a
+                // white loader ring cannot survive that. A glass pill over
+                // the brightest thing on screen must DIM what it sits on.
+                .glassEffect(.clear
+                    .tint(Color(red: 12/255, green: 10/255, blue: 6/255).opacity(0.16))
+                    .interactive(), in: .capsule)
             }
             .buttonStyle(.plain)
             .padding(.trailing, 8)
