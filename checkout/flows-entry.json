@@ -24,7 +24,11 @@
     },
     {
       "id": "renew",
-      "params": { "entry": "renew", "plan": "<id>", "tier": "<tier>" },
+      "params": {
+        "entry": "renew",
+        "plan": "<id>",
+        "tier": "<tier>"
+      },
       "note": "The loyalty-page route: a member tapping Checkout lands on their plan's duration list with the tier already applied."
     }
   ],
@@ -44,28 +48,116 @@
   ],
   "flow": {
     "nodes": [
-      { "id": "plans", "t": "Plan cards", "kind": "screen", "note": "Subscribe Modal — signed-out entry. Prices re-price live under an applied coupon." },
-      { "id": "renew", "t": "Renew Plan", "kind": "screen", "note": "Tiered entry from the loyalty page: plan comparison tabs + the member's current plan detail." },
-      { "id": "duration", "t": "Select duration", "kind": "screen", "note": "Duration cards with Save badges and the Highest Saving flag." },
-      { "id": "modify", "t": "Modify plan", "kind": "module", "note": "Sheet: meal steppers + delivery-day segment." },
-      { "id": "wallet", "t": "Coupon wallet", "kind": "module", "note": "Sheet summoned by the floating coupon button or the promo bar." },
-      { "id": "unlocked", "t": "Tier unlocks it?", "kind": "decision", "note": "Coupons above the member's rung stay locked." },
-      { "id": "payment", "t": "Payment method", "kind": "screen", "note": "Within-this-offer methods vs alternatives; savings total." },
-      { "id": "done", "t": "Order placed", "kind": "end", "note": "NOT YET IN FIGMA — the prototype currently ends at Pay Now with a mock-only confirmation toast." }
+      {
+        "id": "plans",
+        "t": "Plan cards",
+        "kind": "screen",
+        "note": "Subscribe Modal — signed-out entry. Prices re-price live under an applied coupon."
+      },
+      {
+        "id": "renew",
+        "t": "Renew Plan",
+        "kind": "screen",
+        "note": "Tiered entry from the loyalty page: plan comparison tabs + the member's current plan detail."
+      },
+      {
+        "id": "duration",
+        "t": "Select duration",
+        "kind": "screen",
+        "note": "Duration cards with Save badges and the Highest Saving flag."
+      },
+      {
+        "id": "modify",
+        "t": "Modify plan",
+        "kind": "module",
+        "note": "Sheet: meal steppers + delivery-day segment."
+      },
+      {
+        "id": "wallet",
+        "t": "Coupon wallet",
+        "kind": "module",
+        "note": "Sheet summoned by the floating coupon button or the promo bar."
+      },
+      {
+        "id": "unlocked",
+        "t": "Tier unlocks it?",
+        "kind": "decision",
+        "note": "Coupons above the member's rung stay locked."
+      },
+      {
+        "id": "payment",
+        "t": "Payment method",
+        "kind": "screen",
+        "note": "Within-this-offer methods vs alternatives; savings total."
+      },
+      {
+        "id": "done",
+        "t": "Order placed",
+        "kind": "end",
+        "note": "NOT YET IN FIGMA — the prototype currently ends at Pay Now with a mock-only confirmation toast."
+      }
     ],
     "edges": [
-      ["plans", "duration", "pick a plan"],
-      ["renew", "duration", "from loyalty"],
-      ["duration", "modify", "edit meals"],
-      ["modify", "duration", "done"],
-      ["plans", "wallet", "coupon button"],
-      ["duration", "wallet", "promo bar"],
-      ["wallet", "unlocked", ""],
-      ["unlocked", "duration", "applied — re-price"],
-      ["unlocked", "wallet", "locked"],
-      ["wallet", "rewards", "see all"],
-      ["duration", "payment", "proceed"],
-      ["payment", "done", "pay now"]
+      [
+        "plans",
+        "duration",
+        "pick a plan"
+      ],
+      [
+        "renew",
+        "duration",
+        "from loyalty"
+      ],
+      [
+        "duration",
+        "modify",
+        "edit meals"
+      ],
+      [
+        "modify",
+        "duration",
+        "done"
+      ],
+      [
+        "plans",
+        "wallet",
+        "coupon button"
+      ],
+      [
+        "duration",
+        "wallet",
+        "promo bar"
+      ],
+      [
+        "wallet",
+        "unlocked",
+        ""
+      ],
+      [
+        "unlocked",
+        "duration",
+        "applied — re-price"
+      ],
+      [
+        "unlocked",
+        "wallet",
+        "locked"
+      ],
+      [
+        "wallet",
+        "rewards",
+        "see all"
+      ],
+      [
+        "duration",
+        "payment",
+        "proceed"
+      ],
+      [
+        "payment",
+        "done",
+        "pay now"
+      ]
     ]
   },
   "handoff": {
@@ -77,11 +169,116 @@
     "Screen motion": "push = translateX(100%) → 0 over 420ms cubic-bezier(.32,.72,0,1), outgoing screen parks at −26%. Sheets = translateY(100%) → 0 over 460ms on the same curve.",
     "Glass": "Nav buttons and the coupon FAB use CSS backdrop-filter (blur 14 / saturate 180) rather than liquid-glass-js: they float over live scrolling content, which the shader's frozen page snapshot cannot track. Native equivalent is .glassEffect().",
     "Payment": "PROTOTYPE UI ONLY — mock data, no processing, no card entry, nothing charged. Pay Now raises a confirmation toast.",
-    "Driving it from a script": "Every interactive control carries a stable semantic data-act, so a regression run never has to match on visible text (labels are split across weight spans for typography and will not match naively). Selector is always [data-act=\"…\"]. Navigation: pickPlan (plus [data-plan]), dur (plus [data-dur]), plan, toPayment, method (plus [data-method]), pay, back. Coupons: coupons (opens the wallet), pickCoupon (plus [data-cpn]), uncoupon, allRewards. Plan editing: modify, inc, dec, days (plus [data-days]), closeSheet. Other: guide, consult, summer, call, savings. Boot straight into any state instead of tapping through: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…}.",
+    "Driving it from a script": "See the Semantic control map (controls[]) for every act and its payload — one delegated listener on [data-act] at the phone root, authored from the dispatcher. Labels are split across weight spans for typography and must never be matched on. For most runs you can skip the tapping entirely: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…} boots straight into any state, which is how this flow was verified on device when the Simulator MCP refused tap injection.",
     "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
     "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
     "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy."
   },
+  "controls": [
+    {
+      "act": "back",
+      "does": "Steps back one screen; at the first screen closes the flow (ds-close)"
+    },
+    {
+      "act": "toPayment",
+      "does": "Closes any sheet and advances to the payment screen"
+    },
+    {
+      "act": "closeSheet",
+      "does": "Closes any open sheet — also carried by the veil"
+    },
+    {
+      "act": "pickPlan",
+      "payload": "data-plan",
+      "does": "Selects a plan from the plans list, clears duration, advances"
+    },
+    {
+      "act": "plan",
+      "payload": "data-plan",
+      "does": "Re-selects the plan in place, staying on the current screen"
+    },
+    {
+      "act": "dur",
+      "payload": "data-dur",
+      "does": "Sets the subscription duration and re-prices"
+    },
+    {
+      "act": "modify",
+      "does": "Opens the modify sheet"
+    },
+    {
+      "act": "days",
+      "payload": "data-days",
+      "does": "Sets the delivery day pattern"
+    },
+    {
+      "act": "inc",
+      "payload": ".stepper[data-meal]",
+      "does": "Increments one meal's count"
+    },
+    {
+      "act": "dec",
+      "payload": ".stepper[data-meal]",
+      "does": "Decrements one meal's count, floored at 0"
+    },
+    {
+      "act": "coupons",
+      "does": "Opens the coupons sheet"
+    },
+    {
+      "act": "pickCoupon",
+      "payload": "data-cpn, data-tier",
+      "does": "Applies a coupon, or clears it if already applied. Present only on unlocked tiers"
+    },
+    {
+      "act": "uncoupon",
+      "does": "Removes the applied coupon from the promo bar"
+    },
+    {
+      "act": "method",
+      "payload": "data-method",
+      "does": "Selects a payment method and re-prices — methods carry different fees"
+    },
+    {
+      "act": "pay",
+      "does": "Prototype only — toasts the total, takes no payment"
+    },
+    {
+      "act": "savings",
+      "does": "Toasts today's saving"
+    },
+    {
+      "act": "allRewards",
+      "intent": {
+        "to": "rewards",
+        "present": "sheet"
+      },
+      "does": "Emits ds-nav → rewards (sheet)"
+    },
+    {
+      "act": "guide",
+      "intent": {
+        "to": "plan-quiz",
+        "present": "push"
+      },
+      "does": "Emits ds-nav → plan-quiz (push)"
+    },
+    {
+      "act": "consult",
+      "status": "stub",
+      "does": "Consultation booking"
+    },
+    {
+      "act": "summer",
+      "status": "stub",
+      "does": "Summer Offer campaign landing"
+    },
+    {
+      "act": "call",
+      "status": "stub",
+      "does": "Calls the diet consultant"
+    }
+  ],
   "swift": [
     {
       "t": "Price engine",
@@ -127,14 +324,22 @@
     }
   ],
   "downloads": [
-    { "label": "Prototype source (index.html)", "href": "checkout/index.html" }
+    {
+      "label": "Prototype source (index.html)",
+      "href": "checkout/index.html"
+    }
   ],
   "settings": [
     {
       "key": "tier",
       "label": "Loyalty tier",
       "type": "select",
-      "options": ["bronze", "silver", "gold", "vip"],
+      "options": [
+        "bronze",
+        "silver",
+        "gold",
+        "vip"
+      ],
       "default": "vip",
       "note": "Which coupons are unlocked, and which badge rides the discount"
     },
@@ -142,7 +347,10 @@
       "key": "entry",
       "label": "Entry point",
       "type": "select",
-      "options": ["plans", "renew"],
+      "options": [
+        "plans",
+        "renew"
+      ],
       "default": "plans",
       "note": "Signed-out plan picker, or the loyalty page's renew route"
     },
