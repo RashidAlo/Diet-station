@@ -326,17 +326,32 @@
      fully gone by the time the container lands, and only THEN does the
      date animate in — on its own, rising slightly, so it is an entrance
      rather than a pop. */
-  .nav .ttl.scrub.closing .scb { opacity: 0; transition: opacity .15s ease; }
+  /* EXIT, ORCHESTRATED AS ONE MOVE (Rashid: "the date still shows weirdly
+     after I let go... think of it from a clean slate — the number forms back
+     into the original state on the overlay. Orchestrate it in a very simple
+     way").
+     The old exit faded the WHOLE ladder and then faded a label in, so the
+     number you were looking at vanished and a different-looking one
+     appeared — two events, which is the "weird". Now only the NEIGHBOURS
+     leave; the held number stays put and is handed over to the label, which
+     is the same glyph at the same size (both 600 16px), so the swap has
+     nothing to show. One thing moves: the capsule, closing. */
+  .nav .ttl.scrub.closing .scb .scb-it:not(:nth-child(5)) {
+    opacity: 0; transition: opacity .13s ease; }
+  .nav .ttl.scrub.closing .scb .scb-it:nth-child(5) .s {
+    opacity: 0; transition: opacity .13s ease; }
+  .nav .ttl.scrub.closing .scb .scb-it:nth-child(5) .n {
+    opacity: 0; transition: opacity .1s ease .2s; }
   .nav .ttl.scrub.closing .glassbg { opacity: 0;
     transition: opacity .24s ease .02s; }
   .nav .ttl.scrub.closing { box-shadow: none !important; }
   .nav .ttl.scrub.closing #dayLabel { display: inline-block !important;
     position: absolute; left: 50%; top: 50%; z-index: 2; white-space: nowrap;
     opacity: 0; transform: translate(-50%, -50%);
-    animation: lblback .3s cubic-bezier(.32,1.16,.4,1) .33s forwards; }
+    animation: lblback .22s ease .18s forwards; }
   @keyframes lblback {
-    from { opacity: 0; transform: translate(-50%, calc(-50% + 5px)) scale(.94); }
-    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+    from { opacity: 0; }
+    to   { opacity: 1; } }
   /* the glass keeps its scale through the collapse, then eases out over
      the final deflate so the pill doesn't pop off the label */
   .nav .ttl.unforming .glassbg { opacity: 0; transition: opacity .3s ease .04s; }
@@ -467,21 +482,12 @@
      passing through takes the selected ink. The tile is never drawn by a
      slot — a slot-based tile rides the strip's fractional offset instead of
      holding the centre, which is the opposite of the Safari grammar. */
-  .scb-sel { display: none; }
-  .nav .ttl.scrub .scb-sel { display: block; position: absolute;
-    left: 50%; top: 50%; width: 40px; height: 24px; margin-left: -20px;
-    /* HUGS THE NUMBER now that the per-date square is gone: 40x24 instead of
-       34x34, so the held day still reads as held without the indicator being
-       the tallest thing in the capsule. Centred on the NUMBER row, which
-       sits above the stack's own centre by half the status row. */
-    margin-top: -12px; border-radius: 8px; box-sizing: border-box;
-    background: var(--sc-sel-bg); border: 1px solid var(--sc-sel-bd);
-    box-shadow: var(--sc-sel-glow);
-    /* z 0: ABOVE the glass, BELOW the strip — the numbers must read on top
-       of the tile, and the tile must not be a second pane of glass */
-    z-index: 0; pointer-events: none; }
-  .nav .ttl.scrub.closing .scb-sel { opacity: 0; transition: opacity .15s ease; }
-  /* the day currently under the stationary tile takes the selected ink */
+  /* NO CONTAINER ON THE DATE AT ALL (Rashid, twice: "the square container for
+     the dates is still there"). I kept a held pill after the resting squares
+     went, on the reasoning that something had to mark the selection — he has
+     now said plainly that the square is what he wants gone, so it is gone.
+     The held day is marked by POSITION (it is the one under the headline, in
+     the centre of the capsule) and by INK. Nothing is drawn around it. */
   .scb .scb-it:nth-child(5) .n { color: var(--sc-sel-num); }
   /* staggered fade ladder outward from the center */
   .scb .scb-it:nth-child(4), .scb .scb-it:nth-child(6) { opacity: .55; }
@@ -2161,15 +2167,8 @@ confirmBtn.onclick = () => {
   const strip = document.createElement('div');
   strip.className = 'scb';
   ttl.appendChild(strip);
-  /* the held tile is STATIONARY at the capsule centre and the days travel
-     THROUGH it — Rashid's Safari tab-group grammar ("if you tap and hold
-     this category and try to swipe through, it does the same thing that I
-     want"): the selection owns the centre, it does not ride the strip.
-     It must therefore be a sibling of the strip, not a slot inside it —
-     a slot-based tile drifts with the strip's fractional offset. */
-  const selTile = document.createElement('div');
-  selTile.className = 'scb-sel';
-  ttl.appendChild(selTile);
+  /* no held container: the selection is the centre slot, marked by position
+     and ink. See the .scb-it:nth-child(5) rule. */
   /* THE DAY IS THE HEADLINE (Rashid: "prioritise the day, so Monday instead
      of September"). The weekday of the held day sits stationary above the
      ladder; the month is no longer carried by any tile, which is what buys
