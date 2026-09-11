@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 80px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 86px; padding-top: 16px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -504,7 +504,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 80px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub.portal { height: 86px; padding-top: 16px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -2822,7 +2822,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 147 (scrub: two rows, status under the tile)';
+const BUILD = 'build 2026-09-11 · 148 (scrub: two rows + chip clearance)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
