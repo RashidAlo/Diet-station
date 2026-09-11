@@ -596,10 +596,12 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
 
   <section class="card" id="controlmap" style="scroll-margin-top:80px">
     <h2>Semantic control map — required in every new handoff</h2>
-    <p class="desc">A flow is only <b>regression-drivable</b> if a script can find its controls
-      without reading its labels. Ours can&rsquo;t be read: the house button splits its label
-      across weight spans, so the text a human sees is not the text in the DOM. Verified in the
-      shipping code — two flows, two different breakages:</p>
+    <p class="desc">A flow is <b>regression-drivable</b> only when a script can address its
+      controls by something stable. A label is not that — the house button splits its label
+      across weight spans, so the text a human sees is not the text in the DOM. An id is
+      findable, but it names the <i>element</i> rather than the contract and doesn&rsquo;t
+      survive a re-render that rebuilds the markup. Verified in the shipping code — two flows,
+      two different breakages:</p>
 
     <div class="pair">
       <div class="ph">The same button, two label shapes <small>— neither is safe to match on</small></div>
@@ -843,6 +845,30 @@ try { JSON.parse(src); } catch (e) { /* malformed — do not push */ }</pre>
       <code>lab-shell.js</code> (51,459 bytes) returns PARSES, and re-opening that block with a
       single quote returns <code>SyntaxError: Unexpected identifier 'Urbane'</code>, the exact
       failure that shipped.</p>
+
+    <h3>It tells you <i>that</i>, not <i>where</i></h3>
+    <p class="desc" style="font-size:13.5px">The gate gives a verdict and a message, <b>not a
+      location</b>. The <code>&lt;anonymous&gt;:4:7</code> that appears in the thrown
+      error&rsquo;s stack is the frame of <i>your own call</i>, not a position in the file —
+      tested against a fault planted on line 5 of a synthetic file, and against the real bug on
+      line 145: both report line 1 of the caller. Chasing that number wastes more time than
+      having no number at all. To get the true position, load the source as a real script and
+      let the page&rsquo;s own error reporting locate it:</p>
+    <div class="codewrap">
+      <pre id="locatecode">// LOCATOR — run in a throwaway tab: this EXECUTES the file if it parses
+const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+window.addEventListener('error', e =&gt; console.log(e.lineno + ':' + e.colno, e.message));
+document.head.appendChild(Object.assign(document.createElement('script'), { src: url }));</pre>
+      <button class="copycode" data-copy="locatecode">Copy</button>
+    </div>
+    <p class="meta">On the real bug this reports <b>154:23</b> — <code>lab-shell.js:154</code> is
+      <code>font: 600 10.5px/1 'Urbane Rounded'…</code>, exactly where the parser choked. Note
+      what that is and isn&rsquo;t: 154 is the <b>symptom</b>, and the <b>cause</b> is nine lines
+      up at 145, where the literal opened with the wrong quote. A parser reports where it lost
+      the thread, not where you lost it — for an unterminated string, always read upward from
+      the reported line. Use the two tools for their two jobs: <code>new Function</code> is the
+      safe pre-push gate because it never executes; the locator executes on success, so it
+      belongs in a scratch tab and never on a page whose state you care about.</p>
 
     <h3>What it catches, and what it will not</h3>
     <div class="pair">
