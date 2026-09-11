@@ -387,7 +387,9 @@
      Calendar Strip (4091-134124): a 34x34 tile at radius 10 holding a 16px
      number, then the day name beneath it — NOT crammed inside the tile,
      which is what made the text collide with the container. */
-  .nav .ttl.scrub .scb {
+  /* the schemes live on the PILL, not on the strip: the stationary tile is a
+     SIBLING of the strip, so both must be able to read them */
+  .nav .ttl.scrub {
     --sc-num:      #0b0e12;                  /* resting day number      */
     --sc-day:      rgba(11,14,18,.55);       /* day name under the tile */
     --sc-month:    rgba(11,14,18,.45);
@@ -396,12 +398,12 @@
     --sc-sel-bg:   rgba(255,255,255,.82);    /* the held day            */
     --sc-sel-bd:   rgba(0,0,0,.06);
     --sc-sel-glow: 0 1px 5px rgba(0,0,0,.14);
-    --sc-sel-num:  #ed1c24;
-    display: flex; align-items: center; width: 486px; flex: none;
-    position: relative; z-index: 1;
+    --sc-sel-num:  #ed1c24; }
+  .nav .ttl.scrub .scb { display: flex; align-items: center; width: 486px;
+    flex: none; position: relative; z-index: 1;
     animation: scbin .36s cubic-bezier(.3,1.2,.4,1); }   /* dates ride the grow in */
   /* portal = the same ladder in the Figma red scheme */
-  .nav .ttl.scrub.portal .scb {
+  .nav .ttl.scrub.portal {
     --sc-num:      #f9f9f9;
     --sc-day:      rgba(249,249,249,.82);
     --sc-month:    rgba(255,255,255,.72);
@@ -438,10 +440,26 @@
   /* an OFF day is struck through and recedes, per the Figma Off variant */
   .scb .scb-it.st-off .n { text-decoration: line-through; opacity: .62; }
   .scb .scb-it.st-off .d { opacity: .62; }
-  /* the held day (slot 5 of 9) */
-  .scb .scb-it:nth-child(5) .n { background: var(--sc-sel-bg);
-    border-color: var(--sc-sel-bd); box-shadow: var(--sc-sel-glow);
-    color: var(--sc-sel-num); }
+  /* the held tile: STATIONARY at the capsule centre, days travel through it.
+     Sits BELOW the strip so the numbers read on top of it, and the slot
+     passing through takes the selected ink. The tile is never drawn by a
+     slot — a slot-based tile rides the strip's fractional offset instead of
+     holding the centre, which is the opposite of the Safari grammar. */
+  .scb-sel { display: none; }
+  .nav .ttl.scrub .scb-sel { display: block; position: absolute;
+    left: 50%; top: 50%; width: 34px; height: 34px; margin-left: -17px;
+    /* the tile centres on the NUMBER row, not the whole stack: the stack is
+       month + tile + day + status, so the tile sits above centre by half the
+       day/status rows */
+    margin-top: -31px; border-radius: 10px; box-sizing: border-box;
+    background: var(--sc-sel-bg); border: 1px solid var(--sc-sel-bd);
+    box-shadow: var(--sc-sel-glow);
+    /* z 0: ABOVE the glass, BELOW the strip — the numbers must read on top
+       of the tile, and the tile must not be a second pane of glass */
+    z-index: 0; pointer-events: none; }
+  .nav .ttl.scrub.closing .scb-sel { opacity: 0; transition: opacity .15s ease; }
+  /* the day currently under the stationary tile takes the selected ink */
+  .scb .scb-it:nth-child(5) .n { color: var(--sc-sel-num); }
   /* staggered fade ladder outward from the center */
   .scb .scb-it:nth-child(4), .scb .scb-it:nth-child(6) { opacity: .55; }
   .scb .scb-it:nth-child(3), .scb .scb-it:nth-child(7) { opacity: .32; }
@@ -2120,6 +2138,15 @@ confirmBtn.onclick = () => {
   const strip = document.createElement('div');
   strip.className = 'scb';
   ttl.appendChild(strip);
+  /* the held tile is STATIONARY at the capsule centre and the days travel
+     THROUGH it — Rashid's Safari tab-group grammar ("if you tap and hold
+     this category and try to swipe through, it does the same thing that I
+     want"): the selection owns the centre, it does not ride the strip.
+     It must therefore be a sibling of the strip, not a slot inside it —
+     a slot-based tile drifts with the strip's fractional offset. */
+  const selTile = document.createElement('div');
+  selTile.className = 'scb-sel';
+  ttl.appendChild(selTile);
   /* the calendar's own chip vocabulary, reused verbatim so the scrubber and
      the calendar grid can never tell different stories about a day */
   const SCRUB_CHIP = {
@@ -2749,7 +2776,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 143 (scrub: day status)';
+const BUILD = 'build 2026-09-11 · 144 (scrub: stationary held tile)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
