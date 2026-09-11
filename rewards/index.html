@@ -584,7 +584,18 @@ function buildCoupons() {
   const cb = makeGlass('closebtn', 20);
   cb.element.insertAdjacentHTML('beforeend', `<img src="rewards-close.svg" alt="">`);
   cb.element.title = 'close';
-  cb.element.addEventListener('click', () => {
+  cb.element.addEventListener('click', (e) => {
+    /* DEBUG PROBE (phantom-close hunt, 2026-09-11): the pilot's rewards
+       summon dies by this handler's exact choreography in a TOUCHLESS run —
+       log who clicked. isTrusted=false means synthetic (DSChromeTap or
+       script); the shell NSLogs t:'dsdebug' in DEBUG builds. Remove with the
+       hunt's conclusion. */
+    try {
+      window.webkit.messageHandlers.ds.postMessage({
+        t: 'dsdebug', tag: 'xclick',
+        trusted: !!(e && e.isTrusted), ts: Date.now() % 100000
+      });
+    } catch (_) {}
     if (window.DS_EMBED) {
       document.documentElement.classList.add('sheet-enter');
       setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 420);
