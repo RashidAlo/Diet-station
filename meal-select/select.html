@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 80px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 96px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -414,7 +414,7 @@
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
   /* 54 = Figma's 34pt tile + 20pt gutter. The extra width is what stops a
      day name touching its neighbour. */
-  .scb .scb-it { width: 54px; height: 64px; flex: none; display: flex;
+  .scb .scb-it { width: 54px; height: 82px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 3px;
     box-sizing: border-box; }
   /* EVERY day wears the tile (Figma), not just the held one — the held day
@@ -430,6 +430,14 @@
     height: 11px; }
   .scb .scb-it .d { font: 500 11px/13px 'Urbane Rounded', sans-serif;
     color: var(--sc-day); max-width: 52px; overflow: hidden; white-space: nowrap; }
+  /* Figma keeps a status row under the day name — same chips the calendar
+     grid uses, so the two surfaces never disagree about a day */
+  .scb .scb-it .s { height: 15px; display: flex; align-items: center;
+    justify-content: center; }
+  .scb .scb-it .s img { display: block; }
+  /* an OFF day is struck through and recedes, per the Figma Off variant */
+  .scb .scb-it.st-off .n { text-decoration: line-through; opacity: .62; }
+  .scb .scb-it.st-off .d { opacity: .62; }
   /* the held day (slot 5 of 9) */
   .scb .scb-it:nth-child(5) .n { background: var(--sc-sel-bg);
     border-color: var(--sc-sel-bd); box-shadow: var(--sc-sel-glow);
@@ -458,7 +466,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 80px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub.portal { height: 96px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -471,7 +479,7 @@
   .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
     -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 64px; }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 82px; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -1870,6 +1878,18 @@ const DAY_START = +QS.get('day') || 15;
 const MON_LBL = QS.get('mon') || 'Mar';
 const calDone = new Set();           /* days confirmed during this overlay visit */
 let dayIdx = 0;
+/* per-day status for the scrubber's chips (Rashid: "I want to be able to
+   have the status of the days"). Only the CALENDAR can compute this — it
+   owns the month model, the lock clock and the session's selections — so it
+   posts a day:monthIndex map when it opens this overlay. Optional by
+   design: with no map the ladder simply shows no chips. */
+let DAY_STATUS = {};
+addEventListener('message', e => {
+  const d = e.data;
+  if (!d || d.t !== 'ds-daystatus' || !d.map) return;
+  DAY_STATUS = d.map;
+  if (window.repaintScrubStrip) window.repaintScrubStrip();
+});
 
 /* every day opens with deterministic fallback picks the user can just keep */
 function seedAutoDay(idx) {
@@ -2100,9 +2120,25 @@ confirmBtn.onclick = () => {
   const strip = document.createElement('div');
   strip.className = 'scb';
   ttl.appendChild(strip);
+  /* the calendar's own chip vocabulary, reused verbatim so the scrubber and
+     the calendar grid can never tell different stories about a day */
+  const SCRUB_CHIP = {
+    add:   '<img src="cal-add.svg" width="15" height="15" alt="">',
+    soon:  '<img src="cal-add.svg" width="15" height="15" alt="">',
+    sel:   '<img src="cal-check.svg" width="13" height="13" alt="">',
+    auto:  '<img src="cal-check.svg" width="13" height="13" alt="">',
+    today: '<img src="cal-truck.svg" width="14" height="14" alt="">',
+    rate:  '<img src="cal-staryellow.svg" width="14" height="14" alt="">',
+    star:  '<img src="cal-staryellow.svg" width="14" height="14" alt="">',
+    off:   '<img src="cal-off.svg" width="13" height="6" alt="">',
+  };
+  /* on window: the status map arrives on a top-level message listener, which
+     has no view of this closure */
+  window.repaintScrubStrip = function () { if (scrubbing) paintStrip(winC); };
   function itemHTML(idx, center) {
     if (idx < 0 || idx > maxIdx) return '<div class="scb-it"></div>';
     const d = dateFor(idx);
+    const st = DAY_STATUS[d.getDate() + ':' + d.getMonth()] || '';
     /* Figma's Calendar Strip: EVERY day carries its own short weekday under
        the tile, and the month sits on the center only (it is the one that
        flips at a boundary). The old layout put a FULL weekday under a 48pt
@@ -2110,10 +2146,11 @@ confirmBtn.onclick = () => {
        is exactly the text-overlapping-the-container Rashid reported. Short
        names in a 54pt slot cannot collide. The empty month span on
        non-center slots keeps every stack on the same baseline. */
-    return '<div class="scb-it">' +
+    return '<div class="scb-it' + (st ? ' st-' + st : '') + '">' +
       '<span class="m">' + (center ? MONS[d.getMonth()] : '') + '</span>' +
       '<span class="n">' + d.getDate() + '</span>' +
       '<span class="d">' + d.toLocaleDateString('en', { weekday: 'short' }) + '</span>' +
+      '<span class="s">' + (SCRUB_CHIP[st] || '') + '</span>' +
       '</div>';
   }
   function paintStrip(idx) {
@@ -2145,13 +2182,21 @@ confirmBtn.onclick = () => {
      display labels + the center index (int at arm, fractional on track
      frames — 15.4 reads "between 15 and 16", native flips at .5) */
   window.DSScrubState = function () {
-    const out = [];
+    const out = [], days = [], stats = [];
     for (let k = -4; k <= 4; k++) {
       const i = winC + k;
-      out.push(i < 0 || i > maxIdx ? '' : String(dateFor(i).getDate()));
+      if (i < 0 || i > maxIdx) { out.push(''); days.push(''); stats.push(''); continue; }
+      const dd = dateFor(i);
+      out.push(String(dd.getDate()));
+      /* short weekday PER DAY and its status, so the native ladder can draw
+         the same stack the web one does (Figma 4091-134124) instead of a
+         bare number row with one long day name under the center */
+      days.push(dd.toLocaleDateString('en', { weekday: 'short' }));
+      stats.push(DAY_STATUS[dd.getDate() + ':' + dd.getMonth()] || '');
     }
     const d = dateFor(winC);
-    return { dates: out, center: winC, disp: disp,
+    return { dates: out, dayNames: days, statuses: stats,
+      center: winC, disp: disp,
       monthLabel: MONS[d.getMonth()],
       dayName: d.toLocaleDateString('en', { weekday: 'long' }) };
   };
@@ -2704,7 +2749,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 142 (scrub: one design, Figma sizing, sequential exit)';
+const BUILD = 'build 2026-09-11 · 143 (scrub: day status)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3126,6 +3171,10 @@ if (QS.get('solo') === '1') {
     if (window.DSScrubState) {
       var st = DSScrubState();
       e.dates = st.dates;
+      /* new in ·143 — additive, so an older renderer ignores them and keeps
+         drawing exactly what it drew before */
+      e.dayNames = st.dayNames;
+      e.statuses = st.statuses;
       e.center = frac ? 4 + (st.disp - st.center) : 4.0;
       e.monthLabel = st.monthLabel;
       e.dayName = st.dayName;

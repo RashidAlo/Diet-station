@@ -562,6 +562,27 @@ function openDay(mon, day, auto) {
       ? '&scrubtwin=' + (new URLSearchParams(location.search)).get('scrubtwin') : '') +
     '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
+  /* the scrubber shows each day's STATUS (Rashid) and only the calendar
+     knows it — dayStatus() needs the whole month model, the lock clock and
+     the session's selections. Hand the window either side of the opened
+     day over as soon as the frame is up; the selector treats it as
+     optional, so an older selector simply shows no status chips. */
+  ovFrame.addEventListener('load', function () { postDayStatus(day); });
+}
+/* the window either side of the opened day, keyed day:monthIndex — the
+   selector's ladder can travel a month, so send more than it can show */
+function postDayStatus(day) {
+  if (!ovFrame) return;
+  try {
+    const M = computeModel();
+    const base = new Date(M.today.getFullYear(), M.today.getMonth(), day);
+    const map = {};
+    for (let k = -7; k <= 38; k++) {
+      const D = new Date(base.getTime() + k * DAYMS);
+      map[D.getDate() + ':' + D.getMonth()] = dayStatus(D, M);
+    }
+    ovFrame.contentWindow.postMessage({ t: 'ds-daystatus', map: map }, '*');
+  } catch (_) {}
 }
 function closeOverlay() {
   if (!ovFrame) return;
