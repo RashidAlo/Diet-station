@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 98px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 80px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -414,9 +414,12 @@
     --sc-sel-glow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55);
     --sc-sel-num:  #f9f9f9; }
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
-  /* 54 = Figma's 34pt tile + 20pt gutter. The extra width is what stops a
-     day name touching its neighbour. */
-  .scb .scb-it { width: 54px; height: 68px; flex: none; display: flex;
+  /* 54 = Figma's 34pt tile + 20pt gutter.
+     TWO ROWS ONLY (Rashid: "it seems you added the day twice — just replace
+     the top label from month to day, keep the lower label clear, have the
+     status take that place"). The weekday now lives ONCE, as the stationary
+     headline; the row beneath each tile belongs to the status chip. */
+  .scb .scb-it { width: 54px; height: 52px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 3px;
     box-sizing: border-box; }
   /* EVERY day wears the tile (Figma), not just the held one — the held day
@@ -468,7 +471,7 @@
     /* the tile centres on the NUMBER row, not the whole stack: the stack is
        month + tile + day + status, so the tile sits above centre by half the
        day/status rows */
-    margin-top: -25px; border-radius: 10px; box-sizing: border-box;
+    margin-top: -18px; border-radius: 10px; box-sizing: border-box;
     background: var(--sc-sel-bg); border: 1px solid var(--sc-sel-bd);
     box-shadow: var(--sc-sel-glow);
     /* z 0: ABOVE the glass, BELOW the strip — the numbers must read on top
@@ -501,7 +504,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 98px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub.portal { height: 80px; padding-top: 18px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -514,7 +517,7 @@
   .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
     -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 68px; }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 52px; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -2218,7 +2221,6 @@ confirmBtn.onclick = () => {
        non-center slots keeps every stack on the same baseline. */
     return '<div class="scb-it' + (st ? ' st-' + st : '') + '">' +
       '<span class="n">' + d.getDate() + '</span>' +
-      '<span class="d">' + d.toLocaleDateString('en', { weekday: 'short' }) + '</span>' +
       '<span class="s">' + (SCRUB_CHIP[st] || '') + '</span>' +
       '</div>';
   }
@@ -2820,7 +2822,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 146 (scrub: headline gets its own row)';
+const BUILD = 'build 2026-09-11 · 147 (scrub: two rows, status under the tile)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
