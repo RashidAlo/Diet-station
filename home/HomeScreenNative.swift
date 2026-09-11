@@ -301,6 +301,10 @@ struct HomeScreenNative: View {
         if sheetFrame.minY > barFrame.midY { return true }   // white sheet not here yet: red page
         return barFrame.intersection(stripFrame).height > barFrame.height * 0.5
     }
+    /// Reduce Motion is a requirement, not a preference (system/motion.html
+    /// HIG section): counters land instantly and the strip's day switch
+    /// stops animating for those users
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var arrived = false
     @State private var contentIn = true   // re-toggled for return intros;
                                           // the persistent bar never blinks
@@ -669,6 +673,7 @@ struct HomeScreenNative: View {
         return HStack(spacing: 0) {
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(verbatim: "\(d.kcal)").font(DS.urbane(17, .semibold))
+                    .monospacedDigit()   // rolling digits never nudge layout
                     .contentTransition(.numericText(value: Double(d.kcal)))
                 Text("kcal").font(DS.urbane(10, .medium)).opacity(0.55)
             }
@@ -693,7 +698,7 @@ struct HomeScreenNative: View {
         .matchedGeometryEffect(id: "kcalmod", in: modNS)
         // the strip's day switch rolls the digits (Rashid: counting, not
         // snapping, as the meals scroll between days)
-        .animation(.spring(duration: 0.55), value: state.stripDay)
+        .animation(reduceMotion ? nil : .spring(duration: 0.55), value: state.stripDay)
     }
 
     private func thinPair(_ v: Int, _ label: String) -> some View {
@@ -701,6 +706,7 @@ struct HomeScreenNative: View {
         return HStack(alignment: .lastTextBaseline, spacing: 3) {
             Text(label).font(DS.urbane(10, .medium)).foregroundStyle(ink.opacity(0.5))
             Text(verbatim: "\(v)").font(DS.urbane(15, .semibold)).foregroundStyle(ink)
+                .monospacedDigit()
                 .contentTransition(.numericText(value: Double(v)))
             Text("g").font(DS.proxima(9)).foregroundStyle(ink.opacity(0.5))
         }
@@ -1450,7 +1456,8 @@ struct HomeScreenNative: View {
                leave a dead zone across each divider gap = hysteresis */
             let ax = UIScreen.main.bounds.width * 0.45
             if r.minX - 15 <= ax, ax < r.maxX + 15, state.stripDay != i {
-                withAnimation(.spring(duration: 0.35)) { state.stripDay = i }
+                if reduceMotion { state.stripDay = i }
+                else { withAnimation(.spring(duration: 0.35)) { state.stripDay = i } }
             }
         }
     }
@@ -1480,6 +1487,7 @@ struct HomeScreenNative: View {
                 HStack(spacing: 3) {
                     // verbatim: interpolated Ints localize ("1,200") — web shows "1200"
                     Text(verbatim: "\(info.kcal)").font(DS.urbane(15, .semibold)).foregroundStyle(DS.ink)
+                        .monospacedDigit()
                         .contentTransition(.numericText())
                     Text("Kcal").font(DS.urbane(9, .light)).foregroundStyle(Color(white: 0.6))
                     if state.macrosOpen {
@@ -1506,6 +1514,7 @@ struct HomeScreenNative: View {
     private func macro(_ v: Int, _ u: String) -> some View {
         HStack(spacing: 2) {
             Text(verbatim: "\(v)").font(DS.urbane(12)).foregroundStyle(DS.ink)
+                .monospacedDigit()
                 .contentTransition(.numericText())
             Text(u).font(DS.proxima(8)).foregroundStyle(DS.ink)
         }

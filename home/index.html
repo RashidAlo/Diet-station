@@ -318,7 +318,8 @@
     border: none; cursor: pointer;
     display: flex; gap: 3px; padding: 0 12px; align-items: center;
     filter: drop-shadow(0 0 6.65px rgba(56,64,74,.08)); }
-  .sh-kcal b { font: 600 15px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .sh-kcal b { font: 600 15px/22px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    font-variant-numeric: tabular-nums; }   /* digits never reflow mid-count */
   .sh-kcal i { font: 300 9px/14px 'Urbane Rounded', sans-serif; color: #999;
     font-style: normal; }
   /* the macro calculator hides folded inside the pill; tapping expands it
@@ -329,7 +330,8 @@
       margin-left .45s cubic-bezier(.3,1.15,.35,1); }
   .sh-kcal.open .mac { width: 84px; opacity: 1; margin-left: 10px; }
   .sh-kcal .mp { display: flex; align-items: center; gap: 2px;
-    font: 500 13px/18px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+    font: 500 13px/18px 'Urbane Rounded', sans-serif; color: #0b0e12;
+    font-variant-numeric: tabular-nums; }
   .sh-kcal .mp i { font: 400 9px/14px 'Proxima Nova', sans-serif; color: #0d0d0d; }
   .mealstrip { display: flex; align-items: flex-start; gap: 29px; padding: 4px 24px 8px;
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
@@ -1035,7 +1037,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-11 · 20';
+const BUILD = 'home 2026-09-11 · 21';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1496,8 +1498,14 @@ function switchStripDay(ix) {
   countTo(document.getElementById('macF'), info.f);
 }
 function countTo(el, to) {
-  const from = +el.textContent || 0, t0 = Date.now();
   clearInterval(el._cnt);
+  /* Reduce Motion is a requirement, not a preference (system/motion.html
+     HIG section): the value lands instantly for those users */
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = to;
+    return;
+  }
+  const from = +el.textContent || 0, t0 = Date.now();
   el._cnt = setInterval(() => {
     const p = Math.min(1, (Date.now() - t0) / 420);
     el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
