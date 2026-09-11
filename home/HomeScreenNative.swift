@@ -194,8 +194,24 @@ private enum DS {
     /// Figma 16360-78205 "Not logged in": Sign-in greeting, Book/Guide
     /// widgets, and the plans list on the sheet (lab Account toggle)
     var loggedOut = false
-    var guideOpen = false           // Guide me -> the plan-quiz web flow
-    var authOpen = false            // Sign in -> the auth lane's web flow
+    /// ONE presentation slot for every summoned flow. FOUR stacked
+    /// .fullScreenCover modifiers on one view silently break all but the
+    /// last-attached (the phantom-close hunt's actual culprit: the coupons
+    /// cover presented its scrim and was dismissed by SwiftUI within ~0.5s,
+    /// no page code ever ran — while auth, last in the chain, worked).
+    enum Summon: Identifiable, Equatable {
+        case coupons, guide, auth
+        case meal(DSStripMeal)
+        var id: String {
+            switch self {
+            case .coupons: return "coupons"
+            case .guide: return "guide"
+            case .auth: return "auth"
+            case .meal(let m): return "meal-\(m.id)"
+            }
+        }
+    }
+    var summon: Summon?
     var daysLeft: Int = 19          // 19 / 5 / 0 (expired)
     var showPromo = true
     var showDiscounts = true
@@ -218,9 +234,7 @@ private enum DS {
     /// three-tab bar stays as the lab's secondary option.
     var tabBarDynamic = true
     var labOpen = false
-    var couponsOpen = false         // rewards web flow over this screen
     var calendarOpen = false        // meal-select web flow over this screen
-    var mealOpen: DSStripMeal?      // a strip meal's native details sheet
 
     /* the carousel spans Yesterday .. Today+4; past Tomorrow the word slot
        carries the weekday name and the date line carries the date */
@@ -418,48 +432,53 @@ struct HomeScreenNative: View {
         // summoned solo (Rashid: same design, no recreated screens). THE
         // RULE: within 72 hours the meal is already in prep — ingredient
         // switches DISABLE; far days stay editable.
-        .fullScreenCover(item: $state.mealOpen) { meal in
-            FlowOverlay(path: DS.soloDetails) { instant { state.mealOpen = nil } }
-                .presentationBackground(Color.black.opacity(0.42))
-                .onAppear {
-                    let locked = state.days[state.stripDay].off < 3
-                    let ing = meal.ing.map { "'\($0)'" }.joined(separator: ",")
-                    let js = """
-                    window.DSSoloOpen && DSSoloOpen({ cat: '\(state.dayWord(state.stripDay))', \
-                    n: '\(meal.name)', img: '\(DS.assets + meal.img)', \
-                    kcal: \(meal.kcal), p: \(meal.p), c: \(meal.c), f: \(meal.f), \
-                    r: '\(meal.rating)', hot: \(meal.hot), ing: [\(ing)] }, \(locked))
-                    """
-                    FlowPreloader.shared.entry(DS.soloDetails).web
-                        .evaluateJavaScript(js, completionHandler: nil)
-                }
-        }
-        /* web flows summoned over the native screen, transparent — they run
-           their own sheet choreography and post ds-close when done */
+        /* web flows summoned over the native screen — ONE item-driven cover
+           for all of them (stacked cover modifiers on one view silently
+           break all but the last). Each flow runs its own sheet
+           choreography and posts ds-close when done. */
         /* NOTE: no .ignoresSafeArea() on the cover content — FlowOverlay's
            webview/glass layers ignore it internally, but its DS bar must get
-           safe-area placement (bottom = inset + 12, the Rashid-endorsed rule
-           every DS bar shares; a whole-cover ignore pushed the bar to the
-           raw screen edge). */
-        .fullScreenCover(isPresented: $state.couponsOpen) {
-            // REVERTED (Rashid): the web coupon experience is the design —
-            // rip physics, levels, sounds. Native's job here is ONLY the
-            // glasschrome X twin the overlay already renders.
-            FlowOverlay(path: "rewards") { instant { state.couponsOpen = false } }
-                .presentationBackground(Color.black.opacity(0.42))
-        }
-        // signed-out Guide me = the Guide Me experience (plan-quiz web flow)
-        .fullScreenCover(isPresented: $state.guideOpen) {
-            FlowOverlay(path: "plan-quiz") { instant { state.guideOpen = false } }
-                .presentationBackground(Color.black.opacity(0.42))
-        }
-        // Sign in = the auth lane's flow. THE OVERLAY RULE (Rashid): scrims
-        // never travel — the cover is TRANSPARENT with the system slide
-        // suppressed, and auth's ?solo=1 page dissolves its own scrim in
-        // place while only its sheet rides the house spring
-        .fullScreenCover(isPresented: $state.authOpen) {
-            FlowOverlay(path: DS.authSolo) { instant { state.authOpen = false } }
-                .presentationBackground(.clear)
+           safe-area placement (the Rashid-endorsed rule every DS bar
+           shares; a whole-cover ignore pushed the bar to the raw edge). */
+        .fullScreenCover(item: $state.summon) { summon in
+            switch summon {
+            case .meal(let meal):
+                // strip meal tap → THE meal-details page from the selection
+                // flow, summoned solo (Rashid: same design, no recreated
+                // screens). THE RULE: within 72 hours the meal is in prep —
+                // ingredient switches DISABLE; far days stay editable.
+                FlowOverlay(path: DS.soloDetails) { instant { state.summon = nil } }
+                    .presentationBackground(Color.black.opacity(0.42))
+                    .onAppear {
+                        let locked = state.days[state.stripDay].off < 3
+                        let ing = meal.ing.map { "'\($0)'" }.joined(separator: ",")
+                        let js = """
+                        window.DSSoloOpen && DSSoloOpen({ cat: '\(state.dayWord(state.stripDay))', \
+                        n: '\(meal.name)', img: '\(DS.assets + meal.img)', \
+                        kcal: \(meal.kcal), p: \(meal.p), c: \(meal.c), f: \(meal.f), \
+                        r: '\(meal.rating)', hot: \(meal.hot), ing: [\(ing)] }, \(locked))
+                        """
+                        FlowPreloader.shared.entry(DS.soloDetails).web
+                            .evaluateJavaScript(js, completionHandler: nil)
+                    }
+            case .coupons:
+                // REVERTED (Rashid): the web coupon experience is the design —
+                // rip physics, levels, sounds. Native's job here is ONLY the
+                // glasschrome X twin the overlay already renders.
+                FlowOverlay(path: "rewards") { instant { state.summon = nil } }
+                    .presentationBackground(Color.black.opacity(0.42))
+            case .guide:
+                // signed-out Guide me = the Guide Me experience (plan-quiz)
+                FlowOverlay(path: "plan-quiz") { instant { state.summon = nil } }
+                    .presentationBackground(Color.black.opacity(0.42))
+            case .auth:
+                // Sign in = the auth lane's flow. THE OVERLAY RULE (Rashid):
+                // scrims never travel — the cover is TRANSPARENT with the
+                // system slide suppressed; auth's ?solo=1 page dissolves its
+                // own scrim in place, only its sheet rides the house spring
+                FlowOverlay(path: DS.authSolo) { instant { state.summon = nil } }
+                    .presentationBackground(.clear)
+            }
         }
         // warm the auth webview whenever the signed-out state arrives, so
         // the Sign in tap presents instantly like every other summon
@@ -496,7 +515,7 @@ struct HomeScreenNative: View {
                 try? await Task.sleep(for: .seconds(2))
                 instant {
                     if p == "meal-select" { state.calendarOpen = true }
-                    if p == "rewards" { state.couponsOpen = true }
+                    if p == "rewards" { state.summon = .coupons }
                 }
             }
             #if DEBUG
@@ -858,7 +877,7 @@ struct HomeScreenNative: View {
                      in: .rect(cornerRadius: Self.expandedCouponsRadius))
         .glassEffectID("disc", in: glassNS)
         .contentShape(RoundedRectangle(cornerRadius: Self.expandedCouponsRadius))
-        .onTapGesture { instant { state.couponsOpen = true } }
+        .onTapGesture { instant { state.summon = .coupons } }
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
@@ -989,7 +1008,7 @@ struct HomeScreenNative: View {
                      in: .rect(cornerRadius: DS.tile(60)))
         .glassEffectID("disc", in: glassNS)
         .contentShape(RoundedRectangle(cornerRadius: DS.tile(60)))
-        .onTapGesture { instant { state.couponsOpen = true } }   // summon the coupons flow
+        .onTapGesture { instant { state.summon = .coupons } }   // summon the coupons flow
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
@@ -1059,7 +1078,7 @@ struct HomeScreenNative: View {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 // no system slide — auth's solo page runs the presentation
-                instant { state.authOpen = true }
+                instant { state.summon = .auth }
             } label: {
                 HStack(spacing: 10) {
                     ZStack {
@@ -1111,7 +1130,7 @@ struct HomeScreenNative: View {
                          in: .rect(cornerRadius: DS.tile(64)))
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                state.guideOpen = true
+                state.summon = .guide
             } label: {
                 (Text("Guide ").font(DS.urbane(16, .light))
                  + Text("me").font(DS.urbane(16, .semibold)))
@@ -1544,7 +1563,7 @@ struct HomeScreenNative: View {
         .clipShape(RoundedRectangle(cornerRadius: 25.2))
         .onTapGesture {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            state.mealOpen = m
+            state.summon = .meal(m)
         }
     }
 
