@@ -352,7 +352,7 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 86px; padding-top: 16px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 69px; padding: 24px 0 10px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -419,23 +419,25 @@
      the top label from month to day, keep the lower label clear, have the
      status take that place"). The weekday now lives ONCE, as the stationary
      headline; the row beneath each tile belongs to the status chip. */
-  .scb .scb-it { width: 54px; height: 52px; flex: none; display: flex;
-    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  .scb .scb-it { width: 54px; height: 35px; flex: none; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     box-sizing: border-box; }
-  /* EVERY day wears the tile (Figma), not just the held one — the held day
-     is distinguished by scheme, not by being the only one with a container */
-  .scb .scb-it .n { width: 34px; height: 34px; flex: none;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; box-sizing: border-box;
-    background: var(--sc-tile-bg); border: 1px solid var(--sc-tile-bd);
+  /* NO SQUARE PER DATE (Rashid: "reduce the container height by 20%... which
+     means reducing the date's container — maybe remove the square container
+     for the date, so we have more room for each date"). The 34x34 tile was
+     the tallest thing in the stack and the reason the capsule needed 86pt.
+     The number now sits bare, hugged only by the held indicator, which
+     frees both the height and the horizontal room around each date. */
+  .scb .scb-it .n { flex: none; display: flex; align-items: center;
+    justify-content: center; box-sizing: border-box; height: 20px;
     color: var(--sc-num);
-    font: 600 16px/28px 'Urbane Rounded', sans-serif; }
+    font: 600 16px/20px 'Urbane Rounded', sans-serif; }
   /* THE HEADLINE IS THE DAY (Rashid). The weekday of the held day stands
      stationary above the ladder; the month has left the tiles entirely,
      which is the space this buys back. */
   .scb-day, .scb-mon { display: none; }
   .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
-    display: block; position: absolute; left: 50%; top: 5px; z-index: 2;
+    display: block; position: absolute; left: 50%; top: 10px; z-index: 2;
     white-space: nowrap; pointer-events: none;
     font: 600 10.5px/13px 'Urbane Rounded', sans-serif; }
   .nav .ttl.scrub .scb-day { color: var(--sc-day);
@@ -454,7 +456,7 @@
     color: var(--sc-day); max-width: 52px; overflow: hidden; white-space: nowrap; }
   /* Figma keeps a status row under the day name — same chips the calendar
      grid uses, so the two surfaces never disagree about a day */
-  .scb .scb-it .s { height: 15px; display: flex; align-items: center;
+  .scb .scb-it .s { height: 13px; display: flex; align-items: center;
     justify-content: center; }
   .scb .scb-it .s img { display: block; }
   /* an OFF day is struck through and recedes, per the Figma Off variant */
@@ -467,11 +469,12 @@
      holding the centre, which is the opposite of the Safari grammar. */
   .scb-sel { display: none; }
   .nav .ttl.scrub .scb-sel { display: block; position: absolute;
-    left: 50%; top: 50%; width: 34px; height: 34px; margin-left: -17px;
-    /* the tile centres on the NUMBER row, not the whole stack: the stack is
-       month + tile + day + status, so the tile sits above centre by half the
-       day/status rows */
-    margin-top: -18px; border-radius: 10px; box-sizing: border-box;
+    left: 50%; top: 50%; width: 40px; height: 24px; margin-left: -20px;
+    /* HUGS THE NUMBER now that the per-date square is gone: 40x24 instead of
+       34x34, so the held day still reads as held without the indicator being
+       the tallest thing in the capsule. Centred on the NUMBER row, which
+       sits above the stack's own centre by half the status row. */
+    margin-top: -12px; border-radius: 8px; box-sizing: border-box;
     background: var(--sc-sel-bg); border: 1px solid var(--sc-sel-bd);
     box-shadow: var(--sc-sel-glow);
     /* z 0: ABOVE the glass, BELOW the strip — the numbers must read on top
@@ -504,7 +507,7 @@
      (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
      the SIDE bands refract the red and the dates as they slide under.
      Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 86px; padding-top: 16px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub.portal { height: 69px; padding: 24px 0 10px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
        the rim instead of a bright convex highlight, no outer glow, just
@@ -517,7 +520,7 @@
   .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
     -webkit-backdrop-filter: none; backdrop-filter: none; }
   .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 52px; }
+  .nav .ttl.scrub.portal .scb .scb-it { height: 35px; }
   /* red swallows faint white — the fade ladder runs brighter in the portal */
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
   .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
@@ -2829,7 +2832,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 152 (scrub: motion gated on renderer)';
+const BUILD = 'build 2026-09-11 · 153 (scrub: shorter capsule, no date square)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
