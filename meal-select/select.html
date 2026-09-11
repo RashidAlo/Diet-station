@@ -2850,7 +2850,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 159 (dock: glass dims, it does not lighten)';
+const BUILD = 'build 2026-09-11 · 161 (chrome: the reported radius is in points)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3285,7 +3285,7 @@ if (QS.get('solo') === '1') {
     var r = closeRect || el.getBoundingClientRect();
     if (!r.width || !r.height) return null;
     var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-      r: parseFloat(getComputedStyle(el).borderRadius) || r.height / 2,
+      r: radiusOf(el, r),
       mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
     if (window.DSScrubState) {
       var st = DSScrubState();
@@ -3305,6 +3305,23 @@ if (QS.get('solo') === '1') {
     }
     return e;
   }
+  /* THE REPORTED RADIUS IS IN POINTS, ALWAYS (Shell, 2026-09-11: the twin
+     builds its glass as .rect(cornerRadius: el.r) from whatever the page
+     sends, and a wrong radius is invisible until a press lights the shape up
+     — which is the square fill behind the X).
+     getComputedStyle keeps border-radius as a PERCENTAGE when it was authored
+     as one, so `parseFloat('50%')` was handing over the number 50 as if it
+     were points. On a 44pt circle that happened to survive, because 50 is
+     past fully-round and clamps; on anything wider than 100pt it would have
+     been drawn as a rounded square. Resolve the percentage against the box
+     instead of smuggling it across the bridge. */
+  function radiusOf(el, r) {
+    var br = (getComputedStyle(el).borderRadius || '').trim();
+    var v = parseFloat(br);
+    var round = Math.min(r.width, r.height) / 2;
+    if (!v) return round;
+    return br.indexOf('%') >= 0 ? Math.min(round, Math.min(r.width, r.height) * v / 100) : v;
+  }
   /* a ladder re-window mid-scrub posts fresh dates/center to the twin */
   window.DSScrubRepost = function () { if (!layerUp) report(); };
   function report(instant) {
@@ -3321,7 +3338,7 @@ if (QS.get('solo') === '1') {
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) return;
       var entry = { id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 };
+        r: radiusOf(el, r) };
       /* stateful glyphs: the twin must mirror the web state exactly —
          the dual's check is gray until the day completes, then red-trims */
       if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
