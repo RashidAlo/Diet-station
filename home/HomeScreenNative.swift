@@ -1948,6 +1948,18 @@ final class FlowPreloader {
             guard message.name == "ds",
                   let body = message.body as? [String: Any],
                   let t = body["t"] as? String else { return }
+            #if DEBUG
+            // Pages post {t:'dsdebug'} to put their own instrumentation into
+            // the same log stream as ours, so one `log stream` run shows both
+            // sides of a handshake in order instead of two clocks to reconcile.
+            if t == "dsdebug" {
+                NSLog("DSDEBUG tag=%@ trusted=%@ ts=%@",
+                      body["tag"] as? String ?? "?",
+                      String(describing: body["trusted"] ?? "?"),
+                      String(describing: body["ts"] ?? "?"))
+                return
+            }
+            #endif
             if t == "glasschrome" {
                 // same parse + reply as the main webview's Coordinator —
                 // empty els + no bar means clear everything for this overlay
