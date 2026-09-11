@@ -595,7 +595,7 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
   </section>
 
   <section class="card" id="controlmap" style="scroll-margin-top:80px">
-    <h2>Semantic control map — required in every handoff</h2>
+    <h2>Semantic control map — required in every new handoff</h2>
     <p class="desc">A flow is only <b>regression-drivable</b> if a script can find its controls
       without reading its labels. Ours can&rsquo;t be read: the house button splits its label
       across weight spans, so the text a human sees is not the text in the DOM. Verified in the
@@ -697,12 +697,18 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       markup finds 18 of the 21 acts and silently misses three, one of which is
       &ldquo;Pay Now&rdquo;.<br>
       <b style="color:var(--ink)">6 · Cross-flow acts state the intent they emit.</b> A
-      regression run asserts the <code>ds-nav</code> message, not the screen that appears — the
-      target flow may be unbuilt, and dead ends are legal.</p>
+      regression run asserts the <code>ds-nav</code> message, not the screen that appears.
+      Canonical case, hit for real by the Hub&rsquo;s run: checkout&rsquo;s <code>guide</code>
+      dead-ends on the branded later-sprint card, because plan-quiz is hidden — that <i>is</i>
+      the correct behaviour, and a screen assertion fails a flow that is working exactly as
+      designed. Asserting the intent also takes a target&rsquo;s hidden/live state out of the
+      run altogether, which matters while flows sit waiting on Rashid&rsquo;s Live flips.</p>
 
     <h3>flows.json content model</h3>
     <div class="codewrap">
-      <pre id="ctrlmap">// per-flow handoff — REQUIRED section, renders as "Semantic control map"
+      <pre id="ctrlmap">// per-flow handoff — renders as "Semantic control map".
+// REQUIRED for a new flow; optional backport for an existing one.
+// A partial map is legal: 3 rows render exactly like 21.
 "controls": [
   { "act": "pickPlan", "payload": "data-plan",
     "does": "Selects a plan, clears duration, advances" },
@@ -744,9 +750,27 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       for it. Worth knowing before a lane prices its backport: if you only screenshot states,
       the map can wait; if you assert behaviour, it can&rsquo;t.</p>
 
+    <h3>Adoption policy</h3>
+    <div class="slab" style="margin-top:12px">
+      <div class="sl">Ruling — Coordinator, 2026-09-11</div>
+      <div class="sq" style="font-size:15px">Standard for new flows, optional backport for
+        existing ones.</div>
+      <div class="sb">Each lane at its own pace, heaviest-first, and behind anything Rashid
+        asks for. The reasoning on record: it costs a greenfield lane nothing at authoring time
+        — checkout proved that — and the Arabic-mode argument makes it load-bearing rather than
+        nice-to-have; but retrofitting 117 id lookups in meal-select is real work with no
+        user-visible payoff. Written down here so it isn&rsquo;t re-litigated lane by lane.</div>
+    </div>
+    <p class="desc" style="font-size:13.5px"><b style="color:var(--ink)">A partial map is legal
+      and useful.</b> Both renderers treat <code>controls[]</code> as optional and render the
+      same table whether it holds 3 rows or 21, so a lane that documents only its cross-flow
+      acts and its riskiest controls gets most of the value on the first pass. Backporting is
+      not all-or-nothing, and a map that covers the controls a run actually needs beats a
+      complete one that never gets written.</p>
+
     <h3>Adoption</h3>
     <div class="adopt">
-      <span class="on">checkout — 21 acts, controls[] authored</span>
+      <span class="on">checkout — 21 acts, controls[] live</span>
       <span>home — 73 id lookups</span>
       <span>meal-select — 117</span>
       <span>auth — 35</span>
