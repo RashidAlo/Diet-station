@@ -437,7 +437,7 @@
   .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
     display: block; position: absolute; left: 50%; top: 5px; z-index: 2;
     white-space: nowrap; pointer-events: none;
-    font: 600 12.5px/15px 'Urbane Rounded', sans-serif; }
+    font: 600 10.5px/13px 'Urbane Rounded', sans-serif; }
   .nav .ttl.scrub .scb-day { color: var(--sc-day);
     transform: translateX(-50%);
     transition: opacity .16s ease, transform .24s cubic-bezier(.3,1.1,.4,1); }
@@ -2183,7 +2183,9 @@ confirmBtn.onclick = () => {
   let monT = null, lastMon = -1;
   function setHead(idx, announce) {
     const d = dateFor(idx);
-    dayHead.textContent = d.toLocaleDateString('en', { weekday: 'long' });
+    /* abbreviated and quieter (Rashid: "I want the day abbreviated, not the
+       full day, and a tad bit smaller — it doesn't need all the attention") */
+    dayHead.textContent = d.toLocaleDateString('en', { weekday: 'short' });
     if (d.getMonth() === lastMon) return;
     const first = lastMon < 0;
     lastMon = d.getMonth();
@@ -2269,7 +2271,7 @@ confirmBtn.onclick = () => {
     return { dates: out, dayNames: days, statuses: stats,
       center: winC, disp: disp,
       monthLabel: MONS[d.getMonth()],
-      dayName: d.toLocaleDateString('en', { weekday: 'long' }) };
+      dayName: d.toLocaleDateString('en', { weekday: 'short' }) };   /* abbreviated: the headline is quiet, not the hero */
   };
   function glide() {
     raf = scrubbing ? requestAnimationFrame(glide) : null;
@@ -2822,7 +2824,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 148 (scrub: two rows + chip clearance)';
+const BUILD = 'build 2026-09-11 · 149 (scrub: total yield, abbreviated headline)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3137,27 +3139,24 @@ if (QS.get('solo') === '1') {
     'html.ds-gauge #navigator .dock { opacity: 0 !important; pointer-events: none !important; transition: none !important; } ' +
     '#closeBtn { transition: opacity .18s ease, transform .18s cubic-bezier(.3,.8,.3,1), background .35s ease, color .35s ease; } ' +
     '.dual { transition: opacity .18s ease, background .35s ease, color .35s ease; } ' +
-    /* scrub twin confirm: the NATIVE capsule is container-only — the web
-       pill drops its own glass (.glassbg) but keeps drawing the dates,
-       and hit-testing stays web */
-    '.nav .ttl.scrub.ds-native-hidden { opacity: 1 !important; pointer-events: auto !important; ' +
-    '  box-shadow: none !important; } ' +
-    '.nav .ttl.scrub.ds-native-hidden .glassbg { display: none !important; } ' +
-    '.nav .ttl.scrub.ds-native-hidden::before, .nav .ttl.scrub.ds-native-hidden::after { display: none !important; } ' +
-    /* PORTAL under the native twin: the web keeps the RED and the vignette
-       (the native capsule supplies neither) but must not also be GLASS —
-       a backdrop-filtered web layer under a Liquid Glass twin is two
-       lenses stacked on the same rect, which is Rashid's "double liquid
-       glass". Exactly one layer blurs, and it is the native one. */
-    '.nav .ttl.scrub.portal.ds-native-hidden { ' +
-    '  box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24) !important; } ' +
-    '.nav .ttl.scrub.portal.ds-native-hidden .glassbg { display: block !important; ' +
-    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
-    '.nav .ttl.scrub.portal.ds-native-hidden::after { display: block !important; } ' +
-    /* phase 3 yield: the twin draws the ENTIRE ladder natively — the
-       whole web strip retires under a confirm (web ghosts echoed under
-       the material otherwise); red layer/vignette stay per mode. */
-    '.nav .ttl.scrub.ds-native-hidden .scb { visibility: hidden !important; } ' +
+    /* TOTAL YIELD (Rashid, on a TestFlight shot showing a white capsule
+       wrapped around a red one): "the container seems to be a double
+       container — there's two glass effects... I don't mind it being an
+       iOS-only feature if that means the experience is seamless. I don't
+       want any web workarounds to ruin this."
+       Every previous split left the web drawing SOMETHING under the native
+       capsule — first its own glass, then the portal red and vignette,
+       then just a hairline. Each of those is a second container, because a
+       container is a container whether or not it blurs. So in-shell the
+       web scrub pill now renders NOTHING AT ALL: no capsule, no glass, no
+       red, no vignette, no ladder, no headline. The native twin owns the
+       entire control, and there is exactly one of everything by
+       construction rather than by careful subtraction.
+       pointer-events stays AUTO and is the one exception: the gesture is
+       still tracked here and is what drives the twin's state. Invisible,
+       not absent. */
+    '.nav .ttl.scrub.ds-native-hidden { opacity: 0 !important; ' +
+    '  pointer-events: auto !important; box-shadow: none !important; } ' +
     '';
   document.head.appendChild(st);
   /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
