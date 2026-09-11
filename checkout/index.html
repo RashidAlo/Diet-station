@@ -209,17 +209,16 @@
     justify-content: space-between; padding: 8px 0 12px; }
   .pb-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
   .pb-line { display: flex; height: 22px; align-items: flex-start; }
-  .pb-was { display: flex; align-items: flex-end; padding-right: 4px;
+  .pb-was { position: relative; display: flex; align-items: flex-end; padding-right: 4px;
     font: 600 20px/16px 'Proxima Nova', sans-serif; color: var(--red); }
+  /* the crossing rule rides the number itself, so it tracks any price width */
+  .pb-was .sl { position: absolute; left: -2px; right: 2px; top: 50%; height: 11px;
+    margin-top: -5px; display: flex; align-items: center; pointer-events: none; }
+  .pb-was .sl img { width: 100%; height: 1px; display: block; transform: rotate(-9.5deg); }
   .pb-kd { font: 700 20px/22px 'Proxima Nova', sans-serif; color: var(--ink); align-self: center; }
   .pb-now { font: 600 30px/19px 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .pb-before { position: absolute; left: 0; top: -11px; width: 74px; height: 33px;
-    display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
-  .pb-before i { font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
-  /* Figma: a 61px rule rotated 169.61deg over the crossed "Before" price */
-  .pb-before .strike { position: relative; width: 100%; height: 15px; }
-  .pb-before .strike img { position: absolute; left: -1px; top: 9px; width: 61px; height: 1px;
-    display: block; transform: rotate(169.61deg); transform-origin: left center; }
+  .pb-before { position: absolute; left: 0; top: -13px; pointer-events: none;
+    font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
   .cta { flex: 1; min-width: 0; height: 54px; border: none; cursor: pointer;
     border-radius: var(--r-round); background: var(--red); color: #fff;
     display: flex; gap: 6px; align-items: center; justify-content: center; padding: 14px 20px;
@@ -659,7 +658,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·2</div>
+  <div class="s-foot" id="buildInfo">checkout ·3</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -679,7 +678,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·2';
+const BUILD = 'checkout ·3';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -915,16 +914,16 @@ function payDock(label, action, opts) {
     </div>` : ''}
     ${opts.savings ? `<div class="total-row"><span class="total-lbl">Total</span>
       <div class="pb-stack">
-        <div class="pb-line"><span class="pb-was">KD${q.list}</span>
+        <div class="pb-line"><span class="pb-was">KD${q.list}<span class="sl"><img src="${A}strike-line.svg" alt=""></span></span>
           <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
-        <div class="pb-before"><i>Before</i><div class="strike"><img src="${A}strike-line.svg" alt=""></div></div>
+        <div class="pb-before">Before</div>
       </div></div>
       <button class="cta grad" data-act="${action}">${label}</button>`
     : `<div class="paybar-row">
         <div class="pb-price"><div class="pb-stack">
-          <div class="pb-line"><span class="pb-was">KD${q.list}</span>
+          <div class="pb-line"><span class="pb-was">KD${q.list}<span class="sl"><img src="${A}strike-line.svg" alt=""></span></span>
             <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
-          <div class="pb-before"><i>Before</i><div class="strike"><img src="${A}strike-line.svg" alt=""></div></div>
+          <div class="pb-before">Before</div>
         </div></div>
         <button class="cta" data-act="${action}">${label}
           <img src="${A}arrow-forward.svg" alt=""></button>
