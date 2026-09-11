@@ -348,7 +348,7 @@
   .nav .ttl.scrub.closing #dayLabel { display: inline-block !important;
     position: absolute; left: 50%; top: 50%; z-index: 2; white-space: nowrap;
     opacity: 0; transform: translate(-50%, -50%);
-    animation: lblback .22s ease .18s forwards; }
+    animation: lblback .2s ease .04s forwards; }
   @keyframes lblback {
     from { opacity: 0; }
     to   { opacity: 1; } }
@@ -2320,21 +2320,24 @@ confirmBtn.onclick = () => {
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
-      /* Hand the capsule to the WEB before the collapse starts, not after
-         it ends. The shell's release is not instantaneous — it animates
-         the twin away — so releasing at the end left it fading on top of
-         the returned label. Released here, that fade happens while the web
-         is drawing the same capsule at the same rect, and the last third
-         of the gesture is web-only and fully deterministic. */
-      window.DSScrubRelease && DSScrubRelease();
-      ttl.classList.remove('ds-native-hidden');
       ttl.style.setProperty('--close-w', (formW0 || 96) + 'px');
       ttl.style.setProperty('--close-h', (formH0 || 28) + 'px');
       ttl.classList.add('closing');
-      /* long enough for the date's entrance (.33s delay + .3s) to finish —
-         deflate drops .closing, so ending early would snap the label out
-         of its animated state mid-rise */
-      closeT = setTimeout(deflate, 680);
+      /* THE CAPSULE IS NEVER RELEASED UNTIL IT HAS ALREADY CLOSED. The
+         reported rect is interpolated down onto the date label and only
+         then is the el omitted, so nothing has to be kept alive to animate
+         a departure — which is the "glass blob that forms down, gets stuck,
+         then disappears". The web label is held back until that lands, so
+         the two never coexist. */
+      var CLOSE_MS = 300;
+      if (window.DSScrubClose && formRect) {
+        DSScrubClose(formRect, CLOSE_MS, function () {
+          ttl.classList.remove('ds-native-hidden');
+        });
+      } else {
+        ttl.classList.remove('ds-native-hidden');   /* no twin: web owns it */
+      }
+      closeT = setTimeout(deflate, CLOSE_MS + 120);
     } else {
       deflate();                        /* never armed: nothing to collapse */
     }
@@ -2831,7 +2834,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 154 (scrub: no date container at all)';
+const BUILD = 'build 2026-09-11 · 155 (scrub: close without a ghost)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3259,7 +3262,11 @@ if (QS.get('solo') === '1') {
     if (!SCRUB_TWIN || scrubHold) return null;
     var el = document.querySelector('.nav .ttl.scrub');
     if (!el) return null;
-    var r = el.getBoundingClientRect();
+    /* during the close the reported rect comes from the interpolator, not
+       the element — see DSScrubClose. The renderer keeps following rects it
+       already follows, so the capsule shuts WITHOUT any second layer being
+       created to shut on its behalf. */
+    var r = closeRect || el.getBoundingClientRect();
     if (!r.width || !r.height) return null;
     var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
       r: parseFloat(getComputedStyle(el).borderRadius) || r.height / 2,
@@ -3388,14 +3395,45 @@ if (QS.get('solo') === '1') {
   window.DSScrubRelease = function () {
     scrubHold = true;
     clearTimeout(scrubFbT);
-    /* NOT instant any more (Shell): that flag applies the post with
-       animations disabled, which was right when the WEB owned the exit and
-       the capsule had to vanish on a frame so my CSS could carry the
-       collapse. After ·149 the web draws nothing, so the only exit left is
-       the native one — and disabling animation would make the capsule
-       blink out instead of collapsing. The primitive stays useful
-       elsewhere; it is simply the wrong tool for this call now. */
+    closeRect = null;
+    cancelAnimationFrame(closeRaf);
     report();
+  };
+  /* THE CLOSE, WITH NO GHOST (Rashid: "there's a glass blob that forms down
+     and then gets stuck and then disappears. This whole thing needs to be
+     gone. Smoothen the implementation itself to not include that specific
+     state.").
+     The blob was a SECOND LAYER kept alive so the capsule could animate
+     shut, because a released twin would otherwise vanish on a frame. The
+     answer is not to fix that layer — it is to never need it. The twin is
+     never released until it has ALREADY closed: this interpolates the
+     reported rect from the armed capsule down onto the date label, at
+     ~60fps through the track burst that is already running, and only then
+     omits the el. The renderer does nothing new; it follows rects, as it
+     has all along. One layer exists at every instant, because only one is
+     ever created. */
+  var closeRaf = null, closeRect = null;
+  window.DSScrubClose = function (to, ms, done) {
+    var el = document.querySelector('.nav .ttl.scrub');
+    cancelAnimationFrame(closeRaf);
+    if (!el || !to) { scrubHold = true; closeRect = null; if (done) done(); return; }
+    var r = el.getBoundingClientRect();
+    var f = { x: r.left, y: r.top, w: r.width, h: r.height };
+    var t0 = 0;
+    var tick = function (now) {
+      if (!t0) t0 = now;
+      var p = Math.min(1, (now - t0) / ms);
+      var e = 1 - Math.pow(1 - p, 3);        /* easeOutCubic: settles, never overshoots */
+      closeRect = { left: f.x + (to.x - f.x) * e, top: f.y + (to.y - f.y) * e,
+        width: f.w + (to.w - f.w) * e, height: f.h + (to.h - f.h) * e };
+      if (p < 1) { closeRaf = requestAnimationFrame(tick); return; }
+      /* closed. NOW release: the capsule is already the size of the label,
+         so its removal has nothing left to show. */
+      closeRect = null; scrubHold = true;
+      report();
+      if (done) done();
+    };
+    closeRaf = requestAnimationFrame(tick);
   };
   window.DSScrubChrome = function (on) {
     if (on) scrubHold = false;
