@@ -795,6 +795,80 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       seven.</p>
   </section>
 
+  <section class="card" id="parsegate" style="scroll-margin-top:80px">
+    <h2>The parse gate — before you push an executable asset</h2>
+    <p class="desc">One character took every flow&rsquo;s lab menu off the air today. A CSS
+      block added to <code>lab-shell.js</code> opened with a single quote while the file&rsquo;s
+      convention is double, and the block contains <code>'Urbane Rounded'</code> — the
+      apostrophe closed the literal and the parse died at <i>Unexpected identifier
+      &lsquo;Urbane&rsquo;</i>. A syntax error takes the <b>whole file</b> with it, so every
+      flow silently lost its lab menu, User flow tab and Dev handoff at once. Nothing errored
+      where anyone was looking. Hotfixed in <code>b47af82</code>; caught by a lane, not by a
+      check.</p>
+
+    <div class="slab">
+      <div class="sl">Two laws it bought</div>
+      <div class="sq">A GREP PROVES DEPLOYMENT, NOT VALIDITY.</div>
+      <div class="sb">Finding your new string in a deployed <code>.js</code> proves the bytes
+        arrived. It says nothing about whether the file runs. Executable assets need an
+        <i>execution</i> check; content probes are for content.</div>
+      <div class="sq" style="font-size:13.5px;margin-top:18px">When every feature of a shared
+        script vanishes at once, check that the file parses before you debug any one
+        feature.</div>
+      <div class="sb">A JavaScript syntax error presents as <b>silence</b> — no console
+        complaint at the feature you are staring at, because the file never ran. Simultaneous
+        total loss is the signature. Debugging the menu, the tabs, and the handoff view
+        separately is three wasted hours on a one-character fault.</div>
+    </div>
+
+    <h3>The gate — no toolchain required</h3>
+    <p class="desc" style="font-size:13.5px">This Mac has no <code>node</code>,
+      <code>deno</code> or <code>bun</code> (checked), which is why a pre-push syntax gate stayed
+      aspirational. It doesn&rsquo;t need one: the browser pane already <i>is</i> a JavaScript
+      engine, and <code>new Function(src)</code> parses without executing. Fetch cache-busted, or
+      you will validate the file you are trying to replace.</p>
+    <div class="codewrap">
+      <pre id="parsegatecode">// run in the browser pane — parses, never executes
+const src = await (await fetch(URL + '?cb=' + Date.now())).text();
+try { new Function(src); console.log('PARSES'); }
+catch (e) { console.log('SYNTAX ERROR — do not push:', e.message); }
+
+// JSON assets get the same treatment with the matching parser:
+try { JSON.parse(src); } catch (e) { /* malformed — do not push */ }</pre>
+      <button class="copycode" data-copy="parsegatecode">Copy</button>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">A gate you have never seen fail is not a
+      gate.</b> Prove it in both directions before you trust it: run it on the fixed file, then
+      reintroduce the fault and watch it throw. Verified here against the real file —
+      <code>lab-shell.js</code> (51,459 bytes) returns PARSES, and re-opening that block with a
+      single quote returns <code>SyntaxError: Unexpected identifier 'Urbane'</code>, the exact
+      failure that shipped.</p>
+
+    <h3>What it catches, and what it will not</h3>
+    <div class="pair">
+      <div class="ph">Measured, not assumed <small>— every row run through the gate</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Catches</div>
+          <div class="cb">unterminated string &rarr; <i>Invalid or unexpected token</i><br>
+          unbalanced brace &rarr; <i>Unexpected token ')'</i><br>
+          bad identifier &rarr; <i>Invalid or unexpected token</i></div></div>
+        <div class="col"><div class="ct web">Does not</div>
+          <div class="cb">runtime faults — <code>undefinedFn()</code> parses fine<br>
+          <i>parsing is not working; it is the floor, not the ceiling</i><br>
+          a stray top-level <code>return</code> passes here, illegal in a script</div></div>
+      </div>
+    </div>
+    <p class="meta">One false alarm to know about: module syntax throws even when the file is
+      perfectly valid — <code>import</code>, <code>export</code> and top-level
+      <code>await</code> are all errors inside a <code>Function</code> body. Every shared asset
+      in this repo is a classic script, so the gate applies cleanly; if that ever changes, the
+      failure will be a false positive, not a false pass, which is the safe direction to be
+      wrong in. Scope: anything shared and executable — <code>lab-shell.js</code>,
+      <code>liquid-glass-container.js</code>, <code>flows.json</code> — and doubly so for a file
+      every flow loads, where the blast radius is the whole lab. Found and proven by the Hub
+      lane; verified independently here.</p>
+  </section>
+
 </div>
 
 <script>
