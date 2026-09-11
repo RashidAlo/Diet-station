@@ -138,7 +138,7 @@
   @keyframes cardArrive { from { transform: translateX(48px); opacity: 0; } }
   /* Next tap: the dock folds into a circular loader before the day turns */
   .dock .loader { width: 22px; height: 22px; border-radius: 50%;
-    border: 2.5px solid rgba(255,255,255,.34); border-top-color: #fff;
+    border: 2.5px solid rgba(11,14,18,.22); border-top-color: #0b0e12;
     animation: dockspin .75s linear infinite; }
   @keyframes dockspin { to { transform: rotate(360deg); } }
 
@@ -807,7 +807,16 @@
   .dock { position: absolute; right: 8px; top: 8px; width: 53px; height: 53px;
     border-radius: 47.6px; border: none; cursor: pointer; overflow: hidden;
     display: flex; align-items: center; justify-content: center; gap: 7px;
-    color: #f9f9f9; font: 500 14px/1 'Urbane Rounded', sans-serif;
+    /* DARK INK, NOT WHITE (Rashid's call, 2026-09-11). Dimming the capsule
+       took white from 1.12:1 to 1.33:1 — a real gain and still unreadable;
+       reaching 3:1 with white would need the capsule down near .30 luminance,
+       which on a yellow gauge reads as a hole punched in the bar rather than
+       as glass. Dark ink on the capsule as it stands measures 14.2:1 and lets
+       the material keep its character. Every dock state (Next, loader, saved
+       check) only ever appears once the day is COMPLETE, so the backdrop under
+       it is always the fill's bright end — there is no dark-backdrop case for
+       this ink to fail against. */
+    color: #0b0e12; font: 500 14px/1 'Urbane Rounded', sans-serif;
     opacity: 0; transform: scale(.6) translateY(10px); pointer-events: none;
     /* THE GLASS DIMS WHAT IT SITS ON, IT DOES NOT LIGHTEN IT (Rashid: "these
        buttons look extra bright, lower the glass brightness so the word Next
@@ -2850,7 +2859,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 161 (chrome: the reported radius is in points)';
+const BUILD = 'build 2026-09-11 · 162 (dock: dark ink, 14.2:1 instead of 1.33:1)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
