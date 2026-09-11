@@ -148,6 +148,27 @@ html.ds-native #pill, html.ds-native .lab-chip, html.ds-native .lab-tabs,\
 html.ds-native .lab-tabbar { display: none !important; }\
 /* in-app the lab views open from the lab menu; the floating back chip is\
    the way out since the tab bar is hidden there */\
+.lab-ctrlwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }\
+.lab-ctrlmap { width: 100%; border-collapse: collapse; }\
+.lab-ctrlmap th { text-align: left; padding: 0 14px 8px 0; white-space: nowrap;\
+  font: 600 10.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .09em;\
+  text-transform: uppercase; color: #6e6e73; }\
+.lab-ctrlmap td { padding: 9px 14px 9px 0; vertical-align: top;\
+  border-top: 0.5px solid rgba(0,0,0,.09);\
+  font: 400 13px/1.45 -apple-system, sans-serif; color: #1d1d1f; }\
+.lab-ctrlmap code { font: 500 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;\
+  background: #f5f5f7; color: #1d1d1f; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }\
+.lab-ctrlmap tr.stub td { opacity: .45; }\
+.lab-ctrlmap .c-intent { display: block; margin-top: 4px; color: #ED1C24;\
+  font: 500 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }\
+@media (max-width: 600px) {\
+  .lab-ctrlmap, .lab-ctrlmap tbody, .lab-ctrlmap tr, .lab-ctrlmap td { display: block; width: auto; }\
+  .lab-ctrlmap thead { display: none; }\
+  .lab-ctrlmap tr { border-top: 0.5px solid rgba(0,0,0,.09); padding: 11px 0; }\
+  .lab-ctrlmap td { border: 0; padding: 0; }\
+  .lab-ctrlmap td:not(:first-child):not(:empty) { margin-top: 5px; }\
+  .lab-ctrlmap code { white-space: normal; word-break: break-word; }\
+}\
 .lab-back { display: none; position: fixed; top: calc(14px + env(safe-area-inset-top, 0px));\
   right: 14px; z-index: 80; width: 40px; height: 40px; border: 0.5px solid rgba(0,0,0,.1);\
   border-radius: 50%; align-items: center; justify-content: center;\
@@ -605,6 +626,34 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     if (f.rn && f.rn.length)
       renderKit('React fallback kit', 'For every non-iOS platform — stack, ' +
         'Figma-exact tokens, and the interaction math, ready to paste into your own workflow.', f.rn);
+
+    if (f.controls && f.controls.length) {
+      var h3c = document.createElement('div');
+      h3c.className = 'lab-h3'; h3c.textContent = 'Semantic control map';
+      col.appendChild(h3c);
+      var noteC = document.createElement('p');
+      noteC.className = 'lab-note';
+      noteC.textContent = 'Every control this flow exposes, in authoring ' +
+        'order — drive a regression run by [data-act], never by visible ' +
+        'text (labels split across weight spans and move in Arabic).';
+      col.appendChild(noteC);
+      var wrap = document.createElement('div');
+      wrap.className = 'lab-ctrlwrap';
+      var rows = f.controls.map(function (c) {
+        var intent = c.intent
+          ? '<span class="c-intent">&rarr; ' + esc(c.intent.to) +
+            ' &middot; ' + esc(c.intent.present) + '</span>' : '';
+        return '<tr' + (c.status === 'stub' ? ' class="stub"' : '') + '>' +
+          '<td><code>[data-act="' + esc(c.act) + '"]</code></td>' +
+          '<td>' + esc(c.does) + intent + '</td>' +
+          '<td>' + (c.payload ? '<code>' + esc(c.payload) + '</code>' : '') +
+          '</td></tr>';
+      }).join('');
+      wrap.innerHTML = '<table class="lab-ctrlmap"><thead><tr><th>Act</th>' +
+        '<th>What it does</th><th>Payload</th></tr></thead><tbody>' +
+        rows + '</tbody></table>';
+      col.appendChild(wrap);
+    }
 
     if ((f.entries && f.entries.length) || (f.exits && f.exits.length)) {
       var h3i = document.createElement('div');

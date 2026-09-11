@@ -316,6 +316,32 @@
   .btn.ghost { background: var(--ground); color: var(--ink); }
   .btn.ghost:hover { background: #e9e9ec; }
   .btn.ghost[aria-expanded="true"] { background: var(--ink); color: #fff; }
+  /* semantic control map — the handles a regression run drives */
+  .ctrlwrap { overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin-top: 10px; }
+  .ctrlmap { width: 100%; border-collapse: collapse; }
+  .ctrlmap th { text-align: left; padding: 0 14px 8px 0; white-space: nowrap;
+    font: 600 10.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-soft); }
+  .ctrlmap td { padding: 9px 14px 9px 0; vertical-align: top;
+    border-top: 0.5px solid var(--line);
+    font: 400 13px/1.45 -apple-system, sans-serif; color: var(--ink); }
+  .ctrlmap code { font: 500 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo,
+    monospace; background: var(--ground); color: var(--ink);
+    padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+  .ctrlmap tr.stub td { opacity: .45; }
+  .ctrlmap .c-intent { display: block; margin-top: 4px; color: var(--red);
+    font: 500 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  /* phones: stack each control instead of scrolling the table sideways */
+  @media (max-width: 600px) {
+    .ctrlmap, .ctrlmap tbody, .ctrlmap tr, .ctrlmap td { display: block;
+      width: auto; }
+    .ctrlmap thead { display: none; }
+    .ctrlmap tr { border-top: 0.5px solid var(--line); padding: 11px 0; }
+    .ctrlmap td { border: 0; padding: 0; }
+    .ctrlmap td:not(:first-child):not(:empty) { margin-top: 5px; }
+    .ctrlmap code { white-space: normal; word-break: break-word; }
+  }
   .handoff { display: none; margin-top: 20px; border-top: 0.5px solid var(--line); padding-top: 18px; }
   .handoff.open { display: block; }
   .handoff h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
@@ -1230,7 +1256,7 @@ function openLogin() {
   /* preload: fonts, shared libs, every flow page + its heavy assets */
   /* keep the lab-shell stamp in sync with the flow pages' script tags —
      a bare URL would warm a cache key the flows never request */
-  const warm = ['flows.json', 'lab-shell.js?v=20260910b', 'html2canvas.min.js',
+  const warm = ['flows.json', 'lab-shell.js?v=20260911a', 'html2canvas.min.js',
     'font/DietStationDot-Regular.woff2', 'font/DietStationDot-Medium.woff2'];
   const done = fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     for (const f of flows) {
@@ -1363,6 +1389,22 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
     ].join('');
     const ixBlock = ix
       ? `<h3>Integration points</h3><dl class="kv">${ix}</dl>` : '';
+    /* semantic control map: the handles a regression run drives, in the
+       lane's authoring order (order is meaningful — never sort) */
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const ctrlRows = (f.controls || []).map(c => {
+      const intent = c.intent
+        ? `<span class="c-intent">&rarr; ${esc(c.intent.to)} &middot; ${esc(c.intent.present)}</span>` : '';
+      return `<tr${c.status === 'stub' ? ' class="stub"' : ''}>` +
+        `<td><code>[data-act="${esc(c.act)}"]</code></td>` +
+        `<td>${esc(c.does)}${intent}</td>` +
+        `<td>${c.payload ? `<code>${esc(c.payload)}</code>` : ''}</td></tr>`;
+    }).join('');
+    const ctrlBlock = ctrlRows
+      ? '<h3>Semantic control map</h3><div class="ctrlwrap"><table class="ctrlmap">' +
+        '<thead><tr><th>Act</th><th>What it does</th><th>Payload</th></tr></thead>' +
+        `<tbody>${ctrlRows}</tbody></table></div>` : '';
     const tags = [f.platform, f.area].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join('');
     card.innerHTML = `
       <div class="row">
@@ -1385,6 +1427,7 @@ fetch('flows.json?v=' + Date.now()).then(r => r.json()).then(({ flows }) => {
         <h3>Handoff</h3>
         <dl class="kv">${kv}</dl>
         ${ixBlock}
+        ${ctrlBlock}
         <div class="dl">${dl}</div>
       </div>`;
     const btn = card.querySelector('button');
