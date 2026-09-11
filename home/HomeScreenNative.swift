@@ -1955,7 +1955,9 @@ final class FlowPreloader {
                                              dates: e["dates"] as? [String],
                                              center: (e["center"] as? NSNumber)?.doubleValue,
                                              monthLabel: e["monthLabel"] as? String,
-                                             dayName: e["dayName"] as? String))
+                                             dayName: e["dayName"] as? String,
+                                             dayNames: e["dayNames"] as? [String],
+                                             statuses: e["statuses"] as? [String]))
                 }
                 let bar = body["bar"] as? String
                 let flow = body["flow"] as? String
@@ -2068,7 +2070,14 @@ final class FlowPreloader {
                                                  dates: el.dates,
                                                  center: ctr[el.id] ?? el.center,
                                                  monthLabel: el.monthLabel,
-                                                 dayName: el.dayName)
+                                                 dayName: el.dayName,
+                                                 // THE REBUILD LAW: every new
+                                                 // field must be carried here
+                                                 // or it drops on the first
+                                                 // tracked frame (bit us on
+                                                 // mode, then month/dayName)
+                                                 dayNames: el.dayNames,
+                                                 statuses: el.statuses)
                         }
                     }
                 }
