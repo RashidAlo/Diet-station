@@ -151,6 +151,15 @@
   .odo .ocol { display: inline-block; height: 1em; overflow: hidden; vertical-align: top; }
   .odo .ostack { display: block; transition: transform .55s cubic-bezier(.32,.72,0,1); }
   .odo .ostack span { display: block; height: 1em; line-height: 1em; }
+  /* the blur is the giveaway that iOS renders this itself — a glyph in
+     transit is softened, peaking mid-travel. Approximated here. */
+  .odo .ostack.rolling { animation: odoblur .55s cubic-bezier(.32,.72,0,1); }
+  @keyframes odoblur {
+    0%, 100% { filter: blur(0); opacity: 1; }
+    45% { filter: blur(1.5px); opacity: .72; } }
+  @media (prefers-reduced-motion: reduce) {
+    .odo .ostack { transition: none; }
+    .odo .ostack.rolling { animation: none; } }
 </style>
 <script>
   if (/DietStationLab/.test(navigator.userAgent))
@@ -293,8 +302,58 @@
       strip's day. A spring, so it settles rather than stopping.<br>
       &middot; Digit-count changes (1200&nbsp;→&nbsp;940) slide a column in or out at the
       edge instead of reflowing the text.</p>
-    <p class="spec">It reads like a mechanical counter settling — which is the quality worth
-      protecting.</p>
+    <h3>The system renders it — which is why there's blur</h3>
+    <p class="spec">This is not a transform you compose. <code>.contentTransition</code>
+      declares <i>intent</i>, and SwiftUI renders the transition itself at the glyph level —
+      which is why the effect carries something a CSS odometer doesn't: a glyph in transit is
+      <b>blurred and faded</b> as it travels, softening at speed and resolving crisp on
+      arrival, while a digit that isn't changing stays perfectly sharp throughout. That
+      optical treatment is what makes it read as a physical counter rather than sliding
+      tiles, and it is the part you cannot get from translation alone.</p>
+    <p class="spec"><b>You own the timing; the system owns the choreography.</b> The curve
+      comes from the enclosing animation — ours is <code>.spring(duration: 0.55)</code> — and
+      the per-glyph travel, blur and fade come from the platform. That split is also why the
+      effect adapts on its own to font, weight and Dynamic Type without ever being retuned,
+      and why it degrades gracefully to a plain crossfade in contexts where the system can't
+      render the full transition.</p>
+    <p class="spec">In practice it needs: the value change to happen inside an animation
+      context (<code>withAnimation</code> or <code>.animation(_:value:)</code> keyed to
+      whatever drives it); <code>Text(verbatim:)</code> if you don't want an Int localised
+      into &ldquo;1,200&rdquo;; and <b><code>.monospacedDigit()</code></b> so the number
+      can't change width mid-roll.</p>
+
+    <h3>What the HIG asks of it</h3>
+    <p class="spec">Apple's motion guidance, applied to counters:</p>
+    <p class="spec" style="padding-left:14px">
+      &middot; <b>Motion should clarify a change, not decorate it.</b> A counter earns its
+      animation precisely because it shows one quantity <i>becoming</i> another — which is
+      the same test as Count-or-snap below. Animating between unrelated numbers is
+      decoration, and reads as a slot machine.<br>
+      &middot; <b>Keep it brief.</b> A count long enough to watch is long enough to make the
+      interface feel slow; ours settle in roughly half a second.<br>
+      &middot; <b>Honour Reduce Motion.</b> When someone has it enabled, the roll should give
+      way to a plain value change or a simple crossfade. This is an accessibility
+      requirement, not a nicety.<br>
+      &middot; <b>Never let the layout move.</b> Proportional digits change width as they
+      roll and shove the surrounding text; monospaced/tabular figures are mandatory for any
+      number that animates.</p>
+    <p class="spec">Source: Apple's
+      <a href="https://developer.apple.com/design/human-interface-guidelines/motion"
+         target="_blank" rel="noopener" style="color:var(--red)">HIG — Motion</a> and the
+      <a href="https://developer.apple.com/documentation/swiftui/contenttransition"
+         target="_blank" rel="noopener" style="color:var(--red)">ContentTransition</a> API
+      reference.</p>
+    <p class="spec" style="background:var(--red-soft); border-radius:12px; padding:14px 16px;
+      color:#7F1D1D">
+      <b style="font-family:'Urbane Rounded',sans-serif">Two gaps in our shipped code,
+      found writing this up:</b> neither the native screen nor the web twin currently checks
+      <b>Reduce Motion</b> — the counters roll regardless of the setting, on both platforms;
+      and the native numbers don't carry <code>.monospacedDigit()</code>, so a roll that
+      crosses a narrow digit can nudge the layout. Both are small fixes in the owning lanes
+      (native: <code>@Environment(\.accessibilityReduceMotion)</code> guarding the
+      animation, plus the modifier; web: a
+      <code>prefers-reduced-motion</code> branch that sets the value directly). Flagged, not
+      fixed — they're Home's file.</p>
 
     <h3>Web — the fallback</h3>
     <p class="spec">The web twin animates the <b>value</b> and repaints the whole number:
@@ -383,6 +442,11 @@ export const bounce = { damping: 12, stiffness: 180, mass: 0.9 }; // withSpring
       <pre id="countKit">// Counting numbers — the shipped home recipe
 // Canonical web implementation: countTo() in home/index.html
 // 420ms, cubic ease-out, counted FROM THE DISPLAYED VALUE
+// HIG parity the web owes: honour Reduce Motion, keep figures tabular —
+//   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+//     el.textContent = to; return;           // plain change, no roll
+//   }
+//   CSS: font-variant-numeric: tabular-nums
 function countTo(el, to) {
   const from = +el.textContent;          // on-screen, not the last target
   if (from === to) return;
@@ -398,11 +462,16 @@ function countTo(el, to) {
 navigator.vibrate && navigator.vibrate(8);
 // CSS: font-variant-numeric: tabular-nums  (digits must not reflow while counting)
 
-// ── Native (SwiftUI) — the platform does it ──────────────────────────
-Text(verbatim: "\(day.kcal)")
+// ── Native (SwiftUI) — the system renders the transition ─────────────
+@Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+Text(verbatim: "\(day.kcal)")          // verbatim: no "1,200" localisation
+  .monospacedDigit()                   // HIG: an animating number must not resize
   .contentTransition(.numericText(value: Double(day.kcal)))
-// on the container, keyed to whatever drives the value:
-  .animation(.spring(duration: 0.55), value: state.stripDay)
+// timing is YOURS, choreography (travel + blur + fade) is the system's:
+  .animation(reduceMotion ? nil : .spring(duration: 0.55), value: state.stripDay)
+//          ^ HIG: Reduce Motion replaces the roll with a plain change
+
 // countdowns that tick discrete units instead of rolling:
   .contentTransition(.numericText(countsDown: true))
   .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: value)
@@ -535,9 +604,19 @@ Text(verbatim: "\(day.kcal)")
     }
     Array.prototype.forEach.call(host.children, (col, i) => {
       const stack = col.firstChild;
+      const want = 'translateY(' + (-(+s[i]) * 10) + '%)';
+      const changed = stack.style.transform !== want;
       if (instant) stack.style.transition = 'none';
-      stack.style.transform = 'translateY(' + (-(+s[i]) * 10) + '%)';
+      stack.style.transform = want;
       if (instant) requestAnimationFrame(() => { stack.style.transition = ''; });
+      /* only a column that actually MOVES is blurred — a still digit
+         stays crisp, which is half of why the effect reads as calm */
+      else if (changed) {
+        stack.classList.remove('rolling');
+        void stack.offsetWidth;
+        stack.classList.add('rolling');
+        setTimeout(() => stack.classList.remove('rolling'), 580);
+      }
     });
   }
 
