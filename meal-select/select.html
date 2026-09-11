@@ -2180,6 +2180,14 @@ confirmBtn.onclick = () => {
   const CADENCE = 60;           /* ms floor between steps — the scrub speed */
   const maxIdx = 30;            /* the subscription window — one swipe spans it;
                                    still crosses the month boundary freely */
+  /* THE LADDER IS FORWARD-ONLY, ON PURPOSE. Index 0 is the day the overlay
+     opened on and the clamp in the pointermove below never goes under it, so
+     the slots left of centre come up as '' pads and yesterday is unreachable.
+     That is the rule, not an off-by-one: a past day cannot be selected, so
+     offering it in the scrubber would let the user travel somewhere the rest
+     of the flow then refuses. Written down because Shell and I both stopped on
+     it in a tape and had to reason it out — an undocumented rule is
+     indistinguishable from a bug the first time someone new reads it. */
 
   /* the glass lives on a SIBLING below the strip — never an ancestor of
      the dates (device WebKit bakes ancestor filters over children during
@@ -2859,7 +2867,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 162 (dock: dark ink, 14.2:1 instead of 1.33:1)';
+const BUILD = 'build 2026-09-11 · 163 (scrubber: forward-only is a rule, written down)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
