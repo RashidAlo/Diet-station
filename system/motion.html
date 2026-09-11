@@ -82,6 +82,14 @@
   .ease .ev { font: 11px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft); }
   .ease .eu { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-top: 4px; }
   .ease.copied .ed::after { content: ' — copied ✓'; color: var(--ok); }
+  .ewhere { margin-top: 9px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,.07);
+    font-size: 11px; line-height: 1.5; color: var(--ink-soft); }
+  .ewhere span { display: block; margin-bottom: 5px; }
+  .ewhere a { display: inline-block; margin: 0 5px 4px 0; padding: 4px 9px;
+    border-radius: 999px; background: #fff; color: var(--red); text-decoration: none;
+    font: 500 10.5px/1 'Urbane Rounded', sans-serif;
+    box-shadow: inset 0 0 0 1px rgba(237,28,36,.18); }
+  .ewhere a:hover { background: var(--red-soft); }
 
   /* ---- choreography ---- */
   .chore { padding: 16px 0; border-bottom: 0.5px solid var(--line); }
@@ -134,6 +142,15 @@
   .numdays button.on { background: var(--ink); color: #fff; box-shadow: none; }
   .numnote { font: 11.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft);
     margin-top: 12px; }
+  .numcmp { margin-bottom: 14px; }
+  .numlbl { font: 400 11px/1.5 'Proxima Nova', sans-serif; color: var(--ink-soft);
+    margin-bottom: 6px; }
+  .numlbl b { font: 600 11px/1.5 'Urbane Rounded', sans-serif; color: var(--ink); }
+  /* odometer: each digit is its own column; only changed columns move */
+  .odo { display: inline-flex; }
+  .odo .ocol { display: inline-block; height: 1em; overflow: hidden; vertical-align: top; }
+  .odo .ostack { display: block; transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .odo .ostack span { display: block; height: 1em; line-height: 1em; }
 </style>
 <script>
   if (/DietStationLab/.test(navigator.userAgent))
@@ -229,29 +246,76 @@
       between days and the numbers roll to their new values. Tap a day below to feel it.</p>
 
     <div class="numstage">
-      <div class="numpill" id="numPill">
-        <b id="numKcal">1200</b><i>Kcal</i>
-        <span class="nmac">
-          <span class="nmp"><b id="numC">55</b><i>C</i></span>
-          <span class="nmp"><b id="numP">87</b><i>P</i></span>
-          <span class="nmp"><b id="numF">23</b><i>F</i></span>
-        </span>
+      <div class="numcmp">
+        <div class="numlbl"><b>iPhone</b> — the digits roll</div>
+        <div class="numpill">
+          <b class="odo" id="odoKcal"></b><i>Kcal</i>
+          <span class="nmac">
+            <span class="nmp"><b class="odo" id="odoC"></b><i>C</i></span>
+            <span class="nmp"><b class="odo" id="odoP"></b><i>P</i></span>
+            <span class="nmp"><b class="odo" id="odoF"></b><i>F</i></span>
+          </span>
+        </div>
+      </div>
+      <div class="numcmp">
+        <div class="numlbl"><b>Web</b> — the value counts</div>
+        <div class="numpill">
+          <b id="numKcal">1200</b><i>Kcal</i>
+          <span class="nmac">
+            <span class="nmp"><b id="numC">55</b><i>C</i></span>
+            <span class="nmp"><b id="numP">87</b><i>P</i></span>
+            <span class="nmp"><b id="numF">23</b><i>F</i></span>
+          </span>
+        </div>
       </div>
       <div class="numdays" id="numDays"></div>
-      <div class="numnote" id="numNote">tap a day &middot; tap fast to interrupt mid-count</div>
+      <div class="numnote" id="numNote">tap a day &middot; watch <i>where</i> the motion lives</div>
     </div>
 
-    <h3>The recipe</h3>
-    <p class="spec"><b>420ms, cubic ease-out</b> (<code>1 − (1−p)³</code>), value rounded each
-      frame. The count always starts from the <b>currently displayed</b> number, not from the
-      previous target — so interrupting a count mid-flight continues from what the eye is
-      actually seeing and never snaps backwards. A light haptic fires once at the trigger,
-      not per digit.</p>
-    <p class="spec">Native gets this from the platform:
-      <code>.contentTransition(.numericText(value:))</code> under a
-      <code>.spring(duration: 0.55)</code> keyed to the value's source — SwiftUI rolls the
-      digits itself, including odometer-style per-digit travel the web tween approximates
-      with a single interpolated value.</p>
+    <h3>These are two different animations</h3>
+    <p class="spec">Not one effect with two implementations — the platforms animate
+      <i>different things</i>, and it is worth knowing which one you are looking at.</p>
+
+    <h3>iPhone — the standard</h3>
+    <p class="spec"><code>.contentTransition(.numericText(...))</code> animates the
+      <b>digits</b>, not the value. Each digit position is its own column that slides
+      vertically to its new glyph, so:</p>
+    <p class="spec" style="padding-left:14px">
+      &middot; <b>Unchanged positions never move.</b> 1200&nbsp;→&nbsp;1250 moves the tens
+      column alone; the rest sit perfectly still.<br>
+      &middot; <b>No in-between number is ever shown.</b> Going 1200&nbsp;→&nbsp;2025 it
+      never displays 1677 — there is nothing to read mid-flight, only glyphs in transit.<br>
+      &middot; <b>Direction is semantic.</b> <code>.numericText(value:)</code> infers roll
+      direction from the numbers; the days dial forces it with
+      <code>.numericText(countsDown: true)</code>.<br>
+      &middot; <b>Timing comes from the surrounding animation</b>, not from the transition —
+      the kcal capsule rolls under <code>.spring(duration: 0.55)</code> keyed to the meal
+      strip's day. A spring, so it settles rather than stopping.<br>
+      &middot; Digit-count changes (1200&nbsp;→&nbsp;940) slide a column in or out at the
+      edge instead of reflowing the text.</p>
+    <p class="spec">It reads like a mechanical counter settling — which is the quality worth
+      protecting.</p>
+
+    <h3>Web — the fallback</h3>
+    <p class="spec">The web twin animates the <b>value</b> and repaints the whole number:
+      <b>420ms, cubic ease-out</b> (<code>1 − (1−p)³</code>), rounded each frame. So every
+      intermediate frame is a real, readable number, every changing digit churns at once,
+      and the motion lives in the <i>quantity</i> rather than in the glyphs. Its own virtue:
+      the count starts from the <b>currently displayed</b> number, not the previous target,
+      so interrupting mid-count continues from what the eye is actually seeing instead of
+      snapping backwards. A light haptic fires once at the trigger, never per digit.</p>
+    <p class="spec">Two smaller divergences, both already handled in the shipped code:
+      native uses <code>Text(verbatim:)</code> so an Int doesn't localise to
+      &ldquo;1,200&rdquo; where web shows &ldquo;1200&rdquo;; and both sides need
+      <code>tabular-nums</code> so digits don't reflow while they move.</p>
+    <p class="spec" style="background:var(--red-soft); border-radius:12px; padding:14px 16px;
+      color:#7F1D1D">
+      <b style="font-family:'Urbane Rounded',sans-serif">Open question for Rashid:</b> the
+      web fallback approximates the iPhone effect but does not reproduce it. Matching it
+      properly means building a real digit-column odometer on the web (each position its own
+      sliding column, unchanged columns held still) — buildable, but a genuine piece of work
+      rather than a parameter change. Until that's ruled on, <b>iPhone is the reference and
+      web is an acknowledged approximation</b>, not a bug to be quietly "fixed" either way.</p>
 
     <h3>Count or snap</h3>
     <p class="spec"><b>Count</b> when the value is the <i>same quantity moving</i> — the same
@@ -355,17 +419,32 @@ Text(verbatim: "\(day.kcal)")
 
 <script>
 (() => {
+  /* [name, bezier, duration, what it's for, where it ships, [[href, label], …]] */
   const EASES = [
-    ['Press', '.3,.8,.3,1', '.15–.18s', 'Touch feedback: card and button press-scale, small state flips. The lab\'s workhorse.'],
-    ['Sheet', '.32,.72,0,1', '.45–.55s', 'The iOS-feel slide: tab bars, chrome tuck, flow sheets presenting.'],
-    ['Settle', '.25,.9,.3,1', '.42s', 'Bottom sheets landing — a Sheet with a softer touchdown.'],
-    ['Glide', '.5,0,.5,1', '.27–.46s', 'Symmetric ease for position swaps and carousel moves — no drama either end.'],
-    ['Pop', '.2,.8,.3,1.4', '.18s', 'Tiny overshoot for chips, toggles and icons acknowledging a tap.'],
-    ['Bounce', '.26,1.36,.42,1', '.5–.88s', 'Big playful overshoot — brand and reward moments only, never chrome.'],
-    ['Exit', '.5,0,.8,.6', '.4s', 'Accelerate away: dismissing sheets and flows — leaves feel lighter than arrivals.'],
+    ['Press', '.3,.8,.3,1', '.15–.18s', 'Touch feedback: card and button press-scale, small state flips. The lab\'s workhorse.',
+      'press-scale on cards, buttons and chips (.15/.18s), plus width/left slides at .4s',
+      [['meal-select/', 'meal-select'], ['rewards/', 'rewards'], ['auth/', 'auth'], ['breathe/', 'breathe'], ['plan-quiz/', 'plan-quiz']]],
+    ['Sheet', '.32,.72,0,1', '.45–.55s', 'The iOS-feel slide: tab bars, chrome tuck, flow sheets presenting.',
+      'the sheet rise (.55s transform) and chrome slides',
+      [['auth/', 'auth'], ['home/', 'home'], ['meal-select/', 'meal-select'], ['rewards/', 'rewards']]],
+    ['Settle', '.25,.9,.3,1', '.42s', 'Bottom sheets landing — a Sheet with a softer touchdown.',
+      'the coupon settle, run as a Web Animations keyframe at 460ms',
+      [['rewards/', 'rewards']]],
+    ['Glide', '.5,0,.5,1', '.27–.46s', 'Symmetric ease for position swaps and carousel moves — no drama either end.',
+      'the check-draw stroke (.455s stroke-dashoffset) and cross-fades',
+      [['meal-select/', 'meal-select']]],
+    ['Pop', '.2,.8,.3,1.4', '.18s', 'Tiny overshoot for chips, toggles and icons acknowledging a tap.',
+      'ten transform .18s taps — the most consistently applied curve in the lab',
+      [['home/', 'home'], ['meal-select/', 'meal-select']]],
+    ['Bounce', '.26,1.36,.42,1', '.5–.88s', 'Big playful overshoot — brand and reward moments only, never chrome.',
+      'reward reveals at .5s / .7s / .88s',
+      [['meal-select/', 'meal-select']]],
+    ['Exit', '.5,0,.8,.6', '.4s', 'Accelerate away: dismissing sheets and flows — leaves feel lighter than arrivals.',
+      'the hub\'s own flow dismissal (.4s sheet, .32s push) — no flow page uses it directly',
+      [['', 'the hub']]],
   ];
   const root = document.getElementById('eases');
-  EASES.forEach(([name, bez, dur, use]) => {
+  EASES.forEach(([name, bez, dur, use, whereWhat, whereFlows]) => {
     const [x1, y1, x2, y2] = bez.split(',').map(parseFloat);
     const W = 200, H = 60, pad = 6;
     const px = t => pad + t * (W - 2 * pad);
@@ -380,7 +459,11 @@ Text(verbatim: "\(day.kcal)")
         <path class="c" d="${d}"></path></svg>
       <div class="etrack"><span class="eball"></span></div>
       <div class="ev">cubic-bezier(${bez})</div>
-      <div class="eu">${use}</div>`;
+      <div class="eu">${use}</div>
+      <div class="ewhere"><span>${whereWhat}</span>${
+        whereFlows.map(([href, label]) =>
+          `<a href="../${href}" target="_blank" rel="noopener">${label}</a>`).join('')
+      }</div>`;
     const ball = el.querySelector('.eball');
     const play = () => {
       const ms = Math.round(parseFloat(dur.replace(/[^0-9.]/g, ' ').trim().split(/\s+/).pop()) * 1000) || 300;
@@ -424,6 +507,40 @@ Text(verbatim: "\(day.kcal)")
     { d: 'Thu', kcal: 2025, c: 110, p: 96,  f: 58 },
   ];
   const NFIELDS = [['numKcal', 'kcal'], ['numC', 'c'], ['numP', 'p'], ['numF', 'f']];
+  const OFIELDS = [['odoKcal', 'kcal'], ['odoC', 'c'], ['odoP', 'p'], ['odoF', 'f']];
+
+  /* iPHONE SIDE — roll the DIGITS. Every position is its own column of
+     0–9; a column whose digit is unchanged does not move at all, and no
+     intermediate NUMBER is ever displayed. This is a hand-built stand-in
+     for SwiftUI's .contentTransition(.numericText), here only so the two
+     behaviours can be compared side by side. */
+  function odoSet(elId, value, instant) {
+    const host = document.getElementById(elId);
+    const s = String(value);
+    if (host.children.length !== s.length) {
+      host.innerHTML = '';
+      for (let i = 0; i < s.length; i++) {
+        const col = document.createElement('span');
+        col.className = 'ocol';
+        const stack = document.createElement('span');
+        stack.className = 'ostack';
+        for (let d = 0; d <= 9; d++) {
+          const g = document.createElement('span');
+          g.textContent = d;
+          stack.appendChild(g);
+        }
+        col.appendChild(stack);
+        host.appendChild(col);
+      }
+    }
+    Array.prototype.forEach.call(host.children, (col, i) => {
+      const stack = col.firstChild;
+      if (instant) stack.style.transition = 'none';
+      stack.style.transform = 'translateY(' + (-(+s[i]) * 10) + '%)';
+      if (instant) requestAnimationFrame(() => { stack.style.transition = ''; });
+    });
+  }
+
   const nTimers = {};
   function countTo(elId, to) {
     const el = document.getElementById(elId);
@@ -451,12 +568,15 @@ Text(verbatim: "\(day.kcal)")
       const prev = NDAYS[nCur];
       nCur = i;
       NFIELDS.forEach(([id, key]) => countTo(id, day[key]));
+      OFIELDS.forEach(([id, key]) => odoSet(id, day[key]));
       try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
       nNote.textContent = prev.kcal + ' → ' + day.kcal +
-        '   ·   420ms cubic ease-out, counted from the displayed value';
+        '   ·   iPhone: only changed digit columns move, no in-between number' +
+        '   ·   web: every frame is a real value';
     });
     nRoot.appendChild(b);
   });
+  OFIELDS.forEach(([id, key]) => odoSet(id, NDAYS[0][key], true));
 
   document.querySelectorAll('.copycode').forEach(b => {
     b.addEventListener('click', () => {
