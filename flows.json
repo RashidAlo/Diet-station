@@ -1201,6 +1201,7 @@
       "status": "in-progress",
       "updated": "2026-09-11",
       "hidden": true,
+      "sheet": true,
       "sprint": 1,
       "description": "The subscription purchase path, end to end: pick a plan, choose how long, apply a loyalty coupon, then pay. One price engine drives every screen, so redeeming a coupon re-prices the plan cards, the duration rows and the bottom dock together, and the member's tier badge rides the discount all the way to the payment sheet. Coupons above the member's rung render locked, which is what makes the loyalty ladder legible at the moment of purchase. Payment fields are prototype UI on mock data — nothing is ever charged.",
       "path": "checkout/",
@@ -1364,11 +1365,116 @@
         "Screen motion": "push = translateX(100%) → 0 over 420ms cubic-bezier(.32,.72,0,1), outgoing screen parks at −26%. Sheets = translateY(100%) → 0 over 460ms on the same curve.",
         "Glass": "Nav buttons and the coupon FAB use CSS backdrop-filter (blur 14 / saturate 180) rather than liquid-glass-js: they float over live scrolling content, which the shader's frozen page snapshot cannot track. Native equivalent is .glassEffect().",
         "Payment": "PROTOTYPE UI ONLY — mock data, no processing, no card entry, nothing charged. Pay Now raises a confirmation toast.",
-        "Driving it from a script": "Every interactive control carries a stable semantic data-act, so a regression run never has to match on visible text (labels are split across weight spans for typography and will not match naively). Selector is always [data-act=\"…\"]. Navigation: pickPlan (plus [data-plan]), dur (plus [data-dur]), plan, toPayment, method (plus [data-method]), pay, back. Coupons: coupons (opens the wallet), pickCoupon (plus [data-cpn]), uncoupon, allRewards. Plan editing: modify, inc, dec, days (plus [data-days]), closeSheet. Other: guide, consult, summer, call, savings. Boot straight into any state instead of tapping through: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…}.",
+        "Driving it from a script": "See the Semantic control map (controls[]) for every act and its payload — one delegated listener on [data-act] at the phone root, authored from the dispatcher. Labels are split across weight spans for typography and must never be matched on. For most runs you can skip the tapping entirely: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…} boots straight into any state, which is how this flow was verified on device when the Simulator MCP refused tap injection.",
         "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
         "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
         "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy."
       },
+      "controls": [
+        {
+          "act": "back",
+          "does": "Steps back one screen; at the first screen closes the flow (ds-close)"
+        },
+        {
+          "act": "toPayment",
+          "does": "Closes any sheet and advances to the payment screen"
+        },
+        {
+          "act": "closeSheet",
+          "does": "Closes any open sheet — also carried by the veil"
+        },
+        {
+          "act": "pickPlan",
+          "payload": "data-plan",
+          "does": "Selects a plan from the plans list, clears duration, advances"
+        },
+        {
+          "act": "plan",
+          "payload": "data-plan",
+          "does": "Re-selects the plan in place, staying on the current screen"
+        },
+        {
+          "act": "dur",
+          "payload": "data-dur",
+          "does": "Sets the subscription duration and re-prices"
+        },
+        {
+          "act": "modify",
+          "does": "Opens the modify sheet"
+        },
+        {
+          "act": "days",
+          "payload": "data-days",
+          "does": "Sets the delivery day pattern"
+        },
+        {
+          "act": "inc",
+          "payload": ".stepper[data-meal]",
+          "does": "Increments one meal's count"
+        },
+        {
+          "act": "dec",
+          "payload": ".stepper[data-meal]",
+          "does": "Decrements one meal's count, floored at 0"
+        },
+        {
+          "act": "coupons",
+          "does": "Opens the coupons sheet"
+        },
+        {
+          "act": "pickCoupon",
+          "payload": "data-cpn, data-tier",
+          "does": "Applies a coupon, or clears it if already applied. Present only on unlocked tiers"
+        },
+        {
+          "act": "uncoupon",
+          "does": "Removes the applied coupon from the promo bar"
+        },
+        {
+          "act": "method",
+          "payload": "data-method",
+          "does": "Selects a payment method and re-prices — methods carry different fees"
+        },
+        {
+          "act": "pay",
+          "does": "Prototype only — toasts the total, takes no payment"
+        },
+        {
+          "act": "savings",
+          "does": "Toasts today's saving"
+        },
+        {
+          "act": "allRewards",
+          "intent": {
+            "to": "rewards",
+            "present": "sheet"
+          },
+          "does": "Emits ds-nav → rewards (sheet)"
+        },
+        {
+          "act": "guide",
+          "intent": {
+            "to": "plan-quiz",
+            "present": "push"
+          },
+          "does": "Emits ds-nav → plan-quiz (push)"
+        },
+        {
+          "act": "consult",
+          "status": "stub",
+          "does": "Consultation booking"
+        },
+        {
+          "act": "summer",
+          "status": "stub",
+          "does": "Summer Offer campaign landing"
+        },
+        {
+          "act": "call",
+          "status": "stub",
+          "does": "Calls the diet consultant"
+        }
+      ],
       "swift": [
         {
           "t": "Price engine",
@@ -1466,8 +1572,7 @@
           "unit": "ms",
           "note": "Screen-to-screen slide on the Apple curve"
         }
-      ],
-      "sheet": true
+      ]
     }
   ]
 }
