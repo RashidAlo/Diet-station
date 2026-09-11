@@ -118,8 +118,9 @@
   /* ---- shared header (113px, content bottom-aligned) ---- */
   .hdr { flex: none; height: 113px; background: var(--surface); display: flex;
     align-items: flex-end; padding: 16px; z-index: 20; }
-  /* 44 + 69 = Figma's 113 on desktop; grows with the notch on device */
-  body:not(.desktop) .hdr { height: calc(var(--top-pad) + 69px); }
+  /* 44 + 69 = Figma's 113 on desktop; grows with the notch on device, but not
+     when the hub frames this flow as a sheet (it owns the status bar then) */
+  body:not(.desktop):not(.embed) .hdr { height: calc(var(--top-pad) + 69px); }
   .hdr-row { flex: 1; display: flex; gap: 12px; align-items: center; min-width: 0; }
   .icon-btn { width: 40px; height: 40px; flex: none; border-radius: 100px; cursor: pointer;
     background: var(--surface); border: 1px solid var(--hair);
@@ -431,11 +432,13 @@
     -webkit-mask-image: linear-gradient(to top, #000 38%, transparent);
     mask-image: linear-gradient(to top, #000 38%, transparent); }
   /* Figma draws this frame as a presented sheet, so its 24/80 offsets are
-     measured from the sheet's own top edge. Full-screen on a real device it
-     starts at y=0, so the nav has to clear the status bar. */
-  body:not(.desktop) .sub-nav { top: calc(var(--top-pad) + 10px); }
-  body:not(.desktop) .sub-scroll { top: calc(var(--top-pad) + 66px); }
-  body:not(.desktop) .edge.t { height: calc(var(--top-pad) + 66px); }
+     measured from the sheet's own top edge. Full-screen on a real device the
+     frame starts at y=0 and the nav has to clear the status bar — but when the
+     hub presents this flow as a sheet the status bar is already the hub's
+     problem, so embedded keeps Figma's literal numbers. */
+  body:not(.desktop):not(.embed) .sub-nav { top: calc(var(--top-pad) + 10px); }
+  body:not(.desktop):not(.embed) .sub-scroll { top: calc(var(--top-pad) + 66px); }
+  body:not(.desktop):not(.embed) .edge.t { height: calc(var(--top-pad) + 66px); }
   .sub-ctas { display: flex; gap: 16px; height: 54px; align-items: center;
     justify-content: center; width: 100%; flex: none; }
   .book-btn { flex: 1; position: relative; height: 54px; cursor: pointer; border-radius: 54px;
@@ -658,7 +661,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·3</div>
+  <div class="s-foot" id="buildInfo">checkout ·4</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -678,7 +681,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·3';
+const BUILD = 'checkout ·4';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1280,6 +1283,7 @@ function dsNav(to, present, context, fallback) {
   fallback();
 }
 const EMBED = /[?&]embed=1/.test(location.search);
+if (EMBED) document.body.classList.add('embed');
 function dsClose() {
   if (window.parent !== window) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
   location.href = '../?v=' + Date.now();
