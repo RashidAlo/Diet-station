@@ -1465,7 +1465,8 @@
           "unit": "ms",
           "note": "Screen-to-screen slide on the Apple curve"
         }
-      ]
+      ],
+      "sheet": true
     }
   ]
 }
