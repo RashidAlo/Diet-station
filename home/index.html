@@ -1035,7 +1035,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-10 · 19';
+const BUILD = 'home 2026-09-11 · 20';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1466,7 +1466,7 @@ const MEALS = [
   });
   document.getElementById('mealStrip').innerHTML = parts.join('');
 })();
-let stripDay = 1, kcalAnim = null;   /* index into DAYINFO — boots on Today */
+let stripDay = 1;   /* index into DAYINFO — boots on Today */
 function switchStripDay(ix) {
   stripDay = ix;
   vibrate(8);
@@ -1486,18 +1486,23 @@ function switchStripDay(ix) {
       }, 20);
     }, 190);
   });
-  /* the counter counts over, it doesn't jump */
-  const numEl = document.getElementById('kcalNum');
-  const from = +numEl.textContent, to = info.kcal, t0 = Date.now();
-  clearInterval(kcalAnim);
-  kcalAnim = setInterval(() => {
+  /* "Counting numbers" (system/motion.html): 420ms cubic ease-out, counted
+     FROM THE DISPLAYED VALUE — a fast scroll continues the count instead of
+     snapping back. Macros roll WITH the calories, matching the native
+     thinPair (the twin snapped them before — the doc's one open item) */
+  countTo(document.getElementById('kcalNum'), info.kcal);
+  countTo(document.getElementById('macC'), info.c);
+  countTo(document.getElementById('macP'), info.p);
+  countTo(document.getElementById('macF'), info.f);
+}
+function countTo(el, to) {
+  const from = +el.textContent || 0, t0 = Date.now();
+  clearInterval(el._cnt);
+  el._cnt = setInterval(() => {
     const p = Math.min(1, (Date.now() - t0) / 420);
-    numEl.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
-    if (p >= 1) clearInterval(kcalAnim);
+    el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+    if (p >= 1) clearInterval(el._cnt);
   }, 28);
-  document.getElementById('macC').textContent = info.c;
-  document.getElementById('macP').textContent = info.p;
-  document.getElementById('macF').textContent = info.f;
 }
 (function () {
   const strip = document.getElementById('mealStrip');
