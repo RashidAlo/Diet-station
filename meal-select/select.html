@@ -2302,15 +2302,12 @@ confirmBtn.onclick = () => {
      by the time this runs, so it is pure cleanup — no second visual step */
   function deflate() {
     clearTimeout(closeT); clearTimeout(unformT);
-    /* dropping .scrub is what releases the twin (scrubEl queries it), so it
-       goes first and alone. ds-native-hidden is held two frames longer: the
-       label must not come back UNDER a capsule that is still on screen —
-       that overlap is a blurred double image, since the capsule blurs
-       whatever is beneath it. By the time the class is shed the twin is
-       gone, and the label fades in over the vacated rect. */
-    /* pure cleanup: the ladder has already dissolved, the label has
-       already faded in, and the twin was released back at the start of the
-       collapse — nothing here changes anything on screen. */
+    /* THE HANDOFF, not cleanup. Every class goes in one statement, on the
+       frame the capsule lands on the label: .scrub/.closing take the armed
+       geometry with them, so what un-hides is a bare label at exactly the
+       rect the twin just reached. Shedding ds-native-hidden any earlier
+       than this shows an empty armed-size glass box; any later shows a
+       hole where the date should be. */
     ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
@@ -2330,14 +2327,14 @@ confirmBtn.onclick = () => {
          then disappears". The web label is held back until that lands, so
          the two never coexist. */
       var CLOSE_MS = 300;
-      if (window.DSScrubClose && formRect) {
-        DSScrubClose(formRect, CLOSE_MS, function () {
-          ttl.classList.remove('ds-native-hidden');
-        });
-      } else {
-        ttl.classList.remove('ds-native-hidden');   /* no twin: web owns it */
-      }
-      closeT = setTimeout(deflate, CLOSE_MS + 120);
+      /* the native close reports whether it is actually driving a twin.
+         When it is, the DOM pill is shed by deflate() on the frame the
+         capsule lands — it must never outlive the twin wearing its armed
+         geometry. When it is not (Safari, or a shell that never confirmed)
+         the web CSS collapse owns the exit and has to run its full .44s. */
+      var native = (window.DSScrubClose && formRect)
+        ? DSScrubClose(formRect, CLOSE_MS, deflate) : false;
+      closeT = setTimeout(deflate, native ? CLOSE_MS + 200 : 470);
     } else {
       deflate();                        /* never armed: nothing to collapse */
     }
@@ -2834,7 +2831,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 155 (scrub: close without a ghost)';
+const BUILD = 'build 2026-09-11 · 156 (scrub: the web pill was the blob)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3393,6 +3390,10 @@ if (QS.get('solo') === '1') {
      their spring, so they are re-anchored by the ordinary report that
      follows. */
   window.DSScrubRelease = function () {
+    /* a close already in flight OWNS the exit — re-anchoring here would
+       snap the twin back onto the DOM pill, which is still armed-sized
+       until the close lands. That snap is the blob. */
+    if (closeRaf) return;
     scrubHold = true;
     clearTimeout(scrubFbT);
     closeRect = null;
@@ -3416,7 +3417,11 @@ if (QS.get('solo') === '1') {
   window.DSScrubClose = function (to, ms, done) {
     var el = document.querySelector('.nav .ttl.scrub');
     cancelAnimationFrame(closeRaf);
-    if (!el || !to) { scrubHold = true; closeRect = null; if (done) done(); return; }
+    /* no twin on screen means there is no rect to interpolate and the web
+       CSS owns the whole collapse — say so, so the caller leaves it alone */
+    if (!el || !to || !SCRUB_TWIN || !nativeConfirmed || scrubHold) {
+      closeRect = null; return false;
+    }
     var r = el.getBoundingClientRect();
     var f = { x: r.left, y: r.top, w: r.width, h: r.height };
     var t0 = 0;
@@ -3427,13 +3432,21 @@ if (QS.get('solo') === '1') {
       closeRect = { left: f.x + (to.x - f.x) * e, top: f.y + (to.y - f.y) * e,
         width: f.w + (to.w - f.w) * e, height: f.h + (to.h - f.h) * e };
       if (p < 1) { closeRaf = requestAnimationFrame(tick); return; }
-      /* closed. NOW release: the capsule is already the size of the label,
-         so its removal has nothing left to show. */
+      /* LAND IN ONE FRAME, AND IN THIS ORDER. The DOM pill is handed back
+         to plain-label geometry FIRST, and only then is the twin dropped,
+         so the thing that takes the capsule's place is already the right
+         size. The other order is what produced the blob: the twin was
+         released at the label's size, then the web pill un-hid still
+         wearing its ARMED 95x69 geometry with an empty ladder inside it —
+         a blurred box that "forms down, gets stuck and disappears". It was
+         never the native layer; it was this one, un-hidden too early. */
+      closeRaf = null;
+      if (done) done();
       closeRect = null; scrubHold = true;
       report();
-      if (done) done();
     };
     closeRaf = requestAnimationFrame(tick);
+    return true;
   };
   window.DSScrubChrome = function (on) {
     if (on) scrubHold = false;
@@ -3459,11 +3472,11 @@ if (QS.get('solo') === '1') {
       }
     } else {
       /* release: .scrub SURVIVES the collapse now, so the per-frame track
-         burst above keeps the twin glued to the shrinking rect and then
-         omits it by itself the first frame after deflate() drops the class
-         (~430ms). This report is only the backstop that re-anchors
-         close/dual afterwards — it must land AFTER that removal, or it
-         would still find .scrub and re-arm the twin it meant to release. */
+         burst above keeps the twin glued to the shrinking rect until
+         DSScrubClose lands it (~300ms) and omits it. This report is only
+         the backstop that re-anchors close/dual afterwards — it must land
+         AFTER that removal, or it would still find .scrub and re-arm the
+         twin it meant to release. */
       clearTimeout(scrubFbT);
       setTimeout(function () { report(); }, 500);
     }
