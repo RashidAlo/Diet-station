@@ -2829,7 +2829,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 151 (scrub: native motion, origin reported)';
+const BUILD = 'build 2026-09-11 · 152 (scrub: motion gated on renderer)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3162,14 +3162,22 @@ if (QS.get('solo') === '1') {
        not absent. */
     '.nav .ttl.scrub.ds-native-hidden { opacity: 0 !important; ' +
     '  pointer-events: auto !important; box-shadow: none !important; } ' +
-    /* ...AND IT MUST NOT MORPH EITHER. The pill is invisible but still laid
-       out, so its CSS grow/collapse was still being streamed as chrometrack
-       geometry — which meant the native capsule was faithfully following my
-       curve and the "native spring" was half a fiction (Shell caught this).
-       In-shell the pill snaps straight to its armed geometry, so the rects
-       carry a destination rather than a path, and the motion between the
-       label and that destination is entirely iOS's to choose. */
-    '.nav .ttl.scrub.ds-native-hidden, .nav .ttl.scrub.ds-native-hidden * { ' +
+    /* THE SNAP IS GATED ON THE RENDERER, and OFF by default.
+       ·150 stopped the invisible pill morphing so the streamed rects would
+       carry a destination rather than a path, letting the native spring own
+       the motion. That is right ONLY for a renderer that drives the capsule
+       from `from` with its own spring. A renderer that EASES TOWARD THE
+       STREAMED RECTS — every build before 2026-09-11 12:17, which is what
+       is on Rashid's phone — gets a jump instead of a ramp, and reads as
+       exactly what he reported: janky, abrupt, the date moving up and down.
+       Shell warned me of this consequence and I shipped it ungated anyway.
+       So: the web keeps morphing (old renderers get their ramp back) until
+       a renderer announces it handles `from`, via DSNativeChrome's caps.
+       The newer renderer tolerates the morph — it merely follows a curve it
+       could have owned — so defaulting to the SAFE side costs polish, not
+       correctness. */
+    'html.ds-scrub-owns-motion .nav .ttl.scrub.ds-native-hidden, ' +
+    'html.ds-scrub-owns-motion .nav .ttl.scrub.ds-native-hidden * { ' +
     '  transition: none !important; animation: none !important; } ' +
     '';
   document.head.appendChild(st);
@@ -3314,9 +3322,17 @@ if (QS.get('solo') === '1') {
         surface: SURFACE, mode: currentMode(), els: [] });
     } catch (_) {}
   }
-  window.DSNativeChrome = function (ids) {
+  window.DSNativeChrome = function (ids, caps) {
     nativeConfirmed = true;
     ids = ids || [];
+    /* capability handshake: a renderer that drives the capsule from `from`
+       with its own spring says so, and only then does the web stop morphing
+       and hand it a destination instead of a path. Absent (every build
+       before 2026-09-11) we keep morphing, because those renderers ease
+       toward the streamed rects and a snap reads as jank. */
+    if (caps && caps.scrubMotion) {
+      document.documentElement.classList.add('ds-scrub-owns-motion');
+    }
     /* scrub confirm applies in ANY sheet state — the twin only exists
        while armed, and the web pill must yield its glass immediately */
     if (ids.indexOf('scrub') >= 0) {
