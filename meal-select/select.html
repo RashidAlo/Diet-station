@@ -138,7 +138,7 @@
   @keyframes cardArrive { from { transform: translateX(48px); opacity: 0; } }
   /* Next tap: the dock folds into a circular loader before the day turns */
   .dock .loader { width: 22px; height: 22px; border-radius: 50%;
-    border: 2.5px solid rgba(11,14,18,.22); border-top-color: #0b0e12;
+    border: 2.5px solid rgba(255,255,255,.34); border-top-color: #fff;
     animation: dockspin .75s linear infinite; }
   @keyframes dockspin { to { transform: rotate(360deg); } }
 
@@ -815,8 +815,17 @@
        the material keep its character. Every dock state (Next, loader, saved
        check) only ever appears once the day is COMPLETE, so the backdrop under
        it is always the fill's bright end — there is no dark-backdrop case for
-       this ink to fail against. */
-    color: #0b0e12; font: 500 14px/1 'Urbane Rounded', sans-serif;
+       this ink to fail against.
+       REVERSED 2026-09-11, and the reversal is the point. Rashid on seeing it
+       shipped: "the Next button now has black text, make it white. Even the
+       loader shows in black. In this particular component it should be white."
+       He was right the first time and we answered the wrong question: his
+       original words were "lower the GLASS BRIGHTNESS so the word Next and the
+       loader are readable" — dim the material, keep the ink. We under-dimmed
+       the material, found white still unreadable at 1.33:1, and flipped the
+       ink rather than going back and dimming further. The ink was never the
+       variable he offered. */
+    color: #f9f9f9; font: 500 14px/1 'Urbane Rounded', sans-serif;
     opacity: 0; transform: scale(.6) translateY(10px); pointer-events: none;
     /* THE GLASS DIMS WHAT IT SITS ON, IT DOES NOT LIGHTEN IT (Rashid: "these
        buttons look extra bright, lower the glass brightness so the word Next
@@ -831,10 +840,17 @@
        pixels on device, and a 1.4s press on Next never produced the .94 scale
        below, so what Rashid photographed is the native twin, not this. The
        same correction has to be made there or the app is unchanged. */
-    background: rgba(12,10,6,.16);
-    -webkit-backdrop-filter: blur(8px) saturate(115%) brightness(.78);
-    backdrop-filter: blur(8px) saturate(115%) brightness(.78);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.26), inset 0 0 0 .6px rgba(255,255,255,.22);
+       DIMMED THE REST OF THE WAY so white can live here. Measured on device:
+       the gauge fill reaches .88 luminance under the capsule, .78 brightness
+       left the capsule at .74 and white at 1.33:1. White needs the capsule at
+       or below .30 to clear 3:1, so the material goes down to brightness .42
+       with a .24 dark tint. That is a deliberately heavy piece of glass — it
+       has to be, because it is the only control sitting on the brightest part
+       of the bar and it carries white. */
+    background: rgba(10,8,4,.24);
+    -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(.42);
+    backdrop-filter: blur(8px) saturate(120%) brightness(.42);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.22), inset 0 0 0 .6px rgba(255,255,255,.20);
     transition: opacity .27s cubic-bezier(.5,0,.5,1),
       transform .7s cubic-bezier(.26,1.36,.42,1),
       width .45s cubic-bezier(.45,1.45,.8,1); }
@@ -2867,7 +2883,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 163 (scrubber: forward-only is a rule, written down)';
+const BUILD = 'build 2026-09-11 · 164 (white ink on darker glass; bar pinned at entry)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3068,6 +3084,20 @@ const navigatorEl = document.getElementById('navigator');
 let sheetLive = false;
 let SHEET_GAP = 22;
 function sheetGap() { return SHEET_GAP; }
+/* THE CALORIE BAR STAYS PINNED TO THE SCREEN BOTTOM WHATEVER THE SHEET DOES.
+   Split out of syncSheet, which returns early until sheetLive flips ~660ms
+   after entry. The bar lives inside #sheet, so until this runs it inherits the
+   sheet's parked offset and hangs that far below the screen edge — cropped
+   across its middle. Nobody saw it on a FIRST open because a day with no
+   selections keeps the bar hidden and the first pick lands long after 660ms;
+   Rashid found it by reopening a day that ALREADY had meals, where the bar is
+   visible from the first frame (his words: "dismiss the meal selection overlay
+   and then pull it back in... with one day where meals were selected — the
+   meal counter fails to pull up to the proper spot, it shows cropped"). */
+function placeNavigator(y) {
+  if (!navigatorEl) return;
+  navigatorEl.style.bottom = 'calc(' + (10 + y) + 'px + env(safe-area-inset-bottom, 0px))';
+}
 /* ·107 (0092cf2) VERBATIM — the pre-3pm sheet. Scroll-linked 1:1,
    transform written unconditionally, nothing else touched. */
 function syncSheet() {
@@ -3076,8 +3106,7 @@ function syncSheet() {
   sheetEl.style.transform = 'translateY(' + y + 'px)';
   const r = Math.min(44, Math.max(0, y + 8));
   sheetEl.style.borderRadius = r + 'px ' + r + 'px 0 0';
-  /* the calorie bar stays pinned to the SCREEN bottom whatever the sheet does */
-  navigatorEl.style.bottom = 'calc(' + (10 + y) + 'px + env(safe-area-inset-bottom, 0px))';
+  placeNavigator(y);
   if (EMBED) {
     /* nav chrome pad rides the gap continuously — no snap, no overshoot */
     const p = 1 - Math.min(1, y / SHEET_GAP);
@@ -3093,6 +3122,10 @@ setTimeout(() => {
   sheetEl.classList.add('springing');
   document.body.classList.remove('sheet-enter');
   sheetEl.style.transform = 'translateY(' + sheetGap() + 'px)';
+  /* park the bar for the gap the sheet is settling into, on the same frame the
+     sheet is told where to settle — not 600ms later when sheetLive flips. The
+     sheet transform is untouched here; only the bar's own offset is set. */
+  placeNavigator(sheetGap());
   setTimeout(() => {
     sheetEl.classList.remove('springing');
     sheetLive = true;
