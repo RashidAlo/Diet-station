@@ -624,6 +624,13 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
         shortened, and translated — DietStation ships an Arabic mode, so <i>every</i> label in
         the product is a moving target by design. <code>data-act</code> is the one name that
         holds still. Renaming a label is a design change; renaming an act is a breaking change.</div>
+      <div class="sq" style="font-size:13.5px;margin-top:18px">Corollary — when automation
+        can&rsquo;t find a control, the control&rsquo;s contract is missing, not the
+        automation&rsquo;s luck.</div>
+      <div class="sb">This standard exists because the Hub&rsquo;s run failed three times on the
+        same two buttons and that lane refused to accept &ldquo;the selector must be flaky&rdquo;
+        as the answer. A selector that only sometimes works is usually a control that was never
+        given a name.</div>
     </div>
 
     <h3>What the map has to carry</h3>
@@ -757,10 +764,11 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       the unmatchable labels came to light at all; raised as a standard by the Checkout lane,
       endorsed by Hub, specified here. Checkout&rsquo;s <code>controls[]</code> is authored —
       verified against its dispatcher in both directions: nothing handled is missing from the
-      map, nothing in the map is unhandled. It lives in
-      <code>checkout/flows-entry.json</code> and reaches the handoff surfaces once Hub merges
-      that entry into <code>flows.json</code>, which carries no <code>controls[]</code> yet;
-      until then the renderer is live and correctly showing nothing.</p>
+      map, nothing in the map is unhandled — and <b>merged and live</b> in
+      <code>flows.json</code> (Hub, 1042c7c): 21 rows in the lane&rsquo;s own order, 8 payload
+      chips, 2 inline intents, 3 dimmed stubs, stacked without side-scroll on a phone. The chain
+      is closed end to end — law, spec, authored data, shipped renderer — for one flow of
+      seven.</p>
   </section>
 
 </div>
