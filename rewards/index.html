@@ -1042,11 +1042,22 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
      shell must render verbatim rects (no top-line normalization) */
   var MODE = 'sheet';
   var st = document.createElement('style');
-  st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }';
+  /* chrome v3 (Rashid, 2026-09-11): web glass must NEVER paint in the
+     shell — not for a single frame. The per-element class lost the race
+     every time a control was REBUILT (the X is recreated on each level
+     theme), so a fresh WebGL button painted until the twin confirmed:
+     "it starts with the web glass, then quickly shifts into Apple
+     liquid glass". A ROOT-CLASS rule covers every matching element that
+     exists now or is created later, so there is no window to lose.
+     The iOS<26 fallback below drops the root class to restore the web
+     fallback wholesale. */
+  var hideSel = Object.keys(ELS).map(function (id) {
+    return 'html.ds-chrome-native ' + ELS[id];
+  }).join(',');
+  st.textContent = '.ds-native-hidden{opacity:0!important;pointer-events:none!important}'
+    + hideSel + '{opacity:0!important;pointer-events:none!important}';
   document.head.appendChild(st);
-  /* chrome v2 (Rashid): web chrome never renders in-shell — hidden from
-     the first frame; the 1.9s fallback restores it where twins never
-     confirm (iOS<26) */
+  document.documentElement.classList.add('ds-chrome-native');
   prehide();
 
   function prehide() {
@@ -1079,7 +1090,29 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
       rebuildT = setTimeout(report, 120);
     }
   }).observe(document.body, { childList: true, subtree: true });
+  /* GEOMETRY IS ONLY REPORTED ONCE IT HAS STOPPED MOVING (Rashid,
+     2026-09-11: "it sometimes starts in the middle of the screen, it's
+     not anchored to the top of the overlay"). getBoundingClientRect on
+     an element inside a transformed ancestor returns the VISUAL rect —
+     so a report taken while the sheet is springing up anchors the twin
+     wherever the X happened to be mid-flight, and it stays there. The
+     sheet's entrance owns that motion; we wait for it to finish rather
+     than racing it on a timer. */
+  var settled = false;
+  function markSettled() {
+    if (settled) return;
+    settled = true;
+    report();
+  }
+  var sheetNode = document.querySelector('.sheet');
+  if (sheetNode) sheetNode.addEventListener('transitionend', function (e) {
+    if (e.propertyName === 'transform') markSettled();
+  });
+  /* belt: a missed transitionend must never strand the twin unreported */
+  setTimeout(markSettled, (EMBED || FRAMED) ? 1200 : 260);
+
   function report() {
+    if (!settled) return;      /* never sample a moving rect */
     prehide();   /* idempotent — catches async-built elements too */
     /* overlay pages live in (possibly offset / sliding) iframes — convert
        to SCREEN coords by walking same-origin frame ancestors */
@@ -1121,6 +1154,9 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   /* iOS<26 shells never render twins — restore the web chrome */
   setTimeout(function () {
     if (nativeConfirmed) return;
+    /* no twins on this shell (iOS<26): restore the web fallback wholesale
+       — the root class first, or the controls stay invisible forever */
+    document.documentElement.classList.remove('ds-chrome-native');
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
       el.classList.remove('ds-native-hidden');
     });
