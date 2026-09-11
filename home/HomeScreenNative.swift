@@ -2455,6 +2455,9 @@ struct DSGaugeModel: Equatable {
 
 @available(iOS 26.0, *)
 struct DSGaugeGlassView: View {
+    /// #0b0e12 — the dock's label, glyphs and spinner all share it, so the
+    /// word and the ring can never half-flip
+    static let dockInk = Color(red: 11/255, green: 14/255, blue: 18/255)
     let model: DSGaugeModel
     var onNext: () -> Void
     /// grows by exactly 1 per warn — the shake effect plays t: 0→1 each time
@@ -2528,7 +2531,14 @@ struct DSGaugeGlassView: View {
                         .font(.system(size: 14, weight: .bold))
                         .opacity(model.dock == "check" ? 1 : 0)
                 }
-                .foregroundStyle(.white)
+                // DARK INK, Rashid's call (given both options with the
+                // numbers): white on this capsule measured 1.33:1 even after
+                // the tint fix, and reaching 3:1 with white would need the
+                // capsule down at ~0.30 luminance — a hole punched in the
+                // bar rather than glass. Ink on it measures 14.2:1. Safe in
+                // every state: the dock only appears once the day is
+                // COMPLETE, so its backdrop is always the fill's bright end.
+                .foregroundStyle(Self.dockInk)
                 .frame(width: model.dock == "next" ? 92 : 53, height: 53)
                 // The Renew/Change recipe is a WHITE tint, and it fails HERE
                 // specifically: this capsule sits on the gauge's own fill,
@@ -2660,11 +2670,15 @@ struct DSShakeEffect: GeometryEffect {
 @available(iOS 26.0, *)
 struct DSSpinnerRing: View {
     @State private var spin = false
+    /// Ink, not white — the ring rides the gauge dock's capsule over the
+    /// fill's bright end, and a white spinner beside a dark "Next" is the
+    /// half-flip that would look like a bug.
+    var ink: Color = Color(red: 11/255, green: 14/255, blue: 18/255)
     var body: some View {
         ZStack {
-            Circle().stroke(.white.opacity(0.28), lineWidth: 2.5)
+            Circle().stroke(ink.opacity(0.22), lineWidth: 2.5)
             Circle().trim(from: 0, to: 0.25)
-                .stroke(.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .stroke(ink, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(spin ? 360 : 0))
                 .animation(.linear(duration: 0.75).repeatForever(autoreverses: false),
                            value: spin)
