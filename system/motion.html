@@ -343,17 +343,17 @@
       <a href="https://developer.apple.com/documentation/swiftui/contenttransition"
          target="_blank" rel="noopener" style="color:var(--red)">ContentTransition</a> API
       reference.</p>
-    <p class="spec" style="background:var(--red-soft); border-radius:12px; padding:14px 16px;
-      color:#7F1D1D">
-      <b style="font-family:'Urbane Rounded',sans-serif">Two gaps in our shipped code,
-      found writing this up:</b> neither the native screen nor the web twin currently checks
-      <b>Reduce Motion</b> — the counters roll regardless of the setting, on both platforms;
-      and the native numbers don't carry <code>.monospacedDigit()</code>, so a roll that
-      crosses a narrow digit can nudge the layout. Both are small fixes in the owning lanes
-      (native: <code>@Environment(\.accessibilityReduceMotion)</code> guarding the
-      animation, plus the modifier; web: a
-      <code>prefers-reduced-motion</code> branch that sets the value directly). Flagged, not
-      fixed — they're Home's file.</p>
+    <p class="spec" style="background:var(--ok-soft); border-radius:12px; padding:14px 16px;
+      color:#14532D">
+      <b style="font-family:'Urbane Rounded',sans-serif">Both honoured in shipping code.</b>
+      Writing this section up found that neither platform checked Reduce Motion and that the
+      figures weren't tabular; both were fixed rather than deferred, since Reduce Motion is a
+      requirement. Native takes <code>@Environment(\.accessibilityReduceMotion)</code> and
+      passes <code>nil</code> instead of the spring (the day switch applies without it too);
+      web returns the final value immediately under
+      <code>prefers-reduced-motion</code>. Every counting number now carries
+      <code>.monospacedDigit()</code> natively and
+      <code>font-variant-numeric: tabular-nums</code> on the web.</p>
 
     <h3>Web — the fallback</h3>
     <p class="spec">The web twin animates the <b>value</b> and repaints the whole number:
