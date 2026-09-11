@@ -672,7 +672,11 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       (checkout/index.html:1199). Not one handler per button.<br>
       <b style="color:var(--ink)">2 · Every control that changes state or navigates carries an
       act.</b> Decorative wrappers, scroll containers and pure-display rows do not — an act on a
-      non-control is a lie in the map.<br>
+      non-control is a lie in the map. A <i>second</i> listener is only a hole if it can reach
+      prototype surface: checkout&rsquo;s <code>bindSeg</code> (index.html:1353) is bound to the
+      desktop sidebar&rsquo;s own wrappers and never sees a control inside <code>.phone</code>,
+      so it is correctly absent. Say so in the handoff when you have one, so the next lane
+      doesn&rsquo;t re-investigate it.<br>
       <b style="color:var(--ink)">3 · Name the contract, in camelCase, and keep it stable.</b>
       <code>pickPlan</code>, not <code>blackBtn2</code>. Restyle and retranslate the label
       freely; changing the act is a breaking change and gets announced to the lanes.<br>
@@ -712,9 +716,22 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       <button class="copycode" data-copy="ctrlmap">Copy</button>
     </div>
 
+    <h3>Arriving is not acting</h3>
+    <p class="desc" style="font-size:13.5px">A flow can also be <b>booted straight into a
+      state</b> — the ds-nav <code>?ctx=</code> payload, plus any shorthand params a flow
+      chooses to read (checkout takes <code>tier</code>, <code>plan</code>, <code>entry</code>;
+      see <code>applyContext</code> at index.html:1294). That is a different job from the map,
+      and neither replaces the other. <b style="color:var(--ink)">Context gets you to a
+      state without tapping; the map is how you act once you are there.</b> A run that only
+      needs to see each state rendered can boot into them and never touch a control — which is
+      how checkout was verified on device when tap injection was unavailable to its lane. A run
+      that asserts what a control <i>does</i> needs the map, and no boot parameter substitutes
+      for it. Worth knowing before a lane prices its backport: if you only screenshot states,
+      the map can wait; if you assert behaviour, it can&rsquo;t.</p>
+
     <h3>Adoption</h3>
     <div class="adopt">
-      <span class="on">checkout — 21 acts, shipped</span>
+      <span class="on">checkout — 21 acts, controls[] authored</span>
       <span>home — 73 id lookups</span>
       <span>meal-select — 117</span>
       <span>auth — 35</span>
@@ -727,9 +744,12 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       <i>element</i> rather than the contract, and which dies on every re-render that rebuilds
       its markup. <b>Greenfield flows build the map in from the start</b>; existing flows
       backport at their lane&rsquo;s own pace, heaviest first, since a 117-lookup flow is also
-      the one a regression run most needs to reach. Raised by the Checkout lane after the
-      Hub&rsquo;s router regression run missed two controls three times running; endorsed by
-      Hub, specified here.</p>
+      the one a regression run most needs to reach. <b>Found by the Hub&rsquo;s router
+      regression run</b> — it missed checkout&rsquo;s buttons three times running, which is how
+      the unmatchable labels came to light at all; raised as a standard by the Checkout lane,
+      endorsed by Hub, specified here. Checkout&rsquo;s <code>controls[]</code> is authored and
+      shipped — verified against its dispatcher in both directions: nothing handled is missing
+      from the map, nothing in the map is unhandled.</p>
   </section>
 
 </div>
