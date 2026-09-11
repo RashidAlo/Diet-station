@@ -78,7 +78,8 @@
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #fff;
     --top-pad: 44px; }
   body:not(.desktop) .phone { width: 402px;
-    height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1)); }
+    height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1));
+    --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px)); }
   body.desktop .phone { border-radius: 46px; }
   .island { position: absolute; left: 50%; transform: translateX(-50%); top: 11px;
     width: 125px; height: 36px; border-radius: 20px; background: #000; z-index: 90;
@@ -117,6 +118,8 @@
   /* ---- shared header (113px, content bottom-aligned) ---- */
   .hdr { flex: none; height: 113px; background: var(--surface); display: flex;
     align-items: flex-end; padding: 16px; z-index: 20; }
+  /* 44 + 69 = Figma's 113 on desktop; grows with the notch on device */
+  body:not(.desktop) .hdr { height: calc(var(--top-pad) + 69px); }
   .hdr-row { flex: 1; display: flex; gap: 12px; align-items: center; min-width: 0; }
   .icon-btn { width: 40px; height: 40px; flex: none; border-radius: 100px; cursor: pointer;
     background: var(--surface); border: 1px solid var(--hair);
@@ -428,6 +431,12 @@
   .edge.b { bottom: 0; height: 97px;
     -webkit-mask-image: linear-gradient(to top, #000 38%, transparent);
     mask-image: linear-gradient(to top, #000 38%, transparent); }
+  /* Figma draws this frame as a presented sheet, so its 24/80 offsets are
+     measured from the sheet's own top edge. Full-screen on a real device it
+     starts at y=0, so the nav has to clear the status bar. */
+  body:not(.desktop) .sub-nav { top: calc(var(--top-pad) + 10px); }
+  body:not(.desktop) .sub-scroll { top: calc(var(--top-pad) + 66px); }
+  body:not(.desktop) .edge.t { height: calc(var(--top-pad) + 66px); }
   .sub-ctas { display: flex; gap: 16px; height: 54px; align-items: center;
     justify-content: center; width: 100%; flex: none; }
   .book-btn { flex: 1; position: relative; height: 54px; cursor: pointer; border-radius: 54px;
