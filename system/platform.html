@@ -849,26 +849,41 @@ try { JSON.parse(src); } catch (e) { /* malformed — do not push */ }</pre>
     <h3>It tells you <i>that</i>, not <i>where</i></h3>
     <p class="desc" style="font-size:13.5px">The gate gives a verdict and a message, <b>not a
       location</b>. The <code>&lt;anonymous&gt;:4:7</code> that appears in the thrown
-      error&rsquo;s stack is the frame of <i>your own call</i>, not a position in the file —
-      tested against a fault planted on line 5 of a synthetic file, and against the real bug on
-      line 145: both report line 1 of the caller. Chasing that number wastes more time than
-      having no number at all. To get the true position, load the source as a real script and
-      let the page&rsquo;s own error reporting locate it:</p>
+      error&rsquo;s stack is the frame of <i>your own call</i>, not a position in the file.
+      The decisive test: feed the <b>same</b> broken source to <code>new Function</code> from two
+      call sites three lines apart in one script, and it returns <code>4:7</code> and
+      <code>7:7</code> — differing by exactly the distance between the callers, while the fault
+      sits on line 5 of the input and is named by neither. Move your own code, and the
+      &ldquo;location&rdquo; moves with it. A wrong location is worse than none, because a wrong
+      one gets believed. To get the true position, load the source as a real script and let the
+      page&rsquo;s own error reporting find it:</p>
     <div class="codewrap">
-      <pre id="locatecode">// LOCATOR — run in a throwaway tab: this EXECUTES the file if it parses
-const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
-window.addEventListener('error', e =&gt; console.log(e.lineno + ':' + e.colno, e.message));
-document.head.appendChild(Object.assign(document.createElement('script'), { src: url }));</pre>
+      <pre id="locatecode">// LOCATOR — reach for this only after the gate has said no.
+// It EXECUTES the file if it parses, so: throwaway tab only.
+const url = URL.createObjectURL(
+  new Blob([src], { type: 'text/javascript' }));
+window.addEventListener('error',
+  e =&gt; console.log(e.lineno + ':' + e.colno, e.message));
+const s = document.createElement('script');
+s.src = url;
+document.head.appendChild(s);</pre>
       <button class="copycode" data-copy="locatecode">Copy</button>
     </div>
     <p class="meta">On the real bug this reports <b>154:23</b> — <code>lab-shell.js:154</code> is
       <code>font: 600 10.5px/1 'Urbane Rounded'…</code>, exactly where the parser choked. Note
       what that is and isn&rsquo;t: 154 is the <b>symptom</b>, and the <b>cause</b> is nine lines
-      up at 145, where the literal opened with the wrong quote. A parser reports where it lost
-      the thread, not where you lost it — for an unterminated string, always read upward from
-      the reported line. Use the two tools for their two jobs: <code>new Function</code> is the
-      safe pre-push gate because it never executes; the locator executes on success, so it
-      belongs in a scratch tab and never on a page whose state you care about.</p>
+      up at 145, where the literal opened with the wrong quote. <b>A parser reports where it
+      lost the thread, not where you lost it</b> — for an unterminated string, always read
+      upward from the reported line. Nine lines is a short walk; the same fault with no locator
+      is an afternoon, and with a <i>wrong</i> locator it is a confident edit to a font
+      declaration that was never broken.</p>
+    <p class="meta">Use the two tools for their two jobs. <code>new Function</code> never
+      executes, which is what makes it the pre-push gate. The locator runs the file — and the
+      neat thing about that, Hub&rsquo;s observation: <b>it is safe exactly when you need it and
+      unsafe exactly when you don&rsquo;t.</b> A file that fails to parse cannot execute, so
+      pointing the locator at a broken file has no side effects at all; point it at a file that
+      parses and you have just run it. Reach for it only after the gate has already said no,
+      and keep it in a scratch tab regardless.</p>
 
     <h3>What it catches, and what it will not</h3>
     <div class="pair">
