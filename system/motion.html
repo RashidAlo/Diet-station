@@ -107,6 +107,33 @@
   .replay { font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--red);
     background: var(--red-soft); border: none; border-radius: 999px; padding: 8px 14px;
     cursor: pointer; margin-top: 12px; }
+  .spec { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; line-height: 1.55; }
+  .spec code { font: 11.5px/1.5 ui-monospace, Menlo, monospace; }
+
+  /* ---- counting numbers demo ---- */
+  .numstage { margin-top: 16px; padding: 24px 20px 18px; border-radius: 16px;
+    background: var(--ground); }
+  .numpill { display: inline-flex; align-items: baseline; gap: 5px; padding: 13px 20px;
+    border-radius: 999px; background: #fff; color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 22px -14px rgba(0,0,0,.3);
+    font-variant-numeric: tabular-nums; }
+  .numpill b { font: 600 19px/1 'Urbane Rounded', sans-serif; }
+  .numpill i { font: 500 11px/1 'Urbane Rounded', sans-serif; font-style: normal;
+    opacity: .55; }
+  .numpill .nmac { display: inline-flex; gap: 12px; margin-left: 14px;
+    padding-left: 14px; border-left: 1px solid rgba(0,0,0,.09); }
+  .numpill .nmp { display: inline-flex; align-items: baseline; gap: 3px; }
+  .numpill .nmp b { font-size: 15px; }
+  .numpill .nmp i { font-size: 9.5px; }
+  .numdays { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .numdays button { font: 500 12.5px/1 'Urbane Rounded', sans-serif; border: none;
+    cursor: pointer; border-radius: 999px; padding: 9px 14px; background: #fff;
+    color: var(--ink-soft); box-shadow: inset 0 0 0 1px rgba(0,0,0,.07);
+    transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .numdays button:active { transform: scale(.94); }
+  .numdays button.on { background: var(--ink); color: #fff; box-shadow: none; }
+  .numnote { font: 11.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft);
+    margin-top: 12px; }
 </style>
 <script>
   if (/DietStationLab/.test(navigator.userAgent))
@@ -196,6 +223,60 @@
   </section>
 
   <section class="card">
+    <h2>Counting numbers</h2>
+    <p class="desc">When a displayed value changes, <b>it counts over — it never jumps.</b>
+      The home screen's calorie and macro readouts set the standard: scroll the meal strip
+      between days and the numbers roll to their new values. Tap a day below to feel it.</p>
+
+    <div class="numstage">
+      <div class="numpill" id="numPill">
+        <b id="numKcal">1200</b><i>Kcal</i>
+        <span class="nmac">
+          <span class="nmp"><b id="numC">55</b><i>C</i></span>
+          <span class="nmp"><b id="numP">87</b><i>P</i></span>
+          <span class="nmp"><b id="numF">23</b><i>F</i></span>
+        </span>
+      </div>
+      <div class="numdays" id="numDays"></div>
+      <div class="numnote" id="numNote">tap a day &middot; tap fast to interrupt mid-count</div>
+    </div>
+
+    <h3>The recipe</h3>
+    <p class="spec"><b>420ms, cubic ease-out</b> (<code>1 − (1−p)³</code>), value rounded each
+      frame. The count always starts from the <b>currently displayed</b> number, not from the
+      previous target — so interrupting a count mid-flight continues from what the eye is
+      actually seeing and never snaps backwards. A light haptic fires once at the trigger,
+      not per digit.</p>
+    <p class="spec">Native gets this from the platform:
+      <code>.contentTransition(.numericText(value:))</code> under a
+      <code>.spring(duration: 0.55)</code> keyed to the value's source — SwiftUI rolls the
+      digits itself, including odometer-style per-digit travel the web tween approximates
+      with a single interpolated value.</p>
+
+    <h3>Count or snap</h3>
+    <p class="spec"><b>Count</b> when the value is the <i>same quantity moving</i> — the same
+      day's calories recalculated, a macro total as meals change, a countdown of remaining
+      days. <b>Snap</b> when the number is a different thing entirely: a new item's price, an
+      ID, a list index. Counting between unrelated values reads as a slot machine, not a
+      measurement.</p>
+
+    <div class="chore" style="border-top:0.5px solid var(--line); margin-top:18px">
+      <div class="cn">Sibling: the ticking countdown</div>
+      <div class="cd">The days-left dial uses a deliberately different motion — it steps
+        down one whole unit at a time with a light haptic <b>per tick</b>, while its arc
+        eases to the final fraction underneath. Discrete units that a person would count
+        out loud tick; continuous quantities roll.</div>
+      <div class="cv">step .07s linear, 75ms between ticks &middot; arc .9s ease-out &middot;
+        haptic: light impact, intensity .4, per tick</div>
+    </div>
+
+    <p class="meta"><b>Open inconsistency, flagged for Rashid:</b> on native the macros roll
+      with the calories; on web only the calorie number counts and C/P/F snap. Native is the
+      standard, so the web twin is the side that should change — one line each, whenever the
+      Home lane next touches that file.</p>
+  </section>
+
+  <section class="card">
     <h2>Dev handoff</h2>
     <p class="desc">Tokens as CSS custom properties and a Reanimated mapping. The bezier
       curves translate to withTiming; only brand moments use withSpring.</p>
@@ -232,6 +313,39 @@ export const bounce = { damping: 12, stiffness: 180, mass: 0.9 }; // withSpring
 // SwiftUI: .animation(.timingCurve(0.3, 0.8, 0.3, 1, duration: 0.15))
 //          sheets ≈ .spring(response: 0.45, dampingFraction: 0.86)</pre>
       <button class="copycode" data-copy="rnMotion">Copy</button>
+    </div>
+    <div class="codewrap">
+      <pre id="countKit">// Counting numbers — the shipped home recipe
+// Web: 420ms, cubic ease-out, counted FROM THE DISPLAYED VALUE
+function countTo(el, to) {
+  const from = +el.textContent;          // on-screen, not the last target
+  if (from === to) return;
+  const t0 = Date.now();
+  clearInterval(el._count);              // a new count replaces the old
+  el._count = setInterval(() => {
+    const p = Math.min(1, (Date.now() - t0) / 420);
+    el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+    if (p >= 1) clearInterval(el._count);
+  }, 28);
+}
+// one light haptic at the trigger, never per digit:
+navigator.vibrate && navigator.vibrate(8);
+// CSS: font-variant-numeric: tabular-nums  (digits must not reflow while counting)
+
+// ── Native (SwiftUI) — the platform does it ──────────────────────────
+Text(verbatim: "\(day.kcal)")
+  .contentTransition(.numericText(value: Double(day.kcal)))
+// on the container, keyed to whatever drives the value:
+  .animation(.spring(duration: 0.55), value: state.stripDay)
+// countdowns that tick discrete units instead of rolling:
+  .contentTransition(.numericText(countsDown: true))
+  .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: value)
+
+// ── React Native ────────────────────────────────────────────────────
+// Reanimated: useSharedValue + withTiming(to, { duration: 420,
+//   easing: Easing.out(Easing.cubic) }) driving a derived text value;
+//   read the CURRENT animated value as the start so interrupts continue.</pre>
+      <button class="copycode" data-copy="countKit">Copy</button>
     </div>
   </section>
 
@@ -299,6 +413,48 @@ export const bounce = { damping: 12, stiffness: 180, mass: 0.9 }; // withSpring
   };
   document.getElementById('holesGo').onclick = goHoles;
   setTimeout(goHoles, 1200);
+
+  /* ---------- counting numbers: the shipped home recipe, verbatim ---------- */
+  const NDAYS = [
+    { d: 'Mon', kcal: 1200, c: 55,  p: 87,  f: 23 },
+    { d: 'Tue', kcal: 1860, c: 92,  p: 104, f: 41 },
+    { d: 'Wed', kcal: 940,  c: 38,  p: 61,  f: 19 },
+    { d: 'Thu', kcal: 2025, c: 110, p: 96,  f: 58 },
+  ];
+  const NFIELDS = [['numKcal', 'kcal'], ['numC', 'c'], ['numP', 'p'], ['numF', 'f']];
+  const nTimers = {};
+  function countTo(elId, to) {
+    const el = document.getElementById(elId);
+    /* from = what is ON SCREEN, never the previous target — this is what
+       makes an interrupted count continue instead of snapping back */
+    const from = +el.textContent;
+    if (from === to) return;
+    const t0 = Date.now();
+    clearInterval(nTimers[elId]);
+    nTimers[elId] = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / 420);
+      el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      if (p >= 1) clearInterval(nTimers[elId]);
+    }, 28);
+  }
+  const nRoot = document.getElementById('numDays');
+  const nNote = document.getElementById('numNote');
+  let nCur = 0;
+  NDAYS.forEach((day, i) => {
+    const b = document.createElement('button');
+    b.textContent = day.d;
+    if (i === 0) b.classList.add('on');
+    b.addEventListener('click', () => {
+      nRoot.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      const prev = NDAYS[nCur];
+      nCur = i;
+      NFIELDS.forEach(([id, key]) => countTo(id, day[key]));
+      try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+      nNote.textContent = prev.kcal + ' → ' + day.kcal +
+        '   ·   420ms cubic ease-out, counted from the displayed value';
+    });
+    nRoot.appendChild(b);
+  });
 
   document.querySelectorAll('.copycode').forEach(b => {
     b.addEventListener('click', () => {
