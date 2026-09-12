@@ -2667,12 +2667,18 @@ confirmBtn.onclick = () => {
     formRect = { x: r0.left, y: r0.top, w: r0.width, h: r0.height };
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;                /* commit the start of the morph */
-    ttl.classList.remove('tile');   /* resting presentation only */
     ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
     target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
     paintStrip(winC);
     setHead(winC, false);          /* arming is not a crossing — no announce */
     strip.style.transform = '';
+    /* .tile OUT and .scrub IN with nothing between them. Taped at ·177: the
+       removal sat six statements earlier, and paintStrip()'s innerHTML write
+       in between was enough to flush a paint while the element carried
+       NEITHER class — and the bare .ttl hides .glassbg, so the container
+       blinked out for a frame before growing. Both classes show the same
+       glass, so swapping them on one line is a material that never lapses. */
+    ttl.classList.remove('tile');
     ttl.classList.add('scrub');          /* the whole container, one spring */
     dbg('scrub ON');
     /* REPAINT PROBE (?rpt=1, diagnostic, off in every normal load).
@@ -3175,7 +3181,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 177 (square: one container morphs; OFF in words; 52pt row)';
+const BUILD = 'build 2026-09-12 · 178 (the square's material never lapses)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
