@@ -3027,7 +3027,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 173 (the track burst outlives its timer while scrubbing)';
+const BUILD = 'build 2026-09-12 · 174 (the ball finishes at nothing)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3715,7 +3715,11 @@ if (QS.get('solo') === '1') {
          a speck: it is unmistakably a ball at 0.8, and by 1.0 there is nothing
          left for the fade to show. Same defect class as every other residue
          tonight — something still on screen after its job is done. */
-      var k = p > 0.8 ? 1 - ((p - 0.8) / 0.2) * 0.88 : 1;
+      /* 0.97, not 0.88: taped at 0.88 the speck still lands at ~6pt and is
+         faintly visible on the "3" of "30th" for two frames. At 0.97 the ball
+         finishes under a point across — nothing to see, and the shape is still
+         unmistakably round from p=0.8 onward, which is the part that reads. */
+      var k = p > 0.8 ? 1 - ((p - 0.8) / 0.2) * 0.97 : 1;
       cw *= k; ch *= k;
       closeRect = { left: cx - cw / 2, top: cy - ch / 2, width: cw, height: ch };
       if (p < 1) { closeRaf = requestAnimationFrame(tick); return; }
