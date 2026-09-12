@@ -512,15 +512,33 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
           only the second leaves a misleading line in the log. Neither lane could notice: the
           sender can&rsquo;t see that its beacon never arrived, the receiver can&rsquo;t see that
           one was expected. <b>Cheapest enforcement is a heartbeat</b> — one debug line per page
-          load, checked on both surfaces — which turns &ldquo;my instrument is silent&rdquo; from
-          ambiguous into a positive test.</p></div>
+          load naming the build, on every surface. It turns &ldquo;my instrument is silent&rdquo;
+          from ambiguous into a positive test, and it comes with an ordering rule: <b>if the
+          heartbeat is absent from a surface&rsquo;s log, nothing else the page reports on that
+          surface can be trusted — check for it before reading anything else.</b> Handlers must
+          be shape-agnostic and tagged per surface, like the chrome lines.<br>
+          What it cost the day it was found: <i>every</i> page-side instrument built that day was
+          silently useless on the surface Rashid uses — the error beacon that had caught a
+          module-level throw, the declined-handover log, the capability receipt. All worked on
+          the hub; none existed on the pilot. It is also why that lane could not distinguish
+          &ldquo;the confirm handler was never called&rdquo; from &ldquo;the capability was below
+          the threshold&rdquo;, and correctly reported that it couldn&rsquo;t.</p></div>
       <div class="r"><b>Naming the file is part of &ldquo;inspect the build&rdquo;</b>
         <p>On Xcode 26 a <b>Debug</b> build ships a launcher stub as the app binary and the real
           code sits in a <code>.debug.dylib</code> beside it. Grepping the stub returns zero for
           symbols that are definitely present — which reads exactly like &ldquo;this build
           doesn&rsquo;t have the feature&rdquo;, and produced a confident wrong correction between
           two lanes. Release has no stub, so <b>the rule inverts by configuration</b>. Any
-          instruction to verify a build by inspecting it must name the file.</p></div>
+          instruction to verify a build by inspecting it must name the file. Measured on one
+          bundle at one moment: <code>grep -c tileRows</code> returns <b>0</b> against the app
+          binary and <b>4</b> against the <code>.debug.dylib</code>.<br>
+          <b>The general form, and it outranks the stub:</b> a negative from a search is only as
+          good as the place you searched. <b>Confirm the instrument can find something you KNOW
+          is present before you trust its absence.</b> The lane that hit this had a zero for
+          <code>scrubMotion</code> — shipped for days — sitting directly beside its zero for
+          <code>tileRows</code>, and read the second as evidence while ignoring the first. A
+          positive control costs one extra command and is the difference between a measurement
+          and a guess.</p></div>
     </div>
 
     <p class="meta">This is the same shape as the laws on
