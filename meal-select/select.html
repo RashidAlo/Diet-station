@@ -439,8 +439,15 @@
      So the whole action row goes 44 -> 52 when the square is selected, and
      only then: .nav.tile-mode scopes it, the other two variations are
      untouched. The tile stays square, so its width tracks its height. */
+  /* +9, the SAME top as .navbtn and .dual. It was +5, which was the right
+     number while the buttons were 44 tall and the tile was 52 — +5 centred
+     the taller square on the shorter buttons. The +8 row made the buttons 52
+     as well, and the centring offset should have gone back to +9 with it; it
+     didn't, so the square rode 4pt high and its top and bottom edges missed
+     the buttons' by that much. Measured on device: buttons 100.0..151.3,
+     square 95.7..147.7. Same height all along — a different line. */
   .nav .ttl.tile { height: 52px; width: 52px; padding: 2px;
-    border-radius: 16px; top: calc(var(--top-pad) + 5px);
+    border-radius: 16px; top: calc(var(--top-pad) + 9px);
     /* THE SAME MATERIAL AS THE BUTTONS, not the ladder's (Rashid: "the
        rounded square is not a glass container, it should match the buttons —
        right now it's white with a drop shadow").
@@ -482,7 +489,7 @@
      keeps it clear of the notch. Scoped to .nav.tile-mode, so Glass and Red
      portal keep their 69pt pill untouched. */
   .nav.tile-mode .ttl.scrub { height: 52px;
-    top: calc(var(--top-pad) + 5px); border-radius: 26px; }
+    top: calc(var(--top-pad) + 9px); border-radius: 26px; }
   /* THE BOUNCE IS DRIVEN FROM THE DOM, NOT A KEYFRAME. It was
      `animation: tileform` here, and it ran — getComputedStyle showed the
      height mid-interpolation — but it never reached getBoundingClientRect,
@@ -3268,7 +3275,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 184 (the square is the default now)';
+const BUILD = 'build 2026-09-12 · 185 (the square sits on the buttons\u2019 line)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
