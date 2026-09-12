@@ -509,12 +509,60 @@ pill                  .capsule                                    border radius/
           }, '*')<br>
           <i>close:</i> parent.postMessage({ t: 'ds-close' }, '*')</div></div>
         <div class="col"><div class="ct web">Announce — hub &rarr; flow</div>
-          <div class="cb">{ t: 'ds-router', v: 1 }<br>
+          <div class="cb">{ t: 'ds-router', v: 1,<br>
+          &nbsp;&nbsp;caps: ['result'] }<br>
           <i>posted into the frame on every load, including tab swaps. A flow emits ds-nav
           ONLY after hearing this — without it, fall back to direct navigation. Lets both
-          sides ship independently.</i></div></div>
+          sides ship independently.</i><br>
+          <i><b>Feature-detect on caps, never on v.</b> v stays 1: every flow in the fleet
+          tests only t === 'ds-router', so bumping it would buy nothing and break a gate
+          somebody writes later.</i></div></div>
       </div>
     </div>
+
+    <h3>The result channel — ds-result</h3>
+    <p class="desc" style="font-size:13.5px">An intent with no return path can&rsquo;t express
+      &ldquo;go and fetch me something&rdquo;. It exists because Rashid ruled there is <b>one
+      coupon experience</b>: checkout deleted its local wallet, its coupon button now summons
+      rewards as a picker, and it needs the ripped code back.</p>
+    <div class="pair">
+      <div class="ph">Answering the flow that opened you</div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Emit — flow &rarr; hub</div>
+          <div class="cb">parent.postMessage({<br>
+          &nbsp;&nbsp;t: 'ds-result',<br>
+          &nbsp;&nbsp;from: '&lt;flow-id&gt;',<br>
+          &nbsp;&nbsp;payload: { &hellip; }<br>
+          }, '*')</div></div>
+        <div class="col"><div class="ct web">Relay — hub &rarr; opener</div>
+          <div class="cb">{ t: 'ds-result', from, payload }<br>
+          <i>delivered into the frame that OPENED this one, then the emitter pops as ds-close
+          would. Delivery precedes the pop, so the opener is live when the result lands.</i></div></div>
+      </div>
+    </div>
+    <p class="desc" style="font-size:13.5px">
+      <b style="color:var(--ink)">Addressed, never broadcast.</b> Delivery goes to the opener
+      alone — the flow whose ds-nav presented this one — on the same source check as ds-close, so
+      a grandchild can&rsquo;t land a result on an opener that never asked it anything.<br>
+      <b style="color:var(--ink)"><code>from</code> is hub-asserted.</b> The hub overwrites it
+      with the id it knows the posting frame by, so a receiver gating on
+      <code>from === 'rewards'</code> cannot be fooled by a message that merely claims to be
+      rewards. It falls back to the claimed value only for a frame the hub has no id for — and
+      such a frame has no opener either, so nothing is delivered. The guarantee holds for every
+      flow in <code>flows.json</code>, which is every flow that can be a target.<br>
+      <b style="color:var(--ink)">Nobody asked = a no-op, not a close.</b> A flow the hub
+      presented from a card has no opener: its result delivers nothing <i>and pops nothing</i>.
+      The pop is the delivery&rsquo;s consequence, not the message&rsquo;s — a flow with no one
+      to answer closes only if it also posts <code>ds-close</code>. Rewards emits on every rip,
+      so the opposite rule would have dismissed the sheet under anyone browsing coupons from the
+      rewards card.<br>
+      <b style="color:var(--ink)">A <code>tab</code> swap keeps the slot&rsquo;s opener</b> — a
+      swap replaces the occupant, not the summoner.</p>
+    <p class="meta">Degrades quietly in all three directions: no opener, an opener that ignores
+      it, or a target that never emits — checkout simply applies no coupon. Neither side blocks
+      the other landing. Shipped and verified on live by the Hub lane (<code>1cec86b</code>),
+      both paths: the redeem chain re-prices checkout end to end, and rewards-opened-from-a-card
+      survives its own result.</p>
 
     <h3>Presentation modes</h3>
     <p class="desc" style="font-size:13.5px">

@@ -381,6 +381,35 @@ function capOffsetRatio(weight, family) {
   </section>
 
   <section class="card">
+    <h2>The rule through the old price</h2>
+    <p class="desc">The strike travels with the was-price slot, so its rules live here. Both of
+      these come from the Checkout lane, who found them the hard way; verified against the Figma
+      set before writing them down.</p>
+    <div class="pair">
+      <div class="ph">Two things that break a strike</div>
+      <div class="cols">
+        <div class="col"><div class="ct bad">Fixed geometry drifts</div>
+          <div class="cb" style="margin-top:0">A rule positioned at a fixed offset and width
+            stops covering the number the moment the number changes — and the price changes on
+            every coupon. Checkout&rsquo;s was cutting through the <code>KD</code> instead.
+            <br><br>The rule must live <b>inside</b> the struck price and span it:
+            <code>position:absolute</code> with left/right insets, rotated about its own centre,
+            so it tracks whatever width the price happens to be.</div></div>
+        <div class="col"><div class="ct bad">Figma&rsquo;s angle is a half-turn out</div>
+          <div class="cb" style="margin-top:0">Figma exports these rules at
+            <code>169.61deg</code> and <code>170.13deg</code>. Applied literally about a left
+            edge, the rule swings almost a half-turn away from the text.
+            <br><br>A line is symmetric under a half-turn, so the value you want is
+            <b>the Figma angle minus 180</b> — <code>170.13 → −9.87deg</code>. Checkout&rsquo;s
+            shipping CSS reads <code>rotate(-9.87deg)</code>, which is exactly that.</div></div>
+      </div>
+    </div>
+    <p class="meta">Prefer the real rule to <code>text-decoration: line-through</code> only where
+      the design calls for the tilted stroke — the plain strike-through is correct for the
+      <code>was</code> slot at small sizes and is what this page&rsquo;s own specimens use.</p>
+  </section>
+
+  <section class="card">
     <h2>Arabic</h2>
     <p class="desc">The row mirrors and the typeface changes — the structure does not. Numerals
       stay Western, as they do everywhere else in the product, and the currency becomes
@@ -568,6 +597,17 @@ HStack(alignment: .capTop, spacing: 0) {
           on lg/md/sm, and in every case the font size is overridden on the instance anyway. The
           property currently carries no meaning — worth either wiring it to the ramp or removing
           it, so the next person doesn&rsquo;t trust it.</li>
+        <li><b>Two Figma sets disagree, and only one is canon.</b> The Checkout lane reported
+          that Figma&rsquo;s own components contradict the rule; they are right, and the cause is
+          worth knowing. The authored <code>Price</code> set (3551:1926) is unanimous —
+          <b>14 of 14 variants top-aligned</b>. But the <code>Pricing</code> set on the
+          &ldquo;Pricing Modules&rdquo; page has its <code>Plan Price Details</code> rows
+          <b>bottom-aligned</b>, putting <code>/month</code> on the big figure&rsquo;s baseline.
+          Those rows have been restyled into Urbane Rounded and Proxima Nova but never converted
+          — they still price in <b><code>$19</code></b>. They read as kit residue rather than
+          intent, which would make <code>Price</code> canon and those stale; confirming that, or
+          deleting them, stops the next lane rebuilding the old treatment faithfully from the
+          file.</li>
         <li><b>Three type names describe positions, not roles.</b> <code>Secondary sm</code>,
           <code>Secondary sm 2</code> and <code>Secondary L</code> sit beside a
           <code>Size</code> property that already says sm and lg, and two of the three appear
