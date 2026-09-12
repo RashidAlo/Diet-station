@@ -634,7 +634,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·7</div>
+  <div class="s-foot" id="buildInfo">checkout ·8</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -654,7 +654,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·7';
+const BUILD = 'checkout ·8';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1219,10 +1219,13 @@ phone.addEventListener('click', e => {
    {t:'ds-nav', to, context, present:'tab'|'sheet'|'push'}. The hub announces
    itself with {t:'ds-router'}; until it does, dsNav falls back with zero delay
    so this page behaves identically standalone. */
-let DS_ROUTER = false;
+let DS_ROUTER = false, DS_CAPS = [];
+/* feature-detect off caps, not off v: the version stays 1 because several
+   flows only test for t === 'ds-router', so bumping it would buy nothing */
+function routerCan(cap) { return DS_CAPS.indexOf(cap) !== -1; }
 addEventListener('message', e => {
   if (!e.data || !e.data.t) return;
-  if (e.data.t === 'ds-router') DS_ROUTER = true;
+  if (e.data.t === 'ds-router') { DS_ROUTER = true; DS_CAPS = e.data.caps || []; }
   /* accepted entry: an opener may preselect a plan / duration / tier */
   if (e.data.t === 'ds-context' && e.data.ctx) applyContext(e.data.ctx);
   /* RESULT CHANNEL — a flow this one summoned handing an answer back.
@@ -1400,9 +1403,13 @@ document.getElementById('sCopy').onclick = () => {
 window.dsOwnLabMenu = true;
 window.openLabMenu = function () {
   document.body.classList.add('labmenu-open');
+  /* whether the coupon loop can actually close on this host — a reviewer
+     ripping a coupon and seeing no price move should be able to tell why */
+  const loop = !DS_ROUTER ? 'standalone (use the picker above)'
+             : routerCan('result') ? 'rewards → result ✓' : 'router without result relay';
   document.getElementById('buildInfo').textContent =
     BUILD + ' · ' + document.documentElement.clientWidth + 'x' + document.documentElement.clientHeight +
-    ' · s ' + (+stageScale.toFixed(3));
+    ' · s ' + (+stageScale.toFixed(3)) + ' · coupons: ' + loop;
   vibrate(12);
 };
 document.getElementById('labVeil').onclick = () => document.body.classList.remove('labmenu-open');
