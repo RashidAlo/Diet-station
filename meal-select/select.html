@@ -3282,7 +3282,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 192 (say what threw)';
+const BUILD = 'build 2026-09-12 · 193 (declare state where state lives)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3617,6 +3617,17 @@ if (QS.get('solo') === '1') {
   var ELS = { close: '#closeBtn', dual: '.dual', tile: '.nav .ttl.tile' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
   var nativeConfirmed = false;
+  /* WHICH IDS THE SHELL HAS ACTUALLY CONFIRMED IT RENDERS. Declared HERE,
+     with the rest of the module's state, and not beside prehide() where it is
+     read — because `prehide()` is CALLED AT SETUP on line ~3680 ("hidden from
+     the FIRST frame"), which is above where a `var` beside the function would
+     have been assigned. `var` hoists the declaration but not the assignment,
+     so that first call read `undefined.tile`, threw, and took the whole chrome
+     module down with it: no DSNativeChrome, no rest posts, no twins at all.
+     ·191 shipped exactly that. I checked every report() call site, found them
+     all inside callbacks, and concluded the ordering was safe — while the
+     caller that mattered was a bare prehide() I never searched for. */
+  var confirmed = {};
   /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
      mode 'page' (canonical top line), undocked-rest as 'sheet' (verbatim
      rects riding the parked sheet). Web chrome shows only mid-motion. */
@@ -3695,7 +3706,6 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
-  var confirmed = {};
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       if (id === 'tile' && !confirmed.tile) return;
