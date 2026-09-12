@@ -2058,6 +2058,8 @@ if (NATIVE) {
    and presents the target. 'tab' swaps the current frame in place (app
    tab-bar feel), 'sheet' slides up over the stack, 'push' slides in from
    the right. ds-close pops the posting frame (and anything above it).
+   ds-result is ds-close carrying an answer: the hub relays the payload
+   DOWN into the frame that summoned this one, then pops as ds-close would.
    State policy (Rashid): every transition loads the target FRESH. */
 let flowStack = [];
 function dsPost(m) {
@@ -2076,15 +2078,18 @@ function flowUrl(f, context, from) {
    ship independently (contract agreed with the Flows session) */
 function announceRouter(fr) {
   fr.addEventListener('load', () => {
-    try { fr.contentWindow.postMessage({ t: 'ds-router', v: 1 }, '*'); } catch (_) {}
+    try { fr.contentWindow.postMessage({ t: 'ds-router', v: 1, caps: ['result'] }, '*'); } catch (_) {}
   });
 }
-function presentFlow(f, present, context, from) {
+function presentFlow(f, present, context, from, opener) {
   const url = flowUrl(f, context, from);
   if (present === 'tab' && flowStack.length) {
     const top = flowStack[flowStack.length - 1];
     top.frame.src = url;                    /* instant swap, no animation */
     top.id = f.id;
+    /* the slot keeps its opener: a tab swap replaces the occupant, not the
+       frame that summoned it (and a flow that swaps ITSELF away has no one
+       left to answer — its opener was the hub, i.e. null) */
     return;
   }
   const fr = document.createElement('iframe');
@@ -2093,7 +2098,8 @@ function presentFlow(f, present, context, from) {
   announceRouter(fr);
   document.body.append(fr);
   setTimeout(() => fr.classList.add('in'), 20);     /* rAF starves in hidden tabs */
-  flowStack.push({ frame: fr, present: present === 'push' ? 'push' : 'sheet', id: f.id });
+  flowStack.push({ frame: fr, present: present === 'push' ? 'push' : 'sheet',
+                   id: f.id, opener: opener || null });
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
 }
@@ -2104,7 +2110,7 @@ function openFlowSheet(url, id) {           /* card entry point (legacy shape) *
   announceRouter(fr);
   document.body.append(fr);
   setTimeout(() => fr.classList.add('in'), 20);
-  flowStack.push({ frame: fr, present: 'sheet', id: id || null });
+  flowStack.push({ frame: fr, present: 'sheet', id: id || null, opener: null });
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
 }
@@ -2135,11 +2141,26 @@ addEventListener('message', e => {
        and popping the top frame for an unmatched source would close the
        whole stack on a message meant for its own parent */
     if (src) popFlow(src);
+  } else if (d.t === 'ds-result') {
+    /* result channel: a summoned flow answers the flow that summoned it,
+       then dismisses. ADDRESSED, never broadcast — the same source check as
+       ds-close, so a grandchild's message can't be delivered to an opener
+       that never asked it anything. `from` is what the HUB knows the
+       posting frame to be, not what the message claims to be. */
+    if (!src) return;
+    const to = src.opener;
+    if (to && to.frame.contentWindow) {
+      try {
+        to.frame.contentWindow.postMessage(
+          { t: 'ds-result', from: src.id || d.from || null, payload: d.payload }, '*');
+      } catch (_) {}
+    }
+    popFlow(src);                           /* answered or not, it closes */
   } else if (d.t === 'ds-nav') {
     const f = (NAV_FLOWS || []).find(x => x.id === d.to);
     if (!f || flowHiddenNow(f)) { showUnbuilt(d.to, f); return; }
     const present = d.present === 'tab' || d.present === 'push' ? d.present : 'sheet';
-    presentFlow(f, present, d.context, src && src.id);
+    presentFlow(f, present, d.context, src && src.id, src);
   }
 });
 

@@ -1230,10 +1230,10 @@
       ],
       "exits": [
         {
-          "intent": "open-rewards",
+          "intent": "redeem-coupon",
           "to": "rewards",
           "present": "sheet",
-          "note": "\"See all rewards\" at the foot of the coupon wallet — context {src:'checkout-coupons'}"
+          "note": "The coupon button and the promo bar both summon the rewards flow to redeem — context {src:'checkout', mode:'redeem', tier}. EXPECTS A RESULT BACK: {t:'ds-result', from:'rewards', payload:{code}} where code is rewards' own coupon code (DS-<TIER>25 / GYM-<TIER> / KIDS-<TIER>). Checkout decodes the code, applies the discount and re-prices; an unknown code is ignored."
         },
         {
           "intent": "open-plan-quiz",
@@ -1368,7 +1368,8 @@
         "Driving it from a script": "See the Semantic control map (controls[]) for every act and its payload — one delegated listener on [data-act] at the phone root, authored from the dispatcher. Labels are split across weight spans for typography and must never be matched on. For most runs you can skip the tapping entirely: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…} boots straight into any state, which is how this flow was verified on device when the Simulator MCP refused tap injection.",
         "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
         "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
-        "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy."
+        "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy.",
+        "Coupons": "ONE coupon experience in the product: the rewards flow. Checkout keeps no catalogue — it summons rewards and decodes the code that comes back, so the tier travels inside the code (DS-VIP25 → vip, 25% capped KD 80). The lab menu's Redeemed-coupon picker is review chrome standing in for the rip, not product surface."
       },
       "controls": [
         {
@@ -1419,16 +1420,15 @@
         },
         {
           "act": "coupons",
-          "does": "Opens the coupons sheet"
-        },
-        {
-          "act": "pickCoupon",
-          "payload": "data-cpn, data-tier",
-          "does": "Applies a coupon, or clears it if already applied. Present only on unlocked tiers"
+          "does": "Summons the rewards flow to redeem a coupon — checkout shows no list of its own",
+          "intent": {
+            "to": "rewards",
+            "present": "sheet"
+          }
         },
         {
           "act": "uncoupon",
-          "does": "Removes the applied coupon from the promo bar"
+          "does": "Removes the applied coupon from the promo bar and re-prices"
         },
         {
           "act": "method",
@@ -1442,14 +1442,6 @@
         {
           "act": "savings",
           "does": "Toasts today's saving"
-        },
-        {
-          "act": "allRewards",
-          "intent": {
-            "to": "rewards",
-            "present": "sheet"
-          },
-          "does": "Emits ds-nav → rewards (sheet)"
         },
         {
           "act": "guide",
