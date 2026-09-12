@@ -560,6 +560,10 @@ function openDay(mon, day, auto) {
       ? '&scrub=' + (new URLSearchParams(location.search)).get('scrub') : '') +
     ((new URLSearchParams(location.search)).get('scrubtwin')
       ? '&scrubtwin=' + (new URLSearchParams(location.search)).get('scrubtwin') : '') +
+    /* ?rpt=1 — diagnostic only, forwarded so the repaint probe can be armed
+       from the shell's launch URL. Absent in every normal load. */
+    ((new URLSearchParams(location.search)).get('rpt')
+      ? '&rpt=' + (new URLSearchParams(location.search)).get('rpt') : '') +
     '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
   /* the scrubber shows each day's STATUS (Rashid) and only the calendar

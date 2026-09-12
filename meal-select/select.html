@@ -2331,6 +2331,9 @@ confirmBtn.onclick = () => {
      gate: direction answers "scrub or scroll" on the first few pixels instead
      of making every gesture wait a third of a second to find out. */
   let axisLock = 0;
+  /* diagnostic flag: ?rpt=1 arms the repaint probe at the arm. Off always
+     unless explicitly passed, so no normal load can see it. */
+  const RPT = /[?&]rpt=1/.test(location.search);
   /* when the finger last actually moved, and how long a pause counts as "the
      user has stopped" before the nearest day glides to centre. 130ms is long
      enough not to fight a slow deliberate drag and short enough that letting
@@ -2525,6 +2528,25 @@ confirmBtn.onclick = () => {
     strip.style.transform = '';
     ttl.classList.add('scrub');          /* the whole container, one spring */
     dbg('scrub ON');
+    /* REPAINT PROBE (?rpt=1, diagnostic, off in every normal load).
+       The open question is whether the WEB VIEW is painting at all in-shell.
+       Everything measurable says the page is correct — classes applied,
+       .scrub alive for the whole press, layout reporting .scrub's 370x69 —
+       while the frame shows the pre-arm label, and the native layer is
+       equally invisible. One surface showing a stale frame would explain both
+       at once. This paints something impossible to miss, in the web layer,
+       at the moment of the arm: if the recording shows it, the web view
+       repaints and only the native layer is lost; if it doesn't, nothing is
+       painting and that is the whole bug. */
+    if (RPT) {
+      navEl.style.background = '#00e5ff';
+      navEl.style.outline = '6px solid #ff00a0';
+      dbg('repaint probe ON');
+      setTimeout(function () {
+        navEl.style.background = ''; navEl.style.outline = '';
+        dbg('repaint probe OFF');
+      }, 700);
+    }
     ttl.style.width = ''; ttl.style.height = '';   /* .scrub's own geometry wins */
     if (navEl) navEl.classList.add('scrubbing');
     vibrate(6);                          /* light tick on the morph itself */
@@ -3005,7 +3027,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 170 (beacons: when the arm goes on and off)';
+const BUILD = 'build 2026-09-12 · 171 (diagnostic: repaint probe, ?rpt=1)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
