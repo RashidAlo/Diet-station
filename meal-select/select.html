@@ -303,7 +303,14 @@
      doesn't). ALL glass (tint, backdrop blur, lens, sheen, vignette)
      lives on .glassbg — a SIBLING below the strip — so no renderer can
      ever blur the dates. The ttl itself carries only geometry+shadows. */
-  .nav .ttl.forming, .nav .ttl.scrub, .nav .ttl.unforming { padding: 0; overflow: hidden;
+  /* .tile joins this list so the RESTING square and the armed pill are the
+     same surface wearing different geometry — same rim, same glass, same
+     element. Rashid: "I want the container of the square to be the one that
+     morphs into the scrubbing widget, so we get a more seamless look."
+     Before this the tile carried its own background and backdrop-filter, so
+     arming SWAPPED one material for another and the container appeared to
+     pop rather than grow. Now only width, height, radius and top change. */
+  .nav .ttl.tile, .nav .ttl.forming, .nav .ttl.scrub, .nav .ttl.unforming { padding: 0; overflow: hidden;
     transform: translateX(-50%);
     box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.62),
       inset 0 -1px 1.2px rgba(255,255,255,.28),
@@ -311,6 +318,7 @@
       0 10px 28px -12px rgba(0,0,0,.34),
       0 2px 8px -5px rgba(0,0,0,.18); }
   .ttl .glassbg { display: none; }
+  .nav .ttl.tile .glassbg,
   .nav .ttl.forming .glassbg, .nav .ttl.scrub .glassbg,
   .nav .ttl.unforming .glassbg { display: block;
     position: absolute; inset: 0; border-radius: inherit; z-index: 0;
@@ -425,14 +433,23 @@
      Behind the triple-tap menu as a third option, never the default. */
   #dayTile { display: none; flex-direction: column; align-items: center;
     justify-content: center; gap: 1px; position: relative; z-index: 1; }
-  .nav .ttl.tile { height: 44px; width: 44px; padding: 2px;
-    border-radius: 14px; top: calc(var(--top-pad) + 9px);
-    background: rgba(255,255,255,.34);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5),
-      inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22); }
+  /* +8 ON THIS OPTION ONLY (Rashid: "I don't mind for this page if you give
+     the buttons an extra height of eight pixels, including this date widget —
+     I think this will give it more room, but I still want them to match").
+     So the whole action row goes 44 -> 52 when the square is selected, and
+     only then: .nav.tile-mode scopes it, the other two variations are
+     untouched. The tile stays square, so its width tracks its height. */
+  .nav .ttl.tile { height: 52px; width: 52px; padding: 2px;
+    border-radius: 16px; top: calc(var(--top-pad) + 5px);
+    /* geometry only — the glass and the rim come from the shared rules above,
+       which is what makes the morph continuous */
+    transition: width .48s cubic-bezier(.3,1.22,.36,1),
+      height .48s cubic-bezier(.3,1.22,.36,1),
+      top .48s cubic-bezier(.3,1.22,.36,1),
+      border-radius .48s cubic-bezier(.3,1.22,.36,1); }
+  .nav.tile-mode .navbtn { width: 52px; height: 52px; }
+  .nav.tile-mode .dual { height: 52px; border-radius: 26px; }
+  .nav.tile-mode .dual button { height: 52px; }
   .nav .ttl.tile #dayLabel { display: none !important; }
   .nav .ttl.tile #dayTile { display: flex; }
   /* the same split as the ladder: Proxima for the small label, Urbane for the
@@ -545,6 +562,12 @@
     fill: none; stroke: var(--sc-chip); stroke-width: 1.35;
     stroke-linecap: round; stroke-linejoin: round; }
   .scb .scb-it .s svg circle { stroke-width: 1.2; }
+  /* the one chip that is a word rather than a stroke, sized to sit on the
+     same optical line as the icons it replaces */
+  .scb .scb-it .s .c-off, #dayTile .t-s .c-off {
+    font: 600 7px/9px 'Proxima Nova', -apple-system, sans-serif;
+    font-style: normal; letter-spacing: .09em; color: var(--sc-chip); }
+  #dayTile .t-s .c-off { color: rgba(11,14,18,.34); }
   /* an OFF day is struck through and recedes, per the Figma Off variant */
   .scb .scb-it.st-off .n { text-decoration: line-through; opacity: .62; }
   .scb .scb-it.st-off .d { opacity: .62; }
@@ -2138,9 +2161,15 @@ function paintDayTile(idx) {
 function syncTileMode() {
   const t = document.querySelector('.nav .ttl');
   if (!t) return;
-  const on = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile')
-    && !t.classList.contains('scrub');
+  const isTile = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile');
+  const on = isTile && !t.classList.contains('scrub');
   t.classList.toggle('tile', on);
+  /* the +8 row height belongs to the VARIATION, not to the resting state, so
+     it stays on while the scrubber is armed — otherwise the X and the dual
+     would shrink by 8pt the moment you touched the date and grow back on
+     release, which is exactly the kind of twitch the morph is meant to end. */
+  const nav = document.querySelector('.nav');
+  if (nav) nav.classList.toggle('tile-mode', isTile);
   if (on) paintDayTile(typeof dayIdx === 'number' ? dayIdx : 0);
 }
 let turning = false;
@@ -2397,7 +2426,11 @@ confirmBtn.onclick = () => {
              '<circle cx="4.2" cy="11" r="1.5"/><circle cx="11.6" cy="11" r="1.5"/>'),
     rate:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
     star:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
-    off:   CHIP_SVG('M3 3h8', '0 0 14 6'),
+    /* a dash is not a word (Rashid: "the day you have a dash is an off day —
+       just write OFF instead of the dash, so it's understandable"). Every
+       other chip is a picture of its meaning; a horizontal line is a picture
+       of nothing, and the calendar grid already says OFF in words. */
+    off:   '<i class="c-off">OFF</i>',
   };
 
   /* on window: the status map arrives on a top-level message listener, which
@@ -2593,7 +2626,10 @@ confirmBtn.onclick = () => {
          the eye sees it round off rather than deflate — and the radius stream
          below keeps it fully round at every step so it is a ball throughout,
          never a rounded rectangle passing through. */
-      var ballD = Math.max(30, (formH0 || 22) + 8);
+      /* the ball lands on the RESTING footprint: on the square that is the
+         tile's own 52pt, on the plain label the old 30pt floor. Overshooting
+         the tile made the exit finish larger than the thing it returns to. */
+      var ballD = Math.max(30, Math.min(formW0 || 96, formH0 || 22));
       var ball = { x: formRect.x + formRect.w / 2 - ballD / 2,
         y: formRect.y + formRect.h / 2 - ballD / 2, w: ballD, h: ballD };
       var native = (window.DSScrubClose && formRect)
@@ -3139,7 +3175,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 176 (third option: the resting date as a squared glass tile)';
+const BUILD = 'build 2026-09-12 · 177 (square: one container morphs; OFF in words; 52pt row)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
