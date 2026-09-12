@@ -334,6 +334,29 @@
     background: var(--amber); border-radius: var(--r-round); padding: 2px 10px;
     font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
 
+  /* ================= liquid glass (Figma "BG - Small UI" recipe) ==========
+     Glass here floats over LIVE scrolling plan cards, so it is native CSS
+     backdrop-filter rather than a liquid-glass-js Container: the shader
+     refracts a frozen page snapshot and reads fake over moving content. */
+  .glass-btn { position: relative; flex: none; width: 40px; height: 40px; cursor: pointer;
+    border: none; background: none; padding: 6px 8px; border-radius: 1000px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s var(--ease); }
+  .glass-btn:active { transform: scale(.93); }
+  /* Figma stacks a plus-lighter + luminosity pair over the blur; backdrop-filter
+     opens a stacking context, which isolates those blends and turns the button
+     slate-grey (the coupon-compositing trap). Their net effect on a light page
+     is a bright translucent white, so that is what the fallback paints. */
+  .gfill { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
+    background: rgba(255,255,255,.58);
+    backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
+    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0,
+                0 0 0 .5px #e8e8e8, 0 8px 15px 0 rgba(0,0,0,.02); }
+  .gedge { position: absolute; inset: 0; border-radius: 1000px; pointer-events: none;
+    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
+                inset 0 40px 30px -40px #e6e6e6; }
+  .glass-btn img { position: relative; width: 20px; height: 20px; display: block; }
+
   /* ---- floating coupon FAB (50px round liquid glass, red tag icon) ---- */
   .fab-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 87px; z-index: 35;
     display: flex; align-items: center; justify-content: flex-end; padding: 0 24px;
@@ -470,10 +493,13 @@
   .pbig { font: 600 30px/1 'Urbane Rounded', sans-serif; color: transparent;
     background-clip: text; -webkit-background-clip: text; white-space: nowrap; }
   .pmo { font: 500 15px/1 'Proxima Nova', sans-serif; color: var(--muted); }
-  /* Figma: a 46.69px rule rotated 170.13deg, laid over the crossed list price */
-  .pstrike { position: absolute; top: 4px; width: 46px; height: 8px; pointer-events: none;
-    display: flex; align-items: center; justify-content: center; }
-  .pstrike img { width: 46.69px; height: 1px; display: block; transform: rotate(170.13deg); }
+  /* The crossing rule rides the struck number itself rather than a fixed
+     offset — the price changes with every coupon, so a fixed rule drifts off
+     it (it was cutting through the KD too). Same fix as the dock. */
+  .pw { position: relative; }
+  .pstrike { position: absolute; left: -1px; right: 3px; top: 50%; height: 8px;
+    margin-top: -4px; pointer-events: none; display: flex; align-items: center; }
+  .pstrike img { width: 100%; height: 1px; display: block; transform: rotate(-9.87deg); }
   .pchip { flex: none; height: 24px; display: flex; align-items: center;
     justify-content: center; padding: 2px 10px; border-radius: 300px;
     border: 1px solid rgba(0,0,0,.03); background: rgba(0,0,0,0);
@@ -608,7 +634,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·6</div>
+  <div class="s-foot" id="buildInfo">checkout ·7</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -628,7 +654,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·6';
+const BUILD = 'checkout ·7';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -909,7 +935,6 @@ function screenPlans() {
   const card = p => {
     const pr = planPrice(p);
     const m = money(pr.now);
-    const strikeRight = { thediet: 92, lifestyle: 105, bodybuilding: 103, kids: 93 }[p.id];
     return `<div class="pcard" data-plan="${p.id}" data-act="pickPlan">
       <div class="cardbg"></div>
       <div class="pcard-row">
@@ -919,8 +944,7 @@ function screenPlans() {
         </div>
         <div class="pcard-right">
           <div class="pprice"><div class="pprice-row">
-            <span class="pw">KD${p.was}</span><span class="pkd">KD</span><span class="pbig">${m.whole}${m.dec}</span><span class="pmo">/mo</span>
-            <span class="pstrike" style="right:${strikeRight}px"><img src="${A}strike-plan.svg" alt=""></span>
+            <span class="pw">KD${p.was}<span class="pstrike"><img src="${A}strike-plan.svg" alt=""></span></span><span class="pkd">KD</span><span class="pbig">${m.whole}${m.dec}</span><span class="pmo">/mo</span>
           </div></div>
           ${pr.cut ? `<div class="pchip">${AR_CHIP(pr.cut)}</div>` : ''}
           <span class="ppill"><span><span class="a">${esc(p.pill[0])}</span><span class="b">${esc(p.pill[1])}</span></span></span>
