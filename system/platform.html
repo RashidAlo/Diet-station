@@ -972,7 +972,7 @@ addEventListener('storage', e => {
       seven.</p>
   </section>
 
-  <section class="card" id="parsegate" style="scroll-margin-top:80px">
+  <section class="card" id="parsegate" data-ds-section="parsegate-v2" style="scroll-margin-top:80px">
     <h2>The parse gate — before you push an executable asset</h2>
     <p class="desc">One character took every flow&rsquo;s lab menu off the air today. A CSS
       block added to <code>lab-shell.js</code> opened with a single quote while the file&rsquo;s
@@ -996,6 +996,31 @@ addEventListener('storage', e => {
         complaint at the feature you are staring at, because the file never ran. Simultaneous
         total loss is the signature. Debugging the menu, the tabs, and the handoff view
         separately is three wasted hours on a one-character fault.</div>
+    </div>
+
+    <div class="slab">
+      <div class="sl">The missing half, found by this page&rsquo;s own author, three times</div>
+      <div class="sq">AND A GREP DOESN&rsquo;T RELIABLY PROVE DEPLOYMENT EITHER.</div>
+      <div class="sb">A negative from a text search is a claim about <b>byte sequences</b>, not
+        about what shipped. Three deploy checks on this project reported &ldquo;not live&rdquo;
+        for pages that were live, each for a different reason: an apostrophe that the file holds
+        as <code>&amp;rsquo;</code>, a phrase that wraps across a line break, and one before
+        those. <b>At three, the conclusion is about the instrument rather than the causes</b> —
+        grepping prose in source is inherently brittle, because the thing you type is not the
+        thing the file contains. Entities, wrapping, minification, attribute order and whitespace
+        all change the bytes without changing the page.<br><br>
+        The remedy is not a fourth special case:<br>
+        <b style="color:#f5f5f7">Assert on a stable token, not a phrase</b> — a class, an
+        <code>id</code>, a data attribute, a version constant. One word: it cannot wrap and it
+        cannot be entity-encoded. Give every new section an <code>id</code> in the same edit that
+        writes it, and check for that.<br>
+        <b style="color:#f5f5f7">Better, assert on the parsed artefact</b> — fetch and check the
+        DOM or CSSOM for the element or rule, which is what caught the orphaned-selector cascade
+        above. That instrument has not lied yet; the grep has, three times.<br><br>
+        Note the shape, because it is this system&rsquo;s own law in a different medium: the
+        instrument was correct about what it searched for, and the error was reading its answer as
+        a property of the deploy. That the family keeps catching its own authors is the argument
+        for writing it down.</div>
     </div>
 
     <h3>The gate — no toolchain required</h3>
