@@ -287,15 +287,21 @@
       (<code>480</code> beside <code>Kcal</code>), a duration beside its unit, a count beside its
       label. The worked implementation, the constants and the measuring recipe are on
       <a href="price.html#top" style="color:var(--red)">Price</a>.</p>
-    <p class="meta"><b style="color:var(--ink)">k is not per-family — it is per run.</b>
-      Measured on Urbane Rounded: digits <code>.1771</code> at both 300 and 600 (weight
-      doesn&rsquo;t move it), capitals <code>.184</code>, but <code>Kcal</code>
-      <code>.1493</code> — because the <code>l</code> is an ascender and ascenders out-top
-      capitals. A run of digits and a run with ascenders do not share a k, so measure on the
-      glyphs the run actually renders. And where the glyph classes differ, align on <b>cap
-      tops</b> rather than ink: matching the ink of a label with ascenders against a figure&rsquo;s
-      cap leaves the ascenders poking above the line, which is the thing the law was meant to
-      prevent.</p>
+    <p class="meta"><b style="color:var(--ink)">Measure k on a flat capital, and use that one
+      value for every run in the row.</b> Not on each run&rsquo;s own glyphs — that is the
+      tempting version and it is wrong. Measured on Urbane Rounded at the Calendar &amp; Meals
+      macro row&rsquo;s five labels: <code>P</code> <code>.184</code>, <code>F</code>
+      <code>.184</code>, <code>C</code> <code>.1771</code> (round letters overshoot flat ones),
+      <code>Kcal</code> <code>.1493</code> (the <code>l</code> is an ascender), and
+      <code>g</code> <code>.3299</code> — no capital at all, so its ink starts at x-height.
+      Per-run k spreads those across <b>0.18em</b>; at their 6.45px that is 1.2px of visible
+      disagreement, and it would shove the <code>g</code> nearly a pixel upward to stand its
+      x-height on the figure&rsquo;s cap line.<br>
+      One cap-derived k puts every run on a common <b>cap line</b> and lets the rest fall where
+      type says they should: ascenders overshoot, x-height letters sit lower, descenders hang.
+      That is what running text does, and it is what the eye reads as aligned. Use a flat
+      capital — <code>H</code> or <code>P</code> — since round letters and lining figures both
+      overshoot by about <code>.007em</code>.</p>
   </section>
 
   <section class="card">

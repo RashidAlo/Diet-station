@@ -409,21 +409,24 @@
     <p class="meta">If you do measure, compare <b>cap-bearing runs only</b>. A <code>/day</code>
       has no capitals, so its ink starts at x-height and will always read low — that is the
       glyphs, not the alignment.</p>
-    <p class="meta"><b style="color:var(--ink)">k is per run, not per family</b> — the reason
-      this component gets away with two constants is that every slot in a price renders digits
-      or capitals. Measured on Urbane Rounded: digits <code>.1771</code> at weight 300 and 600
-      alike, capitals <code>.184</code>, but <code>Kcal</code> <code>.1493</code>, because the
-      <code>l</code> is an ascender and ascenders out-top capitals. Outside prices — a macro
-      readout, a count beside a label — measure on the glyphs the run actually renders, and see
-      the mixed-size row law on
-      <a href="foundations.html" style="color:var(--red)">Foundations</a>.</p>
+    <p class="meta"><b style="color:var(--ink)">Measure k on a flat capital, not on the
+      run&rsquo;s own glyphs.</b> The reason this component gets away with two constants is that
+      every slot in a price renders digits or capitals, which sit within <code>.007em</code> of
+      each other. Outside prices they do not: on Urbane Rounded a <code>P</code> inks at
+      <code>.184</code>, <code>Kcal</code> at <code>.1493</code> (ascender), and a bare
+      <code>g</code> at <code>.3299</code> — no capital, so x-height. Deriving k per run spreads
+      those over <b>0.18em</b> and would stand the <code>g</code>&rsquo;s x-height on the
+      figure&rsquo;s cap line, which is wrong in the way that looks deliberate. One cap-derived k
+      per font and weight puts every run on a common cap line and lets ascenders overshoot and
+      x-heights sit low, exactly as running text does. Full case on
+      <a href="foundations.html" style="color:var(--red)">Foundations</a>, law 3.</p>
     <div class="codewrap">
       <pre id="kmeasure">/* the per-family constant — re-measure if a font file is ever replaced */
 const ctx = document.createElement('canvas').getContext('2d');
 
 function capOffsetRatio(weight, family) {
   ctx.font = `${weight} 100px ${family}`;
-  const m = ctx.measureText('139');
+  const m = ctx.measureText('H');        // a FLAT capital — never the run's own text
   const box = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
   const halfLeading = (100 - box) / 2;
   return (halfLeading + m.fontBoundingBoxAscent
