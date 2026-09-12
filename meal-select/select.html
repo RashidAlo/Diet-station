@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 207 (one handover frame, and a give as it lands)';
+const BUILD = 'build 2026-09-13 · 208 (the give is a settle, not a dip at the buzzer)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4279,7 +4279,18 @@ if (QS.get('solo') === '1') {
          there, visibly parked, still showing the scrubbed number. The
          ease-in-out keeps the rect moving until it lands, so the frame it
          stops is the frame it is replaced — no parked state to notice. */
-      var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      /* THE TRAVEL FINISHES EARLY SO THERE IS ROOM TO SETTLE. For the square
+         the whole 370 -> 52 journey is mapped into the first 78% and the last
+         22% is a dedicated settle window. ·207 put the give in the last 28% of
+         the travel itself, which meant the rect was still shrinking while it
+         compressed: the stream's final value was 48 and the landing frame
+         snapped it out to 52. Measured on the pilot — tail read 96, 77, 56,
+         48, then the instant post at 52. A 4pt pop is not a bounce.
+         Now: width reaches 52 at 78%, then gives and returns, so the last
+         streamed frames approach 52 from the settle rather than from the
+         shrink and nothing has to snap. */
+      var tp = isTile ? Math.min(1, p / 0.78) : p;
+      var e = tp < 0.5 ? 4 * tp * tp * tp : 1 - Math.pow(-2 * tp + 2, 3) / 2;
       var cw = f.w + (to.w - f.w) * e, ch = f.h + (to.h - f.h) * e;
       var cx = f.x + (to.x - f.x) * e + cw / 2, cy = f.y + (to.y - f.y) * e + ch / 2;
       /* AND THEN THE BALL GOES TO NOTHING. Taped: the collapse reaches a true
@@ -4299,17 +4310,17 @@ if (QS.get('solo') === '1') {
       var k = (!isTile && p > 0.8) ? 1 - ((p - 0.8) / 0.2) * 0.97 : 1;
       cw *= k; ch *= k;
       /* A GIVE AS IT LANDS (Rashid: "I expect some sort of bounce back into
-         the square state"). The last 28% narrows up to 6pt PAST the square
-         and returns, so the tile arrives with a little compression instead of
-         stopping dead — sin() so it is 0 at both ends and the rect still
-         lands on exactly 52.
-         WIDTH ONLY, and symmetric about cx which was computed above from the
-         unmodified width. Height and top are untouched on purpose: the
+         the square state"). In the settle window the width compresses up to
+         5pt past the square and returns — sin(), so zero at both ends, which
+         means the rect lands on exactly 52 and the landing frame has nothing
+         to correct.
+         WIDTH ONLY, and symmetric about cx, which was computed above from the
+         untouched width. Height and top are deliberately left alone: the
          forming bounce he had me remove grew DOWNWARD, because `top` is
-         pinned and an overshoot could only go one way. A horizontal give has
-         no such asymmetry — it compresses about the centre. */
-      if (isTile && p > 0.72) {
-        cw -= Math.sin(((p - 0.72) / 0.28) * Math.PI) * 6;
+         pinned and an overshoot there can only go one way. A horizontal give
+         has no such asymmetry — it compresses about the centre. */
+      if (isTile && p > 0.78) {
+        cw -= Math.sin(((p - 0.78) / 0.22) * Math.PI) * 5;
       }
       closeRect = { left: cx - cw / 2, top: cy - ch / 2, width: cw, height: ch };
       /* the corner travels with the size: 26 (armed capsule) -> 16 (tile), on
