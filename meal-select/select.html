@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 206 (a heartbeat, so an instrument proves it arrived)';
+const BUILD = 'build 2026-09-13 · 207 (one handover frame, and a give as it lands)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4298,6 +4298,19 @@ if (QS.get('solo') === '1') {
          unmistakably round from p=0.8 onward, which is the part that reads. */
       var k = (!isTile && p > 0.8) ? 1 - ((p - 0.8) / 0.2) * 0.97 : 1;
       cw *= k; ch *= k;
+      /* A GIVE AS IT LANDS (Rashid: "I expect some sort of bounce back into
+         the square state"). The last 28% narrows up to 6pt PAST the square
+         and returns, so the tile arrives with a little compression instead of
+         stopping dead — sin() so it is 0 at both ends and the rect still
+         lands on exactly 52.
+         WIDTH ONLY, and symmetric about cx which was computed above from the
+         unmodified width. Height and top are untouched on purpose: the
+         forming bounce he had me remove grew DOWNWARD, because `top` is
+         pinned and an overshoot could only go one way. A horizontal give has
+         no such asymmetry — it compresses about the centre. */
+      if (isTile && p > 0.72) {
+        cw -= Math.sin(((p - 0.72) / 0.28) * Math.PI) * 6;
+      }
       closeRect = { left: cx - cw / 2, top: cy - ch / 2, width: cw, height: ch };
       /* the corner travels with the size: 26 (armed capsule) -> 16 (tile), on
          the same eased progress as the rect, so width and rounding land on the
@@ -4315,7 +4328,22 @@ if (QS.get('solo') === '1') {
       closeRaf = null;
       if (done) done();
       closeRect = null; closeR = null; scrubHold = true;
-      report();
+      /* INSTANT, so the handover is ONE frame rather than two springs
+         (Rashid: "it goes back in two steps instead of a very smooth morph
+         back into the tile").
+         This post drops the scrub el and introduces the tile el on the same
+         frame — two DIFFERENT native twins at the same 52x52 r16 rect. Sent
+         normally, the renderer springs one away while springing the other in,
+         and those two motions at one position are the second step. `instant`
+         is exactly the tool for it: "an omitted el is torn down on that frame
+         instead of springing away, which is the only way to guarantee one
+         glass per frame at a handover."
+         The flag's scope is the whole post, which is the known cost — the
+         close and dual twins are re-anchored without animation here. By this
+         frame their ride back in has had the full close to finish, and the
+         ordinary reports after this one carry them normally. Verified on the
+         pilot rather than assumed. */
+      report(true);
     };
     closeRaf = requestAnimationFrame(tick);
     return true;
