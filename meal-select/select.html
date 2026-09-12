@@ -3263,7 +3263,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 190 (the square asks for real glass)';
+const BUILD = 'build 2026-09-12 · 191 (the tile hands over its text too)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3604,13 +3604,12 @@ if (QS.get('solo') === '1') {
   function currentMode() { return docked ? 'page' : 'sheet'; }
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
-    /* material off, text on — see the ELS note. Gated on the shell actually
-       CONFIRMING 'tile': a renderer that doesn't know the id won't list it,
-       the class never lands, and the web keeps its own approximation. That is
-       what makes this safe to ship before the native side exists. */
-    '.nav .ttl.tile.ds-native-glass { box-shadow: none !important; } ' +
-    '.nav .ttl.tile.ds-native-glass .glassbg { background: transparent !important; ' +
-    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
+    /* ds-native-glass lived here: material off, text on, so the web could keep
+       drawing the date over Shell's container. It cannot work, and the idea is
+       gone with the class. The shell's glass is a NATIVE layer ABOVE the
+       WKWebView, so there is no z-order in which page text sits on top of it —
+       close and dual work only because their glyphs are Shell's too. The tile
+       now hands over its text as well, in the el payload below. */
     /* ONE glass (Rashid): once the shell confirms the native gauge, the web
        bar hides for good — visibility (not opacity) so the celebration's
        burst/confetti children can still escape and render */
@@ -3666,8 +3665,21 @@ if (QS.get('solo') === '1') {
       el.classList.remove('ds-native-hidden');
     });
   }
+  /* PRE-HIDING IS ONLY SAFE FOR AN ID SOMETHING IS ACTUALLY REPLACING.
+     This runs on EVERY report, BEFORE any confirm, to stop a double-glass
+     flash — and that was safe only while ELS held close and dual, which every
+     shell renders. ·190 added `tile` and this blanked it on shells that don't
+     render the id yet: the date went invisible on TestFlight 45, a regression
+     I shipped and Shell caught with a blank-region probe.
+     close and dual keep the old unconditional behaviour, because a shell that
+     reports chrome at all draws those two. `tile` is pre-hidden only once a
+     confirm has actually named it, so an older renderer leaves the web tile
+     alone and the date stays on screen. Cost on a new renderer: the web tile
+     shows for the single frame before the first confirm. */
+  var confirmed = {};
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
+      if (id === 'tile' && !confirmed.tile) return;
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
@@ -3815,6 +3827,18 @@ if (QS.get('solo') === '1') {
       /* stateful glyphs: the twin must mirror the web state exactly —
          the dual's check is gray until the day completes, then red-trims */
       if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
+      /* the tile's three rows, in the same vocabulary as the scrub el's
+         dayNames/dates/statuses, so the renderer reuses one slot layout and
+         the resting square matches the armed ladder's typography BY
+         CONSTRUCTION instead of by two lanes agreeing on numbers. */
+      if (id === 'tile') {
+        try {
+          var td = dateFor(typeof dayIdx === 'number' ? dayIdx : 0);
+          entry.dayName = td.toLocaleDateString('en', { weekday: 'short' });
+          entry.date = String(td.getDate());
+          entry.status = DAY_STATUS[td.getDate() + ':' + td.getMonth()] || '';
+        } catch (_) {}
+      }
       els.push(entry);
     });
     var se = scrubEl(off, frac);
@@ -3840,6 +3864,7 @@ if (QS.get('solo') === '1') {
   window.DSNativeChrome = function (ids, caps) {
     nativeConfirmed = true;
     ids = ids || [];
+    ids.forEach(function (id) { confirmed[id] = true; });
     /* capability handshake: a renderer that drives the capsule from `from`
        with its own spring says so, and only then does the web stop morphing
        and hand it a destination instead of a path. Absent (every build
@@ -3860,12 +3885,7 @@ if (QS.get('solo') === '1') {
       if (id === 'scrub') return;
       var el = document.querySelector(ELS[id]);
       if (!el) return;
-      /* the tile is the one twin whose CONTENT stays web. close and dual are
-         container-only and Shell draws their glyphs, but the tile's three
-         rows are the date itself — so it yields its MATERIAL and keeps its
-         text, rather than going opacity:0 and taking the date with it. Still
-         exactly one container: the native one. */
-      el.classList.add(id === 'tile' ? 'ds-native-glass' : 'ds-native-hidden');
+      el.classList.add('ds-native-hidden');
     });
   };
   window.DSChromeTap = function (id) {
