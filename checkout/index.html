@@ -153,13 +153,13 @@
     justify-content: center; flex: none; }
   .dur .dur-price { padding-right: 30px; }
   .dur.sel .dur-price { padding-right: 0; }
+  /* the price line, duration variant — same rule as the plan cards */
   .price-row { display: flex; align-items: flex-start; }
-  .was { display: flex; align-items: flex-end; padding-right: 4px;
-    font: 600 14px/16px 'Proxima Nova', sans-serif; color: var(--muted);
-    text-decoration: line-through; }
-  .now-kd { font: 700 14px/22px 'Proxima Nova', sans-serif; color: var(--ink); }
-  .now { font: 700 18px/28px 'Proxima Nova', sans-serif; color: var(--ink); }
-  .now-dec { font: 700 12px/24px 'Proxima Nova', sans-serif; color: var(--ink); align-self: flex-end; }
+  .was { padding-right: 4px; font: 600 14px/1 'Proxima Nova', sans-serif;
+    color: var(--muted); text-decoration: line-through; }
+  .now-kd { padding-right: 1px; font: 700 14px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .now { font: 700 18px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .now-dec { font: 700 12px/1 'Proxima Nova', sans-serif; color: var(--ink); }
   .per-mo { display: flex; font: 500 10px/16px 'Proxima Nova', sans-serif; color: var(--muted); }
   .dur-check { width: 20px; height: 20px; flex: none; opacity: 0; transform: scale(.6);
     transition: opacity .2s ease, transform .3s var(--ease); }
@@ -209,15 +209,16 @@
   .pb-price { flex: 1; min-width: 0; display: flex; align-items: center;
     justify-content: space-between; padding: 8px 0 12px; }
   .pb-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
-  .pb-line { display: flex; height: 22px; align-items: flex-start; }
-  .pb-was { position: relative; display: flex; align-items: flex-end; padding-right: 4px;
-    font: 600 20px/16px 'Proxima Nova', sans-serif; color: var(--red); }
+  /* the price line, dock variant — same rule again */
+  .pb-line { display: flex; align-items: flex-start; }
+  .pb-was { position: relative; padding-right: 4px;
+    font: 600 20px/1 'Proxima Nova', sans-serif; color: var(--red); }
   /* the crossing rule rides the number itself, so it tracks any price width */
   .pb-was .sl { position: absolute; left: -2px; right: 2px; top: 50%; height: 11px;
     margin-top: -5px; display: flex; align-items: center; pointer-events: none; }
   .pb-was .sl img { width: 100%; height: 1px; display: block; transform: rotate(-9.5deg); }
-  .pb-kd { font: 700 20px/22px 'Proxima Nova', sans-serif; color: var(--ink); align-self: center; }
-  .pb-now { font: 600 30px/19px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .pb-kd { padding-right: 1px; font: 700 20px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .pb-now { font: 600 30px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
   .pb-before { position: absolute; left: 0; top: -13px; pointer-events: none;
     font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
   .cta { flex: 1; min-width: 0; height: 54px; border: none; cursor: pointer;
@@ -258,8 +259,8 @@
   .pay-name { flex: 1; min-width: 0; font: 500 14px/20px 'Proxima Nova', sans-serif; color: var(--ink); }
   .pay-name .sv { color: var(--green); font-weight: 700; }
   .pay-price { flex: none; display: flex; align-items: flex-start;
-    font: 700 15px/20px 'Proxima Nova', sans-serif; color: var(--ink); }
-  .pay-price .kd { font-size: 12px; line-height: 22px; padding-right: 1px; }
+    font: 700 15px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .pay-price .kd { font-size: 12px; line-height: 1; padding-right: 1px; }
   .pay-check { position: absolute; right: 11px; top: 50%; transform: translateY(-50%) scale(.6);
     width: 20px; height: 20px; opacity: 0; transition: opacity .2s ease, transform .3s var(--ease); }
   .pay-opt.sel .pay-check { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -332,70 +333,6 @@
   .days-seg .best { position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
     background: var(--amber); border-radius: var(--r-round); padding: 2px 10px;
     font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
-
-  /* ================= coupon picker overlay ================= */
-  .coupon-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 24px;
-    display: flex; flex-direction: column; gap: 12px; }
-  .cpn { position: relative; display: flex; align-items: center; gap: 14px; cursor: pointer;
-    border-radius: 20px; padding: 16px 18px; border: 1px solid var(--hair-lt); background: #fff;
-    transition: border-color .2s ease, transform .2s var(--ease); }
-  .cpn:active { transform: scale(.985); }
-  .cpn.sel { border-color: var(--green); border-width: 2px; padding: 15px 17px; }
-  .cpn.locked { opacity: .5; }
-  .cpn-badge { flex: none; width: 54px; height: 26px; border-radius: var(--r-round);
-    display: flex; align-items: center; justify-content: center;
-    font: 600 11px/1 'Urbane Rounded', sans-serif; letter-spacing: .4px;
-    border: 1px solid var(--badge-border, #fff); }
-  .cpn[data-tier="bronze"] .cpn-badge { background: linear-gradient(to bottom, #d5bb9f 45%, #c9a682 55%);
-    border-color: #ffffff; color: rgba(76,64,51,.72); }
-  .cpn[data-tier="silver"] .cpn-badge { background: linear-gradient(to bottom, #e5e7eb 45%, #d1d5db 55%);
-    border-color: #e4e4e7; color: rgba(82,82,91,.76); }
-  .cpn[data-tier="gold"] .cpn-badge { background: linear-gradient(to top, #f2b90d 45%, #ffca2a 55%);
-    border-color: #fefae7; color: #7a5a00; }
-  .cpn[data-tier="vip"] .cpn-badge { background: linear-gradient(180deg, #270f0f 38.462%, #0f0e0d 65.385%);
-    border-color: #f9f9f9; color: #fff; }
-  .cpn-mid { flex: 1; min-width: 0; }
-  .cpn-val { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .cpn-val span { font-size: 12px; font-weight: 500; color: var(--body); }
-  .cpn-sub { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--muted);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cpn-code { font: 500 11px/14px 'Avenir Next World', sans-serif; color: var(--body);
-    letter-spacing: .6px; margin-top: 2px; }
-  .cpn-pick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--hair-md);
-    display: flex; align-items: center; justify-content: center; transition: all .22s var(--ease); }
-  .cpn.sel .cpn-pick { border-color: var(--green); background: var(--green); }
-  .cpn-pick img { width: 14px; height: 14px; opacity: 0; transform: scale(.5);
-    transition: opacity .18s ease, transform .28s var(--ease); filter: brightness(0) invert(1); }
-  .cpn.sel .cpn-pick img { opacity: 1; transform: scale(1); }
-  .cpn-lock { position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-    font: 500 10px/14px 'Avenir Next World', sans-serif; color: var(--muted); }
-  .sheet-foot { flex: none; padding: 8px 20px 34px; }
-  .cpn-more { width: 100%; height: 48px; border-radius: var(--r-round); cursor: pointer;
-    border: 1px solid var(--hair); background: #fff;
-    font: 500 14px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
-
-  /* ================= liquid glass (Figma "BG - Small UI" recipe) ==========
-     Glass here floats over LIVE scrolling plan cards, so it is native CSS
-     backdrop-filter rather than a liquid-glass-js Container: the shader
-     refracts a frozen page snapshot and reads fake over moving content. */
-  .glass-btn { position: relative; flex: none; width: 40px; height: 40px; cursor: pointer;
-    border: none; background: none; padding: 6px 8px; border-radius: 1000px;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform .18s var(--ease); }
-  .glass-btn:active { transform: scale(.93); }
-  /* Figma stacks a plus-lighter + luminosity pair over the blur; backdrop-filter
-     opens a stacking context, which isolates those blends and turns the button
-     slate-grey (the coupon-compositing trap). Their net effect on a light page
-     is a bright translucent white, so that is what the fallback paints. */
-  .gfill { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
-    background: rgba(255,255,255,.58);
-    backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
-    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0,
-                0 0 0 .5px #e8e8e8, 0 8px 15px 0 rgba(0,0,0,.02); }
-  .gedge { position: absolute; inset: 0; border-radius: 1000px; pointer-events: none;
-    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
-                inset 0 40px 30px -40px #e6e6e6; }
-  .glass-btn img { position: relative; width: 20px; height: 20px; display: block; }
 
   /* ---- floating coupon FAB (50px round liquid glass, red tag icon) ---- */
   .fab-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 87px; z-index: 35;
@@ -521,16 +458,18 @@
     flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
   .pprice { display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
     padding-top: 3px; flex: none; }
-  .pprice-row { position: relative; display: flex; height: 26px; align-items: flex-start; }
-  .pw { display: flex; align-items: flex-end; padding-right: 4px;
-    font: 600 15px/16px 'Proxima Nova', sans-serif; color: var(--muted);
-    text-decoration: line-through; }
-  .pkd { font: 700 15px/22px 'Proxima Nova', sans-serif; color: transparent;
+  /* THE PRICE LINE (Rashid, 2026-09-12): only the main figure is large; the
+     struck price, the KD and the /mo all sit on one line, cap-top aligned with
+     it. line-height:1 puts every run's cap the same distance below its own box
+     top, so flex-start alignment lands them on a single optical line. */
+  .pprice-row { position: relative; display: flex; align-items: flex-start; }
+  .pw { padding-right: 4px; font: 600 15px/1 'Proxima Nova', sans-serif;
+    color: var(--muted); text-decoration: line-through; }
+  .pkd { padding-right: 1px; font: 700 15px/1 'Proxima Nova', sans-serif; color: transparent;
     background-clip: text; -webkit-background-clip: text; }
-  .pbig { font: 600 30px/19px 'Urbane Rounded', sans-serif; color: transparent;
+  .pbig { font: 600 30px/1 'Urbane Rounded', sans-serif; color: transparent;
     background-clip: text; -webkit-background-clip: text; white-space: nowrap; }
-  .pmo { display: flex; align-items: flex-start; font: 500 16px/24px 'Proxima Nova', sans-serif;
-    color: var(--muted); align-self: flex-end; }
+  .pmo { font: 500 15px/1 'Proxima Nova', sans-serif; color: var(--muted); }
   /* Figma: a 46.69px rule rotated 170.13deg, laid over the crossed list price */
   .pstrike { position: absolute; top: 4px; width: 46px; height: 8px; pointer-events: none;
     display: flex; align-items: center; justify-content: center; }
@@ -630,6 +569,14 @@
   </div>
 
   <div class="s-sec">
+    <div class="s-label">Redeemed coupon</div>
+    <p class="s-note">In the product a coupon only arrives one way: the member rips a tab in the
+      rewards flow. This picker stands in for that while reviewing outside the hub — it feeds the
+      same code through the same entry point.</p>
+    <div class="seg2" id="segCoupon"></div>
+  </div>
+
+  <div class="s-sec">
     <div class="s-label">Entry point</div>
     <p class="s-note">Signed-out shoppers land on the plan cards; a renewing member arrives from the
       loyalty page straight into their plan's durations.</p>
@@ -661,7 +608,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·5</div>
+  <div class="s-foot" id="buildInfo">checkout ·6</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -681,7 +628,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·5';
+const BUILD = 'checkout ·6';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -699,17 +646,38 @@ const TIERS = {
   vip:    { label: 'VIP',    rank: 4 },
 };
 
-/* ---------------- coupon wallet ----------------
-   Mock data. `tier` is the rung a coupon belongs to: anything above the
-   member's own rank shows locked, which is what makes the ladder legible
-   at the moment of purchase. */
-const COUPONS = [
-  { id: 'vip40',   tier: 'vip',    kind: 'flat', value: 40, label: 'KD 40', sub: 'On any subscription, this offer only', code: 'DS-VIP40',    mins: 180 },
-  { id: 'gold25',  tier: 'gold',   kind: 'pct',  value: 25, cap: 80, label: '25%', sub: 'Up to KD 80 OFF on any of our subscriptions', code: 'DS-GOLD25', mins: 2880 },
-  { id: 'gym',     tier: 'gold',   kind: 'flat', value: 15, label: 'KD 15', sub: 'GYM subscription add-on', code: 'GYM-GOLD',  mins: 4320 },
-  { id: 'silver10',tier: 'silver', kind: 'flat', value: 10, label: 'KD 10', sub: 'Welcome back offer', code: 'DS-SILVER10', mins: 7200 },
-  { id: 'kids',    tier: 'bronze', kind: 'flat', value: 5,  label: 'KD 5',  sub: 'KIDS subscription', code: 'KIDS-BRONZE', mins: 10080 },
-];
+/* ---------------- coupons ----------------
+   There is ONE coupon experience in the product and it is the rewards flow
+   (Rashid, 2026-09-12: "it should be just one page, and it's the coupon page
+   we made"). Checkout never lists coupons. It summons that flow, and decodes
+   whatever code comes back when the member rips a tab.
+
+   The families below mirror rewards' own couponDefs(): every code is
+   `<FAMILY>-<TIER>` with an optional percentage, e.g. DS-VIP25, GYM-GOLD,
+   KIDS-BRONZE — so the tier travels inside the code and checkout keeps no
+   parallel catalogue to drift out of sync. */
+const COUPON_FAMILIES = {
+  DS:   { kind: 'pct',  value: 25, cap: 80, label: '25%',   sub: 'Up to KD 80 OFF on any of our subscriptions' },
+  GYM:  { kind: 'flat', value: 15,          label: 'KD 15', sub: 'GYM subscription add-on' },
+  KIDS: { kind: 'flat', value: 5,           label: 'KD 5',  sub: 'KIDS subscription' },
+};
+const WALLET_SIZE = 3;   /* rewards offers three coupons per tier */
+
+function decodeCoupon(code) {
+  if (!code) return null;
+  const m = /^([A-Z]+)-([A-Z]+?)(\d+)?$/.exec(String(code).trim().toUpperCase());
+  if (!m) return null;
+  const fam = COUPON_FAMILIES[m[1]];
+  const tier = Object.keys(TIERS).find(t => TIERS[t].label.toUpperCase() === m[2]);
+  if (!fam || !tier) return null;
+  const c = Object.assign({ code: String(code).trim().toUpperCase(), tier }, fam);
+  if (m[3] && fam.kind === 'pct') { c.value = +m[3]; c.label = m[3] + '%'; }
+  return c;
+}
+function walletCodes(tier) {
+  const TAG = TIERS[tier].label.toUpperCase();
+  return ['DS-' + TAG + '25', 'GYM-' + TAG, 'KIDS-' + TAG];
+}
 
 /* ---------------- plans ----------------
    Prices are per month. `was` is the crossed list price on the card.
@@ -765,7 +733,7 @@ const S = {
   entry: 'plans',        /* plans | renew */
   plan: 'thediet',
   duration: null,        /* resolved on boot                       */
-  coupon: 'vip40',       /* applied coupon id, or null             */
+  coupon: 'DS-VIP25',    /* applied coupon CODE from rewards, or null */
   method: 'card2',       /* matches the Figma payment screenshot   */
   screen: 'plans',
   meals: { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 },
@@ -789,7 +757,6 @@ const S = {
    them. Flagged for Rashid. */
 
 function tierRank(t) { return TIERS[t].rank; }
-function couponById(id) { return COUPONS.find(c => c.id === id) || null; }
 function couponUnlocked(c) { return tierRank(c.tier) <= tierRank(S.tier); }
 
 function couponCut(c, subtotal) {
@@ -810,7 +777,7 @@ function quote(methodId) {
   const dur = currentDuration();
   const list = dur.was;                       /* crossed "Before" price    */
   const subtotal = dur.now;                   /* after the duration offer  */
-  const c = S.coupon ? couponById(S.coupon) : null;
+  const c = decodeCoupon(S.coupon);
   const cut = couponCut(c, subtotal);
   const afterCoupon = Math.max(0, +(subtotal - cut).toFixed(3));
   const m = METHODS.find(x => x.id === methodId) || null;
@@ -822,7 +789,7 @@ function quote(methodId) {
 
 /* a plan card's monthly price, re-priced by whatever coupon is applied */
 function planPrice(p) {
-  const c = S.coupon ? couponById(S.coupon) : null;
+  const c = decodeCoupon(S.coupon);
   const cut = couponCut(c, p.now);
   return { was: p.was, now: Math.max(0, +(p.now - cut).toFixed(3)), cut };
 }
@@ -876,7 +843,7 @@ function glassBtn(cls, inner, act, extra) {
 
 /* ---- the promo bar, shared by every screen that shows one ---- */
 function promoBar() {
-  const c = S.coupon ? couponById(S.coupon) : null;
+  const c = decodeCoupon(S.coupon);
   if (!c) {
     return `<div class="promo-wrap"><button class="promo" data-act="coupons">
       <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
@@ -1106,36 +1073,6 @@ function sheetModify() {
   </div>`;
 }
 
-/* ---- coupon picker (summoned by the floating coupon button) ---- */
-function sheetCoupons() {
-  const sorted = COUPONS.slice().sort((a, b) => tierRank(b.tier) - tierRank(a.tier));
-  return `<div class="sheet" data-sheet="coupons">
-    <div class="sheet-hdr">
-      <h2>Your coupons</h2>
-      <button class="sheet-x" data-act="closeSheet"><img src="${A}close.svg" alt="Close"></button>
-    </div>
-    <div class="coupon-list">
-      ${sorted.map(c => {
-        const open = couponUnlocked(c);
-        return `<div class="cpn${c.id === S.coupon ? ' sel' : ''}${open ? '' : ' locked'}"
-          data-tier="${c.tier}" data-cpn="${c.id}" ${open ? 'data-act="pickCoupon"' : ''}>
-          <span class="cpn-badge">${TIERS[c.tier].label}</span>
-          <span class="cpn-mid">
-            <span class="cpn-val">${c.label} <span>OFF</span></span>
-            <div class="cpn-sub">${esc(c.sub)}</div>
-            <div class="cpn-code">${c.code}</div>
-          </span>
-          ${open ? `<span class="cpn-pick"><img src="${A}check-thin.svg" alt=""></span>`
-                 : `<span class="cpn-lock">${TIERS[c.tier].label} only</span>`}
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="sheet-foot">
-      <button class="cpn-more" data-act="allRewards">See all rewards</button>
-    </div>
-  </div>`;
-}
-
 /* ============================ render ====================================== */
 const phone = document.getElementById('phone');
 const device = document.getElementById('device');
@@ -1150,10 +1087,9 @@ function render() {
     screenPayment() +
     `<div class="veil" data-act="closeSheet"></div>` +
     sheetModify() +
-    sheetCoupons() +
     `<div class="fab-bar">${glassBtn('fab',
         `<img class="fico" src="${A}coupon-fab.svg" alt="Coupons">`, 'coupons',
-        S.coupon ? '' : `<span class="dot">${COUPONS.filter(couponUnlocked).length}</span>`)}</div>` +
+        S.coupon ? '' : `<span class="dot">${WALLET_SIZE}</span>`)}</div>` +
     `<div class="toast" id="toast"></div>` +
     `<div class="island"></div>`;
   showScreen(S.screen, true);
@@ -1201,26 +1137,17 @@ phone.addEventListener('click', e => {
   if (!el) return;
   const act = el.dataset.act;
 
-  if (act === 'coupons') { e.stopPropagation(); openSheet('coupons'); return; }
+  /* The coupon button IS the rewards flow. Checkout shows no list of its own:
+     the member rips a tab over there, that flow closes itself, and the code it
+     redeemed arrives back here as a ds-result. */
+  if (act === 'coupons') {
+    e.stopPropagation();
+    dsNav('rewards', 'sheet', { src: 'checkout', mode: 'redeem', tier: S.tier },
+      () => toast('Coupons open from the hub — use the lab menu to preview a redemption'));
+    return;
+  }
   if (act === 'closeSheet') { closeSheets(); return; }
-  if (act === 'uncoupon') { e.stopPropagation(); S.coupon = null; vibrate(8); render(); toast('Coupon removed'); return; }
-
-  if (act === 'pickCoupon') {
-    const id = el.dataset.cpn;
-    S.coupon = (S.coupon === id) ? null : id;
-    vibrate(10);
-    const keep = S.screen;
-    render(); showScreen(keep, true);
-    if (S.coupon) { const c = couponById(S.coupon); toast(`${TIERS[c.tier].label} coupon applied — ${c.label} off`); }
-    else toast('Coupon removed');
-    return;
-  }
-
-  if (act === 'allRewards') {
-    /* cross-flow: browsing the whole wallet is the rewards flow's job */
-    dsNav('rewards', 'sheet', { src: 'checkout-coupons' }, () => toast('Rewards opens from the hub'));
-    return;
-  }
+  if (act === 'uncoupon') { e.stopPropagation(); applyCoupon(null); return; }
 
   if (act === 'pickPlan') {
     S.plan = el.dataset.plan; S.duration = null; vibrate(10);
@@ -1270,10 +1197,37 @@ phone.addEventListener('click', e => {
    so this page behaves identically standalone. */
 let DS_ROUTER = false;
 addEventListener('message', e => {
-  if (e.data && e.data.t === 'ds-router') DS_ROUTER = true;
+  if (!e.data || !e.data.t) return;
+  if (e.data.t === 'ds-router') DS_ROUTER = true;
   /* accepted entry: an opener may preselect a plan / duration / tier */
-  if (e.data && e.data.t === 'ds-context' && e.data.ctx) applyContext(e.data.ctx);
+  if (e.data.t === 'ds-context' && e.data.ctx) applyContext(e.data.ctx);
+  /* RESULT CHANNEL — a flow this one summoned handing an answer back.
+     rewards posts the redeemed code when a tab is ripped; the router relays
+     it to the opener as it pops the sheet. Unknown codes are ignored, so a
+     rewards build that doesn't emit yet simply leaves the price untouched. */
+  if (e.data.t === 'ds-result' && e.data.from === 'rewards') {
+    applyCoupon(e.data.payload && e.data.payload.code);
+  }
 });
+
+/* the single place a coupon is applied or cleared, whatever the source */
+function applyCoupon(code) {
+  if (code === null || code === undefined) {
+    if (!S.coupon) return;
+    S.coupon = null; vibrate(8);
+    const keep = S.screen; render(); showScreen(keep, true);
+    toast('Coupon removed');
+    return;
+  }
+  const c = decodeCoupon(code);
+  if (!c) return;                       /* not a coupon this flow understands */
+  S.coupon = c.code;
+  if (tierRank(c.tier) > tierRank(S.tier)) S.tier = c.tier;  /* redeeming proves the rung */
+  vibrate(10);
+  const keep = S.screen; render(); showScreen(keep, true);
+  toast(`${TIERS[c.tier].label} coupon applied — ${c.label} off`);
+}
+window.DSCheckoutApplyCoupon = applyCoupon;   /* native host / solo-summon hook */
 function dsNav(to, present, context, fallback) {
   if (DS_ROUTER && window.parent !== window) {
     vibrate(8);
@@ -1361,9 +1315,26 @@ function bindSeg(id, key, after) {
 }
 bindSeg('segTier', 'tier', () => {
   /* a downgraded member loses coupons above their rung */
-  const c = S.coupon ? couponById(S.coupon) : null;
+  const c = decodeCoupon(S.coupon);
   if (c && !couponUnlocked(c)) S.coupon = null;
+  setTimeout(paintCouponSeg, 0);
 });
+
+/* the redeemed-coupon stand-in: rewards' own three codes for the current tier */
+function paintCouponSeg() {
+  const wrap = document.getElementById('segCoupon');
+  if (!wrap) return;
+  wrap.innerHTML = walletCodes(S.tier).map(code => {
+    const c = decodeCoupon(code);
+    return `<button data-code="${code}" class="${S.coupon === code ? 'on' : ''}">${c.label}</button>`;
+  }).join('') + `<button data-code="" class="${S.coupon ? '' : 'on'}">None</button>`;
+}
+document.getElementById('segCoupon').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  applyCoupon(b.dataset.code || null);
+  paintCouponSeg();
+});
+paintCouponSeg();
 bindSeg('segEntry', 'entry', () => { S.screen = 'duration'; });
 
 function bindRange(id, out, key, fmt) {
@@ -1384,7 +1355,7 @@ bindRange('mCountdown', 'oCountdown', 'countdown', v => {
 bindRange('mPush', 'oPush', 'push', v => v + 'ms');
 
 document.getElementById('sReset').onclick = () => {
-  S.tier = 'vip'; S.entry = 'plans'; S.plan = 'thediet'; S.coupon = 'vip40';
+  S.tier = 'vip'; S.entry = 'plans'; S.plan = 'thediet'; S.coupon = 'DS-VIP25';
   S.method = 'card2'; S.screen = 'duration'; S.duration = null;
   S.meals = { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 };
   S.days = 'No Friday';
