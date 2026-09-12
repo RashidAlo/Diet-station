@@ -194,6 +194,11 @@
     display: flex; flex-direction: column; align-items: center; z-index: 5;
     pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06));
     animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) .62s both; }
+  /* held while the shell's presentation is in flight (build 53+); paused
+     inside the delay, so the badge is sitting at 0% opacity, not visible */
+  html.ds-surface-hold .day .badge { animation-play-state: paused; }
+  /* released: the wait is over, so the fallback delay must not apply again */
+  html.ds-surface-ready .day .badge { animation-delay: 0s; }
   .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
     margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
@@ -408,7 +413,51 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-13 · 25 (the badge pops after the surface lands)';
+
+/* ================= the shell tells us when we are on screen =================
+   An animation on the load clock starts before the user can see the surface:
+   the shell presents this web view with a native spring the page cannot
+   observe, and on a measured capture that cost the deadline badge the first
+   620ms of its 3.1s life — the whole pop. Build 53 publishes the fact
+   instead, one-way, two posts, no confirm:
+     DSNativeSurface({ phase: 'presenting', duration: 0.62 })   // immediately
+     DSNativeSurface({ phase: 'presented' })                    // on arrival
+   PREFER THE EVENT OVER THE NUMBER. `presenting` carries the real duration so
+   a page could size a delay from it, but a delay sized to a constant rots the
+   moment the spring changes; `presented` cannot. So: hold the animation while
+   the surface is in flight, release it on arrival, and let the CSS `.62s`
+   delay govern only when no signal ever arrives — which is every build before
+   53. Both paths end with the badge popping on a surface that has landed.
+   The release is idempotent and also runs on a safety timer, because a page
+   that hid its badge waiting for a second post that never came would be a
+   worse bug than the one this fixes. */
+var SURFACE = { held: false, done: false };
+function surfaceRelease() {
+  if (SURFACE.done || !SURFACE.held) return;
+  SURFACE.done = true; SURFACE.held = false;
+  var r = document.documentElement;
+  r.classList.remove('ds-surface-hold');
+  r.classList.add('ds-surface-ready');    /* delay 0 — for this badge and any later one */
+  /* the hold already spent the delay; restart so the animation begins here */
+  var bs = document.querySelectorAll('.day .badge');
+  for (var i = 0; i < bs.length; i++) {
+    var b = bs[i]; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
+  }
+}
+window.DSNativeSurface = function (m) {
+  try {
+    if (!m || !m.phase || SURFACE.done) return;
+    if (m.phase === 'presenting') {
+      SURFACE.held = true;
+      document.documentElement.classList.add('ds-surface-hold');
+      var d = (typeof m.duration === 'number' && m.duration > 0) ? m.duration : 0.62;
+      setTimeout(surfaceRelease, d * 1000 + 250);   /* if `presented` never lands */
+    } else if (m.phase === 'presented') {
+      SURFACE.held = true; surfaceRelease();
+    }
+  } catch (_) {}
+};
+const BUILD = 'calendar 2026-09-13 · 26 (the shell says when it has landed)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
