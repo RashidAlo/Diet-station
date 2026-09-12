@@ -210,11 +210,250 @@
       and none of them needed to.</p>
   </section>
 
+  <section class="card" id="protocol" style="scroll-margin-top:80px">
+    <h2>The protocol</h2>
+    <p class="desc">Both lanes, debugging from opposite ends of the bridge, reached the same
+      conclusion about what to generalise: <b>the protocol, not the renderer</b>. The Shell
+      lane&rsquo;s count — a generic renderer would have prevented none of the failures below; a
+      specced protocol would have prevented four of the five that reached Rashid. So the spec is
+      the deliverable and the catalogue is its rationale.</p>
+
+    <div class="slab">
+      <div class="sl">The constraint — stated once so it is never re-argued</div>
+      <div class="sq">THE PAGE CAN NEVER DRAW ON TOP OF NATIVE GLASS. WHOEVER DRAWS THE GLASS
+        DRAWS THE CONTENT INSIDE IT.</div>
+      <div class="sb">The shell&rsquo;s material is a native layer above the WKWebView. There is
+        no z-order, no opacity trick, no ordering of the two that puts page content over it.<br><br>
+        So a spec naming a material <i>and what sits under it</i> is fine. A spec saying
+        <b>&ldquo;web draws the text, native draws the container&rdquo; is not implementable</b>
+        — not a trade-off, not a cost question. Platform constraint. It cost Rashid three
+        separate reports in one day.<br><br>
+        <b style="color:#f5f5f7">Diagnostic:</b> blur is the discriminator. Crisp and blurred
+        glyphs cannot both be foreground draws on one layer — if the text beside native text is
+        pale and soft-edged, it is under the material, and no amount of tuning will lift
+        it.</div>
+    </div>
+  </section>
+
+  <section class="card" id="ruling-caps" style="scroll-margin-top:80px">
+    <h2>Ruling 1 — capability signalling</h2>
+    <p class="desc">The first thing ruled here rather than described, because it is a
+      protocol-design problem and not a documentation one. It cost <b>four of Rashid&rsquo;s
+      reports</b>, and both lanes arrived at the same rule independently — the Shell lane from
+      the native side, Calendar &amp; Meals from the page side. Convergence from two directions
+      is the strongest basis a ruling in this lab has had.</p>
+    <div class="slab">
+      <div class="sl">Ruling — binding on every composited surface</div>
+      <div class="sq">AN ECHO SAYS &ldquo;I HEARD YOU&rdquo;, NEVER &ldquo;I CAN DRAW IT&rdquo;.
+        AND A CAPABILITY FLAG SHIPS IN THE SAME COMMIT AS THE CAPABILITY.</div>
+      <div class="sb">
+        <b style="color:#f5f5f7">1 &middot; The confirm is a receipt.</b>
+        <code>DSNativeChrome(ids, caps)</code> derives <code>ids</code> from the payload, so it
+        echoes back every id it received <i>including ids it has no renderer for</i>. Never infer
+        capability from it.<br><br>
+        <b style="color:#f5f5f7">2 &middot; Capabilities are versioned numbers, not booleans.</b>
+        <code>{ scrubMotion: true, tileRows: 2 }</code>, tested <code>&gt;= n</code>, bumped and
+        never re-used. A boolean cannot distinguish a build that announces a thing from one that
+        has it.<br><br>
+        <b style="color:#f5f5f7">3 &middot; The bump lands in the same diff as the renderer &mdash; in
+        EVERY relay that sends it.</b> &ldquo;Same commit&rdquo; alone is not enough: build 48
+        satisfied it loosely, adding the cap to both confirm sites in one edit, and still lied,
+        because only one of the two relays could honour it. The cap was also once added <i>one
+        build before</i> the renderer. That build announces a capability and does not have it —
+        <b>it lies without anyone lying</b>, and no measurement of the implemented build says
+        anything about the announced-only one.<br><br>
+        <b style="color:#f5f5f7">4 &middot; Never confirm a capability from a relay that
+        doesn&rsquo;t share the renderer.</b><br><br>
+        <b style="color:#f5f5f7">5 &middot; Until a signal satisfies 2 and 3, the web keeps the
+        surface.</b> A readable web surface beats a prettier unreadable one, and the fallback
+        costs the user no install because it is page-side.</div>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">Applied to the open case:</b> the resting date
+      tile stays web-owned. That is not a concession pending a better build — under clause 5 it
+      is the correct state for <i>any</i> surface whose handover gate cannot distinguish
+      announcement from implementation, and it flips when a signal exists that ships with the
+      capability, not when a build is measured. Generalised for future surfaces: <b>the handover
+      gate is part of the surface&rsquo;s spec, and a surface whose gate can&rsquo;t be trusted
+      is specified as web-owned from the start</b> rather than handed over and walked back.</p>
+    <p class="meta">The transferable half, from the Calendar &amp; Meals lane and worth more than
+      the clauses: <b>a gate the lane that can SEE the failure can close in one line is worth
+      more than a fix.</b> The page can withhold the handover; only the shell can implement the
+      renderer. Put the guard where the evidence is.</p>
+  </section>
+
   <section class="card">
-    <h2>The failure catalogue</h2>
-    <p class="desc">Every one of these has actually happened in this lab, most more than once.
-      Symptom, cause, and the rule that prevents it — so the next surface doesn&rsquo;t
-      rediscover them. Ordered by how expensive they were.</p>
+    <h2>What the web does underneath a twin</h2>
+    <p class="desc">Three options, and picking the wrong one is failures 01 and 03. The choice
+      is per surface and it is ruled here, not decided in either lane.</p>
+    <div class="lad">
+      <div class="r"><b>Visual-only — yields its pixels, keeps its gesture</b>
+        <p>The native side draws the surface; the web element still receives the touch. Needs an
+          explicit <code>pointer-events</code> exception — and <b>a newly built element does not
+          inherit an older one&rsquo;s exception</b>, which is a whole round of &ldquo;the square
+          is inert&rdquo; on its own. Suppress with a <b>root</b> class and descendant selectors
+          so rebuilt elements stay suppressed (failure 05).</p></div>
+      <div class="r"><b>Inert — yields pixels and touches</b>
+        <p>The native twin is interactive in its own right. The web element is out of the way
+          entirely.</p></div>
+      <div class="r"><b>No twin — the web keeps everything</b>
+        <p>The default, and the correct answer whenever the native side cannot draw the
+          surface&rsquo;s content. A readable web surface beats a prettier unreadable one.</p></div>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">Visual-only and inert are properties of the
+      element, not of a class name</b> — so the spec states which one applies <i>per element</i>,
+      never per surface. The web-only fallback pairing is part of the same ruling: every
+      composited surface names what it becomes where there is no native twin. A surface without
+      that pairing is not specified, it is half-specified.</p>
+  </section>
+
+  <section class="card">
+    <h2>The element contract</h2>
+    <p class="desc">Written from the Shell lane&rsquo;s struct rather than from either
+      lane&rsquo;s memory, so the two sides stop drifting. Channel is
+      <code>window.webkit.messageHandlers.ds</code>; <code>glasschrome</code> is the rest post and
+      <code>chrometrack</code> carries the same element shape per frame while a morph runs.</p>
+    <div class="codewrap">
+      <pre id="elfields">// glasschrome — { t, flow, surface, mode, instant?, els: [...] }
+// chrometrack  — per-frame rects, els IDENTICAL IN SHAPE (failure 04)
+
+id, x, y, w, h, r        geometry; viewport px == points, and r morphs too
+on: Bool                 stateful twins (a confirm check that draws "on")
+mode: String?            variation hint — a documented constant
+from: CGRect?            the ORIGIN rect, captured at pointerdown before
+                         any morph. SEND ONLY ON THE POST THAT BEGINS A
+                         MORPH — present means "this is an arm, grow from
+                         here"; absent means "already armed, just render
+                         the destination". Carried on every rest post, the
+                         two states stop being distinguishable and the twin
+                         re-grows on an ordinary report.
+                         The receiver must ignore a DEGENERATE from (guard
+                         width > 1, height > 1) — framed at 0x0 the twin
+                         draws nothing, which looks exactly like a twin
+                         that never arrived.
+
+// scrub / ladder surfaces
+dates: [String]?         9 fixed slots, '' = out of range
+center: Double?          fractional index into dates (15.4 reads "between
+                         15 and 16"; native flips at .5)
+monthLabel, dayName      headline strings
+dayNames, statuses: [String]?   per-slot, parallel to dates
+
+// the resting tile
+date, status: String?    the numeral and the chip
+
+// status vocabulary, both singular and per-slot:
+//   add | soon | sel | auto | today | rate | star | off | ''
+//   '' IS LEGITIMATE — the day-status map only arrives from the parent
+//   calendar frame, so a direct page load legitimately has none.</pre>
+      <button class="copycode" data-copy="elfields">Copy</button>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">The confirm is <code>DSNativeChrome(ids,
+      caps)</code>.</b> <code>ids</code> echoes what the page sent — it is a receipt, not a
+      capability (failure 02). <code>caps</code> is flat and its values are <b>versioned
+      numbers</b>: <code>{ scrubMotion: true, tileRows: 2 }</code>, tested <code>&gt;= n</code>,
+      bumped and never re-used, with the bump landing in the same diff as the code that honours
+      it in <i>every</i> relay that sends it.</p>
+  </section>
+
+  <section class="card">
+    <h2>Material rules</h2>
+    <p class="desc">Native-side, from the Shell lane. These are the ones a spec gets wrong by
+      omission — each has produced a &ldquo;there are two glass effects&rdquo; report.</p>
+    <div class="lad">
+      <div class="r"><b>One element, not two shapes</b>
+        <p>A filled shape <i>under</i> a <code>.glassEffect()</code> gives two edges at slightly
+          different sizes; a drop shadow adds a third. That is what &ldquo;double container&rdquo;
+          looks like from the outside. Specify a <b>plain fill at rest that morphs into the
+          material when active</b> — one element throughout.</p></div>
+      <div class="r"><b>Glass on glass is <code>.clear</code> with a <code>.tint()</code></b>
+        <p>Two <code>.regular</code> surfaces stack their frost and read as two layers even when
+          the shapes match exactly.</p></div>
+      <div class="r"><b><code>GlassEffectContainer</code> merges siblings — it does not stack them</b>
+        <p>Wrapping a bar in one composites its glass into a single pass, which lifted a
+          selection lens <i>above</i> the labels and refracted them into a smear. Use it only
+          with <code>glassEffectID</code> unions.</p></div>
+      <div class="r"><b>A glass pill tints against its GROUND, not its component</b>
+        <p>The variable that drives the number is <b>what is underneath</b>. Measured across the
+          native side: <code>0.05</code> over saturated brand red &middot; <code>0.12&ndash;0.20</code>
+          over a dark or coloured surface &middot; <code>0.22</code> when the ground is
+          <i>itself</i> glass, because glass on glass needs more tint to read at all. Brand-red
+          tints sit at <code>0.15</code>. Past roughly <code>.5</code> white it stops being glass
+          and becomes plastic.<br>
+          The web layer runs lighter &mdash; <code>0.07</code> published, <code>0.14</code>
+          shipped on nav glass in two flows, <code>0.2</code> the container default. <b>That is a
+          genuine native/web divergence, not an average</b>; pair the two rather than quoting one
+          range for both. <b>A range quoted without its ground is unusable.</b><br>
+          If a surface needs to read as opaque it is not a glass surface &mdash; give it a solid
+          fill and say so.</p></div>
+      <div class="r"><b>Corners are <code>.continuous</code>, not <code>.circular</code></b>
+        <p><code>RoundedRectangle(cornerRadius:)</code> defaults to <code>.circular</code> and
+          Apple&rsquo;s own containers are continuous — visibly different at 52pt. A spec that
+          says only a radius has under-specified the shape.</p></div>
+      <div class="r"><b>On a light ground, web cannot approximate the material at all</b>
+        <p>A translucent white panel over a white sheet is white: <code>backdrop-filter</code>
+          has nothing behind it to refract and cannot reproduce edge response or specular. The
+          page lane proved a web tile <i>byte-identical</i> to the native button
+          (<code>rgba(255,255,255,.34)</code>, <code>blur(12px) saturate(1.6)</code>) and it
+          still read flat. <b>Native, or accept that it reads as a panel</b> — do not spend
+          iterations closing that gap.</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The spec, before anyone builds</h2>
+    <p class="desc">Short on purpose — it is a ruling, not a document. Nine lines, from this page,
+      before Shell and the feature lane start.</p>
+    <div class="codewrap">
+      <pre id="spectpl">SURFACE      which control, on which flow, in which state
+TWIN         yes / no — and if no, stop here
+DRAWS        who draws the content: native, or web. The same side must draw
+             the glass AND the rows (failure 01) — there is no in-between
+WEB DOES     per element: visual-only / inert / keeps everything
+FIELDS       every field, and EVERY construction and parse site — both
+             relays, hub and pilot (failure 03)
+GEOMETRY     the shared rule both sides quote (never two derivations)
+MATERIAL     tint within 0.07-0.2, radius, and the web-only fallback pairing
+CAP          the versioned number that gates the handover, and the diff it
+             lands in
+EVIDENCE     what measurement, on which surface, on a build in Rashid's
+             hands, closes this</pre>
+      <button class="copycode" data-copy="spectpl">Copy</button>
+    </div>
+    <p class="meta">The last line is failure 02 written as a question. A spec that ends at
+      &ldquo;the shell will announce a capability&rdquo; has not said how anyone will know it is
+      true.</p>
+  </section>
+
+  <section class="card">
+    <h2>Instruments are part of the contract</h2>
+    <p class="desc">The Shell lane&rsquo;s point, and it earns its own card because it is the
+      reason several of the failures above took multiple rounds rather than one.</p>
+    <div class="slab">
+      <div class="sl">Why a surface must announce itself</div>
+      <div class="sq">A SURFACE WITH NO INSTRUMENT PRODUCES EXACTLY THE SAME SILENCE AS A SURFACE
+        WITH NOTHING WRONG.</div>
+      <div class="sb">Which is how two lanes verified the wrong screen three times in a row.
+        Every relay logs under its own tag — <code>DSCHROME(hub)</code> versus
+        <code>DSCHROME(pilot)</code> — so a reading names the surface it came from rather than
+        assuming it. And every verification report states <b>build, surface, and install
+        method</b>: a green result taken against a hot-reloaded dylib is not a result about the
+        build in Rashid&rsquo;s hands, and every green reading on the native path so far had been
+        taken that way.</div>
+    </div>
+    <p class="meta">This is the same shape as the laws on
+      <a href="price.html" style="color:var(--red)">Price</a> — a check that cannot fail, an
+      audit that could not have found anything. Here it is a check that cannot say <i>where</i>
+      it looked. Requiring the tag is cheap; the alternative is a correct measurement of the
+      wrong screen, which is indistinguishable from success.</p>
+  </section>
+
+  <section class="card">
+    <h2>The catalogue — why the protocol says what it says</h2>
+    <p class="desc">The rationale appendix. Every one of these happened here, most more than
+      once, and each is the reason a clause above exists. Both lanes submitted their halves
+      independently and the overlap is almost total — Calendar &amp; Meals from the page side,
+      Shell from the native side, arriving at the same rules from opposite ends of the bridge.
+      The first two cost the most; the rest are grouped by kind.</p>
 
     <div class="fail">
       <div class="fh"><span class="fn">01</span><span class="ft">The number vanishes under the
@@ -347,118 +586,6 @@
   </section>
 
   <section class="card">
-    <h2>What the web does underneath a twin</h2>
-    <p class="desc">Three options, and picking the wrong one is failures 01 and 03. The choice
-      is per surface and it is ruled here, not decided in either lane.</p>
-    <div class="lad">
-      <div class="r"><b>Visual-only — yields its pixels, keeps its gesture</b>
-        <p>The native side draws the surface; the web element still receives the touch. Needs an
-          explicit <code>pointer-events</code> exception — and <b>a newly built element does not
-          inherit an older one&rsquo;s exception</b>, which is a whole round of &ldquo;the square
-          is inert&rdquo; on its own. Suppress with a <b>root</b> class and descendant selectors
-          so rebuilt elements stay suppressed (failure 05).</p></div>
-      <div class="r"><b>Inert — yields pixels and touches</b>
-        <p>The native twin is interactive in its own right. The web element is out of the way
-          entirely.</p></div>
-      <div class="r"><b>No twin — the web keeps everything</b>
-        <p>The default, and the correct answer whenever the native side cannot draw the
-          surface&rsquo;s content. A readable web surface beats a prettier unreadable one.</p></div>
-    </div>
-    <p class="meta"><b style="color:var(--ink)">Visual-only and inert are properties of the
-      element, not of a class name</b> — so the spec states which one applies <i>per element</i>,
-      never per surface. The web-only fallback pairing is part of the same ruling: every
-      composited surface names what it becomes where there is no native twin. A surface without
-      that pairing is not specified, it is half-specified.</p>
-  </section>
-
-  <section class="card">
-    <h2>The element contract</h2>
-    <p class="desc">Written from the Shell lane&rsquo;s struct rather than from either
-      lane&rsquo;s memory, so the two sides stop drifting. Channel is
-      <code>window.webkit.messageHandlers.ds</code>; <code>glasschrome</code> is the rest post and
-      <code>chrometrack</code> carries the same element shape per frame while a morph runs.</p>
-    <div class="codewrap">
-      <pre id="elfields">// glasschrome — { t, flow, surface, mode, instant?, els: [...] }
-// chrometrack  — per-frame rects, els IDENTICAL IN SHAPE (failure 04)
-
-id, x, y, w, h, r        geometry; viewport px == points, and r morphs too
-on: Bool                 stateful twins (a confirm check that draws "on")
-mode: String?            variation hint — a documented constant
-from: CGRect?            the origin rect, captured BEFORE any morph
-
-// scrub / ladder surfaces
-dates: [String]?         9 fixed slots, '' = out of range
-center: Double?          fractional index into dates (15.4 reads "between
-                         15 and 16"; native flips at .5)
-monthLabel, dayName      headline strings
-dayNames, statuses: [String]?   per-slot, parallel to dates
-
-// the resting tile
-date, status: String?    the numeral and the chip
-
-// status vocabulary, both singular and per-slot:
-//   add | soon | sel | auto | today | rate | star | off | ''
-//   '' IS LEGITIMATE — the day-status map only arrives from the parent
-//   calendar frame, so a direct page load legitimately has none.</pre>
-      <button class="copycode" data-copy="elfields">Copy</button>
-    </div>
-    <p class="meta"><b style="color:var(--ink)">The confirm is <code>DSNativeChrome(ids,
-      caps)</code>.</b> <code>ids</code> echoes what the page sent — it is a receipt, not a
-      capability (failure 02). <code>caps</code> is flat and its values are <b>versioned
-      numbers</b>: <code>{ scrubMotion: true, tileRows: 2 }</code>, tested <code>&gt;= n</code>,
-      bumped and never re-used, with the bump landing in the same diff as the code that honours
-      it in <i>every</i> relay that sends it.</p>
-  </section>
-
-  <section class="card">
-    <h2>The spec, before anyone builds</h2>
-    <p class="desc">Short on purpose — it is a ruling, not a document. Nine lines, from this page,
-      before Shell and the feature lane start.</p>
-    <div class="codewrap">
-      <pre id="spectpl">SURFACE      which control, on which flow, in which state
-TWIN         yes / no — and if no, stop here
-DRAWS        who draws the content: native, or web. The same side must draw
-             the glass AND the rows (failure 01) — there is no in-between
-WEB DOES     per element: visual-only / inert / keeps everything
-FIELDS       every field, and EVERY construction and parse site — both
-             relays, hub and pilot (failure 03)
-GEOMETRY     the shared rule both sides quote (never two derivations)
-MATERIAL     tint within 0.07-0.2, radius, and the web-only fallback pairing
-CAP          the versioned number that gates the handover, and the diff it
-             lands in
-EVIDENCE     what measurement, on which surface, on a build in Rashid's
-             hands, closes this</pre>
-      <button class="copycode" data-copy="spectpl">Copy</button>
-    </div>
-    <p class="meta">The last line is failure 02 written as a question. A spec that ends at
-      &ldquo;the shell will announce a capability&rdquo; has not said how anyone will know it is
-      true.</p>
-  </section>
-
-  <section class="card">
-    <h2>Instruments are part of the contract</h2>
-    <p class="desc">The Shell lane&rsquo;s point, and it earns its own card because it is the
-      reason several of the failures above took multiple rounds rather than one.</p>
-    <div class="slab">
-      <div class="sl">Why a surface must announce itself</div>
-      <div class="sq">A SURFACE WITH NO INSTRUMENT PRODUCES EXACTLY THE SAME SILENCE AS A SURFACE
-        WITH NOTHING WRONG.</div>
-      <div class="sb">Which is how two lanes verified the wrong screen three times in a row.
-        Every relay logs under its own tag — <code>DSCHROME(hub)</code> versus
-        <code>DSCHROME(pilot)</code> — so a reading names the surface it came from rather than
-        assuming it. And every verification report states <b>build, surface, and install
-        method</b>: a green result taken against a hot-reloaded dylib is not a result about the
-        build in Rashid&rsquo;s hands, and every green reading on the native path so far had been
-        taken that way.</div>
-    </div>
-    <p class="meta">This is the same shape as the laws on
-      <a href="price.html" style="color:var(--red)">Price</a> — a check that cannot fail, an
-      audit that could not have found anything. Here it is a check that cannot say <i>where</i>
-      it looked. Requiring the tag is cheap; the alternative is a correct measurement of the
-      wrong screen, which is indistinguishable from success.</p>
-  </section>
-
-  <section class="card">
     <h2>Where the boundary sits today</h2>
     <p class="desc">Live state, not a ruling — it moves, and these lanes are mid-flight. Recorded
       so a reader knows which side of the line they are on.</p>
@@ -468,11 +595,17 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
       failure 01 stated as a constraint rather than a bug, and Rashid has accepted it. It is also
       exactly why these rules matter — that boundary is where the two lanes meet, and every
       failure above happened within a few points of it.</p>
-    <p class="meta">The calendar tile handover is currently <b>page-side</b> — the web keeps the
-      tile — after the 48/49 round. It flips when a row is measured on an uploaded build in
-      Rashid&rsquo;s hands, not on a hot-reloaded dylib. That distinction is failure 02: every
-      green result on the native path so far had been taken against a dylib newer than the build
-      he was holding.</p>
+    <p class="meta"><b style="color:var(--ok)">The versioned cap works end to end.</b> Measured
+      by the Shell lane on the <i>pilot</i> surface, on the current build, against the Calendar
+      lane&rsquo;s ·205: <code>armed=[close,dual,tile]</code> with the three rows drawing at
+      <code>rgb(120,122,124)</code> / <code>rgb(11,14,18)</code> / <code>rgb(171,172,173)</code>
+      — one step off the web&rsquo;s values on two of three rows, <b>which is how you tell whose
+      renderer drew it</b>. That last detail is worth keeping as a technique: when both sides can
+      draw the same thing, a small deliberate difference in the output is the cheapest possible
+      instrument.<br>
+      The resting date tile remains web-owned under Ruling 1 clause 5 — not as a concession
+      pending a better build, but because that is the specified state for a surface until its
+      gate can distinguish announcement from implementation.</p>
   </section>
 
 </div>
