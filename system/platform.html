@@ -621,9 +621,29 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       <pre id="dsnavManifest">// optional per-flow fields, rendered as "Integration points" in both
 // handoff surfaces (hub card panel + lab-shell Dev handoff view):
 "entries": [ { "id": "meal-select", "params": "ctx.day", "note": "opened from home day strip" } ],
-"exits":   [ { "intent": "view rewards", "to": "rewards", "present": "sheet", "note": "coupon chip tap" } ]</pre>
+"exits":   [ { "intent": "view rewards", "to": "rewards", "present": "sheet", "note": "coupon chip tap" } ]
+
+// TWO EXIT SHAPES THAT ARE NOT ds-nav TARGETS — a validator must not flag them:
+//
+// 1. LEAVING, NOT GOING. present:'close' with to:'(host)' documents a ds-close.
+//    "(host)" is prose, not a flow id — it means "whatever presented me resumes".
+//    auth declares one for its X and its post-success; auth/index.html contains
+//    no "(host)" anywhere, because there is nothing to navigate to.
+//
+// 2. AN EXIT THAT EXPECTS AN ANSWER SAYS SO, in its own note — the shape of the
+//    ds-result it awaits and what it does with an unrecognised payload.
+//    checkout's redeem-coupon is the worked example: it names the payload key,
+//    the code formats rewards can send, and that an unknown code is ignored.</pre>
       <button class="copycode" data-copy="dsnavManifest">Copy</button>
     </div>
+    <p class="meta"><b style="color:var(--ink)">Writing a validator over this?</b> Hub swept
+      the whole manifest and every <code>to</code> resolved — its single finding was the sweep
+      being wrong about <code>(host)</code>. Two things not to treat as defects: an exit whose
+      <code>present</code> is <code>close</code> has no target to resolve, and a
+      <code>to</code> pointing at an <b>offline</b> flow is correct behaviour — three exits
+      currently reach plan-quiz, which shows the later-sprint card until Rashid flips it live.
+      A manifest is a place where a check that cannot fail hides easily: a claim about a lane
+      that ships nothing agrees with any rule you hand it.</p>
     <p class="meta"><b style="color:var(--ink)">Building a new flow?</b> Wire its controls with
       <code>data-act</code> and one delegated listener from the first commit, and publish the
       <a href="#controlmap" style="color:var(--red)">semantic control map</a> with its handoff —
