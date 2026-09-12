@@ -2910,7 +2910,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 166 (one exit per arm; Next on clear glass, shadow on the glyphs)';
+const BUILD = 'build 2026-09-12 · 167 (re-window carries the fractional centre)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3400,8 +3400,20 @@ if (QS.get('solo') === '1') {
     return br.indexOf('%') >= 0 ? Math.min(round, Math.min(r.width, r.height) * v / 100) : v;
   }
   /* a ladder re-window mid-scrub posts fresh dates/center to the twin */
-  window.DSScrubRepost = function () { if (!layerUp) report(); };
-  function report(instant) {
+  /* A RE-WINDOW MUST NOT RE-ALIGN THE LADDER (Rashid: "instead of snapping or
+     instantly switching to each one, just have them draggable left and right
+     smoothly").
+     This fires on every integer crossing to hand the twin a freshly windowed
+     date array. It used to go through report() with no `frac`, which reports
+     center as EXACTLY 4.0 — but at the moment of a crossing the true centre is
+     4 + (disp - winC), and disp can sit up to half a slot either side of the
+     integer. So once per day the renderer was told "you are perfectly aligned"
+     when it was not, and it corrected. That correction, repeated every day
+     crossed, IS the snapping: the track frames either side of it were already
+     continuous. Same rect, same dates, fractional centre — the re-window
+     becomes invisible and the ladder just travels. */
+  window.DSScrubRepost = function () { if (!layerUp) report(false, true); };
+  function report(instant, frac) {
     if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
@@ -3421,7 +3433,7 @@ if (QS.get('solo') === '1') {
       if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
       els.push(entry);
     });
-    var se = scrubEl(off);
+    var se = scrubEl(off, frac);
     if (se) els.push(se);
     try {
       var msg = { t: 'glasschrome', flow: FLOW,
