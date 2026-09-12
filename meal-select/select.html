@@ -410,6 +410,40 @@
     background: rgba(50,50,54,.22); }
   .nav .ttl #dayLabel { position: relative; z-index: 1; }  /* above .glassbg */
   .nav .ttl.scrub #dayLabel { display: none !important; }   /* beats its inline display */
+  /* ---- THIRD VARIATION: the resting date as a squared glass tile ----
+     Rashid: "a third variation where the date and its default format is in
+     the same state inside the scrubber — the tiny day above, the date number
+     in the middle, and the status — but in a rounded square container in
+     liquid glass. That way it shows you can actually interact with this
+     element, and then the calendar expands into the scrubbing form. But the
+     square's height must not exceed the other action buttons."
+     So the resting title stops being bare text and becomes a CONTROL: the
+     same three-row stack a ladder slot carries, in the same material as the
+     X and the dual, at exactly their 44pt height. Nothing about the armed
+     scrubber changes — this is the state you see BEFORE you touch it, and it
+     is what makes the affordance legible.
+     Behind the triple-tap menu as a third option, never the default. */
+  #dayTile { display: none; flex-direction: column; align-items: center;
+    justify-content: center; gap: 1px; position: relative; z-index: 1; }
+  .nav .ttl.tile { height: 44px; width: 44px; padding: 2px;
+    border-radius: 14px; top: calc(var(--top-pad) + 9px);
+    background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5),
+      inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22); }
+  .nav .ttl.tile #dayLabel { display: none !important; }
+  .nav .ttl.tile #dayTile { display: flex; }
+  /* the same split as the ladder: Proxima for the small label, Urbane for the
+     numeral, hairline strokes for the chip */
+  #dayTile .t-d { font: 400 9px/10px 'Proxima Nova', -apple-system, sans-serif;
+    letter-spacing: .05em; color: rgba(11,14,18,.55); }
+  #dayTile .t-n { font: 600 15px/17px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  #dayTile .t-s { height: 10px; display: flex; align-items: center; }
+  #dayTile .t-s svg { display: block; width: 10px; height: 10px; fill: none;
+    stroke: rgba(11,14,18,.34); stroke-width: 1.4;
+    stroke-linecap: round; stroke-linejoin: round; }
   .scb { display: none; }
   /* ONE LADDER DESIGN, TWO COLOUR SCHEMES (Rashid: "make both red portal
      and the glass one the same design just different colour schemes").
@@ -1169,6 +1203,7 @@
     <div class="seg2" id="scrubSeg">
       <button data-v="glass" class="on">Glass</button>
       <button data-v="portal">Red portal</button>
+      <button data-v="tile">Square</button>
     </div>
   </div>
 
@@ -1205,7 +1240,7 @@
           <button class="navbtn gx" id="closeBtn" aria-label="Close">
             <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </button>
-          <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span></div>
+          <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span><span id="dayTile" aria-hidden="true"></span></div>
           <div class="dual">
             <button class="dclear" id="clearBtn" aria-label="Clear all">
               <svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg>
@@ -2029,6 +2064,10 @@ addEventListener('message', e => {
   if (!d || d.t !== 'ds-daystatus' || !d.map) return;
   DAY_STATUS = d.map;
   if (window.repaintScrubStrip) window.repaintScrubStrip();
+  /* the resting tile carries a status chip too, and this map lands after
+     first paint — without this the tile shows a day with no status until
+     something else happens to repaint it */
+  if (typeof syncTileMode === 'function') syncTileMode();
 });
 
 /* every day opens with deterministic fallback picks the user can just keep */
@@ -2079,6 +2118,30 @@ function dateFor(idx) {
 function dayLabelFor(idx) {
   const d = dateFor(idx);
   return MONS[d.getMonth()] + ' ' + ordinal(d.getDate());
+}
+/* the resting tile's three rows — the same stack a ladder slot carries, so
+   the thing you touch and the thing it becomes are visibly the same object */
+function paintDayTile(idx) {
+  const el = document.getElementById('dayTile');
+  if (!el) return;
+  const d = dateFor(idx);
+  const st = DAY_STATUS[d.getDate() + ':' + d.getMonth()] || '';
+  const chip = (window.scrubChipFor && window.scrubChipFor(st)) || '';
+  el.innerHTML =
+    '<span class="t-d">' + d.toLocaleDateString('en', { weekday: 'short' }) + '</span>' +
+    '<span class="t-n">' + d.getDate() + '</span>' +
+    '<span class="t-s">' + chip + '</span>';
+}
+/* .tile is the RESTING presentation only: it is shed the moment the scrubber
+   arms and restored when the capsule has landed, so it never fights .scrub's
+   geometry. Third option, never the default. */
+function syncTileMode() {
+  const t = document.querySelector('.nav .ttl');
+  if (!t) return;
+  const on = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile')
+    && !t.classList.contains('scrub');
+  t.classList.toggle('tile', on);
+  if (on) paintDayTile(typeof dayIdx === 'number' ? dayIdx : 0);
 }
 let turning = false;
 /* ---- day-turn arrival offset (Rashid: "offset/padding only, minimise the
@@ -2134,6 +2197,7 @@ function turnDay(dir, target) {
     lbl.style.transform = 'translateX(' + (-28 * dir) + 'px)'; lbl.style.opacity = '0';
     setTimeout(() => {
       lbl.textContent = dayLabelFor(dayIdx);   /* month-aware past the boundary */
+      paintDayTile(dayIdx);
       lbl.style.transition = 'none';
       lbl.style.transform = 'translateX(' + (28 * dir) + 'px)';
       setTimeout(() => {
@@ -2338,6 +2402,8 @@ confirmBtn.onclick = () => {
 
   /* on window: the status map arrives on a top-level message listener, which
      has no view of this closure */
+  /* the resting tile lives at top level and needs the same chip artwork */
+  window.scrubChipFor = function (st) { return SCRUB_CHIP[st] || ''; };
   window.repaintScrubStrip = function () { if (scrubbing) paintStrip(winC); };
   function itemHTML(idx, center) {
     if (idx < 0 || idx > maxIdx) return '<div class="scb-it"></div>';
@@ -2477,6 +2543,7 @@ confirmBtn.onclick = () => {
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
+    syncTileMode();       /* back to the resting presentation */
   }
   function unform() {
     /* ONE EXIT PER ARM (Rashid: "when I quickly tap and move my finger away
@@ -2564,6 +2631,7 @@ confirmBtn.onclick = () => {
     formRect = { x: r0.left, y: r0.top, w: r0.width, h: r0.height };
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;                /* commit the start of the morph */
+    ttl.classList.remove('tile');   /* resting presentation only */
     ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
     target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
     paintStrip(winC);
@@ -2896,6 +2964,7 @@ document.querySelectorAll('#scrubSeg button').forEach(b =>
     MODS.scrubStyle = b.dataset.v;
     document.querySelectorAll('#scrubSeg button').forEach(x =>
       x.classList.toggle('on', x === b));
+    syncTileMode();          /* the resting presentation changes with it */
   });
 document.querySelectorAll('#scrubSeg button').forEach(x =>   /* primer sync */
   x.classList.toggle('on', x.dataset.v === (MODS.scrubStyle || 'glass')));
@@ -3070,7 +3139,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 175 (Next responds in 650ms; line chips; softer shadows)';
+const BUILD = 'build 2026-09-12 · 176 (third option: the resting date as a squared glass tile)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3264,6 +3333,7 @@ buildQuotaRows();
 buildScreen();
 applyDay(0);
 document.getElementById('dayLabel').textContent = MON_LBL + ' ' + ordinal(DAY_START);
+syncTileMode();   /* third option; a no-op unless MODS.scrubStyle is 'tile' */
 
 /* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
 const sheetEl = document.getElementById('sheet');
