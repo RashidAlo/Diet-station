@@ -544,20 +544,42 @@ pill                  .capsule                                    border radius/
       <b style="color:var(--ink)">Addressed, never broadcast.</b> Delivery goes to the opener
       alone — the flow whose ds-nav presented this one — on the same source check as ds-close, so
       a grandchild can&rsquo;t land a result on an opener that never asked it anything.<br>
-      <b style="color:var(--ink)"><code>from</code> is hub-asserted.</b> The hub overwrites it
-      with the id it knows the posting frame by, so a receiver gating on
-      <code>from === 'rewards'</code> cannot be fooled by a message that merely claims to be
-      rewards. It falls back to the claimed value only for a frame the hub has no id for — and
-      such a frame has no opener either, so nothing is delivered. The guarantee holds for every
-      flow in <code>flows.json</code>, which is every flow that can be a target.<br>
+      <b style="color:var(--ink)"><code>from</code> is hub-asserted, unconditionally.</b> The
+      hub overwrites it with the id it knows the poster by; the claimed value is discarded, not
+      merged. A receiver gating on <code>from === 'rewards'</code> therefore cannot be fooled.
+      Demonstrated on live: a frame occupying the rewards slot posting
+      <code>{from:'plan-quiz'}</code> arrives at checkout as <code>from:'rewards'</code>.<br>
       <b style="color:var(--ink)">Nobody asked = a no-op, not a close.</b> A flow the hub
       presented from a card has no opener: its result delivers nothing <i>and pops nothing</i>.
       The pop is the delivery&rsquo;s consequence, not the message&rsquo;s — a flow with no one
       to answer closes only if it also posts <code>ds-close</code>. Rewards emits on every rip,
       so the opposite rule would have dismissed the sheet under anyone browsing coupons from the
       rewards card.<br>
-      <b style="color:var(--ink)">A <code>tab</code> swap keeps the slot&rsquo;s opener</b> — a
-      swap replaces the occupant, not the summoner.</p>
+      <b style="color:var(--ink)">An opener is created only by a ds-nav that presents on
+      <i>top</i> — sheet or push.</b> A <code>tab</code> swap is navigation, not summoning: it
+      replaces the occupant and <b>clears</b> the opener, because nobody asked the new occupant
+      anything. Inheriting it would let rule 3&rsquo;s failure back in through the side door — a
+      flow the user merely navigated to could post something result-shaped, get a successful
+      delivery, and dismiss itself under them.</p>
+    <div class="pair">
+      <div class="ph">The case that bites <small>— and the one that proves nothing</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct native">Use this one</div>
+          <div class="cb">checkout presents rewards as a sheet<br>
+          <i>opener = checkout</i><br>
+          that slot tab-swaps to meal-select<br>
+          <i>opener CLEARED</i><br>
+          meal-select posts a result<br>
+          <i>no delivery, no pop</i><br><br>
+          <i>Before the rule: delivered to checkout, a coupon nobody chose applied, the sheet
+          popped.</i></div></div>
+        <div class="col"><div class="ct web">Not this one</div>
+          <div class="cb">hub &rarr; home &rarr; swap to meal-select<br>
+          <i>a hub-presented flow has opener null already — the hub is not a stack entry — so
+          this reads as a passing no-op both before and after the change, and anyone testing the
+          rule against it concludes it was unnecessary.</i></div></div>
+      </div>
+    </div>
     <p class="meta">Degrades quietly in all three directions: no opener, an opener that ignores
       it, or a target that never emits — checkout simply applies no coupon. Neither side blocks
       the other landing. Shipped and verified on live by the Hub lane (<code>1cec86b</code>),

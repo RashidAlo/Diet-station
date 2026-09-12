@@ -80,6 +80,8 @@
     font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1;
     --k-num: .1164; --k-sat: .1164;                    /* Proxima Nova */
     --dsp-numfam: 'Proxima Nova', sans-serif; --dsp-numwt: 700; --dsp-ink: #0B0E12;
+    --dsp-satwt: 700;                                  /* satellite weight */
+    --dsp-was-ink: #999999;                            /* struck old price */
     --dsp-per: var(--dsp-cur); }
   .dsp.primary  { --dsp-numfam: 'Urbane Rounded', sans-serif; --dsp-numwt: 600;
                   --dsp-ink: var(--red); --k-num: .1811; }
@@ -89,7 +91,8 @@
   .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
     font-size: var(--dsp-num); color: var(--dsp-ink); }
   .dsp .cur, .dsp .dec, .dsp .per, .dsp .minus {
-    font-family: 'Proxima Nova', sans-serif; font-weight: 700; color: var(--dsp-ink); }
+    font-family: 'Proxima Nova', sans-serif; font-weight: var(--dsp-satwt);
+    color: var(--dsp-ink); }
   .dsp .cur { font-size: var(--dsp-cur); padding-right: 1px;
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
   .dsp .dec { font-size: var(--dsp-dec);
@@ -102,7 +105,7 @@
     text-decoration: line-through;
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-was) * var(--k-sat)); }
   .dsp .was > * { font-family: 'Proxima Nova', sans-serif; font-weight: 600;
-    color: #999999; font-size: var(--dsp-was); margin-top: 0; padding: 0; }
+    color: var(--dsp-was-ink); font-size: var(--dsp-was); margin-top: 0; padding: 0; }
   /* size ramp — font sizes read from Figma "Price" set 3551:1926 */
   .dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
   .dsp.xxl  { --dsp-num:24px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
@@ -355,8 +358,40 @@
       push each satellite down by the difference between its cap offset and the
       numeral&rsquo;s. That offset is a fixed fraction of font-size for a given family, so it is
       one constant per typeface and one <code>calc()</code> per slot — no magic numbers per size,
-      and it survives a size being changed. Verified on this page: across all six slots the ink
-      tops agree to <b>0.01px</b>.</p>
+      and it survives a size being changed.</p>
+
+    <div class="slab" style="background:#3a1b1d">
+      <div class="sl" style="color:#ff9a9f">Correction — a check worth not copying</div>
+      <div class="sq">A CHECK THAT CANNOT FAIL IS NOT A CHECK.</div>
+      <div class="sb">This page first claimed the six slots agree to 0.01px, measured by reading
+        <code>marginTop + k × fontSize</code> off the computed styles. The Checkout lane pointed
+        out that this is an <b>algebraic identity</b>: <code>marginTop</code> is <i>set</i> to
+        <code>numSize·kNum − ownSize·kSat</code>, so adding <code>kSat·ownSize</code> back always
+        returns <code>numSize·kNum</code> — the same value for every slot, <i>for any k
+        whatsoever</i>. It would report a perfect zero with the constants wildly wrong and the
+        ink visibly drifting. They had made the same mistake one layer down an hour earlier,
+        measuring box tops that <code>flex-start</code> makes identical by construction. Two
+        lanes, each measuring the quantity that could not disagree with itself.<br><br>
+        What that check <i>does</i> establish is worth keeping: that the rule reached every slot.
+        It verifies <b>wiring</b>, not correctness.</div>
+    </div>
+
+    <h3>What the ink actually does</h3>
+    <p class="desc" style="font-size:13.5px">The check that can fail is a pixel probe: rasterise
+      each run and find its topmost inked row. Measured that way the cap ratios are
+      <code>Urbane '139' .1792</code>, <code>Proxima '139' .1167</code>,
+      <code>Proxima 'KD' .1250</code>, <code>Avenir '139' .0688</code> — close to the constants
+      in use but not identical, and note that <b>the currency&rsquo;s letters start lower than
+      digits do</b>, because Proxima&rsquo;s lining figures overshoot its cap height. So there is
+      a real residual, and it is sub-pixel: my probe puts the currency ~0.19px low of the
+      numeral; Checkout&rsquo;s independent one (16&times;, swept across three ink thresholds)
+      puts it ~0.6px the other way. Different rasterisers, same conclusion — <b>well under a
+      pixel, invisible, and not worth chasing to zero</b>. It is written down so the next person
+      who measures pixels finds a documented number instead of thinking they have found a
+      bug.</p>
+    <p class="meta">If you do measure, compare <b>cap-bearing runs only</b>. A <code>/day</code>
+      has no capitals, so its ink starts at x-height and will always read low — that is the
+      glyphs, not the alignment.</p>
     <div class="codewrap">
       <pre id="kmeasure">/* the per-family constant — re-measure if a font file is ever replaced */
 const ctx = document.createElement('canvas').getContext('2d');
@@ -480,6 +515,8 @@ function capOffsetRatio(weight, family) {
   font-variant-numeric: tabular-nums;
   --k-num: .1164; --k-sat: .1164;                      /* Proxima Nova */
   --dsp-numfam: 'Proxima Nova'; --dsp-numwt: 700; --dsp-ink: #0B0E12;
+  --dsp-satwt: 700;              /* satellite weight — 500 for a Medium /mo */
+  --dsp-was-ink: #999999;        /* struck price — #ED1C24 in the payment dock */
   --dsp-per: var(--dsp-cur); }
 .dsp.primary { --dsp-numfam:'Urbane Rounded'; --dsp-numwt:600; --dsp-ink:#ED1C24;
                --k-num: .1811; }
@@ -487,8 +524,8 @@ function capOffsetRatio(weight, family) {
 
 .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
   font-size: var(--dsp-num); color: var(--dsp-ink); }
-.dsp .cur, .dsp .dec, .dsp .per { font-family: 'Proxima Nova'; font-weight: 700;
-  color: var(--dsp-ink); }
+.dsp .cur, .dsp .dec, .dsp .per { font-family: 'Proxima Nova';
+  font-weight: var(--dsp-satwt); color: var(--dsp-ink); }
 .dsp .cur { font-size: var(--dsp-cur);
   margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-cur)*var(--k-sat)); }
 .dsp .dec { font-size: var(--dsp-dec);
@@ -498,7 +535,8 @@ function capOffsetRatio(weight, family) {
 .dsp .was { display: inline-flex; align-items: flex-start; padding-right: 6px;
   text-decoration: line-through;
   margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-was)*var(--k-sat)); }
-.dsp .was > * { font: 600 var(--dsp-was)/1 'Proxima Nova'; color: #999; margin-top: 0; }
+.dsp .was > * { font: 600 var(--dsp-was)/1 'Proxima Nova'; margin-top: 0;
+  color: var(--dsp-was-ink); }
 
 /* size — font sizes only; the ramp's line-heights are Figma's, not the web's */
 .dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
@@ -518,6 +556,35 @@ function capOffsetRatio(weight, family) {
   font-family: 'Avenir Next World'; }</pre>
       <button class="copycode" data-copy="csskit">Copy</button>
     </div>
+
+    <h3>The component owns metrics. Paint is yours.</h3>
+    <p class="desc" style="font-size:13.5px">Raised by the Checkout lane, who tried to adopt
+      <code>.dsp</code> and found three places where its paint fought the frame. The division is
+      now explicit: <b><code>.dsp</code> owns the row, the sizes and the alignment. Colour and
+      weight are configuration, not something to fight.</b></p>
+    <div class="legend">
+      <div class="k">--dsp-satwt</div>
+      <div class="v">Satellite weight, default <code>700</code>. Checkout&rsquo;s plan-card
+        <code>/mo</code> is Proxima <b>Medium 500</b> per the frame — now a token, not an
+        override.</div>
+      <div class="k">--dsp-was-ink</div>
+      <div class="v">The struck price, default <code>#999999</code>. The payment dock&rsquo;s
+        &ldquo;before&rdquo; price is <code>#ED1C24</code> in the frame — grey is the common
+        case, not the only one.</div>
+      <div class="k">--dsp-ink</div>
+      <div class="v">The live price. Set it per instance wherever the type&rsquo;s default is
+        wrong.</div>
+      <div class="k">color</div>
+      <div class="v"><b>The sanctioned override surface.</b> Gradient prices — checkout&rsquo;s
+        per-plan fills — set <code>color: transparent</code> with
+        <code>background-clip: text</code> on <code>.num</code> and <code>.cur</code>. That is
+        expected use, not a workaround: the component never positions by colour, so painting
+        over it cannot break the alignment.</div>
+    </div>
+    <p class="meta">The rule behind all four: <b>a component that dictates paint gets
+      overridden per instance, and then it is not a component any more</b> — it is arithmetic
+      wearing a class name. If adopting <code>.dsp</code> would mean overriding colour in three
+      places, that is the system&rsquo;s bug, not the lane&rsquo;s.</p>
 
     <h3>Web — one call site</h3>
     <div class="codewrap">
