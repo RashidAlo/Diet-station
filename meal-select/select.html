@@ -2403,6 +2403,16 @@ confirmBtn.onclick = () => {
     }
     strip.style.transform = 'translateX(' + (-(disp - winC) * SLOT).toFixed(2) + 'px)';
   }
+  /* BEACON (Shell's t:'dsdebug', wired on both hosts). The log and the frame
+     currently disagree: their confirm reports the web pill as HIDDEN at the
+     arm, and a frame taken moments later shows the date label plainly. Both
+     cannot be true of the same element at the same moment, so something is
+     tearing the arm down almost immediately and nothing on either side logs
+     WHEN. This says so from the page. Silent and free where no handler. */
+  function dbg(m) {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug', m: 'calmeals ' + m }); }
+    catch (_) {}
+  }
   const navEl = document.querySelector('.nav');
   let unformT = null, closeT = null;
   let formW0 = 0, formH0 = 0, formRect = null;          /* the label's own size, pre-morph */
@@ -2416,6 +2426,7 @@ confirmBtn.onclick = () => {
        rect the twin just reached. Shedding ds-native-hidden any earlier
        than this shows an empty armed-size glass box; any later shows a
        hole where the date should be. */
+    dbg('scrub OFF (deflate)');
     ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
@@ -2435,6 +2446,7 @@ confirmBtn.onclick = () => {
        let it finish. Guard goes before the clearTimeouts, or the second call
        would cancel the first close's own watchdog on its way out. */
     if (ttl.classList.contains('closing')) return;
+    dbg('unform');
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
@@ -2512,6 +2524,7 @@ confirmBtn.onclick = () => {
     setHead(winC, false);          /* arming is not a crossing — no announce */
     strip.style.transform = '';
     ttl.classList.add('scrub');          /* the whole container, one spring */
+    dbg('scrub ON');
     ttl.style.width = ''; ttl.style.height = '';   /* .scrub's own geometry wins */
     if (navEl) navEl.classList.add('scrubbing');
     vibrate(6);                          /* light tick on the morph itself */
@@ -2992,7 +3005,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 169 (the strip settles when the finger stops)';
+const BUILD = 'build 2026-09-12 · 170 (beacons: when the arm goes on and off)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
