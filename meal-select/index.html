@@ -412,53 +412,58 @@
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
 
-/* ================= wait for our own sheet, not for a clock =================
-   `badgesay` runs on the load clock, but in embed mode this page slides its
-   OWN calendar sheet up first: `.cal` starts at translateY(103%) and springs
-   home over .55s, begun 60ms after boot. 610ms — which is the ~620ms I
-   measured on a capture and spent most of a day attributing to a native
-   presentation that does not exist on this path. The badge's whole playful
-   part, the 6% pop and the 11% undershoot, was finishing while the sheet was
-   still on its way up, so Rashid saw the badge already settled and correctly
-   reported that it "left on time".
-   The fix is the event, not a delay: the sheet's own `transitionend`. It
-   cannot drift when the spring is retuned, it costs nothing, and this page
-   owns both halves. The earlier `.62s` delay and the shell's DSNativeSurface
-   signal are both gone from here — the shell keeps that primitive for flows
-   that really are cover-presented, but on this path it publishes duration 0
-   because nothing native animates, so it could only ever have released the
-   badge too early.
-   The hold is `animation-play-state: paused`, so a badge rendered while the
-   sheet is still moving waits at its 0% keyframe (opacity 0) rather than at
-   its natural CSS state — and resumes from the start rather than mid-flight,
-   since it never advanced. Non-embed has no entry animation and no hold: the
-   badge pops at once, which is correct there.
-   The safety release is not optional. A page that hid its countdown waiting
-   for a transitionend that never came — a cancelled transition, a hidden
-   element — would be a worse bug than the one this fixes. */
+/* ================= let the badge speak once the page is quiet ==============
+   Four builds of measurement on the device, and almost every explanation I
+   held along the way was wrong. The record, because the wrong turns are the
+   useful part:
+     ·25  Delayed the badge .62s to clear what I believed was the shell's
+          native presentation. It worked — full 1.14 / .95 / 1.04 / 1 bounce,
+          peak +19% over settled mass.
+     ·27  Keyed off `.cal`'s transitionend instead, on the theory that the
+          .62s was this page's own sheet spring (60ms + .55s = 610ms, which
+          matched the measurement almost exactly).
+     ·28  Instrumented it. `release via timer` — transitionend never fired.
+     ·29  Logged transitionstart too: the entry transition DOES NOT RUN. It
+          starts at 13s, on some later interaction, never at 60ms. `springing`
+          (which supplies the transition) and the removal of `embed-enter`
+          (which changes the transform) land in one style recalculation, so
+          the sheet SNAPS home rather than springing. The .62s never
+          corresponded to that spring, and the spring the comment describes
+          has not been animating.
+   So the thing the badge must actually wait for is neither a native
+   presentation nor a sheet: it is FIRST PAINT. Released at the moment the
+   content paints (·27 and ·29 both), the pop measures +3% instead of +19% —
+   the animation is competing with the page's own first layout and the
+   excursion is eaten. The .62s worked by accident: it landed in the quiet
+   after paint rather than in it.
+   Wait for `load` plus a beat, which adapts to a slow fetch instead of
+   guessing, with a backstop so the countdown can never be hidden by a load
+   event that never arrives. The hold stays `animation-play-state: paused`,
+   so the badge waits at its 0% keyframe and then plays in full from the
+   start. Non-embed has no wait at all.
+   If this page ever gets a real entry animation, the badge should wait for
+   BOTH — but do not add that until the animation actually runs, which this
+   one demonstrably does not. */
 var SURFACE = { held: false, done: false };
-function surfaceRelease(why) {
+function surfaceRelease() {
   if (SURFACE.done) return;
   SURFACE.done = true; SURFACE.held = false;
   document.documentElement.classList.remove('ds-surface-hold');
-  if (typeof surfLog === 'function') surfLog('release via ' + (why || '?'));
 }
 function surfaceHold(ms) {
   if (SURFACE.done || SURFACE.held) return;
   SURFACE.held = true;
   document.documentElement.classList.add('ds-surface-hold');
-  setTimeout(function () { surfaceRelease('timer'); }, ms);  /* if it never ends */
+  setTimeout(surfaceRelease, ms);          /* backstop */
 }
-function surfLog(m) {                 /* TEMPORARY — ·28 diagnostic only */
-  try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-    m: 'calmeals SURF ' + Math.round(performance.now()) + 'ms ' + m }); } catch (_) {}
+if (/[?&]embed=1/.test(location.search)) {
+  surfaceHold(2600);                        /* backstop: never hide the countdown */
+  var quiet = function () { setTimeout(surfaceRelease, 260); };
+  if (document.readyState === 'complete') quiet();
+  else window.addEventListener('load', quiet);
 }
-if (/[?&]embed=1/.test(location.search)) surfaceHold(900);   /* 60 + 550 + margin */
-surfLog('boot embed=' + /[?&]embed=1/.test(location.search) +
-        ' held=' + document.documentElement.classList.contains('ds-surface-hold') +
-        ' search=' + location.search);
 
-const BUILD = 'calendar 2026-09-13 · 29 (a cancelled transition is still an arrival)';
+const BUILD = 'calendar 2026-09-13 · 30 (the badge waits for quiet, not for a clock)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -841,28 +846,6 @@ if (EMBED) {
   document.documentElement.classList.add('embed');
   document.body.classList.add('embed', 'embed-enter');
   calPage.classList.add('presenting');
-  setTimeout(function () {            /* TEMPORARY — ·28: what state is the badge in? */
-    var b = document.querySelector('.day .badge');
-    surfLog('badge exists=' + !!b +
-      ' held=' + document.documentElement.classList.contains('ds-surface-hold') +
-      (b ? ' play=' + getComputedStyle(b).animationPlayState +
-           ' opacity=' + (+getComputedStyle(b).opacity).toFixed(2) : ''));
-  }, 0);
-  /* END *OR* CANCEL. The sheet's spring is torn down 660ms after boot — the
-     600ms cleanup nested inside the 60ms start — while the .55s transition
-     itself ends at 610ms. Fifty milliseconds of margin, and removing
-     `springing` mid-flight cancels the transition, which fires
-     transitioncancel and NEVER transitionend. ·28 measured exactly that on
-     the device: the hold applied, the badge sat paused at opacity 0, and the
-     release came `via timer` at 900ms. Either event means the sheet has
-     stopped moving, which is the only thing the badge needs to know. */
-  ['transitionend', 'transitioncancel', 'transitionstart'].forEach(function (ev) {
-    calPage.addEventListener(ev, function (e) {
-      if (e.propertyName !== 'transform' || e.target !== calPage) return;
-      if (typeof surfLog === 'function') surfLog('cal ' + ev);
-      if (ev !== 'transitionstart') surfaceRelease(ev);
-    });
-  });
   setTimeout(() => {
     calPage.classList.add('springing');
     document.body.classList.remove('embed-enter');
