@@ -644,10 +644,13 @@ function readGlobalTier() {
   catch (_) { return null; }
 }
 
-// SEED, DON'T OVERWRITE. First flow to boot establishes it; every later boot
-// inherits. Reversing this makes the last flow opened win, which is the same
-// bug wearing a different hat.
-if (!readGlobalTier()) writeGlobalTier(S.tier);
+// SEED FROM THE DECLARED DEFAULT, DON'T OVERWRITE. First flow to boot
+// establishes the key; every later boot inherits it. Two rules in one line:
+// reversing the seed makes the last flow opened win, and falling back to a
+// LOCAL default instead of the declared one makes the FIRST flow opened win.
+const TIER_DEFAULT = 'gold';                   // declared once, for every flow
+const tier = readGlobalTier() || TIER_DEFAULT;
+if (!readGlobalTier()) writeGlobalTier(tier);
 
 // PROPAGATE LIVE, AND RE-DERIVE WHAT DEPENDED ON IT. The storage event is the
 // easy half; the second half is the one that matters — checkout drops an
@@ -660,16 +663,29 @@ addEventListener('storage', e => {
 });</pre>
       <button class="copycode" data-copy="sharedstate">Copy</button>
     </div>
-    <p class="meta"><b style="color:var(--red)">A shared key needs ONE declared default, or the
-      first flow to boot decides it.</b> Found while preparing rewards&rsquo; adoption: checkout
-      seeds <code>vip</code> (<code>readGlobalTier() || 'vip'</code>) and rewards&rsquo; markup
-      defaults <code>gold</code> (<code>data-level="gold"</code>). Seed-don&rsquo;t-overwrite
-      makes each of them correct on its own and the pair non-deterministic — open checkout first
-      and the member is VIP everywhere, open rewards first and they are Gold. The rule keeps
-      them <i>consistent</i>; only a declared default makes them <i>predictable</i>. State it
-      once, with the key, and have every flow fall back to it rather than to its own resting
-      value. <b>On Rashid&rsquo;s sheet</b>: which rung a first-time prototype visitor starts
-      on.</p>
+    <div class="slab" style="margin-top:14px">
+      <div class="sl">Requirement 4 — the declared default</div>
+      <div class="sq"><code style="color:#f5f5f7">ds-tier-v1</code> &nbsp;default:
+        <b>gold</b> &nbsp;<small style="font-weight:400;color:#8e8e93">— Rashid, 2026-09-12</small></div>
+      <div class="sb"><b style="color:#f5f5f7">Every flow falls back to the declared default,
+        never to its own resting value.</b> A shared key without one isn&rsquo;t shared — the
+        first flow to boot decides it. Found while preparing rewards&rsquo; adoption: checkout
+        seeded <code>vip</code> and rewards&rsquo; markup defaults <code>gold</code>, each
+        correct alone and the pair non-deterministic — open checkout first and the member was VIP
+        everywhere, open rewards first and they were Gold. Seed-don&rsquo;t-overwrite buys
+        <i>consistency</i>; only a declared default buys <i>predictability</i>.<br><br>
+        Now settled at <b>gold</b>: rewards&rsquo; <code>data-level="gold"</code> is already
+        correct and becomes the reference; checkout&rsquo;s
+        <code>readGlobalTier() || 'vip'</code> becomes <code>|| 'gold'</code>.</div>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">And the lesson for whoever documents the third
+      shared key:</b> that fault was invisible from either lane alone. Both implementations were
+      correct in isolation; only the <i>pair</i> was broken, so neither lane could have found it
+      and neither was at fault. It surfaced because this page read both implementations instead
+      of publishing the shape it was handed — which is the cost of documenting a cross-flow
+      contract properly, and it is one grep. Left alone it would have arrived as &ldquo;the tier
+      is wrong sometimes&rdquo; in a review, which is the most expensive possible moment to learn
+      it.</p>
     <p class="meta">Written by earned state too, not just by a picker: checkout raises the key
       when redeeming a coupon proves a higher rung. <b>The two instances differ in payload</b> —
       <code>ds-glass-global-v1</code> holds a JSON object merged over published defaults,
