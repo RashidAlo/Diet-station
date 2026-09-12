@@ -536,6 +536,21 @@
     font-size: 15px; line-height: 15px; }
   .nav.tile-mode .ttl.scrub .scb .scb-it .s { height: 10px; }
   .nav.tile-mode .ttl.scrub .scb .scb-it .s svg { width: 10px; height: 10px; }
+  /* THE SQUARE TAPERS TOO, 15/14/13 — the flat 15px above is the box, this is
+     the perspective. Shell confirmed from their own code that their compact
+     ladder has always tapered centre 15 / near 14 / far 13, so every 52pt
+     film measured today was of a tapered ladder and my flattening has been
+     invisible in-shell since ·177. It was never intended at this scale; it
+     was unobserved. Stated here so the web-drawn version matches the native
+     one outside the shell too, and so one taper has one description. */
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(4) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(6) .n { font-size: 14px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(3) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(7) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(2) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(8) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(1) .n,
+  .nav.tile-mode .ttl.scrub .scb .scb-it:nth-child(9) .n { font-size: 13px; }
   .nav .ttl.tile #dayLabel { display: none !important; }
   .nav .ttl.tile #dayTile { display: flex; }
   /* the same split as the ladder: Proxima for the small label, Urbane for the
@@ -3248,7 +3263,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 189 (one taper, stated once)';
+const BUILD = 'build 2026-09-12 · 190 (the square asks for real glass)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3564,7 +3579,23 @@ if (QS.get('solo') === '1') {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
   if (/[?&]solo=1/.test(location.search)) return;   /* solo: no twins, no gauge */
   var FLOW = 'selector', SURFACE = 'light';
-  var ELS = { close: '#closeBtn', dual: '.dual' };
+  /* THE SQUARE NEEDS A NATIVE TWIN, NOT A BETTER STYLESHEET (Rashid,
+     2026-09-12: "the square date is still not liquid glass").
+     He is right and no CSS of mine can fix it. The tile's material is already
+     BYTE-IDENTICAL to the X button's — both rgba(255,255,255,.34) with
+     blur(12px) saturate(160%), verified from computed styles on the live
+     page. The difference on screen is that #closeBtn and .dual are REPLACED
+     in-shell by Shell's native Liquid Glass, while the tile kept the web
+     approximation. Over a white sheet a translucent white panel is simply
+     white: backdrop-filter has nothing behind it to refract, and it cannot
+     reproduce the material's edge response or specular. So the tile joins the
+     chrome map and gets the same real material as the controls it sits
+     beside — which is the standing doctrine anyway: native is the standard,
+     the web replicates it.
+     It reports ONLY while resting: `.nav .ttl.tile` stops matching the moment
+     .scrub lands, so the tile twin is torn down and the scrub twin takes over
+     in the same post — one glass per frame, by construction. */
+  var ELS = { close: '#closeBtn', dual: '.dual', tile: '.nav .ttl.tile' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
   var nativeConfirmed = false;
   /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
@@ -3573,6 +3604,13 @@ if (QS.get('solo') === '1') {
   function currentMode() { return docked ? 'page' : 'sheet'; }
   var st = document.createElement('style');
   st.textContent = '.ds-native-hidden { opacity: 0 !important; pointer-events: none !important; } ' +
+    /* material off, text on — see the ELS note. Gated on the shell actually
+       CONFIRMING 'tile': a renderer that doesn't know the id won't list it,
+       the class never lands, and the web keeps its own approximation. That is
+       what makes this safe to ship before the native side exists. */
+    '.nav .ttl.tile.ds-native-glass { box-shadow: none !important; } ' +
+    '.nav .ttl.tile.ds-native-glass .glassbg { background: transparent !important; ' +
+    '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ' +
     /* ONE glass (Rashid): once the shell confirms the native gauge, the web
        bar hides for good — visibility (not opacity) so the celebration's
        burst/confetti children can still escape and render */
@@ -3821,7 +3859,13 @@ if (QS.get('solo') === '1') {
     ids.forEach(function (id) {
       if (id === 'scrub') return;
       var el = document.querySelector(ELS[id]);
-      if (el) el.classList.add('ds-native-hidden');
+      if (!el) return;
+      /* the tile is the one twin whose CONTENT stays web. close and dual are
+         container-only and Shell draws their glyphs, but the tile's three
+         rows are the date itself — so it yields its MATERIAL and keeps its
+         text, rather than going opacity:0 and taking the date with it. Still
+         exactly one container: the native one. */
+      el.classList.add(id === 'tile' ? 'ds-native-glass' : 'ds-native-hidden');
     });
   };
   window.DSChromeTap = function (id) {
