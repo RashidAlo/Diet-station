@@ -14,6 +14,14 @@
   "preview": "checkout/preview.png",
   "entries": [
     {
+      "id": "from-rewards",
+      "params": {
+        "src": "rewards",
+        "coupon": "DS-<TIER>25 | GYM-<TIER> | KIDS-<TIER>"
+      },
+      "note": "THE FIRST ENTRY POINT (Rashid, 2026-09-12): home → the coupon flow → checkout. rewards emits {t:'ds-nav', to:'checkout', present:'sheet', context:{src:'rewards', coupon:<code>}} and checkout opens on the plan picker with that coupon already applied and every price re-priced. The code is validated the same way a redemption is; an unrecognised one is ignored rather than poisoning state, so this degrades quietly until rewards emits."
+    },
+    {
       "id": "default",
       "params": {
         "plan": "thediet|lifestyle|bodybuilding|kids",
@@ -173,7 +181,10 @@
     "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
     "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
     "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy.",
-    "Coupons": "ONE coupon experience in the product: the rewards flow. Checkout keeps no catalogue — it summons rewards and decodes the code that comes back, so the tier travels inside the code (DS-VIP25 → vip, 25% capped KD 80). The lab menu's Redeemed-coupon picker is review chrome standing in for the rip, not product surface."
+    "Coupons": "ONE coupon experience in the product: the rewards flow. Checkout keeps no catalogue — it summons rewards and decodes the code that comes back, so the tier travels inside the code (DS-VIP25 → vip, 25% capped KD 80). The lab menu's Redeemed-coupon picker is review chrome standing in for the rip, not product surface.",
+    "Overlay": "The plan picker is how checkout arrives, so it follows system/overlays.html: scrim rgba(11,14,18,.42) opacity-only over .32s ease (the scrim never travels — it dissolves in place, only the sheet moves), sheets translateY(103%)→0 on .55s cubic-bezier(.32,.72,0,1), partial sheets 24 24 0 0, the near-fullscreen plan overlay 44 44 0 0, lift 0 -14px 44px rgba(0,0,0,.24). NOTE: that radius overrides the 38 the Figma frame draws — the same frame-vs-law tension recorded against auth; resolved here on Rashid's instruction to apply the system values.",
+    "Tier is global": "The member's tier is NOT checkout's to own. It lives in localStorage under `ds-tier-v1` (values: bronze|silver|gold|vip), seeded on first boot, written by the lab picker, by a redemption proving a higher rung, and by an incoming ctx.tier. A `storage` listener applies a change made in another flow without a reload. Any flow that shows tier should read the same key — Rashid, 2026-09-12: set a tier once and it applies throughout the prototype. The badge wears its own rung using the Figma tier gradients (17137:76380), matching how rewards themes its coupons.",
+    "Glass CTAs": "Book Consultation and Guide me are house glass widgets in light-mode form — the home flow's .plancard material (white .7 / blur 14 / saturate 140, .5px hairline, 0 8px 37px lift). The brand CTA wears the same shell with its gradient as a tint BENEATH the glass and a thinner white fill (.22) so the primary action keeps its weight."
   },
   "controls": [
     {
