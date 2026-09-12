@@ -526,7 +526,43 @@ function capOffsetRatio(weight, family) {
     </div>
     <p class="meta">Not a criticism of that lane — the pattern only became a rule today. Half of
       checkout already matched the Figma set by eye, which is a fair sign the law was real before
-      it was written down. The alignment pass replaces all six with this component.</p>
+      it was written down.</p>
+
+    <h3>Adopted — and what it cost</h3>
+    <p class="desc" style="font-size:13.5px">All six are now <code>.dsp</code> (checkout ·9):
+      plan cards and dock <code>primary xxxl</code>, duration rows <code>lg</code>, payment rows
+      <code>md</code>, the per-month line <code>xxs</code>, the savings total <code>md</code>
+      with the <code>minus</code> slot. <b>Every checkout case turned out to be
+      configuration</b> — no local rule on any slot: gradients through the blessed
+      <code>color</code>/<code>background-clip</code> surface, the dock&rsquo;s red struck price
+      through <code>--dsp-was-ink</code>, the Medium <code>#999</code> <code>/mo</code> through
+      <code>--dsp-perwt</code> and <code>--dsp-per-ink</code>.</p>
+    <div class="pair">
+      <div class="ph">Pixel deltas <small>— Checkout&rsquo;s 12&times; probe, converted against
+        the pre-conversion baseline</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct good">Identical, not similar</div>
+          <div class="cb" style="margin-top:0">plan card &nbsp;<code>.was 0.000 &middot; .cur
+            0.000 &middot; .num 0.000</code><br>
+            dock &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>.was 0.000 &middot; .cur 0.000 &middot; .num
+            0.000</code><br><br>
+            Every computed size, weight, family and colour matches the baseline exactly. A
+            refactor with a measured delta of zero.</div></div>
+        <div class="col"><div class="ct web">Residual, unchanged</div>
+          <div class="cb" style="margin-top:0">cap spread <code>0.75px</code> plan card,
+            <code>0.83px</code> dock<br><br>
+            The component&rsquo;s known sub-pixel residual, carried across the conversion rather
+            than introduced by it — and measured with the probe that <i>can</i> fail, which is
+            why these numbers are on this page and my computed-style ones are not.</div></div>
+      </div>
+    </div>
+    <p class="meta">The component is vendored into the flow folder rather than linked, since a
+      flow folder is self-contained; it gets re-copied when this page changes. One artefact worth
+      sweeping when convenient: <code>.pcard .pkd, .pcard .pbig</code> survives at
+      <code>index.html:548</code> and now matches <b>nothing</b> — verified zero elements.
+      Harmless, because the gradient reaches the new markup through
+      <code>.pcard .dsp .num, .pcard .dsp .cur</code> — but a dead selector is exactly where the
+      next silent regression hides.</p>
   </section>
 
   <section class="card">
@@ -706,6 +742,27 @@ HStack(alignment: .capTop, spacing: 0) {
     <h2>On Rashid&rsquo;s sheet</h2>
     <p class="desc">Three things the Figma set says that look like drift rather than intent. Left
       as-is and documented rather than &ldquo;fixed&rdquo; — they are his calls:</p>
+    <div class="slab" style="margin-bottom:16px">
+      <div class="sl">Two questions, and they pull opposite ways</div>
+      <div class="sq" style="font-size:14.5px">Answer them separately and you can agree to both
+        and get neither.</div>
+      <div class="sb">The checkout frame and the Price set disagree twice, and the disagreements
+        point in <i>opposite directions</i> — the Checkout lane&rsquo;s observation, and the
+        reason these two belong on one page rather than two.<br><br>
+        <b style="color:#f5f5f7">The currency</b> — frame 20px, set 15px. Taking 15 makes
+        checkout <i>more</i> like the set.<br>
+        <b style="color:#f5f5f7">The suffix</b> — frame mutes <code>/mo</code> to Medium
+        <code>#999</code>, the set renders <code>/day</code> in the row&rsquo;s own Bold ink.
+        Keeping the muting makes checkout <i>less</i> like the set.<br><br>
+        So: <b style="color:#f5f5f7">one rule</b> means the set gains a muted-suffix variant;
+        <b style="color:#f5f5f7">the frame wins</b> means the set takes the smaller currency.
+        Either is a single change. Ruling on them one at a time is what produces two
+        half-answers and a set that still disagrees with the screens.<br><br>
+        Both readings are verified at source, in different files — the set in Design System 1.0
+        by this lane, the frame in Diet Station 4.0 by Checkout, who re-read the Decimal
+        group and confirmed <code>Proxima_Nova:Medium</code> bound to
+        <code>text/disabled/default</code>. Neither is a misreading; they genuinely differ.</div>
+    </div>
     <div class="flags">
       <div class="ft">Not blocking anything — the component ships either way</div>
       <ol>
