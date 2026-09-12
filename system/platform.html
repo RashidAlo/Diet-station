@@ -975,6 +975,48 @@ document.head.appendChild(s);</pre>
       parses and you have just run it. Reach for it only after the gate has already said no,
       and keep it in a scratch tab regardless.</p>
 
+    <h3>The CSS sibling — valid, absent, and invisible</h3>
+    <p class="desc" style="font-size:13.5px">The parse gate cannot see this one, and neither can
+      anything else we have: <b>the JavaScript is fine, the CSS raises no error, and the rule is
+      simply gone.</b> Found by the Checkout lane doing exactly the kind of CSS surgery this
+      system keeps asking lanes to do — deleting a dead selector by line range leaves its
+      declaration body behind with nothing in front of it, and the browser discards that block
+      <i>and the rule after it</i>, without a word.</p>
+    <p class="desc" style="font-size:13.5px">Verified here rather than taken on report, because
+      the blast radius is the part you need to know. Three rules, the middle selector deleted:
+      the orphan consumes itself and <b>exactly one</b> following rule, then the parser
+      resynchronises — so a five-rule file loses two and keeps three, which is precisely the
+      shape that reads as &ldquo;mostly still working&rdquo; on the screen you happen to be
+      looking at.</p>
+    <div class="codewrap">
+      <pre id="cssgate">// run in the browser pane after any CSS surgery
+function cssIntegrity(src, sheet) {
+  const opens  = (src.match(/\{/g) || []).length;
+  const parsed = sheet.cssRules.length;
+  const orphan = /\}\s*[\r\n][^{}@\/]*:[^{};]+;[^{}]*\}/.test(src);
+  return { opens, parsed, agrees: opens === parsed, orphanSuspected: orphan };
+}
+// healthy → { opens: 3, parsed: 3, agrees: true,  orphanSuspected: false }
+// orphaned → { opens: 3, parsed: 2, agrees: false, orphanSuspected: true }
+//
+// The brace count is a HEURISTIC: @media and nested blocks add braces without
+// adding top-level rules, so on a real stylesheet read the two numbers as a
+// pair you know the baseline of — a DROP after an edit is the signal, not
+// equality. The orphan regex is the part that stands alone.</pre>
+      <button class="copycode" data-copy="cssgate">Copy</button>
+    </div>
+    <div class="slab">
+      <div class="sl">The counterweight, also Checkout&rsquo;s</div>
+      <div class="sq">&ldquo;MATCHES NOTHING RIGHT NOW&rdquo; IS NOT &ldquo;DEAD&rdquo;.</div>
+      <div class="sb">Their sweep flagged <b>64</b> selectors and only <b>6</b> were genuinely
+        dead. Everything <code>:active</code>, <code>:hover</code>, <code>.on</code>,
+        <code>[disabled]</code> matches nothing in a resting DOM; so does every rule belonging to
+        a screen you haven&rsquo;t opened. Deleting on that evidence is how the same lane lost
+        its liquid-glass rules in an earlier build. Enumerate against a DOM with <i>every</i>
+        screen and sheet forced open, and treat state selectors as live by default — a selector
+        is dead when you can say what used to match it, not when nothing does today.</div>
+    </div>
+
     <h3>What it catches, and what it will not</h3>
     <div class="pair">
       <div class="ph">Measured, not assumed <small>— every row run through the gate</small></div>
