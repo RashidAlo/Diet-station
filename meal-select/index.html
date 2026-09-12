@@ -193,10 +193,7 @@
   .day .badge { position: absolute; top: -29px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; z-index: 5;
     pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06));
-    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) both; }
-  /* held while this page's own calendar sheet is still springing up; paused
-     at the 0% keyframe, so the badge waits invisible and then plays in full */
-  html.ds-surface-hold .day .badge { animation-play-state: paused; }
+    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) .62s both; }
   .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
     margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
@@ -412,58 +409,36 @@
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
 
-/* ================= let the badge speak once the page is quiet ==============
-   Four builds of measurement on the device, and almost every explanation I
-   held along the way was wrong. The record, because the wrong turns are the
-   useful part:
-     ·25  Delayed the badge .62s to clear what I believed was the shell's
-          native presentation. It worked — full 1.14 / .95 / 1.04 / 1 bounce,
-          peak +19% over settled mass.
-     ·27  Keyed off `.cal`'s transitionend instead, on the theory that the
-          .62s was this page's own sheet spring (60ms + .55s = 610ms, which
-          matched the measurement almost exactly).
-     ·28  Instrumented it. `release via timer` — transitionend never fired.
-     ·29  Logged transitionstart too: the entry transition DOES NOT RUN. It
-          starts at 13s, on some later interaction, never at 60ms. `springing`
-          (which supplies the transition) and the removal of `embed-enter`
-          (which changes the transform) land in one style recalculation, so
-          the sheet SNAPS home rather than springing. The .62s never
-          corresponded to that spring, and the spring the comment describes
-          has not been animating.
-   So the thing the badge must actually wait for is neither a native
-   presentation nor a sheet: it is FIRST PAINT. Released at the moment the
-   content paints (·27 and ·29 both), the pop measures +3% instead of +19% —
-   the animation is competing with the page's own first layout and the
-   excursion is eaten. The .62s worked by accident: it landed in the quiet
-   after paint rather than in it.
-   Wait for `load` plus a beat, which adapts to a slow fetch instead of
-   guessing, with a backstop so the countdown can never be hidden by a load
-   event that never arrives. The hold stays `animation-play-state: paused`,
-   so the badge waits at its 0% keyframe and then plays in full from the
-   start. Non-embed has no wait at all.
-   If this page ever gets a real entry animation, the badge should wait for
-   BOTH — but do not add that until the animation actually runs, which this
-   one demonstrably does not. */
-var SURFACE = { held: false, done: false };
-function surfaceRelease() {
-  if (SURFACE.done) return;
-  SURFACE.done = true; SURFACE.held = false;
-  document.documentElement.classList.remove('ds-surface-hold');
-}
-function surfaceHold(ms) {
-  if (SURFACE.done || SURFACE.held) return;
-  SURFACE.held = true;
-  document.documentElement.classList.add('ds-surface-hold');
-  setTimeout(surfaceRelease, ms);          /* backstop */
-}
-if (/[?&]embed=1/.test(location.search)) {
-  surfaceHold(2600);                        /* backstop: never hide the countdown */
-  var quiet = function () { setTimeout(surfaceRelease, 620); };
-  if (document.readyState === 'complete') quiet();
-  else window.addEventListener('load', quiet);
-}
-
-const BUILD = 'calendar 2026-09-13 · 31 (probe: is the weak pop paint contention?)';
+/* ================= why the badge waits, and why it waits like THIS =========
+   `badgesay` runs on the load clock, and Rashid could not see the playful
+   part: measured on the device, the badge was already settled by the time the
+   calendar was on screen. He reported it as "it left on time", which was a
+   correct report about the only part he was shown.
+   The delay is the fix, and the ONLY thing that produces the animation as
+   designed. Five builds of alternatives, all measured on the device:
+     ·25/·26  plain `animation-delay` -> pill width 40.3 -> 45.3 -> 38.0 ->
+              40.0pt. Peak 1.13x, trough 0.95x: the 1.14 pop and the .95
+              undershoot, exactly as the keyframes ask.
+     ·27/·29  release on the sheet's transitionend. The event never fires —
+              the entry transition does not run at all (`springing` and the
+              transform change land in one style recalculation, so the sheet
+              snaps). Logged transitionstart to be sure: it fires at 13s, on
+              a later interaction.
+     ·30/·31  hold with `animation-play-state: paused`, release after load.
+              Width 39.0 -> 41.3 -> 40.0. Peak 1.03x and NO trough — the
+              shape of the 11%-to-22% tail, not of the whole animation.
+              Pausing at 0% and resuming does not replay it; it damps it.
+              Doubling the beat changed nothing, which ruled out contention.
+   So: no signal, no hold, no JS. A delay, kept because it measurably renders
+   the designed motion, with `both` so the backwards fill holds the badge
+   invisible through the wait instead of parking it opaque and then jumping.
+   The .62s is NOT a native presentation and NOT this page's sheet spring —
+   both of those were wrong guesses of mine, disproven above. It is simply
+   long enough to clear first paint on this path, and short enough that the
+   badge still reads as arriving with the screen. If the page ever gets a
+   real entry animation that actually runs, revisit this with a measurement,
+   not with a theory. */
+const BUILD = 'calendar 2026-09-13 · 32 (the plain delay, for the measured reason)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
