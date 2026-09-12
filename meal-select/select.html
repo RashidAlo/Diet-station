@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 198 (the shell takes the tile only when it can draw it)';
+const BUILD = 'build 2026-09-13 · 199 (hand the tile over on the cap, not on the next report)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4001,8 +4001,20 @@ if (QS.get('solo') === '1') {
        and hand it a destination instead of a path. Absent (every build
        before 2026-09-11) we keep morphing, because those renderers ease
        toward the streamed rects and a snap reads as jank. */
-    /* the tile's rows are a capability, not an assumption — see tileNative */
+    /* the tile's rows are a capability, not an assumption — see tileNative.
+       HAND OVER ON THE CAP, NOT ON THE NEXT ORGANIC REPORT. The confirm that
+       carries the capability necessarily arrives AFTER the first post, so the
+       tile can only appear in a later one — Shell's note: armed=[close,dual]
+       and then armed=[close,dual,tile]. Waiting for whatever report happens
+       next (a scroll, a totals change, a timer) leaves the WEB tile on screen
+       for an unbounded stretch wearing its approximation of the material, and
+       then swapping to real glass. One report is the floor the handshake
+       imposes; anything beyond that is just me not asking. So the transition
+       to native posts immediately, and only on the transition — a repeat
+       confirm changes nothing and must not re-post. */
+    var wasTileNative = tileNative;
     if (caps && caps.tileRows) tileNative = true;
+    if (!wasTileNative && tileNative) setTimeout(report, 0);
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
     }
