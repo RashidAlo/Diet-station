@@ -3181,7 +3181,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 179 (repair: apostrophe in the build stamp)';
+const BUILD = 'build 2026-09-12 · 180 (hand over on confirm, not on hope)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3907,8 +3907,19 @@ if (QS.get('solo') === '1') {
          straight back if the scrub twin never lands. */
       if (nativeConfirmed) {
         scrubConfirmed = false;
-        var sc = document.querySelector('.nav .ttl.scrub');
-        if (sc) sc.classList.add('ds-native-hidden');
+        /* HAND OVER ON CONFIRM, NOT ON HOPE. ·149 hid the web pill the instant
+           the twin was REQUESTED, to close the window where both were drawn —
+           the entry half of the old double-glass. But the twin does not arrive
+           on that frame, so the pill vanishes ~33ms before anything replaces
+           it, and the square variation made that visible: the resting tile is
+           a solid object and it blinks out before the capsule grows.
+           DSNativeChrome already applies the class the moment the shell
+           confirms, and the confirm has measured at ~33ms after the arm. So
+           the two artefacts are the same size and we get to choose which:
+           a frame of NOTHING, or a frame of two identical shapes on one rect.
+           The second is the lesser — an overlap of two things that agree is
+           far harder to see than a hole. The 320ms fallback below is unchanged
+           and still un-hides on a shell that never confirms. */
         clearTimeout(scrubFbT);
         scrubFbT = setTimeout(function () {
           if (scrubConfirmed) return;
