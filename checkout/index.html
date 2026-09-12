@@ -686,7 +686,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·12</div>
+  <div class="s-foot" id="buildInfo">checkout ·13</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -706,7 +706,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·12';
+const BUILD = 'checkout ·13';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -765,6 +765,11 @@ function walletCodes(tier) {
    anywhere sets it everywhere. Declared to the other lanes; a flow that hasn't
    adopted it yet simply doesn't read the key. */
 const TIER_KEY = 'ds-tier-v1';
+/* ONE DECLARED DEFAULT for the shared key (Rashid, 2026-09-12). Without it
+   the first flow to boot decides the tier for every other — checkout would
+   have said VIP and rewards Gold, each correct alone and non-deterministic
+   as a pair. */
+const TIER_DEFAULT = 'gold';
 function readGlobalTier() {
   try { const t = localStorage.getItem(TIER_KEY); return TIERS[t] ? t : null; }
   catch (_) { return null; }
@@ -824,11 +829,11 @@ const METHODS = [
 
 /* ---------------- state ---------------- */
 const S = {
-  tier: readGlobalTier() || 'vip',
+  tier: readGlobalTier() || TIER_DEFAULT,
   entry: 'plans',        /* plans | renew */
   plan: 'thediet',
   duration: null,        /* resolved on boot                       */
-  coupon: 'DS-VIP25',    /* applied coupon CODE from rewards, or null */
+  coupon: 'seed',        /* resolved at boot to this rung's own top offer */
   method: 'card2',       /* matches the Figma payment screenshot   */
   screen: 'plans',
   meals: { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 },
@@ -1470,7 +1475,8 @@ bindRange('mCountdown', 'oCountdown', 'countdown', v => {
 bindRange('mPush', 'oPush', 'push', v => v + 'ms');
 
 document.getElementById('sReset').onclick = () => {
-  S.tier = 'vip'; writeGlobalTier('vip'); S.entry = 'plans'; S.plan = 'thediet'; S.coupon = 'DS-VIP25';
+  S.tier = TIER_DEFAULT; writeGlobalTier(TIER_DEFAULT); S.entry = 'plans'; S.plan = 'thediet';
+  S.coupon = walletCodes(S.tier)[0];
   S.method = 'card2'; S.screen = 'duration'; S.duration = null;
   S.meals = { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 };
   S.days = 'No Friday';
@@ -1506,6 +1512,10 @@ document.getElementById('labVeil').onclick = () => document.body.classList.remov
 /* Seed the shared key on a first run so other flows inherit the same default
    rather than each falling back to its own. Never overwrites an existing tier. */
 if (!readGlobalTier()) writeGlobalTier(S.tier);
+/* the boot coupon follows the rung, so a first render can never show a
+   coupon the member cannot hold — the default tier is not ours to assume */
+{ const seeded = S.coupon === 'seed' ? null : decodeCoupon(S.coupon);
+  if (!seeded || !couponUnlocked(seeded)) S.coupon = walletCodes(S.tier)[0]; }
 /* the tier may have arrived from another flow, so the picker follows S, not markup */
 document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === S.tier));
 paintCouponSeg();
