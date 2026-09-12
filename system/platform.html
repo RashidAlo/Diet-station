@@ -616,6 +616,65 @@ const ctx = q.get('ctx') ? JSON.parse(decodeURIComponent(q.get('ctx'))) : {};
       <button class="copycode" data-copy="dsnavCtx">Copy</button>
     </div>
 
+    <h3>Shared prototype state</h3>
+    <p class="desc" style="font-size:13.5px">Rashid, 2026-09-12: <i>&ldquo;one rule where if we
+      set a tier for the user, it applies throughout the prototype experience.&rdquo;</i> The
+      contract above moves a user <i>between</i> flows; this one keeps a fact about them the
+      same <i>across</i> them. It is the second instance of the shape — the glass recipe was the
+      first — which is what makes it a pattern rather than a decision.</p>
+    <div class="slab">
+      <div class="sl">The principle</div>
+      <div class="sq">STATE THE USER PERCEIVES AS ONE FACT ABOUT THEMSELVES LIVES IN ONE KEY,
+        NOT ONE PER FLOW.</div>
+      <div class="sb">The failure it prevents is a member who is <b>VIP in checkout and Bronze in
+        rewards at the same time</b> — not a rendering bug, a prototype that contradicts itself
+        while someone is being walked through it. Note the boundary: the fleet&rsquo;s
+        <code>ds-mods-&lt;flow&gt;</code> keys are correctly <i>per flow</i>, because a lab
+        override is a fact about a surface, not about the person.</div>
+    </div>
+    <div class="codewrap">
+      <pre id="sharedstate">// the key: ds-&lt;thing&gt;-v1 — prefixed, versioned, one per shared fact
+const TIER_KEY = 'ds-tier-v1';                 // bronze | silver | gold | vip
+
+// READ DEFENSIVELY. try/catch survives private browsing; validating against
+// the known set means an unknown value reads as "unset" instead of
+// propagating garbage into every flow that trusts the key.
+function readGlobalTier() {
+  try { const t = localStorage.getItem(TIER_KEY); return TIERS[t] ? t : null; }
+  catch (_) { return null; }
+}
+
+// SEED, DON'T OVERWRITE. First flow to boot establishes it; every later boot
+// inherits. Reversing this makes the last flow opened win, which is the same
+// bug wearing a different hat.
+if (!readGlobalTier()) writeGlobalTier(S.tier);
+
+// PROPAGATE LIVE, AND RE-DERIVE WHAT DEPENDED ON IT. The storage event is the
+// easy half; the second half is the one that matters — checkout drops an
+// applied coupon the new tier no longer unlocks before it repaints.
+addEventListener('storage', e => {
+  if (e.key !== TIER_KEY || !TIERS[e.newValue] || e.newValue === S.tier) return;
+  S.tier = e.newValue;
+  if (couponNoLongerUnlocked()) S.coupon = null;   // re-derive, then render
+  render();
+});</pre>
+      <button class="copycode" data-copy="sharedstate">Copy</button>
+    </div>
+    <p class="meta">Written by earned state too, not just by a picker: checkout raises the key
+      when redeeming a coupon proves a higher rung. <b>The two instances differ in payload</b> —
+      <code>ds-glass-global-v1</code> holds a JSON object merged over published defaults,
+      <code>ds-tier-v1</code> holds a validated scalar — so the convention being shared is the
+      <i>key discipline</i> (prefixed, versioned, defensive read, seed-don&rsquo;t-overwrite),
+      not the shape of the value.</p>
+    <p class="meta"><b style="color:var(--red)">Adoption: checkout only, and the failure is
+      live.</b> Verified at source — <code>rewards/index.html</code> has a full level concept
+      (<code>.phone[data-level="bronze"]</code>, <code>silver</code>, and its own
+      <code>data-lvl</code> picker) and reads no shared key, so a member can be VIP in one flow
+      and Bronze in the other today. That is the case the standard exists for, still open until
+      the owning lane adopts it. One discoverability note for whoever does: the key lives behind
+      a <code>TIER_KEY</code> constant, so grepping the fleet for the literal string finds
+      nothing — search the constant, or the pattern <code>ds-*-v1</code>.</p>
+
     <h3>Integration manifest (flows.json)</h3>
     <div class="codewrap">
       <pre id="dsnavManifest">// optional per-flow fields, rendered as "Integration points" in both
