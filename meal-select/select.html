@@ -482,12 +482,16 @@
      keeps it clear of the notch. Scoped to .nav.tile-mode, so Glass and Red
      portal keep their 69pt pill untouched. */
   .nav.tile-mode .ttl.scrub { height: 52px;
-    top: calc(var(--top-pad) + 5px); border-radius: 26px;
-    animation: tileform .52s cubic-bezier(.34,1.24,.4,1); }
-  @keyframes tileform {
-    0%   { height: 52px; }
-    44%  { height: 60px; }
-    100% { height: 52px; } }
+    top: calc(var(--top-pad) + 5px); border-radius: 26px; }
+  /* THE BOUNCE IS DRIVEN FROM THE DOM, NOT A KEYFRAME. It was
+     `animation: tileform` here, and it ran — getComputedStyle showed the
+     height mid-interpolation — but it never reached getBoundingClientRect,
+     so the rect I report stayed flat at 52 and the native capsule never
+     bounced. Shell's per-arm maxH settled it: 52, every arm, with an
+     instrument that watches any rect change and could not have missed 60.
+     An animation the reporter cannot see is an animation the twin never
+     performs, so the bounce now writes an inline height each frame — one
+     owner, and the rect carries it by construction. */
   /* the ladder has to LIVE in 52pt now, so the stack compacts rather than
      overflowing: 17 top pad + 30 slot + 5 bottom = 52 exactly, with the
      headline riding at 5 inside the top pad. Type comes down a step with it —
@@ -2760,6 +2764,24 @@ confirmBtn.onclick = () => {
       }, 700);
     }
     ttl.style.width = ''; ttl.style.height = '';   /* .scrub's own geometry wins */
+    /* 52 -> 60 -> 52 over 520ms, peaking at 44%: the squash that makes the
+       capsule read as FORMING rather than merely stretching (Rashid: "with a
+       good bounce for height, animation wise, to show it forming"). Peak is
+       held at 60 deliberately — Shell's ladder picks its compact metrics at
+       h < 64, so anything above that would flip the layout mid-bounce. */
+    if (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile') {
+      var bT0 = 0;
+      var bounce = function (now) {
+        if (!bT0) bT0 = now;
+        if (!ttl.classList.contains('scrub')) { ttl.style.height = ''; return; }
+        var bp = Math.min(1, (now - bT0) / 520);
+        var k = bp < 0.44 ? bp / 0.44 : (1 - bp) / 0.56;
+        ttl.style.height = (52 + 8 * Math.sin(k * Math.PI / 2)).toFixed(2) + 'px';
+        if (bp < 1) requestAnimationFrame(bounce);
+        else ttl.style.height = '';
+      };
+      requestAnimationFrame(bounce);
+    }
     if (navEl) navEl.classList.add('scrubbing');
     vibrate(6);                          /* light tick on the morph itself */
     /* arm the twin a frame later, so the rects it tracks start at the
@@ -3240,7 +3262,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 182 (square: button glass, wider not taller)';
+const BUILD = 'build 2026-09-12 · 183 (the bounce the reporter can see)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
