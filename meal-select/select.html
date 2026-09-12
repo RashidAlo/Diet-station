@@ -524,9 +524,15 @@
      lands the numeral and the chip on the same two lines the resting square
      already puts them on. The OFF word's 6.5px/8px override is gone with
      them — it now shares the square's 7px/9px, which is the rule two
-     paragraphs down and was always the same optical line. */
-  .nav .ttl.scrub .scb-day,
-  .nav .ttl.scrub .scb-mon { top: 6.5px; font-size: 9px; line-height: 10px; }
+     paragraphs down and was always the same optical line.
+     The headline's numbers are NOT here. They live in the .scb-day rule
+     further down, which is the only rule that sets them — a copy here looked
+     tidier and was simply wrong: equal specificity, and that rule comes LATER
+     with a `font:` shorthand that resets size and line-height, so the copy
+     lost the cascade and the headline stayed at 10.5/13 while every other row
+     moved. The old .nav.tile-mode prefix had been hiding that by carrying an
+     extra class's worth of specificity, and folding it away removed the
+     crutch. One property, one owner. */
   .nav .ttl.scrub .scb .scb-it { height: 28px; gap: 1px; }
   .nav .ttl.scrub .scb .scb-it .n { height: 17px;
     font-size: 15px; line-height: 17px; }
@@ -597,7 +603,7 @@
      which is the space this buys back. */
   .scb-day, .scb-mon { display: none; }
   .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
-    display: block; position: absolute; left: 50%; top: 10px; z-index: 2;
+    display: block; position: absolute; left: 50%; top: 6.5px; z-index: 2;
     white-space: nowrap; pointer-events: none;
     /* THE WEEKDAY IS PROXIMA AND LIGHTER (Rashid: "make the day font thinner,
        less weight, and maybe use Proxima — Proxima looks better when it's a
@@ -608,7 +614,12 @@
        takes the 10.5px weekday, where Urbane's roundness turns to mush. Weight
        600 -> 400 with a touch of tracking, because a label this small reads
        lighter and wider, not bolder and tighter. */
-    font: 400 10.5px/13px 'Proxima Nova', -apple-system, sans-serif;
+    /* 9px/10px at top 6.5 — #dayTile .t-d's exact metrics, so the armed
+       headline lands on the line the resting square puts its weekday on
+       (Rashid: "the spacing between day, date number and icon in the square
+       is perfect — apply the same spacing to the dates inside the scrubber").
+       This is the ONLY place the headline is sized or placed. */
+    font: 400 9px/10px 'Proxima Nova', -apple-system, sans-serif;
     letter-spacing: .05em; }
   .nav .ttl.scrub .scb-day { color: var(--sc-day);
     transform: translateX(-50%);
@@ -3207,7 +3218,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 186 (one scrubber, on the square\u2019s rhythm)';
+const BUILD = 'build 2026-09-12 · 187 (the headline actually wins its cascade)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
