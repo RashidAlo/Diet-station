@@ -382,7 +382,16 @@
         scope <i>narrower than its reading</i>.<br>
         Tested against all five before adopting it, and against the day that produced them: the
         rows one lane measured were real, on the wrong surface; the build another measured was
-        real, and not the one Rashid was holding. Five for five.</div>
+        real, and not the one Rashid was holding. Five for five.<br><br>
+        <b style="color:#f5f5f7">The tool-level instance, hit by two lanes independently while
+        writing this card down:</b> a splice whose anchor doesn&rsquo;t match writes nothing and
+        reports done — and the push around it succeeds, truthfully, scoped to the half that
+        worked. That is <i>two</i> of the five at once: an edit whose failure mode is
+        indistinguishable from success, and a true report read as covering more than it does. It
+        cost the other lane two corrupted files, from the same shape in reverse — an index-based
+        splice that assumed block order duplicated seventeen thousand characters and reported
+        done. <b>Assert the anchor before splicing, and assert the order of markers too. The
+        remedy for a silent no-op is an explicit precondition, not more care.</b></div>
       <div class="sq" style="font-size:13.5px;margin-top:18px">First — a check that cannot fail is
         not a check.</div>
       <div class="sb">This page first claimed the six slots agree to 0.01px, measured by reading
