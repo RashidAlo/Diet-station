@@ -569,7 +569,13 @@
     font-style: normal; letter-spacing: .09em; color: var(--sc-chip); }
   #dayTile .t-s .c-off { color: rgba(11,14,18,.34); }
   /* an OFF day is struck through and recedes, per the Figma Off variant */
-  .scb .scb-it.st-off .n { text-decoration: line-through; opacity: .62; }
+  /* TWO SIGNALS, NOT THREE (2026-09-12). The off day used to strike the
+     numeral AND recede AND — since the chip became a word — say OFF. The
+     strike was the weakest of the three and the most easily mistaken for a
+     rendering fault at 16px. Shell removed theirs deliberately rather than
+     leave a request that silently wasn't taking; this matches, so the two
+     surfaces agree again: the numeral recedes, and the chip says the word. */
+  .scb .scb-it.st-off .n { opacity: .62; }
   .scb .scb-it.st-off .d { opacity: .62; }
   /* the held tile: STATIONARY at the capsule centre, days travel through it.
      Sits BELOW the strip so the numbers read on top of it, and the slot
@@ -3181,7 +3187,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 180 (hand over on confirm, not on hope)';
+const BUILD = 'build 2026-09-12 · 181 (off day: two signals, not three)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
