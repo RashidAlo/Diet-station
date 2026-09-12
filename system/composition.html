@@ -609,7 +609,7 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
         build in Rashid&rsquo;s hands, and every green reading on the native path so far had been
         taken that way.</div>
     </div>
-    <h3>Three siblings, each bought with builds</h3>
+    <h3>Four siblings, each bought with builds</h3>
     <div class="lad">
       <div class="r"><b>Never claim an absence from a sampled window unless the window is proved
         to contain the event</b>
@@ -639,6 +639,20 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
           the hub; none existed on the pilot. It is also why that lane could not distinguish
           &ldquo;the confirm handler was never called&rdquo; from &ldquo;the capability was below
           the threshold&rdquo;, and correctly reported that it couldn&rsquo;t.</p></div>
+      <div class="r"><b>An absence inside the container is not an absence if the data
+        legitimately ends</b>
+        <p>The open strip measured two slots left of centre and three right — one present at
+          <code>x=363</code>, nothing at <code>x=39</code>, and 39 sits well inside the
+          container&rsquo;s 15.7&hellip;386.3. It read as a lopsided visible range: the fifth
+          instance of a known fault family, in exactly the place one had been predicted. Then the
+          index arithmetic: the overlay was opened on day 16, so <b>16 is the range start</b>,
+          slot 1 is the day before the first selectable one, and the sender correctly pushes
+          <code>''</code>. A capture centred further along shows three each side from the same
+          code.<br>
+          <b>The pixels were right and the inference was wrong.</b> Sibling of the sampled-window
+          law and the same shape as this card&rsquo;s first line: the absence has to be
+          <i>earned</i>, and earning it meant reading the range boundary rather than looking
+          harder at the image.</p></div>
       <div class="r"><b>Naming the file is part of &ldquo;inspect the build&rdquo;</b>
         <p>On Xcode 26 a <b>Debug</b> build ships a launcher stub as the app binary and the real
           code sits in a <code>.debug.dylib</code> beside it. Grepping the stub returns zero for
@@ -814,7 +828,12 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
       <div class="row"><div class="k">Rule</div><div class="rule">The design system owns the
         <i>rule</i>, not the number: both codebases quote one formula and neither re-derives it.
         Assert against the formula, never against the value it happens to produce on the device
-        in front of you.</div></div>
+        in front of you.<br>
+        Same family, one element rather than two: <b>if one property of an element follows the
+        data, every property of it must.</b> A twin drew a circle because its glass shape was
+        hardcoded to a capsule while only the <i>clip</i> followed the reported radius — two
+        properties of one element, one data-driven and one fixed, agreeing in exactly the case
+        that was tested.</div></div>
     </div>
     <div class="fail">
       <div class="fh"><span class="fn">09</span><span class="ft">Motion the measurement cannot
@@ -935,16 +954,20 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
       failure 01 stated as a constraint rather than a bug, and Rashid has accepted it. It is also
       exactly why these rules matter — that boundary is where the two lanes meet, and every
       failure above happened within a few points of it.</p>
-    <p class="meta"><b style="color:var(--ok)">The tile is closed on both sides, and the
-      contract is what is protecting him now rather than a flag.</b> The handover is gated on the
-      versioned cap: builds 48 and 49 send <code>true</code> and withhold on their own, 50 sends
-      <code>2</code> and hands over. Measured independently on the <i>pilot</i> surface on build
-      50 by both lanes, same numbers — the rows landing one step off the web&rsquo;s values on
-      two of three, <b>which is how you tell whose renderer drew it</b>. That detail is worth
-      keeping as a technique rather than a result: when two renderers can draw the same thing, a
-      small deliberate difference in the output is the cheapest instrument for telling which one
-      did. The page-side <code>TILE_NATIVE_PROVEN</code> remains as an emergency brake — flip it
-      false and the date is readable again in one deploy, no install.</p>
+    <p class="meta"><b style="color:var(--ok)">Ruling 2 is built, shipped and measured.</b> The
+      date widget is one component across both states — verified at source: <code>tile</code> is
+      gone from the page entirely, one <code>dateEl()</code> builder feeds the rest post and the
+      track post so they cannot diverge, <code>slots</code> is derived as a count
+      (<code>e.slots = e.dates.length</code>), and at rest the arrays are one element long with
+      <code>center: 0</code>. Measured on the pilot on an installed build: one id across the whole
+      gesture, fade symmetric by distance (75/74 at one step, 134/134 at two), pitch 54.0 exactly,
+      centre slot at 201.0 against a container centre of 201.0, and the close landing on 52 in 24
+      frames. <b>The swap is gone rather than disguised.</b></p>
+    <p class="meta">Four renderer faults were surfaced by the pre-build pass and all four are
+      fixed — including two that appeared <i>after</i> the renderer was called done: a selection
+      colour that drew the resting numeral red, and the hardcoded capsule above. Worth keeping as
+      a note on what &ldquo;done&rdquo; means: the lane that implements a renderer is not the lane
+      that can see it fail, which is Ruling 1&rsquo;s point arriving one level down.</p>
     <p class="meta"><b style="color:var(--ink)">The contract and the brake are not redundant, and
       one is not a reason to delete the other.</b> A versioned cap protects against a build that
       <i>announces</i> what it cannot do. It does nothing about a capability that is correctly
