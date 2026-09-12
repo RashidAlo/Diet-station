@@ -1458,6 +1458,25 @@ window.addEventListener('error', function (ev) {
          ' @' + (ev.lineno || '?') + ':' + (ev.colno || '?') });
   } catch (_) {}
 });
+/* HEARTBEAT — one line per page load, so an instrument can PROVE it arrived.
+   Every page-side diagnostic I built was silently useless on the pilot: its
+   relay forwarded dsdebug and then discarded the payload, logging a line with
+   no information in it. So a grep for my messages found nothing while the
+   handler ran fine — and I could not tell "my beacon never arrived" from
+   "there was nothing to report", which is the instrument-silence trap with
+   the missing instrument being MINE and the silent surface being THEIRS.
+   Neither lane can notice that alone: I can't see that my beacon never
+   landed, and they can't see that I was expecting one.
+   The cheap permanent proof (Shell's suggestion): post once per load, naming
+   the build. If this line is absent from a surface's log, NOTHING else the
+   page reports on that surface can be trusted — check for it before reading
+   anything else, and never conclude from page-log silence without it. */
+window.addEventListener('load', function () {
+  try {
+    webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+      m: 'calmeals HEARTBEAT ' + (typeof BUILD === 'string' ? BUILD : '?') });
+  } catch (_) {}
+});
 window.addEventListener('unhandledrejection', function (ev) {
   try {
     webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
@@ -3334,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 205 (gate open on the version, and it says what it saw)';
+const BUILD = 'build 2026-09-13 · 206 (a heartbeat, so an instrument proves it arrived)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
