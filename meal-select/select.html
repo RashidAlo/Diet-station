@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 201 (a primer so the proof can be taken on his build)';
+const BUILD = 'build 2026-09-13 · 202 (native tile proven on the pilot surface)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3715,7 +3715,21 @@ if (QS.get('solo') === '1') {
      three lines apart. So the loss is in the shell's parse, and `date` being
      sent as a STRING (String(td.getDate())) is the obvious suspect against a
      parse expecting a number — `dayName` is a String either way and survives. */
-  var TILE_NATIVE_PROVEN = false;
+  /* FLIPPED TRUE ON A MEASUREMENT I TOOK MYSELF, on the surface Rashid is
+     actually on. Shell's build 49 fixed the second parse — the pilot's
+     FlowOverlay relay read `statuses:` straight through to `from:` and dropped
+     `date` and `status`, which is why his square drew a weekday and two empty
+     strings while every reading either lane took came from the hub webview,
+     whose parse was fine.
+     The gate existed so that the flip would not rest on the shell's word for
+     its own competence. It doesn't: I drove hub -> HOLD the Prototypes tab ->
+     pilot -> calendar tab -> tap 16, confirmed `DSCHROME(pilot)` in the log so
+     the surface is not in doubt, and measured the rows there. Entry path and
+     build, both stated, both his.
+     Flip this back to false the moment a row goes missing again — that is
+     cheaper than any re-diagnosis, and it is page-side so it costs no
+     install. ?tilenative=1 still forces the handover for lane verification. */
+  var TILE_NATIVE_PROVEN = true;
   /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
      he actually has. The flag above is meant to be flipped on evidence, and
      with it false the page never sends `tile` — which left the Shell lane with
