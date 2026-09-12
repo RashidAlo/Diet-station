@@ -153,9 +153,32 @@
   .day .dot { position: absolute; top: -9px; left: calc(50% - 2px); width: 4px; height: 4px;
     z-index: 2; }
   /* deadline badge — yellow pill + down arrow above the day (Figma 4852-5580) */
+  /* IT SAYS ITS PIECE AND LEAVES (Rashid, 2026-09-12: "the yellow tooltip with
+     the timer — animate it in playfully when it shows, and then after two or
+     three seconds animate it out. It doesn't need to be there the whole
+     time").
+     One animation covers the whole life: a springy drop-in with a small
+     overshoot and settle, ~2.4s holding the deadline legible, then it lifts
+     away. `forwards` leaves it gone rather than snapping back, and the
+     transform is re-stated in every frame because the rule's own
+     translateX(-50%) is what centres it — an animation that omitted it would
+     throw the badge half a width off as soon as it started.
+     syncClock() writes the countdown with bb.textContent rather than
+     re-rendering the day, so the per-second tick does NOT restart this; the
+     badge re-animates only when the deadline moves to another day, which is
+     the one time it should. */
+  @keyframes badgesay {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(-7px) scale(.4); }
+    6%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.14); }
+    11%  { transform: translateX(-50%) translateY(0) scale(.95); }
+    16%  { transform: translateX(-50%) translateY(0) scale(1.04); }
+    22%  { transform: translateX(-50%) translateY(0) scale(1); }
+    84%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.88); } }
   .day .badge { position: absolute; top: -29px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; z-index: 5;
-    pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06)); }
+    pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06));
+    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) forwards; }
   .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
     margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
@@ -370,7 +393,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-10 · 22';
+const BUILD = 'calendar 2026-09-12 · 23 (the deadline badge says its piece and leaves)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
