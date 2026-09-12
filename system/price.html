@@ -82,7 +82,12 @@
     --dsp-numfam: 'Proxima Nova', sans-serif; --dsp-numwt: 700; --dsp-ink: #0B0E12;
     --dsp-satwt: 700;                                  /* satellite weight */
     --dsp-was-ink: #999999;                            /* struck old price */
-    --dsp-per: var(--dsp-cur); }
+    --dsp-per: var(--dsp-cur);
+    /* per-slot paint — each falls back to the satellite default, so a flow can
+       mute one slot without restating the others */
+    --dsp-curwt: var(--dsp-satwt); --dsp-cur-ink: var(--dsp-ink);
+    --dsp-decwt: var(--dsp-satwt); --dsp-dec-ink: var(--dsp-ink);
+    --dsp-perwt: var(--dsp-satwt); --dsp-per-ink: var(--dsp-ink); }
   .dsp.primary  { --dsp-numfam: 'Urbane Rounded', sans-serif; --dsp-numwt: 600;
                   --dsp-ink: var(--red); --k-num: .1811; }
   .dsp.struck   { --dsp-numwt: 600; }
@@ -94,10 +99,13 @@
     font-family: 'Proxima Nova', sans-serif; font-weight: var(--dsp-satwt);
     color: var(--dsp-ink); }
   .dsp .cur { font-size: var(--dsp-cur); padding-right: 1px;
+    font-weight: var(--dsp-curwt); color: var(--dsp-cur-ink);
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
   .dsp .dec { font-size: var(--dsp-dec);
+    font-weight: var(--dsp-decwt); color: var(--dsp-dec-ink);
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-dec) * var(--k-sat)); }
   .dsp .per { font-size: var(--dsp-per); padding-left: 1px;
+    font-weight: var(--dsp-perwt); color: var(--dsp-per-ink);
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-per) * var(--k-sat)); }
   .dsp .minus { font-size: var(--dsp-cur); font-weight: 400; padding-right: 2px;
     margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
@@ -525,15 +533,21 @@ function capOffsetRatio(weight, family) {
   --dsp-numfam: 'Proxima Nova'; --dsp-numwt: 700; --dsp-ink: #0B0E12;
   --dsp-satwt: 700;              /* satellite weight — 500 for a Medium /mo */
   --dsp-was-ink: #999999;        /* struck price — #ED1C24 in the payment dock */
-  --dsp-per: var(--dsp-cur); }
+  --dsp-per: var(--dsp-cur);
+  /* per-slot paint, each falling back to the satellite default */
+  --dsp-curwt: var(--dsp-satwt); --dsp-cur-ink: var(--dsp-ink);
+  --dsp-decwt: var(--dsp-satwt); --dsp-dec-ink: var(--dsp-ink);
+  --dsp-perwt: var(--dsp-satwt); --dsp-per-ink: var(--dsp-ink); }
 .dsp.primary { --dsp-numfam:'Urbane Rounded'; --dsp-numwt:600; --dsp-ink:#ED1C24;
                --k-num: .1811; }
 .dsp > *, .dsp .was > * { display: block; line-height: 1; }
 
 .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
   font-size: var(--dsp-num); color: var(--dsp-ink); }
-.dsp .cur, .dsp .dec, .dsp .per { font-family: 'Proxima Nova';
-  font-weight: var(--dsp-satwt); color: var(--dsp-ink); }
+.dsp .cur { font-weight: var(--dsp-curwt); color: var(--dsp-cur-ink); }
+.dsp .dec { font-weight: var(--dsp-decwt); color: var(--dsp-dec-ink); }
+.dsp .per { font-weight: var(--dsp-perwt); color: var(--dsp-per-ink); }
+.dsp .cur, .dsp .dec, .dsp .per { font-family: 'Proxima Nova'; }
 .dsp .cur { font-size: var(--dsp-cur);
   margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-cur)*var(--k-sat)); }
 .dsp .dec { font-size: var(--dsp-dec);
@@ -582,6 +596,13 @@ function capOffsetRatio(weight, family) {
       <div class="k">--dsp-ink</div>
       <div class="v">The live price. Set it per instance wherever the type&rsquo;s default is
         wrong.</div>
+      <div class="k">--dsp-curwt<br>--dsp-decwt<br>--dsp-perwt</div>
+      <div class="v">Per-slot weight, each falling back to <code>--dsp-satwt</code>. A muted
+        suffix beside a bold currency — checkout&rsquo;s <code>/mo</code> — is the normal shape
+        for a per-period price, and one token for all satellites couldn&rsquo;t express it.</div>
+      <div class="k">--dsp-cur-ink<br>--dsp-dec-ink<br>--dsp-per-ink</div>
+      <div class="v">Per-slot ink, each falling back to <code>--dsp-ink</code>. Set only the
+        slot that differs; the rest follow the type.</div>
       <div class="k">color</div>
       <div class="v"><b>The sanctioned override surface.</b> Gradient prices — checkout&rsquo;s
         per-plan fills — set <code>color: transparent</code> with
@@ -589,10 +610,21 @@ function capOffsetRatio(weight, family) {
         expected use, not a workaround: the component never positions by colour, so painting
         over it cannot break the alignment.</div>
     </div>
-    <p class="meta">The rule behind all four: <b>a component that dictates paint gets
+    <p class="meta">The rule behind all of them: <b>a component that dictates paint gets
       overridden per instance, and then it is not a component any more</b> — it is arithmetic
       wearing a class name. If adopting <code>.dsp</code> would mean overriding colour in three
-      places, that is the system&rsquo;s bug, not the lane&rsquo;s.</p>
+      places, that is the system&rsquo;s bug, not the lane&rsquo;s.<br>
+      Verified in one instance with no local rules: a Bold red currency, a Medium
+      <code>#999</code> <code>/mo</code>, a red struck price and a gradient numeral all
+      expressing together, margins unchanged, and an ordinary caller&rsquo;s defaults
+      untouched.</p>
+    <p class="meta"><b style="color:var(--ink)">Worth knowing, since it&rsquo;s a design
+      question and not a code one:</b> the Figma <code>Price</code> set does <i>not</i> mute its
+      suffix — Tertiary md renders <code>/day</code> in the same Bold and the same ink as the
+      rest of the row. The muted <code>/mo</code> is a decision in the checkout frame. The tokens
+      let a flow express it either way; which one is right sits on Rashid&rsquo;s sheet beside
+      the 20-vs-15 currency question, since the two are the same kind of disagreement between a
+      drawn screen and the component set.</p>
 
     <h3>Web — one call site</h3>
     <div class="codewrap">
