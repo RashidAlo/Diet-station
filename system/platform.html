@@ -660,6 +660,16 @@ addEventListener('storage', e => {
 });</pre>
       <button class="copycode" data-copy="sharedstate">Copy</button>
     </div>
+    <p class="meta"><b style="color:var(--red)">A shared key needs ONE declared default, or the
+      first flow to boot decides it.</b> Found while preparing rewards&rsquo; adoption: checkout
+      seeds <code>vip</code> (<code>readGlobalTier() || 'vip'</code>) and rewards&rsquo; markup
+      defaults <code>gold</code> (<code>data-level="gold"</code>). Seed-don&rsquo;t-overwrite
+      makes each of them correct on its own and the pair non-deterministic — open checkout first
+      and the member is VIP everywhere, open rewards first and they are Gold. The rule keeps
+      them <i>consistent</i>; only a declared default makes them <i>predictable</i>. State it
+      once, with the key, and have every flow fall back to it rather than to its own resting
+      value. <b>On Rashid&rsquo;s sheet</b>: which rung a first-time prototype visitor starts
+      on.</p>
     <p class="meta">Written by earned state too, not just by a picker: checkout raises the key
       when redeeming a coupon proves a higher rung. <b>The two instances differ in payload</b> —
       <code>ds-glass-global-v1</code> holds a JSON object merged over published defaults,
