@@ -141,7 +141,7 @@
     border: 2.5px solid rgba(255,255,255,.34); border-top-color: #fff;
     /* the ring is a border, so it needs the glyph shadow as a filter too —
        otherwise the spinner is the one thing left unreadable on clear glass */
-    filter: drop-shadow(0 1px 2.5px rgba(0,0,0,.42));
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.22));
     animation: dockspin .75s linear infinite; }
   @keyframes dockspin { to { transform: rotate(360deg); } }
 
@@ -429,6 +429,10 @@
     --sc-sel-bg:   rgba(255,255,255,.82);    /* the held day            */
     --sc-sel-bd:   rgba(0,0,0,.06);
     --sc-sel-glow: 0 1px 5px rgba(0,0,0,.14);
+    /* the chips are the quietest thing in the slot: light gray against the
+       black numerals, per Rashid — "the numbers can be black while the
+       icons are in gray, or lightish gray" */
+    --sc-chip:     rgba(11,14,18,.34);
     --sc-sel-num:  #ed1c24; }
   .nav .ttl.scrub .scb { display: flex; align-items: center; width: 486px;
     flex: none; position: relative; z-index: 1;
@@ -443,6 +447,7 @@
     --sc-sel-bg:   #ed1c24;
     --sc-sel-bd:   #f53a3a;
     --sc-sel-glow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55);
+    --sc-chip:     rgba(255,255,255,.58);
     --sc-sel-num:  #f9f9f9; }
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
   /* 54 = Figma's 34pt tile + 20pt gutter.
@@ -500,6 +505,12 @@
   .scb .scb-it .s { height: 13px; display: flex; align-items: center;
     justify-content: center; }
   .scb .scb-it .s img { display: block; }
+  /* subtle by construction: a hairline stroke in the scheme's chip colour,
+     never a fill, so the numeral above stays the loudest thing in the slot */
+  .scb .scb-it .s svg { display: block; width: 13px; height: 13px;
+    fill: none; stroke: var(--sc-chip); stroke-width: 1.35;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .scb .scb-it .s svg circle { stroke-width: 1.2; }
   /* an OFF day is struck through and recedes, per the Figma Off variant */
   .scb .scb-it.st-off .n { text-decoration: line-through; opacity: .62; }
   .scb .scb-it.st-off .d { opacity: .62; }
@@ -884,7 +895,13 @@
     -webkit-backdrop-filter: blur(9px) saturate(118%);
     backdrop-filter: blur(9px) saturate(118%);
     box-shadow: inset 0 1px 1px rgba(255,255,255,.30), inset 0 0 0 .6px rgba(255,255,255,.26);
-    text-shadow: 0 1px 2.5px rgba(0,0,0,.42), 0 0 8px rgba(0,0,0,.22);
+    /* SOFTENED (Rashid: "the added drop shadows are a little too
+       aggressive, soften it or lower it down — there's too much drop shadow
+       on the text inside the button and the loader"). The job is to lift
+       white off a bright ground, not to draw a shadow: the tight edge pass
+       drops .42 -> .24 and the wide lift .22 -> .10, which keeps the glyph
+       legible without the type looking embossed. */
+    text-shadow: 0 1px 2px rgba(0,0,0,.24), 0 0 6px rgba(0,0,0,.10);
     transition: opacity .27s cubic-bezier(.5,0,.5,1),
       transform .7s cubic-bezier(.26,1.36,.42,1),
       width .45s cubic-bezier(.45,1.45,.8,1); }
@@ -899,7 +916,7 @@
   /* the arrow and the saved-check are strokes, not text, so text-shadow does
      not reach them — they carry the same shadow as a filter */
   .dock svg { width: 16px; height: 16px; display: block;
-    filter: drop-shadow(0 1px 2.5px rgba(0,0,0,.42)); }
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.24)); }
   .dock .d-check { width: 19px; height: 14px; }
   .dock .d-check { transition: opacity .18s ease; }
   .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
@@ -2163,7 +2180,17 @@ function nextTapped() {
   dock.classList.remove('wide');
   dock.innerHTML = '<span class="loader"></span>';
   if (CAL) calDone.add(DAY_START + dayIdx);   /* Next = this day confirmed, keep picking */
-  setTimeout(() => turnDay(1), 2000);
+  /* 650ms, not 2000 (Rashid: "when I tap it, it doesn't proceed to next — I
+     have to tap it multiple times, there's an activation issue").
+     The tap DID register every time; the button spun a loader for two full
+     seconds before the day turned, and two seconds of nothing reads as a
+     dead control. So you tap again — and the second tap really is dead,
+     because the handler is detached on the first one, which makes the button
+     feel broken rather than slow. Nothing is being waited for here: the turn
+     is local and saveDay() is synchronous, so the delay was pure theatre.
+     650ms is long enough for the loader to register as a beat and short
+     enough that nobody reaches for a second tap. */
+  setTimeout(() => turnDay(1), 650);
 }
 
 /* horizontal swipe switches days back and forth */
@@ -2283,16 +2310,32 @@ confirmBtn.onclick = () => {
   }
   /* the calendar's own chip vocabulary, reused verbatim so the scrubber and
      the calendar grid can never tell different stories about a day */
-  const SCRUB_CHIP = {
-    add:   '<img src="cal-add.svg" width="15" height="15" alt="">',
-    soon:  '<img src="cal-add.svg" width="15" height="15" alt="">',
-    sel:   '<img src="cal-check.svg" width="13" height="13" alt="">',
-    auto:  '<img src="cal-check.svg" width="13" height="13" alt="">',
-    today: '<img src="cal-truck.svg" width="14" height="14" alt="">',
-    rate:  '<img src="cal-staryellow.svg" width="14" height="14" alt="">',
-    star:  '<img src="cal-staryellow.svg" width="14" height="14" alt="">',
-    off:   '<img src="cal-off.svg" width="13" height="6" alt="">',
+  /* LINE ICONS, NOT FILLS (Rashid: "for the glass version I want the icons
+     under the date number to be line based and not fill, and very subtle —
+     the numbers themselves can be black, while the icons are in gray").
+     These were the calendar grid's filled <img> chips, which read as solid
+     blobs at 13px and competed with the numeral above them. Inline strokes
+     instead, so they take currentColor and a scheme can tint them: gray on
+     glass, light on portal. Drawn once here and coloured per scheme rather
+     than shipped as two icon sets, because his standing rule is that the two
+     schemes are the same design in different colours. */
+  const CHIP_SVG = function (d, vb, extra) {
+    return '<svg viewBox="' + (vb || '0 0 14 14') + '" aria-hidden="true">' +
+      '<path d="' + d + '"/>' + (extra || '') + '</svg>';
   };
+  const SCRUB_CHIP = {
+    add:   CHIP_SVG('M7 3.4v7.2M3.4 7h7.2'),
+    soon:  CHIP_SVG('M7 3.4v7.2M3.4 7h7.2'),
+    sel:   CHIP_SVG('M3.2 7.4l2.6 2.6 5-5.8'),
+    auto:  CHIP_SVG('M3.2 7.4l2.6 2.6 5-5.8'),
+    today: CHIP_SVG('M1.4 4h7.2v5.4H1.4zM8.6 5.8h2.8l2.2 2.2v1.4H8.6z',
+             '0 0 16 14',
+             '<circle cx="4.2" cy="11" r="1.5"/><circle cx="11.6" cy="11" r="1.5"/>'),
+    rate:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
+    star:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
+    off:   CHIP_SVG('M3 3h8', '0 0 14 6'),
+  };
+
   /* on window: the status map arrives on a top-level message listener, which
      has no view of this closure */
   window.repaintScrubStrip = function () { if (scrubbing) paintStrip(winC); };
@@ -3027,7 +3070,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 174 (the ball finishes at nothing)';
+const BUILD = 'build 2026-09-12 · 175 (Next responds in 650ms; line chips; softer shadows)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
