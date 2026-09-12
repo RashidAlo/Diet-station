@@ -2184,7 +2184,11 @@ addEventListener('message', e => {
        then dismisses. ADDRESSED, never broadcast — the same source check as
        ds-close, so a grandchild's message can't be delivered to an opener
        that never asked it anything. `from` is what the HUB knows the
-       posting frame to be, not what the message claims to be.
+       posting frame to be, NEVER what the message claims — a receiver
+       gating on `from === 'rewards'` can rely on that unconditionally.
+       (An entry only gets an opener via presentFlow, whose id comes from
+       flows.json, so a delivering frame always has a hub-known id; there
+       is deliberately no fallback to the claimed value.)
        NOBODY ASKED = NO-OP, not a close. A flow the hub itself presented
        (from a card) has no opener, and rewards will post a result on every
        rip once it learns how — dismissing the sheet for a lab visitor just
@@ -2196,7 +2200,7 @@ addEventListener('message', e => {
     if (!to.frame.contentWindow) return;    /* opener already gone */
     try {
       to.frame.contentWindow.postMessage(
-        { t: 'ds-result', from: src.id || d.from || null, payload: d.payload }, '*');
+        { t: 'ds-result', from: src.id, payload: d.payload }, '*');
     } catch (_) { return; }
     popFlow(src);
   } else if (d.t === 'ds-nav') {
