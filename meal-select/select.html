@@ -184,8 +184,21 @@
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .navbtn:active { transform: scale(.92); }
   .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+  /* THE RETURN IS SLOWER AND IT BOUNCES (Rashid: "during the exit animation
+     slow down the way the other buttons show up from right to left and give
+     them a little bit of a gentle bounce when they move in").
+     One curve used to serve both directions, so the buttons left and came back
+     at the same brisk pace and the return read as a snap-back. The exit stays
+     quick — they are getting out of the way of something the user just did —
+     and the RETURN is given its own longer, springier curve plus a small
+     stagger, so the capsule lands first and the actions arrive after it with
+     a little overshoot rather than racing it home. */
   .navbtn, .dual { color: #0b0e12; transition: background .35s ease, color .35s ease,
-    opacity .28s ease, transform .5s cubic-bezier(.3,1.06,.36,1); will-change: transform; }
+    opacity .28s ease, transform .78s cubic-bezier(.22,1.28,.32,1) .06s;
+    will-change: transform; }
+  .nav.scrubbing .navbtn, .nav.scrubbing .dual {
+    transition: background .35s ease, color .35s ease, opacity .28s ease,
+      transform .42s cubic-bezier(.42,0,.62,.28); }
   /* scrubber takeover (Rashid v9): the growing pill PUSHES the other
      actions out of the screen — the X exits left, the dual capsule exits
      right — and they ride back in on release. Web path; the native twins
@@ -457,7 +470,17 @@
   .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
     display: block; position: absolute; left: 50%; top: 10px; z-index: 2;
     white-space: nowrap; pointer-events: none;
-    font: 600 10.5px/13px 'Urbane Rounded', sans-serif; }
+    /* THE WEEKDAY IS PROXIMA AND LIGHTER (Rashid: "make the day font thinner,
+       less weight, and maybe use Proxima — Proxima looks better when it's a
+       smaller text. But the date itself uses Urbane Rounded, the same one
+       we're using now, it's pretty good").
+       So the two runs split by ROLE, not by size: Urbane Rounded keeps the
+       numerals, where its rounded bowls carry weight at 16px, and Proxima Nova
+       takes the 10.5px weekday, where Urbane's roundness turns to mush. Weight
+       600 -> 400 with a touch of tracking, because a label this small reads
+       lighter and wider, not bolder and tighter. */
+    font: 400 10.5px/13px 'Proxima Nova', -apple-system, sans-serif;
+    letter-spacing: .05em; }
   .nav .ttl.scrub .scb-day { color: var(--sc-day);
     transform: translateX(-50%);
     transition: opacity .16s ease, transform .24s cubic-bezier(.3,1.1,.4,1); }
@@ -2303,6 +2326,11 @@ confirmBtn.onclick = () => {
   const FOLLOW = 0.2;                           /* smoothing — lower = softer */
   const SLOT = 54;                              /* strip slot width (Figma: 34pt tile + 20pt gutter) */
   let holdT = null, scrubbing = false, downX = 0, downY = 0;
+  /* 0 = undecided, 1 = horizontal (this gesture scrubs), -1 = vertical (it was
+     a scroll and the scrubber has already stood down). Replaces the 380ms hold
+     gate: direction answers "scrub or scroll" on the first few pixels instead
+     of making every gesture wait a third of a second to find out. */
+  let axisLock = 0;
   let engageX = 0, baseIdx = 0, target = 0, scrubIdx = 0;
   let disp = 0, winC = 0;                       /* displayed fraction + window center */
   let stepFwd = STEP, stepBack = STEP, latched = false, lastX = 0, raf = null;
@@ -2411,8 +2439,21 @@ confirmBtn.onclick = () => {
          capsule lands — it must never outlive the twin wearing its armed
          geometry. When it is not (Safari, or a shell that never confirmed)
          the web CSS collapse owns the exit and has to run its full .44s. */
+      /* IT COLLAPSES INTO A BALL, NOT A PILL (Rashid: "when the animation
+         morphs down it morphs into a capsule shape — maybe make it more ball
+         type, so the morph looks smoother when it morphs down").
+         The old target was the date label's own rect, so the capsule stayed a
+         wide flat pill the whole way down and simply got smaller: a shape
+         shrinking, not a shape changing. Aiming at a CIRCLE centred on the
+         label means the aspect travels from 17:1 to 1:1 as the size falls, so
+         the eye sees it round off rather than deflate — and the radius stream
+         below keeps it fully round at every step so it is a ball throughout,
+         never a rounded rectangle passing through. */
+      var ballD = Math.max(30, (formH0 || 22) + 8);
+      var ball = { x: formRect.x + formRect.w / 2 - ballD / 2,
+        y: formRect.y + formRect.h / 2 - ballD / 2, w: ballD, h: ballD };
       var native = (window.DSScrubClose && formRect)
-        ? DSScrubClose(formRect, CLOSE_MS, deflate, fromRect) : false;
+        ? DSScrubClose(ball, CLOSE_MS, deflate, fromRect) : false;
       closeT = setTimeout(deflate, native ? CLOSE_MS + 200 : 470);
     } else {
       deflate();                        /* never armed: nothing to collapse */
@@ -2460,25 +2501,45 @@ confirmBtn.onclick = () => {
     requestAnimationFrame(() => {
       if (ttl.classList.contains('scrub')) window.DSScrubChrome && DSScrubChrome(true);
     });
-    holdT = setTimeout(() => {
-      scrubbing = true;                  /* only now does dragging scrub */
-      lastX = downX;
-      calibrate(downX);
-      try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
-      vibrate(10);
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(glide);
-    }, 380);
+    /* SCRUBBING STARTS ON TOUCH (Rashid: "it takes like a second when I tap
+       and hold before I can swipe left and right — I want it to start
+       registering swipes the moment I tap on it").
+       There was a 380ms hold gate before dragging did anything, so the first
+       third of a second of every gesture was dead and the ladder only caught
+       up afterwards. The gate existed to tell a scrub from a page scroll, but
+       a TIMER is the wrong instrument for that question — DIRECTION answers it
+       immediately and without making the user wait. So the wheel is live from
+       the first frame and axisLock below decides, on the first few pixels of
+       movement, whether this gesture is a scrub or a scroll. */
+    axisLock = 0;
+    scrubbing = true;
+    lastX = downX;
+    calibrate(downX);
+    try { ttl.setPointerCapture(e.pointerId); } catch (_) {}
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(glide);
   });
   ttl.addEventListener('pointermove', e => {
-    if (!scrubbing) {
-      /* a drift before the hold lands is a scroll, not a scrub */
-      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) {
-        clearTimeout(holdT);
-        unform();
+    if (axisLock < 0) return;            /* already resolved as a scroll */
+    if (scrubbing && axisLock === 0) {
+      /* FIRST MOVEMENT DECIDES. A mostly-vertical drag is the user trying to
+         scroll the list from a finger that happened to land on the date, and
+         it cancels exactly as the old hold-gate cancel did. Anything else is
+         a scrub and proceeds with no delay. The 1.4 bias means a diagonal
+         resolves as a scrub, because a diagonal on a horizontal control is
+         far more often a sloppy swipe than an attempted scroll. */
+      const adx = Math.abs(e.clientX - downX), ady = Math.abs(e.clientY - downY);
+      if (adx > 4 || ady > 4) {
+        if (ady > adx * 1.4) {
+          axisLock = -1; scrubbing = false;
+          cancelAnimationFrame(raf); raf = null;
+          unform();
+          return;
+        }
+        axisLock = 1;
       }
-      return;
     }
+    if (!scrubbing) return;
     const mx = e.clientX - lastX;
     lastX = e.clientX;
     if (latched) {
@@ -2910,7 +2971,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 167 (re-window carries the fractional centre)';
+const BUILD = 'build 2026-09-12 · 168 (scrub arms on touch; ball exit; softer button return)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3362,7 +3423,9 @@ if (QS.get('solo') === '1') {
     var r = closeRect || el.getBoundingClientRect();
     if (!r.width || !r.height) return null;
     var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-      r: radiusOf(el, r),
+      /* fully round for every frame of the close, so the capsule rounds off
+         into a ball instead of staying a rounded rectangle that shrinks */
+      r: closeRect ? Math.min(r.width, r.height) / 2 : radiusOf(el, r),
       mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
     if (window.DSScrubState) {
       var st = DSScrubState();
