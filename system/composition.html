@@ -201,7 +201,9 @@
           the feature lane owns <b>behaviour</b><br>
           <i>mediator, not gatekeeper: if a ruling can&rsquo;t land inside a lane&rsquo;s
           working window they proceed and this page documents after, flagging anything it
-          would have ruled differently</i></div></div>
+          would have ruled differently — AS A DIFF against what shipped, never as a
+          principle: &ldquo;the tile should have been inert, not visual-only&rdquo; is actionable
+          in minutes; a restatement of the rule is not</i></div></div>
       </div>
     </div>
     <p class="meta"><b style="color:var(--ink)">Process:</b> a <i>new</i> native-over-web
@@ -264,7 +266,15 @@
         anything about the announced-only one.<br><br>
         <b style="color:#f5f5f7">4 &middot; Never confirm a capability from a relay that
         doesn&rsquo;t share the renderer.</b><br><br>
-        <b style="color:#f5f5f7">5 &middot; Until a signal satisfies 2 and 3, the web keeps the
+        <b style="color:#f5f5f7">5 &middot; A correctly-versioned cap REPLACES the per-build
+        measurement.</b> The rule once asked for &ldquo;a measurement on a build in Rashid&rsquo;s
+        hands&rdquo;, and a lane could not produce one — no device in that lane, and the
+        shell&rsquo;s primer passthrough is <code>#if DEBUG</code>, so a Release build cannot
+        carry it. It doesn&rsquo;t need to: <b>because the bump ships with the renderer in every
+        relay, a build that cannot draw cannot send the number</b>, and the inference is sound
+        without measuring each build. A rule that demands evidence a lane is unable to get will
+        be quietly skipped.<br><br>
+        <b style="color:#f5f5f7">6 &middot; Until a signal satisfies 2 and 3, the web keeps the
         surface.</b> A readable web surface beats a prettier unreadable one, and the fallback
         costs the user no install because it is page-side.</div>
     </div>
@@ -483,6 +493,36 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
         build in Rashid&rsquo;s hands, and every green reading on the native path so far had been
         taken that way.</div>
     </div>
+    <h3>Three siblings, each bought with builds</h3>
+    <div class="lad">
+      <div class="r"><b>Never claim an absence from a sampled window unless the window is proved
+        to contain the event</b>
+        <p>&ldquo;The native capsule never renders&rdquo; was reported five times from frames
+          sampled at 3&ndash;5s of recordings where the event was at 10&ndash;14s. Four fixes
+          were built on it. Receiving side: <b>ask how the window was chosen, and ask before
+          building anything</b> — asked first it costs one message; asked after the fourth failed
+          fix it has cost four builds. And <b>four failed fixes is evidence the diagnosis is
+          wrong</b>, not that the bug is deep.</p></div>
+      <div class="r"><b>When two lanes share a debug channel, each lane&rsquo;s instruments must
+        be proven on every surface the other lane serves</b>
+        <p>The page lane&rsquo;s error beacon, bail log and capability receipt all worked on the
+          hub and produced nothing on the pilot — because the pilot&rsquo;s debug handler was
+          <b>schema-bound</b>, logging three fixed keys and discarding the rest. <i>Not
+          forwarded</i> and <i>forwarded with its payload discarded</i> have different fixes, and
+          only the second leaves a misleading line in the log. Neither lane could notice: the
+          sender can&rsquo;t see that its beacon never arrived, the receiver can&rsquo;t see that
+          one was expected. <b>Cheapest enforcement is a heartbeat</b> — one debug line per page
+          load, checked on both surfaces — which turns &ldquo;my instrument is silent&rdquo; from
+          ambiguous into a positive test.</p></div>
+      <div class="r"><b>Naming the file is part of &ldquo;inspect the build&rdquo;</b>
+        <p>On Xcode 26 a <b>Debug</b> build ships a launcher stub as the app binary and the real
+          code sits in a <code>.debug.dylib</code> beside it. Grepping the stub returns zero for
+          symbols that are definitely present — which reads exactly like &ldquo;this build
+          doesn&rsquo;t have the feature&rdquo;, and produced a confident wrong correction between
+          two lanes. Release has no stub, so <b>the rule inverts by configuration</b>. Any
+          instruction to verify a build by inspecting it must name the file.</p></div>
+    </div>
+
     <p class="meta">This is the same shape as the laws on
       <a href="price.html" style="color:var(--red)">Price</a> — a check that cannot fail, an
       audit that could not have found anything. Here it is a check that cannot say <i>where</i>
@@ -570,13 +610,21 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
         control</span></div>
       <div class="row"><div class="k">Symptom</div><div>The web control and its native twin both
         paint. Briefly on arrival, or permanently on a surface that rebuilds.</div></div>
-      <div class="row"><div class="k">Cause</div><div>The web yielded by adding a class to the
-        elements that existed at parse time. Anything rebuilt afterwards — a themed control, a
-        re-rendered row — comes back unsuppressed.</div></div>
+      <div class="row"><div class="k">Cause</div><div>Three different mechanisms, one symptom.
+        <b>(a)</b> The web yielded by adding a class to elements that existed at parse time, so
+        anything rebuilt afterwards came back unsuppressed. <b>(b) Partial yield</b> — the glass
+        went but a hairline stayed, then a shadow, then a rim. <b>(c) The yield decision not
+        consulted at a transition</b>: the exit stripped the hidden class and re-dressed the
+        element, so the web surface reappeared on the landing frame and stayed until the next
+        report re-hid it — <i>&ldquo;an abrupt square that keeps staying there.&rdquo;</i></div></div>
       <div class="row"><div class="k">Rule</div><div class="rule">Yield with a <b>root</b> class
-        and descendant selectors, never by touching the elements: it covers what exists and what
-        is built later. And the fallback path must drop that class, or a shell that can&rsquo;t
-        draw the twin leaves the surface with no control at all.</div></div>
+        and descendant selectors, never by touching the elements — it covers what exists and what
+        is built later; and the fallback path must drop that class, or a shell that can&rsquo;t
+        draw the twin leaves the surface with no control at all.<br>
+        A container is a container <i>whether or not it blurs</i>: the yielding layer renders
+        <b>nothing</b>. One of everything <b>by construction, not by careful subtraction</b>.<br>
+        And the ownership decision is consulted at <b>every transition</b>, not only at setup —
+        <b>setup-time correctness is not correctness</b>.</div></div>
     </div>
 
     <div class="fail">
@@ -584,13 +632,25 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
         mid-flight</span></div>
       <div class="row"><div class="k">Symptom</div><div>The native glass sits in the wrong place
         — mid-screen, or where the surface was a moment ago rather than where it is.</div></div>
-      <div class="row"><div class="k">Cause</div><div>Geometry was sampled while the surface was
-        still animating. Inside a transformed ancestor a rect read mid-spring returns the
-        <i>visual</i> position, not the resting one.</div></div>
+      <div class="row"><div class="k">Cause</div><div>Four mechanisms, one symptom —
+        <i>&ldquo;a glass blob that forms down, gets stuck, then disappears.&rdquo;</i>
+        <b>(a)</b> Geometry sampled while still animating: inside a transformed ancestor a rect
+        read mid-spring returns the <i>visual</i> position. <b>(b)</b> The web surface un-hid
+        ~120ms <i>before</i> the code stripping its armed geometry ran, so an armed-size empty box
+        was briefly visible. <b>(c)</b> <code>easeOutCubic</code> parked the rect within a pixel
+        of its target for ~170ms, so the capsule visibly sat at its destination before handover.
+        <b>(d)</b> A closing class set <code>width</code> with <code>!important</code> while
+        <code>height</code> was normal, so a rect measured after the class landed had its width
+        already home — hence &ldquo;forms <i>down</i>&rdquo;.</div></div>
       <div class="row"><div class="k">Rule</div><div class="rule">Never report a rect that is
         still moving — gate on the owning motion finishing, with a timed belt, never a timer
-        racing the animation. And whichever side owns a motion exposes a synchronisation
-        primitive; the far side never times against it. Overlap is not synchronisation.</div></div>
+        racing the animation. Whichever side owns a motion exposes a synchronisation primitive;
+        the far side never times against it. <b>Overlap is not synchronisation.</b><br>
+        Hand over <b>on the landing frame, in one statement</b>; the thing taking the twin&rsquo;s
+        place must <i>already</i> be the right size; capture the from-rect <b>before the closing
+        class exists</b> (see <code>from:</code> in the element contract — this is why). And
+        prefer ease-<i>in</i>-out for a travelling handover: it keeps moving until it lands, so
+        the frame it stops is the frame it is replaced.</div></div>
     </div>
 
     <div class="fail">
@@ -622,6 +682,109 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
         Assert against the formula, never against the value it happens to produce on the device
         in front of you.</div></div>
     </div>
+    <div class="fail">
+      <div class="fh"><span class="fn">09</span><span class="ft">Motion the measurement cannot
+        see</span></div>
+      <div class="row"><div class="k">Symptom</div><div>An animation runs in the browser and the
+        twin never performs it. The inverse of 06 — nothing is stale, the motion was never
+        sent.</div></div>
+      <div class="row"><div class="k">Cause</div><div>A CSS keyframe, transform or filter moves
+        rendered <i>pixels</i> while leaving <code>getBoundingClientRect</code> flat. The rect
+        stream is built from the measurement, so the motion exists only in the stylesheet. A
+        forming bounce ran 52&rarr;60&rarr;52, <code>getComputedStyle</code> showed it
+        interpolating, and the shell&rsquo;s per-arm max read 52 on every arm — accurate
+        reporting of what was actually sent.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">Any motion the shell must
+        mirror has to be in the <b>measured geometry</b>, not merely in the rendered pixels —
+        drive it from rAF writing the property the measurement reads. Corollary, and it cost four
+        builds: &ldquo;the instrument missed it&rdquo; and &ldquo;it was never there&rdquo; want
+        different fixes, and only the second was real.</div></div>
+    </div>
+
+    <div class="fail">
+      <div class="fh"><span class="fn">10</span><span class="ft">A threshold read live is read
+        during the animation too</span></div>
+      <div class="row"><div class="k">Symptom</div><div>A twin&rsquo;s layout flips mid-gesture,
+        or an exit re-lays-out while it is disappearing.</div></div>
+      <div class="row"><div class="k">Cause</div><div>A mode-discriminating threshold
+        (<code>el.h &lt; 64</code> choosing a metric set) sampled from the live rect. The
+        entry&rsquo;s overshoot crossed it going in; the collapse crossed it coming
+        out.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">Latch mode decisions on a value
+        that <b>cannot change mid-animation</b> — the tallest rect of the arm, not the current
+        one. And coupled constants across lanes (a 60pt peak against a 64pt threshold) are
+        documented on <b>both</b> sides and retuned by neither alone.</div></div>
+    </div>
+
+    <div class="fail">
+      <div class="fh"><span class="fn">11</span><span class="ft">A guard defeated by an earlier
+        call in the same frame</span></div>
+      <div class="row"><div class="k">Symptom</div><div>A safety condition demonstrably present
+        in the code has no effect. The lane asserts the failure is impossible while Rashid is
+        holding it.</div></div>
+      <div class="row"><div class="k">Cause</div><div>The tile&rsquo;s suppression was gated on
+        the shell&rsquo;s confirm — but <code>prehide()</code> runs on <i>every</i> rest post,
+        <b>before</b> any confirm, hiding every id in the map. The gate never got a chance to
+        apply.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">A guard is only a guard if
+        nothing earlier in the frame already does the thing you are guarding against. When you
+        add an id to a shared map, read <b>every</b> loop that iterates that map — not the one
+        you are thinking about.</div></div>
+    </div>
+
+    <div class="fail">
+      <div class="fh"><span class="fn">12</span><span class="ft">Module state declared beside its
+        reader instead of above its first caller</span></div>
+      <div class="row"><div class="k">Symptom</div><div>No twins at all, no posts, no confirms.
+        Reads unmistakably as the shell being broken.</div></div>
+      <div class="row"><div class="k">Cause</div><div><code>var confirmed = {}</code> placed next
+        to the function that reads it, while that function is <i>also</i> called at module setup
+        eighteen lines above. <code>var</code> hoists the declaration and not the assignment, so
+        the setup call read <code>undefined.tile</code>, threw, and took the whole chrome module
+        down before its API was assigned.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">Declare module state with the
+        module&rsquo;s other state, above every caller. And note what the symptom was: <b>total
+        silence from the page, which is also what a healthy page looks like</b> — a window
+        <code>error</code> listener posting over the debug channel named it in one line. Instrument
+        before diagnosis applies to the page, not only to the shell&rsquo;s surfaces.</div></div>
+    </div>
+
+    <div class="fail">
+      <div class="fh"><span class="fn">13</span><span class="ft">A handover that declines to
+        drive is invisible, not broken</span></div>
+      <div class="row"><div class="k">Symptom</div><div>A morph doesn&rsquo;t animate — the
+        surface simply appears at its final size.</div></div>
+      <div class="row"><div class="k">Cause</div><div>The page&rsquo;s close interpolator can
+        bail (no twin, not confirmed, already released) and hand the collapse to the web CSS —
+        which in-shell is an element at <code>opacity: 0</code>. Nothing travels, and from
+        outside that is indistinguishable from an animation that ran badly. The lane
+        &ldquo;fixed&rdquo; the animation twice before discovering it was never
+        running.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">Any handover that can decline
+        must <b>say so, with the condition named</b> — <code>close BAIL el=… twin=… conf=…</code>.
+        A silent bail is a bug that presents as a taste problem.</div></div>
+    </div>
+
+    <div class="fail">
+      <div class="fh"><span class="fn">14</span><span class="ft">An exit inherited from a
+        different return target</span></div>
+      <div class="row"><div class="k">Symptom</div><div>The entry is smooth and the exit snaps —
+        on the same surface.</div></div>
+      <div class="row"><div class="k">Cause</div><div>The close was written when the surface
+        returned to a small text label, so it rounded fully and shrank to a speck — both
+        deliberate then. When the resting presentation became a 52pt squircle, those same tricks
+        meant the capsule had to be <i>replaced by</i> the tile rather than <i>becoming</i> it,
+        and three inherited numbers were all wrong for the new target.</div></div>
+      <div class="row"><div class="k">Rule</div><div class="rule">When a surface&rsquo;s
+        <b>resting</b> presentation changes, its exit choreography is re-derived, not inherited.
+        Entry and exit are the same move in opposite directions — same duration, same curve, the
+        rounding travelling with the size so they land on the same frame.<br>
+        Sibling: <b>a derived offset dies silently when either of its inputs changes.</b> A tile
+        sat at <code>--top-pad + 5px</code>, the number that centred a 52pt square against 44pt
+        buttons; the buttons became 52 and nothing failed loudly — the square just rode 4pt high
+        with equal height and a different line.</div></div>
+    </div>
+
     <p class="meta">Numbers 03, 04 and 06 are the glasschrome laws already carried on
       <a href="platform.html" style="color:var(--red)">Platform Mapping</a> — restated here as
       failures rather than as protocol, because a lane hits the symptom first and looks for that.
@@ -638,17 +801,16 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
       failure 01 stated as a constraint rather than a bug, and Rashid has accepted it. It is also
       exactly why these rules matter — that boundary is where the two lanes meet, and every
       failure above happened within a few points of it.</p>
-    <p class="meta"><b style="color:var(--ok)">The versioned cap works end to end.</b> Measured
-      by the Shell lane on the <i>pilot</i> surface, on the current build, against the Calendar
-      lane&rsquo;s ·205: <code>armed=[close,dual,tile]</code> with the three rows drawing at
-      <code>rgb(120,122,124)</code> / <code>rgb(11,14,18)</code> / <code>rgb(171,172,173)</code>
-      — one step off the web&rsquo;s values on two of three rows, <b>which is how you tell whose
-      renderer drew it</b>. That last detail is worth keeping as a technique: when both sides can
-      draw the same thing, a small deliberate difference in the output is the cheapest possible
-      instrument.<br>
-      The resting date tile remains web-owned under Ruling 1 clause 5 — not as a concession
-      pending a better build, but because that is the specified state for a surface until its
-      gate can distinguish announcement from implementation.</p>
+    <p class="meta"><b style="color:var(--ok)">The tile is closed on both sides, and the
+      contract is what is protecting him now rather than a flag.</b> The handover is gated on the
+      versioned cap: builds 48 and 49 send <code>true</code> and withhold on their own, 50 sends
+      <code>2</code> and hands over. Measured independently on the <i>pilot</i> surface on build
+      50 by both lanes, same numbers — the rows landing one step off the web&rsquo;s values on
+      two of three, <b>which is how you tell whose renderer drew it</b>. That detail is worth
+      keeping as a technique rather than a result: when two renderers can draw the same thing, a
+      small deliberate difference in the output is the cheapest instrument for telling which one
+      did. The page-side <code>TILE_NATIVE_PROVEN</code> remains as an emergency brake — flip it
+      false and the date is readable again in one deploy, no install.</p>
   </section>
 
 </div>
