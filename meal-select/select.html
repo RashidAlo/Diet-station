@@ -441,15 +441,68 @@
      untouched. The tile stays square, so its width tracks its height. */
   .nav .ttl.tile { height: 52px; width: 52px; padding: 2px;
     border-radius: 16px; top: calc(var(--top-pad) + 5px);
-    /* geometry only — the glass and the rim come from the shared rules above,
-       which is what makes the morph continuous */
+    /* THE SAME MATERIAL AS THE BUTTONS, not the ladder's (Rashid: "the
+       rounded square is not a glass container, it should match the buttons —
+       right now it's white with a drop shadow").
+       He is right and it was my doing: ·177 moved the tile onto .glassbg so
+       the morph would be continuous, and .glassbg is tuned for the ARMED
+       pill — 3px blur over a .12 tint, which is nearly invisible sitting on a
+       white bar, leaving only the armed pill's heavy seat shadow. So it read
+       as a white card. The rim below is the X button's, and .glassbg gets the
+       button's blur while resting; both transition into the armed values, so
+       the surface is still continuous — it just starts life looking like the
+       control it sits beside. */
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5),
+      inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22);
     transition: width .48s cubic-bezier(.3,1.22,.36,1),
       height .48s cubic-bezier(.3,1.22,.36,1),
       top .48s cubic-bezier(.3,1.22,.36,1),
-      border-radius .48s cubic-bezier(.3,1.22,.36,1); }
+      border-radius .48s cubic-bezier(.3,1.22,.36,1),
+      box-shadow .34s ease; }
+  .nav .ttl.tile .glassbg { background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    transition: background .34s ease, -webkit-backdrop-filter .34s ease,
+      backdrop-filter .34s ease; }
   .nav.tile-mode .navbtn { width: 52px; height: 52px; }
   .nav.tile-mode .dual { height: 52px; border-radius: 26px; }
   .nav.tile-mode .dual button { height: 52px; }
+
+  /* ---- ARMED, IN THIS VARIATION ONLY: WIDER, NOT TALLER ----
+     Rashid: "if it expands, no need to increase its height — the current
+     height is enough. Just have it increase in width, but with a good bounce
+     for height, animation wise, to show it forming. Right now, because of the
+     extra height of the scrubbing widget when it expands, it gets very close
+     to the iPhone notch when the screen is full screen."
+     So the armed capsule keeps the square's 52pt and its optical line, and
+     only the width travels. The height still MOVES — it overshoots to 60 and
+     settles back — because that squash is what makes it read as forming
+     rather than merely stretching; it just ends where it began, which is what
+     keeps it clear of the notch. Scoped to .nav.tile-mode, so Glass and Red
+     portal keep their 69pt pill untouched. */
+  .nav.tile-mode .ttl.scrub { height: 52px;
+    top: calc(var(--top-pad) + 5px); border-radius: 26px;
+    animation: tileform .52s cubic-bezier(.34,1.24,.4,1); }
+  @keyframes tileform {
+    0%   { height: 52px; }
+    44%  { height: 60px; }
+    100% { height: 52px; } }
+  /* the ladder has to LIVE in 52pt now, so the stack compacts rather than
+     overflowing: 17 top pad + 30 slot + 5 bottom = 52 exactly, with the
+     headline riding at 5 inside the top pad. Type comes down a step with it —
+     numerals 16 -> 15, headline 10.5 -> 9.5, chips 13 -> 10 — which is the
+     smallest set that still reads at arm's length. Same proportions as the
+     69pt pill, one size down. */
+  .nav.tile-mode .ttl.scrub { padding: 17px 0 5px; }
+  .nav.tile-mode .ttl.scrub .scb-day,
+  .nav.tile-mode .ttl.scrub .scb-mon { top: 5px; font-size: 9.5px; line-height: 11px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it { height: 30px; gap: 1px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it .n { height: 18px;
+    font-size: 15px; line-height: 18px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it .s { height: 10px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it .s svg { width: 10px; height: 10px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it .s .c-off { font-size: 6.5px; line-height: 8px; }
   .nav .ttl.tile #dayLabel { display: none !important; }
   .nav .ttl.tile #dayTile { display: flex; }
   /* the same split as the ladder: Proxima for the small label, Urbane for the
@@ -3187,7 +3240,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 181 (off day: two signals, not three)';
+const BUILD = 'build 2026-09-12 · 182 (square: button glass, wider not taller)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
