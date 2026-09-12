@@ -3282,7 +3282,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 193 (declare state where state lives)';
+const BUILD = 'build 2026-09-12 · 194 (the square must still feel the finger)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3665,6 +3665,17 @@ if (QS.get('solo') === '1') {
        still tracked here and is what drives the twin's state. Invisible,
        not absent. */
     '.nav .ttl.scrub.ds-native-hidden { opacity: 0 !important; ' +
+    '  pointer-events: auto !important; box-shadow: none !important; } ' +
+    /* THE RESTING TILE NEEDS THE SAME EXCEPTION, and for the same reason one
+       paragraph up: it is the GESTURE TARGET. pointerdown on .nav .ttl is what
+       arms the scrubber, so a tile that yields its pixels must not yield its
+       touches. ·191 put `tile` in the confirm loop and it inherited the base
+       rule's `pointer-events: none` — the square went invisible-and-inert, and
+       tap-and-hold stopped doing anything at all (Rashid: "tapping/holding
+       does not initiate the scrubbing state"). Invisible, not absent — the
+       distinction the scrub pill has had since ·143 and that I failed to carry
+       across when I added a second hidden-but-live element. */
+    '.nav .ttl.tile.ds-native-hidden { opacity: 0 !important; ' +
     '  pointer-events: auto !important; box-shadow: none !important; } ' +
     /* THE SNAP IS GATED ON THE RENDERER, and OFF by default.
        ·150 stopped the invisible pill morphing so the streamed rects would
