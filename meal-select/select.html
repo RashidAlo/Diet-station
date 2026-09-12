@@ -673,10 +673,21 @@
   .scb .scb-it:nth-child(3), .scb .scb-it:nth-child(7) { opacity: .32; }
   .scb .scb-it:nth-child(2), .scb .scb-it:nth-child(8) { opacity: .16; }
   .scb .scb-it:nth-child(1), .scb .scb-it:nth-child(9) { opacity: .08; }
+  /* THREE SIZE STEPS, NOT FOUR, to match the renderer exactly. This was
+     16/15/14/12 across centre / 4-6 / 3-7 / outward; Shell's ladder has three
+     steps (centre / neighbour / outward) and shipped 16/15/13. The two lanes
+     describing the same taper differently is the kind of small divergence that
+     has cost us real time this session, and the honest arbiter is that the
+     renderer is what users see — so this follows it rather than asking them to
+     add a fourth step for slots sitting at 8-16% opacity, where a 1pt
+     difference cannot be seen at all. One taper, stated once.
+     NOTE this only takes effect in Glass: the square's own .n override wins on
+     specificity and flattens every slot to 15px, which is deliberate at 52pt
+     (the compact ladder leans on the opacity fade for depth instead). */
   .scb .scb-it:nth-child(4) .n, .scb .scb-it:nth-child(6) .n { font-size: 15px; }
-  .scb .scb-it:nth-child(3) .n, .scb .scb-it:nth-child(7) .n { font-size: 14px; }
+  .scb .scb-it:nth-child(3) .n, .scb .scb-it:nth-child(7) .n,
   .scb .scb-it:nth-child(2) .n, .scb .scb-it:nth-child(8) .n,
-  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(9) .n { font-size: 12px; }
+  .scb .scb-it:nth-child(1) .n, .scb .scb-it:nth-child(9) .n { font-size: 13px; }
   /* wheel feel (Rashid): each step lands with a springy overshoot, and
      the center figures pop as the day snaps in */
   .scb.slide { transition: transform .16s cubic-bezier(.25, 1.55, .45, 1); }
@@ -3237,7 +3248,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 188 (glass back, portal gone, no bump, tighter ladder)';
+const BUILD = 'build 2026-09-12 · 189 (one taper, stated once)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
