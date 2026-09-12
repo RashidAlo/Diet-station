@@ -3027,7 +3027,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 172 (the ball goes to nothing; no residue on the date)';
+const BUILD = 'build 2026-09-12 · 173 (the track burst outlives its timer while scrubbing)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3616,8 +3616,22 @@ if (QS.get('solo') === '1') {
     if (scrubRaf) cancelAnimationFrame(scrubRaf);
     var step = function () {
       postTrack();
-      if (performance.now() - scrubT0 < ms) scrubRaf = requestAnimationFrame(step);
-      else scrubRaf = null;
+      /* THE BURST MUST OUTLIVE ITS TIMER WHILE THE SCRUB IS STILL LIVE.
+         760ms was chosen for the arm's morph and the release's return, but a
+         DRAG can last as long as the finger does. Past 760ms the posts simply
+         stopped and the native ladder froze at whatever centre it last heard
+         — so a scrub longer than three quarters of a second left the held day
+         stuck wherever it happened to be, up to half a slot off the middle,
+         and no later settle could reach it. Taped: held numeral parked at
+         +25.5pt for over a second while the web strip had already settled to
+         0. That is almost certainly what Rashid photographed, and it is the
+         same number Shell measured off his frame.
+         scrubHold is false for exactly the armed period, so this keeps
+         streaming for the whole gesture and then for `ms` more to carry the
+         close. */
+      if (!scrubHold || performance.now() - scrubT0 < ms) {
+        scrubRaf = requestAnimationFrame(step);
+      } else scrubRaf = null;
     };
     scrubRaf = requestAnimationFrame(step);
   }
