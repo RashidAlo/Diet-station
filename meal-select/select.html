@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 204 (a version is evidence, a boolean was a promise)';
+const BUILD = 'build 2026-09-13 · 205 (gate open on the version, and it says what it saw)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3745,7 +3745,16 @@ if (QS.get('solo') === '1') {
      apart. Then this flips on a signal that is evidence rather than a promise
      about which build you are on. Asked for; ?tilenative=1 still forces the
      handover meanwhile. */
-  var TILE_NATIVE_PROVEN = false;
+  /* TRUE AGAIN, and this time the safety is in the CONTRACT rather than in my
+     judgement about which build he is on. ·202 was unsafe because the boolean
+     cap could not tell 48 from 49; `caps.tileRows >= 2` can, and a build that
+     cannot draw the rows cannot send 2 — so 48 and 49 withhold on their own,
+     with or without this flag. That is what makes flipping it safe now and
+     was exactly what was missing before.
+     The flag stays as the emergency brake: the lane that can SEE the failure
+     keeps the switch. Flip it false the instant a row goes missing, before
+     any diagnosis — page-side, no install. */
+  var TILE_NATIVE_PROVEN = true;
   /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
      he actually has. The flag above is meant to be flipped on evidence, and
      with it false the page never sends `tile` — which left the Shell lane with
@@ -4064,6 +4073,17 @@ if (QS.get('solo') === '1') {
        and hand it a destination instead of a path. Absent (every build
        before 2026-09-11) we keep morphing, because those renderers ease
        toward the streamed rects and a snap reads as jank. */
+    /* SAY WHAT THE CAP ACTUALLY WAS. Two of today's four user-visible
+       regressions came from reasoning about a capability's value instead of
+       reading it, and a nested-object mistake in this exact key once looked
+       identical to a fix that had not deployed. One line removes the whole
+       class: the value, its type, and the verdict, in the log.  */
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+        m: 'calmeals caps.tileRows=' + (caps ? JSON.stringify(caps.tileRows) : 'no-caps') +
+           ' proven=' + TILE_NATIVE_PROVEN +
+           ' -> tileNative=' + !!(TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) });
+    } catch (_) {}
     /* the tile's rows are a capability, not an assumption — see tileNative.
        HAND OVER ON THE CAP, NOT ON THE NEXT ORGANIC REPORT. The confirm that
        carries the capability necessarily arrives AFTER the first post, so the
