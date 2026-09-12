@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 203 (the cap cannot tell 48 from 49 — closed again)';
+const BUILD = 'build 2026-09-13 · 204 (a version is evidence, a boolean was a promise)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4076,7 +4076,18 @@ if (QS.get('solo') === '1') {
        to native posts immediately, and only on the transition — a repeat
        confirm changes nothing and must not re-post. */
     var wasTileNative = tileNative;
-    if (TILE_NATIVE_PROVEN && caps && caps.tileRows) tileNative = true;
+    /* `>= 2`, NOT TRUTHY. The boolean could not distinguish a build that
+       ANNOUNCED the capability from one that HAD it: 48 sent tileRows:true
+       from both relays while only the hub relay parsed `date`/`status`. The
+       NUMBER 2 ships in the same change as the fix being present in both
+       relays, so no build can send 2 without being able to draw all three
+       rows — which is what makes it evidence rather than a promise.
+         48 -> true, one relay broken   -> withhold
+         49 -> true, both relays fixed  -> withhold (conservative, harmless)
+         50 -> 2,    both relays fixed  -> hand over
+       Bump the number for the next contract change; never re-use one. And 2
+       is truthy, so any older check of the same key is unaffected. */
+    if (TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) tileNative = true;
     if (!wasTileNative && tileNative) setTimeout(report, 0);
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
