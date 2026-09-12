@@ -437,20 +437,28 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    for a transitionend that never came — a cancelled transition, a hidden
    element — would be a worse bug than the one this fixes. */
 var SURFACE = { held: false, done: false };
-function surfaceRelease() {
+function surfaceRelease(why) {
   if (SURFACE.done) return;
   SURFACE.done = true; SURFACE.held = false;
   document.documentElement.classList.remove('ds-surface-hold');
+  if (typeof surfLog === 'function') surfLog('release via ' + (why || '?'));
 }
 function surfaceHold(ms) {
   if (SURFACE.done || SURFACE.held) return;
   SURFACE.held = true;
   document.documentElement.classList.add('ds-surface-hold');
-  setTimeout(surfaceRelease, ms);       /* if the transition never ends */
+  setTimeout(function () { surfaceRelease('timer'); }, ms);  /* if it never ends */
+}
+function surfLog(m) {                 /* TEMPORARY — ·28 diagnostic only */
+  try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+    m: 'calmeals SURF ' + Math.round(performance.now()) + 'ms ' + m }); } catch (_) {}
 }
 if (/[?&]embed=1/.test(location.search)) surfaceHold(900);   /* 60 + 550 + margin */
+surfLog('boot embed=' + /[?&]embed=1/.test(location.search) +
+        ' held=' + document.documentElement.classList.contains('ds-surface-hold') +
+        ' search=' + location.search);
 
-const BUILD = 'calendar 2026-09-13 · 27 (the sheet itself says when it has landed)';
+const BUILD = 'calendar 2026-09-13 · 28 (instrumented: when does the hold release?)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -833,10 +841,17 @@ if (EMBED) {
   document.documentElement.classList.add('embed');
   document.body.classList.add('embed', 'embed-enter');
   calPage.classList.add('presenting');
+  setTimeout(function () {            /* TEMPORARY — ·28: what state is the badge in? */
+    var b = document.querySelector('.day .badge');
+    surfLog('badge exists=' + !!b +
+      ' held=' + document.documentElement.classList.contains('ds-surface-hold') +
+      (b ? ' play=' + getComputedStyle(b).animationPlayState +
+           ' opacity=' + (+getComputedStyle(b).opacity).toFixed(2) : ''));
+  }, 0);
   calPage.addEventListener('transitionend', function landed(e) {
     if (e.propertyName !== 'transform' || e.target !== calPage) return;
     calPage.removeEventListener('transitionend', landed);
-    surfaceRelease();                 /* the sheet is home: let the badge speak */
+    surfaceRelease('transitionend');  /* the sheet is home: let the badge speak */
   });
   setTimeout(() => {
     calPage.classList.add('springing');
