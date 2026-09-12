@@ -193,12 +193,10 @@
   .day .badge { position: absolute; top: -29px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; z-index: 5;
     pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06));
-    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) .62s both; }
-  /* held while the shell's presentation is in flight (build 53+); paused
-     inside the delay, so the badge is sitting at 0% opacity, not visible */
+    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) both; }
+  /* held while this page's own calendar sheet is still springing up; paused
+     at the 0% keyframe, so the badge waits invisible and then plays in full */
   html.ds-surface-hold .day .badge { animation-play-state: paused; }
-  /* released: the wait is over, so the fallback delay must not apply again */
-  html.ds-surface-ready .day .badge { animation-delay: 0s; }
   .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
     margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
@@ -414,50 +412,45 @@
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
 
-/* ================= the shell tells us when we are on screen =================
-   An animation on the load clock starts before the user can see the surface:
-   the shell presents this web view with a native spring the page cannot
-   observe, and on a measured capture that cost the deadline badge the first
-   620ms of its 3.1s life — the whole pop. Build 53 publishes the fact
-   instead, one-way, two posts, no confirm:
-     DSNativeSurface({ phase: 'presenting', duration: 0.62 })   // immediately
-     DSNativeSurface({ phase: 'presented' })                    // on arrival
-   PREFER THE EVENT OVER THE NUMBER. `presenting` carries the real duration so
-   a page could size a delay from it, but a delay sized to a constant rots the
-   moment the spring changes; `presented` cannot. So: hold the animation while
-   the surface is in flight, release it on arrival, and let the CSS `.62s`
-   delay govern only when no signal ever arrives — which is every build before
-   53. Both paths end with the badge popping on a surface that has landed.
-   The release is idempotent and also runs on a safety timer, because a page
-   that hid its badge waiting for a second post that never came would be a
-   worse bug than the one this fixes. */
+/* ================= wait for our own sheet, not for a clock =================
+   `badgesay` runs on the load clock, but in embed mode this page slides its
+   OWN calendar sheet up first: `.cal` starts at translateY(103%) and springs
+   home over .55s, begun 60ms after boot. 610ms — which is the ~620ms I
+   measured on a capture and spent most of a day attributing to a native
+   presentation that does not exist on this path. The badge's whole playful
+   part, the 6% pop and the 11% undershoot, was finishing while the sheet was
+   still on its way up, so Rashid saw the badge already settled and correctly
+   reported that it "left on time".
+   The fix is the event, not a delay: the sheet's own `transitionend`. It
+   cannot drift when the spring is retuned, it costs nothing, and this page
+   owns both halves. The earlier `.62s` delay and the shell's DSNativeSurface
+   signal are both gone from here — the shell keeps that primitive for flows
+   that really are cover-presented, but on this path it publishes duration 0
+   because nothing native animates, so it could only ever have released the
+   badge too early.
+   The hold is `animation-play-state: paused`, so a badge rendered while the
+   sheet is still moving waits at its 0% keyframe (opacity 0) rather than at
+   its natural CSS state — and resumes from the start rather than mid-flight,
+   since it never advanced. Non-embed has no entry animation and no hold: the
+   badge pops at once, which is correct there.
+   The safety release is not optional. A page that hid its countdown waiting
+   for a transitionend that never came — a cancelled transition, a hidden
+   element — would be a worse bug than the one this fixes. */
 var SURFACE = { held: false, done: false };
 function surfaceRelease() {
-  if (SURFACE.done || !SURFACE.held) return;
+  if (SURFACE.done) return;
   SURFACE.done = true; SURFACE.held = false;
-  var r = document.documentElement;
-  r.classList.remove('ds-surface-hold');
-  r.classList.add('ds-surface-ready');    /* delay 0 — for this badge and any later one */
-  /* the hold already spent the delay; restart so the animation begins here */
-  var bs = document.querySelectorAll('.day .badge');
-  for (var i = 0; i < bs.length; i++) {
-    var b = bs[i]; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
-  }
+  document.documentElement.classList.remove('ds-surface-hold');
 }
-window.DSNativeSurface = function (m) {
-  try {
-    if (!m || !m.phase || SURFACE.done) return;
-    if (m.phase === 'presenting') {
-      SURFACE.held = true;
-      document.documentElement.classList.add('ds-surface-hold');
-      var d = (typeof m.duration === 'number' && m.duration > 0) ? m.duration : 0.62;
-      setTimeout(surfaceRelease, d * 1000 + 250);   /* if `presented` never lands */
-    } else if (m.phase === 'presented') {
-      SURFACE.held = true; surfaceRelease();
-    }
-  } catch (_) {}
-};
-const BUILD = 'calendar 2026-09-13 · 26 (the shell says when it has landed)';
+function surfaceHold(ms) {
+  if (SURFACE.done || SURFACE.held) return;
+  SURFACE.held = true;
+  document.documentElement.classList.add('ds-surface-hold');
+  setTimeout(surfaceRelease, ms);       /* if the transition never ends */
+}
+if (/[?&]embed=1/.test(location.search)) surfaceHold(900);   /* 60 + 550 + margin */
+
+const BUILD = 'calendar 2026-09-13 · 27 (the sheet itself says when it has landed)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -840,6 +833,11 @@ if (EMBED) {
   document.documentElement.classList.add('embed');
   document.body.classList.add('embed', 'embed-enter');
   calPage.classList.add('presenting');
+  calPage.addEventListener('transitionend', function landed(e) {
+    if (e.propertyName !== 'transform' || e.target !== calPage) return;
+    calPage.removeEventListener('transitionend', landed);
+    surfaceRelease();                 /* the sheet is home: let the badge speak */
+  });
   setTimeout(() => {
     calPage.classList.add('springing');
     document.body.classList.remove('embed-enter');
