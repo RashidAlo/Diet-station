@@ -139,6 +139,9 @@
   /* Next tap: the dock folds into a circular loader before the day turns */
   .dock .loader { width: 22px; height: 22px; border-radius: 50%;
     border: 2.5px solid rgba(255,255,255,.34); border-top-color: #fff;
+    /* the ring is a border, so it needs the glyph shadow as a filter too —
+       otherwise the spinner is the one thing left unreadable on clear glass */
+    filter: drop-shadow(0 1px 2.5px rgba(0,0,0,.42));
     animation: dockspin .75s linear infinite; }
   @keyframes dockspin { to { transform: rotate(360deg); } }
 
@@ -840,17 +843,25 @@
        pixels on device, and a 1.4s press on Next never produced the .94 scale
        below, so what Rashid photographed is the native twin, not this. The
        same correction has to be made there or the app is unchanged.
-       DIMMED THE REST OF THE WAY so white can live here. Measured on device:
-       the gauge fill reaches .88 luminance under the capsule, .78 brightness
-       left the capsule at .74 and white at 1.33:1. White needs the capsule at
-       or below .30 to clear 3:1, so the material goes down to brightness .42
-       with a .24 dark tint. That is a deliberately heavy piece of glass — it
-       has to be, because it is the only control sitting on the brightest part
-       of the bar and it carries white. */
-    background: rgba(10,8,4,.24);
-    -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(.42);
-    backdrop-filter: blur(8px) saturate(120%) brightness(.42);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.22), inset 0 0 0 .6px rgba(255,255,255,.20);
+       CLEAR GLASS, AND THE CONTRAST MOVES TO THE GLYPHS (Rashid, final: "I
+       just want it in a glass container that's fully transparent, and it
+       blends with the layer below it. No need to darken that much or lighten
+       it that much. It should be very close to what's under it.")
+       He has now rejected both ends — the light tint that started this, and
+       the .42/.30-luminance version that made white readable by turning the
+       capsule into a dark sticker. Both failed for the same reason: the
+       MATERIAL was carrying the legibility, and a material heavy enough to do
+       that stops being glass. So the material carries none of it. The tint is
+       a whisper, there is no brightness shift at all, and the label, arrow and
+       spinner get their own shadow — which is what iOS does for white type
+       over bright photography (Control Center, the camera UI). Contrast now
+       comes from the type, which is the only thing that needed it, and it
+       holds at any tint because it does not depend on one. */
+    background: rgba(255,255,255,.05);
+    -webkit-backdrop-filter: blur(9px) saturate(118%);
+    backdrop-filter: blur(9px) saturate(118%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.30), inset 0 0 0 .6px rgba(255,255,255,.26);
+    text-shadow: 0 1px 2.5px rgba(0,0,0,.42), 0 0 8px rgba(0,0,0,.22);
     transition: opacity .27s cubic-bezier(.5,0,.5,1),
       transform .7s cubic-bezier(.26,1.36,.42,1),
       width .45s cubic-bezier(.45,1.45,.8,1); }
@@ -862,7 +873,10 @@
   .dock .d-label { white-space: nowrap; opacity: 0; transition: opacity .25s ease .1s; }
   .dock.wide .d-label { opacity: 1; }
   .dock:active { transform: scale(.94); }
-  .dock svg { width: 16px; height: 16px; display: block; }
+  /* the arrow and the saved-check are strokes, not text, so text-shadow does
+     not reach them — they carry the same shadow as a filter */
+  .dock svg { width: 16px; height: 16px; display: block;
+    filter: drop-shadow(0 1px 2.5px rgba(0,0,0,.42)); }
   .dock .d-check { width: 19px; height: 14px; }
   .dock .d-check { transition: opacity .18s ease; }
   .dock .d-check path { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
@@ -2361,6 +2375,19 @@ confirmBtn.onclick = () => {
     ttl.style.width = ''; ttl.style.height = '';
   }
   function unform() {
+    /* ONE EXIT PER ARM (Rashid: "when I quickly tap and move my finger away
+       while holding, there is a state that gets stuck, a smaller capsule
+       version, in both the red and the glass one").
+       The cancel arrives TWICE on that gesture: the drift past 12px fires
+       unform() while the finger is still down, then pointerup/pointercancel
+       fires it again. The second call re-measured the armed rect from an
+       element that was ALREADY mid-collapse and restarted the interpolation
+       from there — so the capsule stopped wherever the first close had got to
+       and closed again from that smaller size, or simply parked. That
+       half-size capsule is the stuck state. A close already owns the exit;
+       let it finish. Guard goes before the clearTimeouts, or the second call
+       would cancel the first close's own watchdog on its way out. */
+    if (ttl.classList.contains('closing')) return;
     clearTimeout(unformT); clearTimeout(closeT);
     if (navEl) navEl.classList.remove('scrubbing');
     if (ttl.classList.contains('scrub')) {
@@ -2883,7 +2910,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-11 · 165 (repair: a stray comment terminator killed the dock rule)';
+const BUILD = 'build 2026-09-12 · 166 (one exit per arm; Next on clear glass, shadow on the glyphs)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
