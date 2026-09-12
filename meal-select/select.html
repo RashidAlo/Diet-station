@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 211 (the receipt reports every cap it read)';
+const BUILD = 'build 2026-09-13 · 212 (instant only where there is still a swap to hide)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4438,7 +4438,20 @@ if (QS.get('solo') === '1') {
          frame their ride back in has had the full close to finish, and the
          ordinary reports after this one carry them normally. Verified on the
          pilot rather than assumed. */
-      report(true);
+      /* INSTANT ONLY WHERE THERE IS STILL A SWAP TO HIDE. ·207 added the flag
+         because the landing frame dropped the `scrub` el and introduced
+         `tile` — two different twins at one rect, springing past each other.
+         With ONE component there is no swap: the el persists and merely
+         changes slots and width, so the flag now suppresses the very motion
+         it was added to make invisible. Shell's numeral glide (the held day
+         travelling from its ladder offset to the centre as slots go 9 -> 1)
+         is applied inside their transaction, so `instant` would disable it
+         along with everything else — the seam-killer question again, and this
+         time the answer is "yes, suppressed".
+         Still sent on the two-id fallback, which is exactly the case it was
+         written for. Conditional rather than deleted, because the fallback
+         has to keep working while `caps.dateWidget` is absent. */
+      report(!dateWidgetNative);
     };
     closeRaf = requestAnimationFrame(tick);
     return true;
