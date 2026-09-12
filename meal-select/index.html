@@ -166,7 +166,22 @@
      syncClock() writes the countdown with bb.textContent rather than
      re-rendering the day, so the per-second tick does NOT restart this; the
      badge re-animates only when the deadline moves to another day, which is
-     the one time it should. */
+     the one time it should.
+       The .62s delay is not taste, it is a measurement. The shell presents
+     this web view with a NATIVE animation the page cannot observe: on a
+     TestFlight capture the surface began appearing 400ms after the page had
+     rendered and finished arriving 620ms after it. An animation on the load
+     clock therefore spends its first 20% off-screen — which is exactly the
+     6% pop and the 11% undershoot, the whole playful part, spent where nobody
+     can see it. Delaying by the measured arrival puts the pop on screen.
+     `both` rather than `forwards` is load-bearing: without the backwards fill
+     the badge would sit at its natural CSS state (fully opaque, no transform)
+     for those 620ms and then jump to 0% to start — a flash, not a delay.
+       This is the general hazard of the two-lane architecture, not one badge's
+     problem: any page-side entry animation on the load clock starts before the
+     user can see the surface. The durable fix is a "surface presented" signal
+     from the shell; until there is one, every load-triggered animation here
+     needs this offset. */
   @keyframes badgesay {
     0%   { opacity: 0; transform: translateX(-50%) translateY(-7px) scale(.4); }
     6%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.14); }
@@ -178,7 +193,7 @@
   .day .badge { position: absolute; top: -29px; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; z-index: 5;
     pointer-events: none; filter: drop-shadow(0px 4px 2.4px rgba(0,0,0,.06));
-    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) forwards; }
+    animation: badgesay 3.1s cubic-bezier(.3,.9,.35,1) .62s both; }
   .day .badge .bb { background: #FFC52E; border-radius: 999px; padding: 4px 8px;
     margin-bottom: -6px; font: 600 10px/12px 'Urbane Rounded', sans-serif; color: #f9f9f9;
     text-shadow: 0 1px 2px rgba(0,0,0,.07); white-space: nowrap; }
@@ -393,7 +408,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-13 · 24 (forward the tilenative primer)';
+const BUILD = 'calendar 2026-09-13 · 25 (the badge pops after the surface lands)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
