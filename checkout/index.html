@@ -48,7 +48,6 @@
   .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
   .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .seg3 { grid-template-columns: 1fr 1fr 1fr; }
   .seg4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
     padding: 10px 8px; background: #fff;
@@ -57,8 +56,8 @@
   .s-actions { display: flex; gap: 8px; margin-top: 4px; }
   .s-actions button { flex: 1; border: none; border-radius: 10px; cursor: pointer;
     padding: 11px 0; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
-  #sReset, #sCopy, #sFresh { background: #ececef; color: #1d1d1f; }
-  #sReset:hover, #sCopy:hover, #sFresh:hover { background: #e2e2e6; }
+  #sReset, #sCopy { background: #ececef; color: #1d1d1f; }
+  #sReset:hover, #sCopy:hover { background: #e2e2e6; }
   .s-foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08);
     font: 400 11px/16px 'Proxima Nova', sans-serif; color: #8e8e93; }
 
@@ -198,7 +197,7 @@
   .paybar .dsp .was { position: relative; }
   /* duration rows + payment rows: Proxima numerals, so base .dsp */
   .dur .dsp, .pay-opt .dsp { --dsp-ink: var(--ink); }
-  .per-mo .dsp, .dur .permo { --dsp-ink: var(--muted); --dsp-cur-ink: var(--muted); }
+  .per-mo .dsp { --dsp-ink: var(--muted); --dsp-cur-ink: var(--muted); }
   /* savings total reads green */
   .savings-row .dsp { --dsp-ink: var(--green); --dsp-cur-ink: var(--green); }
   /* the crossing rule rides the struck number and spans it — a price changes
@@ -299,8 +298,6 @@
   .pay-price { flex: none; display: flex; align-items: flex-start;
     font: 700 15px/1 'Proxima Nova', sans-serif; color: var(--ink); }
   /* numeral 15px Proxima → cap offset 15 × .1164 */
-  .pay-price .kd { font-size: 12px; line-height: 1; padding-right: 1px;
-    margin-top: calc(15px * .1164 - 1em * .1164); }
   .pay-check { position: absolute; right: 11px; top: 50%; transform: translateY(-50%) scale(.6);
     width: 20px; height: 20px; opacity: 0; transition: opacity .2s ease, transform .3s var(--ease); }
   .pay-opt.sel .pay-check { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -338,15 +335,6 @@
   .sheet-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair);
     background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .sheet-x img { width: 18px; height: 18px; display: block; }
-
-  /* ---- plan pills (shared component) ---- */
-  .plan-pill { display: inline-flex; align-items: center; justify-content: center;
-    height: 40px; padding: 0 20px; border-radius: var(--r-round);
-    font: 500 16px/1 'Urbane Rounded', sans-serif; color: #fff; white-space: nowrap; }
-  .plan-pill b { font-weight: 600; }
-  .plan-pill[data-plan="thediet"] { background: linear-gradient(96deg, #7b3fb5 0%, #5b2c86 100%); }
-  .plan-pill[data-plan="lifestyle"] { background: linear-gradient(96deg, #ff963e 0%, #ff4d2d 100%); }
-  .plan-pill[data-plan="bodybuilding"] { background: linear-gradient(96deg, #1f8fe0 0%, #0b5fa8 100%); }
 
   /* ---- meal stepper (modify sheet) ---- */
   .meal-row { display: flex; align-items: center; gap: 12px; padding: 0 20px; min-height: 46px; }
@@ -545,7 +533,6 @@
   [data-plan="kids"] { --g: linear-gradient(111.278deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%);
     --gp: linear-gradient(107.753deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%);
     --gc: linear-gradient(141.821deg, rgb(255,135,88) 53.4%, rgb(236,0,20) 141.76%); }
-  .pcard .pkd, .pcard .pbig { background-image: var(--g); }
   .pcard .pchip { background-image: var(--gc); }
   .pcard .ppill, .ppill[data-plan]:not(.plan-tab) { background-image: var(--gp); }
   .plan-tab:not(.on) { background-image: none; }
@@ -655,7 +642,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·9</div>
+  <div class="s-foot" id="buildInfo">checkout ·10</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -675,7 +662,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·9';
+const BUILD = 'checkout ·10';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
