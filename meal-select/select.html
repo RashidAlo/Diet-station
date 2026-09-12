@@ -1414,6 +1414,25 @@
 <div class="lab-veil" id="labVeil"></div>
 
 <script>
+/* THROW BEACON (diagnostic). ·191 stopped posting chrome to the shell
+   entirely — no DSCHROME lines at all — and the chrome module is gated on the
+   DietStationLab user agent, so it cannot be reproduced or read in a desktop
+   browser. Every uncaught error on the page now reports itself over Shell's
+   existing dsdebug channel with a line and column, which is the only way to
+   see a shell-only throw from here. Silent and free where no handler. */
+window.addEventListener('error', function (ev) {
+  try {
+    webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+      m: 'calmeals THROW ' + (ev.message || '?') +
+         ' @' + (ev.lineno || '?') + ':' + (ev.colno || '?') });
+  } catch (_) {}
+});
+window.addEventListener('unhandledrejection', function (ev) {
+  try {
+    webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+      m: 'calmeals REJECT ' + ((ev.reason && ev.reason.message) || ev.reason || '?') });
+  } catch (_) {}
+});
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
 /* ================= data ================= */
 const DISHES = {
@@ -3263,7 +3282,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 191 (the tile hands over its text too)';
+const BUILD = 'build 2026-09-12 · 192 (say what threw)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
