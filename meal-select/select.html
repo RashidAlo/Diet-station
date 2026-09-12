@@ -2695,6 +2695,18 @@ confirmBtn.onclick = () => {
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
     syncTileMode();       /* back to the resting presentation */
+    /* AND IT MUST NOT FLASH (Rashid: "the exit goes into a circle, but there's
+       still some sort of abrupt square that shows — an element that is not
+       linked to the scrubber that just keeps staying there").
+       That square is this element. deflate() strips ds-native-hidden to
+       un-hide the LABEL variation's date, and syncTileMode() then dresses it
+       as the tile — so when the shell owns the tile the web's own version
+       appeared, with its own material and shadow, and stayed up until the next
+       report and confirm hid it again. Re-hidden here, on the landing frame,
+       so the handover is capsule -> native tile with nothing of mine in
+       between. When the web OWNS the tile this is a no-op and it stays
+       visible, which is the whole point of the flag. */
+    if (window.DSTileNative && DSTileNative()) ttl.classList.add('ds-native-hidden');
   }
   function unform() {
     /* ONE EXIT PER ARM (Rashid: "when I quickly tap and move my finger away
@@ -3322,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 197 (say why the close bailed)';
+const BUILD = 'build 2026-09-12 · 198 (the shell takes the tile only when it can draw it)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3668,6 +3680,21 @@ if (QS.get('solo') === '1') {
      all inside callbacks, and concluded the ordering was safe — while the
      caller that mattered was a bare prehide() I never searched for. */
   var confirmed = {};
+  /* WHO OWNS THE RESTING TILE — one decision, made from a capability the
+     shell ANNOUNCES, never assumed.
+     Rashid, twice: "I can't see the number and the icon." The cause is that
+     the page hands the tile over on the strength of the shell merely naming
+     the id back, and a shell can name it back while being unable to draw its
+     three rows — TestFlight 46 does exactly that, drawing `dayName` and
+     dropping `date` and `status`. The web then hides its own tile, and since
+     the shell's glass is a layer ABOVE the WKWebView there is no way to put
+     the number back: whoever draws the rows must be whoever draws the glass.
+     So: the tile is not SENT at all until the shell says it can render its
+     content. Until then the web owns the whole thing — its own material, its
+     own crisp number and chip — and no half-state exists in between. That is
+     also what makes the exit clean: there is exactly one tile on screen at
+     every moment, and which lane draws it never changes mid-gesture. */
+  var tileNative = false;
   /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
      mode 'page' (canonical top line), undocked-rest as 'sheet' (verbatim
      rects riding the parked sheet). Web chrome shows only mid-motion. */
@@ -3759,7 +3786,7 @@ if (QS.get('solo') === '1') {
      shows for the single frame before the first confirm. */
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
-      if (id === 'tile' && !confirmed.tile) return;
+      if (id === 'tile' && !tileNative) return;   /* never hide what we still draw */
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
@@ -3930,6 +3957,7 @@ if (QS.get('solo') === '1') {
   function chromeEls(off) {
     var els = [];
     Object.keys(ELS).forEach(function (id) {
+      if (id === 'tile' && !tileNative) return;   /* see tileNative */
       var el = document.querySelector(ELS[id]);
       if (!el) return;
       var r = el.getBoundingClientRect();
@@ -3973,6 +4001,8 @@ if (QS.get('solo') === '1') {
        and hand it a destination instead of a path. Absent (every build
        before 2026-09-11) we keep morphing, because those renderers ease
        toward the streamed rects and a snap reads as jank. */
+    /* the tile's rows are a capability, not an assumption — see tileNative */
+    if (caps && caps.tileRows) tileNative = true;
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
     }
@@ -3991,6 +4021,9 @@ if (QS.get('solo') === '1') {
       el.classList.add('ds-native-hidden');
     });
   };
+  /* the exit needs to know, on the frame the capsule lands, whether the web
+     tile is allowed to appear — see deflate() */
+  window.DSTileNative = function () { return tileNative; };
   window.DSChromeTap = function (id) {
     /* gauge-next used to hand the bar back to the web here — gone: the
        native twin now owns the loader morph and every other state */
