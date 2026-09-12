@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 200 (a readable date beats a prettier unreadable one)';
+const BUILD = 'build 2026-09-13 · 201 (a primer so the proof can be taken on his build)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3716,6 +3716,18 @@ if (QS.get('solo') === '1') {
      sent as a STRING (String(td.getDate())) is the obvious suspect against a
      parse expecting a number — `dayName` is a String either way and survives. */
   var TILE_NATIVE_PROVEN = false;
+  /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
+     he actually has. The flag above is meant to be flipped on evidence, and
+     with it false the page never sends `tile` — which left the Shell lane with
+     nothing to measure and no way to earn the flip except by asserting its own
+     competence again. That is a deadlock, and this is the key out of it: they
+     install the uploaded build from TestFlight, drive the surface Rashid is
+     actually on with this primer, and send measured rows from HIS software.
+     Then the flag gets flipped on a measurement instead of a promise.
+     Same shape as ?scrubtwin=1 and ?scrub= — a lane-verification primer, off
+     in every normal load, forwarded by the calendar so it survives the embed. */
+  try { if (/[?&]tilenative=1/.test(location.search)) TILE_NATIVE_PROVEN = true; }
+  catch (_) {}
   /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
      mode 'page' (canonical top line), undocked-rest as 'sheet' (verbatim
      rects riding the parked sheet). Web chrome shows only mid-motion. */

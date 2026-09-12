@@ -393,7 +393,7 @@
 
 <script>
 window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic one */
-const BUILD = 'calendar 2026-09-12 · 23 (the deadline badge says its piece and leaves)';
+const BUILD = 'calendar 2026-09-13 · 24 (forward the tilenative primer)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -583,6 +583,13 @@ function openDay(mon, day, auto) {
       ? '&scrub=' + (new URLSearchParams(location.search)).get('scrub') : '') +
     ((new URLSearchParams(location.search)).get('scrubtwin')
       ? '&scrubtwin=' + (new URLSearchParams(location.search)).get('scrubtwin') : '') +
+    /* ?tilenative=1 — forces the resting tile's native handover regardless of
+       the overlay's TILE_NATIVE_PROVEN flag, so the Shell lane can measure the
+       native rows on an UPLOADED build and on the surface Rashid is actually
+       on. Forwarded because the real path is calendar -> overlay iframe, and a
+       primer that does not survive the embed cannot verify the real path. */
+    ((new URLSearchParams(location.search)).get('tilenative')
+      ? '&tilenative=' + (new URLSearchParams(location.search)).get('tilenative') : '') +
     /* ?rpt=1 — diagnostic only, forwarded so the repaint probe can be armed
        from the shell's launch URL. Absent in every normal load. */
     ((new URLSearchParams(location.search)).get('rpt')
