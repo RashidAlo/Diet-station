@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 199 (hand the tile over on the cap, not on the next report)';
+const BUILD = 'build 2026-09-13 · 200 (a readable date beats a prettier unreadable one)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3695,6 +3695,27 @@ if (QS.get('solo') === '1') {
      also what makes the exit clean: there is exactly one tile on screen at
      every moment, and which lane draws it never changes mid-gesture. */
   var tileNative = false;
+  /* AND THE CAP IS NOT ENOUGH EITHER. Rashid has now reported the missing
+     number THREE times, the third on TestFlight 48 — a build that announces
+     caps.tileRows and still draws only the weekday. So a shell can announce
+     the capability and not have it, which makes my ·198 gate exactly as
+     worthless as the id echo it replaced: both are the shell's word for its
+     own competence, and neither is evidence.
+     What IS evidence: a row measured on a build that is in his hands. Until
+     that exists, the page keeps the tile. His date is readable today — that
+     is worth more than a prettier unreadable one, and it costs him no
+     install because this is page-side.
+     TO RE-ENABLE: flip this to true once the Shell lane has measured all
+     three rows on an UPLOADED build, not on a hot-reloaded dylib. That
+     distinction is the whole reason this line exists — every green result on
+     the native path so far has been against a dylib newer than the build he
+     was holding.
+     WHAT THE EVIDENCE POINTS AT, for whoever picks this up: `dayName` arrives
+     on 48 and `date` does not, and the page sets all three in one statement
+     three lines apart. So the loss is in the shell's parse, and `date` being
+     sent as a STRING (String(td.getDate())) is the obvious suspect against a
+     parse expecting a number — `dayName` is a String either way and survives. */
+  var TILE_NATIVE_PROVEN = false;
   /* glass lives at REST in BOTH sheet states (Rashid): docked reports as
      mode 'page' (canonical top line), undocked-rest as 'sheet' (verbatim
      rects riding the parked sheet). Web chrome shows only mid-motion. */
@@ -4013,7 +4034,7 @@ if (QS.get('solo') === '1') {
        to native posts immediately, and only on the transition — a repeat
        confirm changes nothing and must not re-post. */
     var wasTileNative = tileNative;
-    if (caps && caps.tileRows) tileNative = true;
+    if (TILE_NATIVE_PROVEN && caps && caps.tileRows) tileNative = true;
     if (!wasTileNative && tileNative) setTimeout(report, 0);
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
