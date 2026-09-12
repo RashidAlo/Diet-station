@@ -358,15 +358,21 @@
       and it survives a size being changed. Verified on this page: across all six slots the ink
       tops agree to <b>0.01px</b>.</p>
     <div class="codewrap">
-      <pre id="kmeasure">/* the per-family constant — re-measure it if a font file is ever replaced */
+      <pre id="kmeasure">/* the per-family constant — re-measure if a font file is ever replaced */
 const ctx = document.createElement('canvas').getContext('2d');
+
 function capOffsetRatio(weight, family) {
   ctx.font = `${weight} 100px ${family}`;
   const m = ctx.measureText('139');
-  const halfLeading = (100 - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2;
-  return (halfLeading + m.fontBoundingBoxAscent - m.actualBoundingBoxAscent) / 100;
+  const box = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
+  const halfLeading = (100 - box) / 2;
+  return (halfLeading + m.fontBoundingBoxAscent
+          - m.actualBoundingBoxAscent) / 100;
 }
-// Urbane Rounded 600 → .1811   Proxima Nova 700 → .1164   Avenir Next World 600 → .074</pre>
+
+// Urbane Rounded 600 → .1811
+// Proxima Nova   700 → .1164
+// Avenir Next World  → .0740</pre>
       <button class="copycode" data-copy="kmeasure">Copy</button>
     </div>
     <p class="meta"><b style="color:var(--ink)">Two things not to reach for.</b>
