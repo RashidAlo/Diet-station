@@ -2939,7 +2939,24 @@ confirmBtn.onclick = () => {
     scrubbing = false;
     unform();
     cancelAnimationFrame(raf); raf = null;
-    scrubIdx = Math.round(target);
+    /* COMMIT WHAT WAS ON SCREEN, NOT WHERE THE FINGER WAS HEADING.
+       This read `Math.round(target)`. `target` is the finger's position;
+       `disp` is the ladder's, and it EASES toward target at FOLLOW = 0.2 — so
+       on a quick flick-and-release disp lags target by several days. Measured:
+       the capture showed "Mon 21" centred under the finger at release and
+       "Sun 27" committed a moment later. SIX DAYS. You could select a day you
+       never saw centred, which is the opposite of "the centre day is the one
+       to use".
+       `Math.round(disp)` is exactly `winC` — the glide loop maintains winC as
+       the rounded disp — so the committed day IS the one the ladder was
+       showing, and `dates[4]` at the last armed post is that same day.
+       That also removes the numeral's CONTENT change at the collapse, which
+       is what SwiftUI was crossfading: 1.7x ink for five frames with the
+       centre parked at the midpoint. The dissolve had a sender-side cause.
+       target is pinned too, so no residual glide keeps travelling after the
+       commit. */
+    scrubIdx = Math.round(disp);
+    target = scrubIdx;
     paintStrip(scrubIdx);
     strip.style.transform = '';
     /* the scrub/ds-native-hidden classes are NOT torn off here —
@@ -3353,7 +3370,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 212 (instant only where there is still a swap to hide)';
+const BUILD = 'build 2026-09-13 · 213 (commit the day that was on screen)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
