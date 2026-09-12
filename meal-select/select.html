@@ -173,7 +173,12 @@
   .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   /* nav buttons: transparent frosted circles — content blurs through */
-  .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 44px; height: 44px;
+  /* 52, not 44: Rashid gave this row an extra 8pt with the square date
+     ("I don't mind for this page if you give the buttons an extra height of
+     eight pixels, including this date widget"). It was scoped to
+     .nav.tile-mode while the square was one of three variations; the square
+     won, so the height is simply the height. */
+  .navbtn { position: absolute; top: calc(var(--top-pad) + 9px); width: 52px; height: 52px;
     border-radius: 50%; border: none; cursor: pointer; z-index: 31;
     display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,.34);
@@ -214,14 +219,14 @@
   .ttl.on-dark { color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.5); }
   .gx { left: 24px; }
   /* Apple dual action capsule: confirm | divider | clear */
-  .dual { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px); height: 44px;
-    display: flex; align-items: center; border-radius: 22px; overflow: hidden; z-index: 31;
+  .dual { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px); height: 52px;
+    display: flex; align-items: center; border-radius: 26px; overflow: hidden; z-index: 31;
     background: rgba(255,255,255,.34);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
     box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
       0 4px 14px -8px rgba(0,0,0,.22); }
-  .dual button { width: 50px; height: 44px; border: none; background: transparent; cursor: pointer;
+  .dual button { width: 50px; height: 52px; border: none; background: transparent; cursor: pointer;
     color: inherit;               /* iOS UA would tint buttons blue otherwise */
     display: flex; align-items: center; justify-content: center;
     transition: background .3s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
@@ -391,8 +396,28 @@
   /* stage 2: the full-width scrubber — springy rise-and-widen, no hop.
      width !important beats the inline forming width so the grow
      transitions px -> full on the same property. */
-  .nav .ttl.scrub { height: 69px; padding: 24px 0 10px; top: calc(var(--top-pad) - 9px);
-    border-radius: 30px;
+  /* THE SQUARE'S GEOMETRY, NOT A VARIANT OF IT. This was the 69pt pill at
+     --top-pad - 9, with the 52pt square overriding it under .nav.tile-mode.
+     Rashid chose the square on 2026-09-12 and had Glass and Red portal
+     removed, so the square's numbers ARE the scrubber's numbers — and the
+     tall pill is DELETED rather than overridden, because nothing in this
+     page may be able to report a 69pt rect any more: that is the condition
+     the Shell renderer needs before it can collapse to one metric set.
+     Height stays 52 right through the arm (the notch is close in fullscreen)
+     and only the width travels. The 52 -> 60 -> 52 forming bounce is written
+     as an inline height from the arm handler, never as a keyframe here — a
+     CSS animation moves rendered pixels while leaving getBoundingClientRect
+     flat, so it would never cross the bridge to the native twin.
+     THE PADDING IS THE SQUARE'S RHYTHM, MEASURED OFF IT (Rashid: "the
+     spacing between day, date number and icon in the square is perfect —
+     apply the same spacing to the dates inside the scrubber"). #dayTile
+     centres a 10 + 1 + 17 + 1 + 10 = 39pt stack in its 48pt content box, so
+     its three rows sit at 6.5 / 17.5 / 35.5 from the tile's top edge. These
+     paddings put the headline and the ladder on exactly those lines:
+     17.5 + 28 + 6.5 = 52, with the headline absolute at 6.5. */
+  .nav .ttl.scrub { height: 52px; padding: 17.5px 0 6.5px;
+    top: calc(var(--top-pad) + 9px);
+    border-radius: 26px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
       box-shadow .3s ease, width .48s cubic-bezier(.3,1.22,.36,1),
@@ -427,18 +452,19 @@
      square's height must not exceed the other action buttons."
      So the resting title stops being bare text and becomes a CONTROL: the
      same three-row stack a ladder slot carries, in the same material as the
-     X and the dual, at exactly their 44pt height. Nothing about the armed
-     scrubber changes — this is the state you see BEFORE you touch it, and it
-     is what makes the affordance legible.
-     Behind the triple-tap menu as a third option, never the default. */
+     X and the dual, at exactly their height. This is the state you see
+     BEFORE you touch it, and it is what makes the affordance legible.
+     It arrived as a third option behind the triple-tap menu; Rashid picked it
+     on 2026-09-12 and it is now simply the date. */
   #dayTile { display: none; flex-direction: column; align-items: center;
     justify-content: center; gap: 1px; position: relative; z-index: 1; }
-  /* +8 ON THIS OPTION ONLY (Rashid: "I don't mind for this page if you give
-     the buttons an extra height of eight pixels, including this date widget —
-     I think this will give it more room, but I still want them to match").
-     So the whole action row goes 44 -> 52 when the square is selected, and
-     only then: .nav.tile-mode scopes it, the other two variations are
-     untouched. The tile stays square, so its width tracks its height. */
+  /* +8 ON THE WHOLE ROW (Rashid: "I don't mind for this page if you give the
+     buttons an extra height of eight pixels, including this date widget — I
+     think this will give it more room, but I still want them to match").
+     44 -> 52 for the X, the dual and this tile alike; it was scoped to
+     .nav.tile-mode while the square was one option of three, and became
+     unconditional when the square won. The tile stays square, so its width
+     tracks its height. */
   /* +9, the SAME top as .navbtn and .dual. It was +5, which was the right
      number while the buttons were 44 tall and the tile was 52 — +5 centred
      the taller square on the shorter buttons. The +8 row made the buttons 52
@@ -472,9 +498,6 @@
     backdrop-filter: blur(12px) saturate(160%);
     transition: background .34s ease, -webkit-backdrop-filter .34s ease,
       backdrop-filter .34s ease; }
-  .nav.tile-mode .navbtn { width: 52px; height: 52px; }
-  .nav.tile-mode .dual { height: 52px; border-radius: 26px; }
-  .nav.tile-mode .dual button { height: 52px; }
 
   /* ---- ARMED, IN THIS VARIATION ONLY: WIDER, NOT TALLER ----
      Rashid: "if it expands, no need to increase its height — the current
@@ -486,34 +509,29 @@
      only the width travels. The height still MOVES — it overshoots to 60 and
      settles back — because that squash is what makes it read as forming
      rather than merely stretching; it just ends where it began, which is what
-     keeps it clear of the notch. Scoped to .nav.tile-mode, so Glass and Red
-     portal keep their 69pt pill untouched. */
-  .nav.tile-mode .ttl.scrub { height: 52px;
-    top: calc(var(--top-pad) + 9px); border-radius: 26px; }
-  /* THE BOUNCE IS DRIVEN FROM THE DOM, NOT A KEYFRAME. It was
-     `animation: tileform` here, and it ran — getComputedStyle showed the
-     height mid-interpolation — but it never reached getBoundingClientRect,
-     so the rect I report stayed flat at 52 and the native capsule never
-     bounced. Shell's per-arm maxH settled it: 52, every arm, with an
-     instrument that watches any rect change and could not have missed 60.
-     An animation the reporter cannot see is an animation the twin never
-     performs, so the bounce now writes an inline height each frame — one
-     owner, and the rect carries it by construction. */
-  /* the ladder has to LIVE in 52pt now, so the stack compacts rather than
-     overflowing: 17 top pad + 30 slot + 5 bottom = 52 exactly, with the
-     headline riding at 5 inside the top pad. Type comes down a step with it —
-     numerals 16 -> 15, headline 10.5 -> 9.5, chips 13 -> 10 — which is the
-     smallest set that still reads at arm's length. Same proportions as the
-     69pt pill, one size down. */
-  .nav.tile-mode .ttl.scrub { padding: 17px 0 5px; }
-  .nav.tile-mode .ttl.scrub .scb-day,
-  .nav.tile-mode .ttl.scrub .scb-mon { top: 5px; font-size: 9.5px; line-height: 11px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it { height: 30px; gap: 1px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it .n { height: 18px;
-    font-size: 15px; line-height: 18px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it .s { height: 10px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it .s svg { width: 10px; height: 10px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it .s .c-off { font-size: 6.5px; line-height: 8px; }
+     keeps it clear of the notch. */
+  /* THE LADDER ON THE SQUARE'S RHYTHM (Rashid: "the spacing between day, date
+     number and icon in the square is perfect — apply the same spacing to the
+     dates inside the scrubber"). These were the compacted numbers I picked to
+     fit the ladder into 52pt; they were close to the square's but not equal,
+     and "the same spacing" means equal. So every row is now taken from
+     #dayTile rather than chosen to resemble it:
+       headline  9px/10px at top 6.5   <- #dayTile .t-d, 400 9px/10px
+       numeral  15px/17px, slot 17     <- #dayTile .t-n, 600 15px/17px
+       chip      10x10, slot 10        <- #dayTile .t-s
+       gap       1px                   <- #dayTile's own gap
+     28pt of slot (17 + 1 + 10) between 17.5 and 6.5 of padding = 52, which
+     lands the numeral and the chip on the same two lines the resting square
+     already puts them on. The OFF word's 6.5px/8px override is gone with
+     them — it now shares the square's 7px/9px, which is the rule two
+     paragraphs down and was always the same optical line. */
+  .nav .ttl.scrub .scb-day,
+  .nav .ttl.scrub .scb-mon { top: 6.5px; font-size: 9px; line-height: 10px; }
+  .nav .ttl.scrub .scb .scb-it { height: 28px; gap: 1px; }
+  .nav .ttl.scrub .scb .scb-it .n { height: 17px;
+    font-size: 15px; line-height: 17px; }
+  .nav .ttl.scrub .scb .scb-it .s { height: 10px; }
+  .nav .ttl.scrub .scb .scb-it .s svg { width: 10px; height: 10px; }
   .nav .ttl.tile #dayLabel { display: none !important; }
   .nav .ttl.tile #dayTile { display: flex; }
   /* the same split as the ladder: Proxima for the small label, Urbane for the
@@ -526,10 +544,13 @@
     stroke: rgba(11,14,18,.34); stroke-width: 1.4;
     stroke-linecap: round; stroke-linejoin: round; }
   .scb { display: none; }
-  /* ONE LADDER DESIGN, TWO COLOUR SCHEMES (Rashid: "make both red portal
-     and the glass one the same design just different colour schemes").
-     Geometry, type and rhythm are shared; only these variables differ, so
-     the two modes can never drift apart again. Sizes follow the Figma
+  /* ONE LADDER, ONE SCHEME. This carried two --sc-* sets so the glass and
+     the red portal could be "the same design just different colour schemes"
+     (Rashid); he picked the square, which wears the glass set, and the red
+     one is gone from both lanes. The variables stay as variables rather than
+     being inlined — they are still what keeps the stationary tile and the
+     sliding strip reading the same colours, since the tile is a SIBLING of
+     the strip and not its child. Sizes follow the Figma
      Calendar Strip (4091-134124): a 34x34 tile at radius 10 holding a 16px
      number, then the day name beneath it — NOT crammed inside the tile,
      which is what made the text collide with the container. */
@@ -552,18 +573,6 @@
   .nav .ttl.scrub .scb { display: flex; align-items: center; width: 486px;
     flex: none; position: relative; z-index: 1;
     animation: scbin .36s cubic-bezier(.3,1.2,.4,1); }   /* dates ride the grow in */
-  /* portal = the same ladder in the Figma red scheme */
-  .nav .ttl.scrub.portal {
-    --sc-num:      #f9f9f9;
-    --sc-day:      rgba(249,249,249,.82);
-    --sc-month:    rgba(255,255,255,.72);
-    --sc-tile-bg:  transparent;
-    --sc-tile-bd:  rgba(255,255,255,.20);
-    --sc-sel-bg:   #ed1c24;
-    --sc-sel-bd:   #f53a3a;
-    --sc-sel-glow: 0 0 5px #ca0002, 0 0 11px rgba(202,0,2,.55);
-    --sc-chip:     rgba(255,255,255,.58);
-    --sc-sel-num:  #f9f9f9; }
   @keyframes scbin { from { opacity: 0; transform: scale(.86); } }
   /* 54 = Figma's 34pt tile + 20pt gutter.
      TWO ROWS ONLY (Rashid: "it seems you added the day twice — just replace
@@ -671,62 +680,14 @@
   .scb.snap { animation: scbsnap .28s cubic-bezier(.2,.8,.3,1); }
   @keyframes scbsnap { 0% { transform: translateX(-30px); opacity: .4; }
     100% { transform: translateX(0); opacity: 1; } }
-  /* ---- PORTAL scrubber (Rashid A/B, Figma Calendar Strip 4091-134124,
-     compacted): the armed pill becomes a WINDOW onto a red layer — brand
-     red behind the sliding dates, the current day wearing the Figma tile
-     (hairline #f53a3a + #ca0002 glow), glass specular still on top, and
-     the SIDE bands refract the red and the dates as they slide under.
-     Switch lives in the triple-tap menu › Date scrubber. ---- */
-  .nav .ttl.scrub.portal { height: 69px; padding: 24px 0 10px; top: calc(var(--top-pad) - 9px);
-    border-radius: 30px;
-    /* a WINDOW, not a float (Rashid): recessed cavity — dark insets at
-       the rim instead of a bright convex highlight, no outer glow, just
-       a soft seat shadow. The vignette ::after finishes the depth. */
-    box-shadow: inset 0 0 0 .8px rgba(255,255,255,.24),
-      inset 0 2px 7px rgba(64,0,2,.3),
-      inset 0 -1px 5px rgba(64,0,2,.18),
-      0 6px 18px -10px rgba(0,0,0,.32); }
-  /* the red layer rides the same under-strip .glassbg (no filters) */
-  .nav .ttl.scrub.portal .glassbg { background: #ed1c24;
-    -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .nav .ttl.scrub.portal .glassbg::before { display: none; }
-  .nav .ttl.scrub.portal .scb .scb-it { height: 35px; }
-  /* red swallows faint white — the fade ladder runs brighter in the portal */
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(4),
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(6) { opacity: .72; }
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(3),
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(7) { opacity: .48; }
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(2),
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(8) { opacity: .28; }
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(1),
-  .nav .ttl.scrub.portal .scb .scb-it:nth-child(9) { opacity: .15; }
-  /* the side refraction: the lens rides ABOVE the red and the dates,
-     smearing them stylistically at the edges while scrubbing */
-  /* the side lens hugs the very EDGES only (Rashid on TF33: wide
-     feathers blurred the dates — the lens now starts past the last
-     visible slot, so only the entry/exit sliver refracts). Deliberately
-     ABOVE the strip (that IS the refraction) but a SIBLING of the dates,
-     never their ancestor. */
-  .nav .ttl.scrub.portal::before { content: ''; position: absolute;
-    inset: 0; border-radius: inherit; z-index: 2; pointer-events: none;
-    -webkit-backdrop-filter: blur(3px) saturate(160%);
-    backdrop-filter: blur(3px) saturate(160%);
-    -webkit-mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
-    -webkit-mask-composite: source-over;
-    mask: linear-gradient(90deg, #000 0 5%, transparent 13% 87%, #000 95% 100%);
-    mask-composite: add; }
-  /* the vignette: edges darken toward the rim like the inside of a
-     recess — the dates dim INTO the shadow, so the pill reads as a
-     peek into the red sheet rather than a surface floating over it */
-  .nav .ttl.scrub.portal::after { content: ''; position: absolute;
-    inset: 0; border-radius: inherit; z-index: 3; pointer-events: none;
-    background:
-    linear-gradient(90deg, rgba(56,0,2,.34), rgba(56,0,2,0) 14% 86%, rgba(56,0,2,.34)),
-    linear-gradient(180deg, rgba(56,0,2,.14), rgba(56,0,2,0) 24% 74%, rgba(56,0,2,.18)),
-    radial-gradient(130% 170% at 50% -18%, rgba(255,255,255,.16), rgba(255,255,255,0) 42%); }
-  /* portal's per-element colour overrides are gone: the scheme now lives
-     entirely in the --sc-* variables on .scb, so both modes share one set
-     of geometry rules and cannot drift apart */
+  /* The PORTAL scrubber lived here — the armed pill as a window onto brand
+     red, with a recessed rim, a red .glassbg, side refraction and a vignette,
+     switched from the triple-tap menu. Rashid chose the square on 2026-09-12
+     and had it removed; Shell deleted the matching native scheme the same
+     afternoon. Recorded because the red version was on TestFlight for two
+     days and someone will come looking for where it went: it was deliberate,
+     not lost. Nothing red remains except --sc-sel-num, the held day's
+     numeral, which was always brand red in the glass scheme too. */
   .nav .clear { margin-left: auto; border: none; background: none; cursor: pointer;
     font: 500 14px/20px 'Urbane Rounded', sans-serif; color: #ed1c24; padding: 6px 2px; }
   .confirm { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
@@ -1292,12 +1253,6 @@
       <button data-v="red" class="on">Red</button>
       <button data-v="neon">Neon</button>
     </div>
-    <div class="s-note" style="margin-top:14px">Date scrubber</div>
-    <div class="seg2" id="scrubSeg">
-      <button data-v="glass" class="on">Glass</button>
-      <button data-v="portal">Red portal</button>
-      <button data-v="tile">Square</button>
-    </div>
   </div>
 
   <div class="s-actions">
@@ -1467,22 +1422,15 @@ const CATS = [
   { id: 'snacks', title: 'Snacks', quota: 1 },
   { id: 'dessert', title: 'Dessert', quota: 0 },
 ];
-const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add',
-  /* the date scrubber's resting presentation. 'tile' is the house default
-     from 2026-09-12 (Rashid): the date sits in a rounded square on the
-     buttons' own material, and THAT square is what morphs open into the
-     scrubber and back. 'glass' and 'portal' stay available in the
-     triple-tap menu and via ?scrub=. */
-  scrubStyle: 'tile' };
+const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
 /* primer settings from the app launcher (hub Settings sheet) */
 try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}')); } catch (_) {}
-/* headless A/B primer: ?scrub=portal|glass seeds the scrubber mode so lane
-   verification can drive both variants without the triple-tap menu (the
-   calendar forwards the param into this embed) */
-try {
-  var _sp = new URLSearchParams(location.search);
-  if (_sp.get('scrub')) MODS.scrubStyle = _sp.get('scrub');
-} catch (_) {}
+/* ?scrub= is gone with the variations it primed. It seeded glass|portal|tile
+   so lane verification could film all three without the triple-tap menu;
+   Rashid picked the square on 2026-09-12 and there is nothing left to switch.
+   The calendar's forwarding of the param is harmless and stays — a query
+   string nobody reads costs nothing, and removing it would need a second
+   deploy to land in step with this one. */
 const GAUGE_BASE = 0.2473;            /* Figma: fill at zero selection */
 
 const ICON = {
@@ -2237,15 +2185,13 @@ function paintDayTile(idx) {
 function syncTileMode() {
   const t = document.querySelector('.nav .ttl');
   if (!t) return;
-  const isTile = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile');
-  const on = isTile && !t.classList.contains('scrub');
+  const on = !t.classList.contains('scrub');
   t.classList.toggle('tile', on);
-  /* the +8 row height belongs to the VARIATION, not to the resting state, so
-     it stays on while the scrubber is armed — otherwise the X and the dual
-     would shrink by 8pt the moment you touched the date and grow back on
-     release, which is exactly the kind of twitch the morph is meant to end. */
-  const nav = document.querySelector('.nav');
-  if (nav) nav.classList.toggle('tile-mode', isTile);
+  /* .tile-mode is gone: it existed to scope the +8 row to this variation, and
+     with the variation now the only one the heights live in the base rules.
+     Nothing here touches .nav any more, which also removes the old hazard —
+     a nav-level class that had to STAY on through the arm, or the X and the
+     dual would have shrunk by 8pt the moment you touched the date. */
   if (on) paintDayTile(typeof dayIdx === 'number' ? dayIdx : 0);
 }
 let turning = false;
@@ -2648,7 +2594,7 @@ confirmBtn.onclick = () => {
        than this shows an empty armed-size glass box; any later shows a
        hole where the date should be. */
     dbg('scrub OFF (deflate)');
-    ttl.classList.remove('forming', 'scrub', 'closing', 'portal', 'ds-native-hidden');
+    ttl.classList.remove('forming', 'scrub', 'closing', 'ds-native-hidden');
     ttl.style.removeProperty('--close-w');
     ttl.style.removeProperty('--close-h');
     ttl.style.width = ''; ttl.style.height = '';
@@ -2743,7 +2689,6 @@ confirmBtn.onclick = () => {
     formRect = { x: r0.left, y: r0.top, w: r0.width, h: r0.height };
     ttl.style.width = w0 + 'px'; ttl.style.height = h0 + 'px';
     void ttl.offsetWidth;                /* commit the start of the morph */
-    ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
     target = dayIdx; disp = dayIdx; winC = dayIdx; latched = false;
     paintStrip(winC);
     setHead(winC, false);          /* arming is not a crossing — no announce */
@@ -2782,19 +2727,17 @@ confirmBtn.onclick = () => {
        good bounce for height, animation wise, to show it forming"). Peak is
        held at 60 deliberately — Shell's ladder picks its compact metrics at
        h < 64, so anything above that would flip the layout mid-bounce. */
-    if (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile') {
-      var bT0 = 0;
-      var bounce = function (now) {
-        if (!bT0) bT0 = now;
-        if (!ttl.classList.contains('scrub')) { ttl.style.height = ''; return; }
-        var bp = Math.min(1, (now - bT0) / 520);
-        var k = bp < 0.44 ? bp / 0.44 : (1 - bp) / 0.56;
-        ttl.style.height = (52 + 8 * Math.sin(k * Math.PI / 2)).toFixed(2) + 'px';
-        if (bp < 1) requestAnimationFrame(bounce);
-        else ttl.style.height = '';
-      };
-      requestAnimationFrame(bounce);
-    }
+    var bT0 = 0;
+    var bounce = function (now) {
+      if (!bT0) bT0 = now;
+      if (!ttl.classList.contains('scrub')) { ttl.style.height = ''; return; }
+      var bp = Math.min(1, (now - bT0) / 520);
+      var k = bp < 0.44 ? bp / 0.44 : (1 - bp) / 0.56;
+      ttl.style.height = (52 + 8 * Math.sin(k * Math.PI / 2)).toFixed(2) + 'px';
+      if (bp < 1) requestAnimationFrame(bounce);
+      else ttl.style.height = '';
+    };
+    requestAnimationFrame(bounce);
     if (navEl) navEl.classList.add('scrubbing');
     vibrate(6);                          /* light tick on the morph itself */
     /* arm the twin a frame later, so the rects it tracks start at the
@@ -2863,7 +2806,7 @@ confirmBtn.onclick = () => {
     scrubIdx = Math.round(target);
     paintStrip(scrubIdx);
     strip.style.transform = '';
-    /* the scrub/portal/ds-native-hidden classes are NOT torn off here —
+    /* the scrub/ds-native-hidden classes are NOT torn off here —
        unform() carries them through the collapse and drops them in
        deflate(). Removing them on this frame is what used to end the
        gesture twice over: the pill snapped to auto width AND the twin
@@ -2885,7 +2828,6 @@ confirmBtn.onclick = () => {
     setTimeout(() => {
       target = dayIdx; disp = dayIdx; winC = dayIdx;
       paintStrip(winC);
-      ttl.classList.toggle('portal', MODS.scrubStyle === 'portal');
       ttl.classList.add('forming', 'scrub');
       if (navEl) navEl.classList.add('scrubbing');
     }, 700);
@@ -3094,16 +3036,6 @@ function drawGlowRing(o, now, RW, RH, RR) {
 document.querySelectorAll('#selcSeg button').forEach(b =>
   b.onclick = () => applySelc(b.dataset.v));
 applySelc(MODS.selc || 'red');   /* red is the house default (Rashid 2026-09-08) */
-/* date scrubber A/B (Rashid): Glass vs the Figma red Portal */
-document.querySelectorAll('#scrubSeg button').forEach(b =>
-  b.onclick = () => {
-    MODS.scrubStyle = b.dataset.v;
-    document.querySelectorAll('#scrubSeg button').forEach(x =>
-      x.classList.toggle('on', x === b));
-    syncTileMode();          /* the resting presentation changes with it */
-  });
-document.querySelectorAll('#scrubSeg button').forEach(x =>   /* primer sync */
-  x.classList.toggle('on', x.dataset.v === (MODS.scrubStyle || 'tile')));
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -3275,7 +3207,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 185 (the square sits on the buttons\u2019 line)';
+const BUILD = 'build 2026-09-12 · 186 (one scrubber, on the square\u2019s rhythm)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3469,7 +3401,7 @@ buildQuotaRows();
 buildScreen();
 applyDay(0);
 document.getElementById('dayLabel').textContent = MON_LBL + ' ' + ordinal(DAY_START);
-syncTileMode();   /* third option; a no-op unless MODS.scrubStyle is 'tile' */
+syncTileMode();   /* dress the resting date as the square */
 
 /* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
 const sheetEl = document.getElementById('sheet');
@@ -3701,7 +3633,7 @@ if (QS.get('solo') === '1') {
   /* the armed scrubber's twin entry (Home-lane contract, 2026-09-10):
      container-only native Liquid Glass at the pill's live rect; present
      while armed, released by omission from the next glasschrome post.
-     mode picks the material: 'glass' (.regular) or 'portal' (red tint). */
+     mode names the material and is now always 'glass' (.regular). */
   /* PHASE 3 (ratified 3-lane contract): the twin renders the ENTIRE
      ladder natively above its own glass — dates[9] ('' pads), center as
      the FRACTIONAL INDEX INTO THE ARRAY (armed 4.0; track 4 ± fraction;
@@ -3731,7 +3663,14 @@ if (QS.get('solo') === '1') {
       /* fully round for every frame of the close, so the capsule rounds off
          into a ball instead of staying a rounded rectangle that shrinks */
       r: closeRect ? Math.min(r.width, r.height) / 2 : radiusOf(el, r),
-      mode: (typeof MODS !== 'undefined' && MODS.scrubStyle === 'portal') ? 'portal' : 'glass' };
+      /* A CONSTANT, NOT A SWITCH — read it as documentation of which material
+         the twin should use, not as something this page still chooses. It was
+         `MODS.scrubStyle === 'portal' ? 'portal' : 'glass'` while the red
+         portal existed; that variation is gone from both lanes, so 'glass' is
+         the only value this can ever take. Still SENT, because the renderer's
+         parse expects the key and a silent omission is a worse contract than
+         a constant one. */
+      mode: 'glass' };
     if (window.DSScrubState) {
       var st = DSScrubState();
       e.dates = st.dates;
