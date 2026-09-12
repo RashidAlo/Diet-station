@@ -2331,6 +2331,12 @@ confirmBtn.onclick = () => {
      gate: direction answers "scrub or scroll" on the first few pixels instead
      of making every gesture wait a third of a second to find out. */
   let axisLock = 0;
+  /* when the finger last actually moved, and how long a pause counts as "the
+     user has stopped" before the nearest day glides to centre. 130ms is long
+     enough not to fight a slow deliberate drag and short enough that letting
+     go feels like it lands rather than drifts. */
+  let lastMoveAt = 0;
+  const SETTLE_MS = 130;
   let engageX = 0, baseIdx = 0, target = 0, scrubIdx = 0;
   let disp = 0, winC = 0;                       /* displayed fraction + window center */
   let stepFwd = STEP, stepBack = STEP, latched = false, lastX = 0, raf = null;
@@ -2367,6 +2373,19 @@ confirmBtn.onclick = () => {
   function glide() {
     raf = scrubbing ? requestAnimationFrame(glide) : null;
     if (!scrubbing) return;
+    /* THE STRIP SETTLES WHEN THE FINGER STOPS (Rashid: "the numbers seem off
+       center — our main number should be in the center", and separately that
+       he wants continuous conveyor motion rather than day-to-day jumps).
+       Those two only look contradictory. While the finger MOVES the strip has
+       to sit wherever the finger puts it, which means the held day is off
+       centre by up to half a slot — measured at 25.2pt on his frame, against a
+       54pt slot, which is exactly that. The moment the finger STOPS there is
+       no longer anything to track, and a picker glides the nearest value to
+       dead centre. So: travel continuously, then settle. One settle only, and
+       it lives here rather than natively, because two dampers would fight. */
+    if (!latched && lastMoveAt && performance.now() - lastMoveAt > SETTLE_MS) {
+      target = Math.round(target);
+    }
     disp += (target - disp) * FOLLOW;
     if (Math.abs(target - disp) < 0.003) disp = target;
     const c = Math.round(disp);
@@ -2512,6 +2531,7 @@ confirmBtn.onclick = () => {
        the first frame and axisLock below decides, on the first few pixels of
        movement, whether this gesture is a scrub or a scroll. */
     axisLock = 0;
+    lastMoveAt = performance.now();   /* the settle clock starts at the touch */
     scrubbing = true;
     lastX = downX;
     calibrate(downX);
@@ -2550,6 +2570,7 @@ confirmBtn.onclick = () => {
     const dx = engageX - e.clientX;             /* + = later days */
     target = Math.max(0, Math.min(maxIdx,
       baseIdx + (dx >= 0 ? dx / stepFwd : dx / stepBack)));
+    if (mx) lastMoveAt = performance.now();     /* only real movement defers the settle */
   });
   const endScrub = () => {
     clearTimeout(holdT);
@@ -2971,7 +2992,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 168 (scrub arms on touch; ball exit; softer button return)';
+const BUILD = 'build 2026-09-12 · 169 (the strip settles when the finger stops)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
