@@ -458,12 +458,12 @@ function surfaceHold(ms) {
 }
 if (/[?&]embed=1/.test(location.search)) {
   surfaceHold(2600);                        /* backstop: never hide the countdown */
-  var quiet = function () { setTimeout(surfaceRelease, 260); };
+  var quiet = function () { setTimeout(surfaceRelease, 620); };
   if (document.readyState === 'complete') quiet();
   else window.addEventListener('load', quiet);
 }
 
-const BUILD = 'calendar 2026-09-13 · 30 (the badge waits for quiet, not for a clock)';
+const BUILD = 'calendar 2026-09-13 · 31 (probe: is the weak pop paint contention?)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
