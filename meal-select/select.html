@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 208 (the give is a settle, not a dip at the buzzer)';
+const BUILD = 'build 2026-09-13 · 209 (one element, rest and armed, behind the cap)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3774,6 +3774,25 @@ if (QS.get('solo') === '1') {
      keeps the switch. Flip it false the instant a row goes missing, before
      any diagnosis — page-side, no install. */
   var TILE_NATIVE_PROVEN = true;
+  /* ONE TRUE NATIVE COMPONENT (Rashid, 2026-09-13: "Make them one true native
+     component"). The resting square and the armed scrubber stop being two
+     twins that swap: the page reports ONE el in every state, and the resting
+     square is expressed as a ONE-SLOT LADDER — nine slots with only the
+     centre populated, 52pt wide instead of 370. Opening is then a continuous
+     geometry change on one element: no create, no destroy, and no handover
+     frame to disguise.
+     Shell confirmed feasibility from the renderer rather than from optimism:
+     slots are POSITIONED (`.offset(x: (idx - center) * 54)`) inside a ZStack
+     framed to `el.w`, empty labels are skipped, so nothing about the 54pt
+     pitch imposes a minimum width — and the metric set is chosen by reported
+     height, so at h=52 the one-slot render uses exactly the compact ladder
+     the resting tile already uses. Same code path for both states, which is
+     also why they can no longer drift apart.
+     Gated on `caps.dateWidget >= 1`, which ships in the same diff as their
+     renderer in every relay that sends it. While it is absent the page keeps
+     today's two-id behaviour EXACTLY — the safe direction by construction,
+     and no window where the date can go missing again. */
+  var dateWidgetNative = false;
   /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
      he actually has. The flag above is meant to be flipped on evidence, and
      with it false the page never sends `tile` — which left the Shell lane with
@@ -3877,7 +3896,10 @@ if (QS.get('solo') === '1') {
      shows for the single frame before the first confirm. */
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
-      if (id === 'tile' && !tileNative) return;   /* never hide what we still draw */
+      /* suppression covers BOTH handover shapes: the separate tile twin, and
+         the unified one-element form where the same web element is yielded
+         to a single native component. */
+      if (id === 'tile' && !(tileNative || dateWidgetNative)) return;
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
@@ -3940,6 +3962,42 @@ if (QS.get('solo') === '1') {
      for the whole collapse, so nothing native is still fading when the
      label lands. Cleared when the next gesture arms. */
   var scrubHold = false;
+  /* THE ONE EL, whichever state the control is in. Armed (or closing) goes
+     through scrubEl unchanged; resting is the same id with a one-slot ladder.
+     Both carry the full ladder vocabulary so the renderer has one code path
+     and the two states cannot drift — the rebuild law applied to STATES
+     rather than to posts. */
+  function dateEl(off, frac) {
+    if (!SCRUB_TWIN) return null;
+    if (document.querySelector('.nav .ttl.scrub') || closeRect) {
+      return scrubEl(off, frac);
+    }
+    if (!dateWidgetNative) return null;   /* two-id behaviour until announced */
+    var el = document.querySelector('.nav .ttl.tile');
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    /* deliberately NOT gated on scrubHold: that flag parks the ARMED twin for
+       the duration of an exit, and the resting el is what must appear on the
+       frame the exit lands. */
+    var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y,
+      w: r.width, h: r.height, r: radiusOf(el, r), mode: 'glass' };
+    try {
+      var td = dateFor(typeof dayIdx === 'number' ? dayIdx : 0);
+      var dd = [], dn = [], st = [];
+      for (var k = 0; k < 9; k++) { dd.push(''); dn.push(''); st.push(''); }
+      dd[4] = String(td.getDate());
+      dn[4] = td.toLocaleDateString('en', { weekday: 'short' });
+      st[4] = DAY_STATUS[td.getDate() + ':' + td.getMonth()] || '';
+      e.dates = dd; e.dayNames = dn; e.statuses = st;
+      e.center = 4;                       /* the populated slot, dead centre */
+      e.dayName = dn[4];
+      e.monthLabel = MONS[td.getMonth()];
+      /* no `from`: there is nothing to spring out of at rest, and sending an
+         origin would ask the renderer to animate a state it is simply in. */
+    } catch (_) {}
+    return e;
+  }
   function scrubEl(off, frac) {
     if (!SCRUB_TWIN || scrubHold) return null;
     var el = document.querySelector('.nav .ttl.scrub');
@@ -4021,7 +4079,7 @@ if (QS.get('solo') === '1') {
     restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
     var off = frameOffset();
     var els = chromeEls(off);
-    var se = scrubEl(off, frac);
+    var se = dateEl(off, frac);
     if (se) els.push(se);
     try {
       var msg = { t: 'glasschrome', flow: FLOW,
@@ -4048,7 +4106,10 @@ if (QS.get('solo') === '1') {
   function chromeEls(off) {
     var els = [];
     Object.keys(ELS).forEach(function (id) {
-      if (id === 'tile' && !tileNative) return;   /* see tileNative */
+      /* when the control is ONE component the resting state is carried by
+         dateEl(), not by a second el — so the tile is suppressed on the web
+         side but never posted as its own twin. */
+      if (id === 'tile' && (!tileNative || dateWidgetNative)) return;
       var el = document.querySelector(ELS[id]);
       if (!el) return;
       var r = el.getBoundingClientRect();
@@ -4127,6 +4188,7 @@ if (QS.get('solo') === '1') {
        Bump the number for the next contract change; never re-use one. And 2
        is truthy, so any older check of the same key is unaffected. */
     if (TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) tileNative = true;
+    if (caps && caps.dateWidget >= 1) dateWidgetNative = true;
     if (!wasTileNative && tileNative) setTimeout(report, 0);
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
@@ -4536,7 +4598,7 @@ if (QS.get('solo') === '1') {
     if (layerUp) return;
     var off = frameOffset();
     var els = chromeEls(off);   /* same builder as the rest post — see chromeEls */
-    var se = scrubEl(off, true);   /* track frames carry the FRACTIONAL center */
+    var se = dateEl(off, true);   /* track frames carry the FRACTIONAL center */
     if (se) els.push(se);
     if (!els.length) return;
     try {
