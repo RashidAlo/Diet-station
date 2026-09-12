@@ -458,7 +458,7 @@ surfLog('boot embed=' + /[?&]embed=1/.test(location.search) +
         ' held=' + document.documentElement.classList.contains('ds-surface-hold') +
         ' search=' + location.search);
 
-const BUILD = 'calendar 2026-09-13 · 28 (instrumented: when does the hold release?)';
+const BUILD = 'calendar 2026-09-13 · 29 (a cancelled transition is still an arrival)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -848,10 +848,20 @@ if (EMBED) {
       (b ? ' play=' + getComputedStyle(b).animationPlayState +
            ' opacity=' + (+getComputedStyle(b).opacity).toFixed(2) : ''));
   }, 0);
-  calPage.addEventListener('transitionend', function landed(e) {
-    if (e.propertyName !== 'transform' || e.target !== calPage) return;
-    calPage.removeEventListener('transitionend', landed);
-    surfaceRelease('transitionend');  /* the sheet is home: let the badge speak */
+  /* END *OR* CANCEL. The sheet's spring is torn down 660ms after boot — the
+     600ms cleanup nested inside the 60ms start — while the .55s transition
+     itself ends at 610ms. Fifty milliseconds of margin, and removing
+     `springing` mid-flight cancels the transition, which fires
+     transitioncancel and NEVER transitionend. ·28 measured exactly that on
+     the device: the hold applied, the badge sat paused at opacity 0, and the
+     release came `via timer` at 900ms. Either event means the sheet has
+     stopped moving, which is the only thing the badge needs to know. */
+  ['transitionend', 'transitioncancel', 'transitionstart'].forEach(function (ev) {
+    calPage.addEventListener(ev, function (e) {
+      if (e.propertyName !== 'transform' || e.target !== calPage) return;
+      if (typeof surfLog === 'function') surfLog('cal ' + ev);
+      if (ev !== 'transitionstart') surfaceRelease(ev);
+    });
   });
   setTimeout(() => {
     calPage.classList.add('springing');
