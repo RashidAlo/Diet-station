@@ -233,7 +233,8 @@
   <section class="card">
     <h2>Layout laws</h2>
     <p class="desc">Two decrees from the home rounds (2026-09-09) that govern how the spacing
-      scale gets applied — written here beside the inset system they constrain.</p>
+      scale gets applied — written here beside the inset system they constrain — and a third,
+      about rows that mix type sizes.</p>
 
     <h3>1 &middot; The uniform-padding law</h3>
     <p class="desc" style="font-size:13.5px">Cards wear <b>one</b> padding value on all four
@@ -273,6 +274,28 @@
       signed-in web tab bar currently measures 314 — a pre-backport interim, not the decree;
       it becomes 256&nbsp;+&nbsp;module&nbsp;/&nbsp;370 exactly per v3 when the dynamic-bar
       backport lands.</p>
+
+    <h3>3 &middot; The mixed-size row</h3>
+    <p class="desc" style="font-size:13.5px"><b style="color:var(--ink)">Any row that sets one
+      large figure beside smaller satellites aligns their TOPS, and
+      <code>align-items: flex-start</code> alone will not do it.</b> Each run&rsquo;s cap sits a
+      fixed fraction of <i>its own</i> font-size below its box top, so the big one starts lower
+      and the small ones ride high. The satellite needs
+      <code>margin-top: calc(bigSize &times; kBig &minus; 1em &times; kSmall)</code>, where k is
+      that fraction. Generalised here at the Calendar &amp; Meals lane&rsquo;s prompting: this
+      began as a price rule, but it belongs to the shape, not the subject — a macro readout
+      (<code>480</code> beside <code>Kcal</code>), a duration beside its unit, a count beside its
+      label. The worked implementation, the constants and the measuring recipe are on
+      <a href="price.html#top" style="color:var(--red)">Price</a>.</p>
+    <p class="meta"><b style="color:var(--ink)">k is not per-family — it is per run.</b>
+      Measured on Urbane Rounded: digits <code>.1771</code> at both 300 and 600 (weight
+      doesn&rsquo;t move it), capitals <code>.184</code>, but <code>Kcal</code>
+      <code>.1493</code> — because the <code>l</code> is an ascender and ascenders out-top
+      capitals. A run of digits and a run with ascenders do not share a k, so measure on the
+      glyphs the run actually renders. And where the glyph classes differ, align on <b>cap
+      tops</b> rather than ink: matching the ink of a label with ascenders against a figure&rsquo;s
+      cap leaves the ascenders poking above the line, which is the thing the law was meant to
+      prevent.</p>
   </section>
 
   <section class="card">

@@ -392,6 +392,14 @@
     <p class="meta">If you do measure, compare <b>cap-bearing runs only</b>. A <code>/day</code>
       has no capitals, so its ink starts at x-height and will always read low — that is the
       glyphs, not the alignment.</p>
+    <p class="meta"><b style="color:var(--ink)">k is per run, not per family</b> — the reason
+      this component gets away with two constants is that every slot in a price renders digits
+      or capitals. Measured on Urbane Rounded: digits <code>.1771</code> at weight 300 and 600
+      alike, capitals <code>.184</code>, but <code>Kcal</code> <code>.1493</code>, because the
+      <code>l</code> is an ascender and ascenders out-top capitals. Outside prices — a macro
+      readout, a count beside a label — measure on the glyphs the run actually renders, and see
+      the mixed-size row law on
+      <a href="foundations.html" style="color:var(--red)">Foundations</a>.</p>
     <div class="codewrap">
       <pre id="kmeasure">/* the per-family constant — re-measure if a font file is ever replaced */
 const ctx = document.createElement('canvas').getContext('2d');
