@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Price — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'Avenir Next World'; src: url('../font/AvenirNextWorld-Medium.otf'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Avenir Next World'; src: url('../font/AvenirNextWorld-Demi.otf'); font-weight: 600; font-display: swap; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .backc { flex: none; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #e9e9ec; color: var(--ink); text-decoration: none;
+    transition: background .15s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
+  .backc:hover { background: #e0e0e4; }
+  .backc:active { transform: scale(.92); }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 56ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+  .slab { margin-top: 16px; border-radius: 14px; padding: 16px 18px;
+    background: #1d1d1f; color: #f5f5f7; }
+  .slab .sl { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: #8e8e93; }
+  .slab .sq { font: 600 15.5px/1.45 'Urbane Rounded', sans-serif; margin-top: 9px;
+    letter-spacing: -.005em; }
+  .slab .sb { font-size: 12.5px; line-height: 1.6; color: #b9b9c0; margin-top: 9px; }
+
+  /* ================= THE PRICE COMPONENT — this is the shippable CSS =============
+     The law is CAP-TOP alignment: every part's first painted pixel sits on one line.
+     line-height:1 puts each part's box top a fixed fraction of its own font-size
+     above its cap — so each satellite is pushed down by the difference. The two
+     --k constants are that fraction, measured per family (see the doc card).      */
+  .dsp { display: inline-flex; align-items: flex-start; white-space: nowrap;
+    font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1;
+    --k-num: .1164; --k-sat: .1164;                    /* Proxima Nova */
+    --dsp-numfam: 'Proxima Nova', sans-serif; --dsp-numwt: 700; --dsp-ink: #0B0E12;
+    --dsp-per: var(--dsp-cur); }
+  .dsp.primary  { --dsp-numfam: 'Urbane Rounded', sans-serif; --dsp-numwt: 600;
+                  --dsp-ink: var(--red); --k-num: .1811; }
+  .dsp.struck   { --dsp-numwt: 600; }
+  .dsp.struck .num, .dsp.struck .dec { text-decoration: line-through; }
+  .dsp > *, .dsp .was > * { display: block; line-height: 1; }
+  .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
+    font-size: var(--dsp-num); color: var(--dsp-ink); }
+  .dsp .cur, .dsp .dec, .dsp .per, .dsp .minus {
+    font-family: 'Proxima Nova', sans-serif; font-weight: 700; color: var(--dsp-ink); }
+  .dsp .cur { font-size: var(--dsp-cur); padding-right: 1px;
+    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
+  .dsp .dec { font-size: var(--dsp-dec);
+    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-dec) * var(--k-sat)); }
+  .dsp .per { font-size: var(--dsp-per); padding-left: 1px;
+    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-per) * var(--k-sat)); }
+  .dsp .minus { font-size: var(--dsp-cur); font-weight: 400; padding-right: 2px;
+    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
+  .dsp .was { display: inline-flex; align-items: flex-start; padding-right: 6px;
+    text-decoration: line-through;
+    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-was) * var(--k-sat)); }
+  .dsp .was > * { font-family: 'Proxima Nova', sans-serif; font-weight: 600;
+    color: #999999; font-size: var(--dsp-was); margin-top: 0; padding: 0; }
+  /* size ramp — font sizes read from Figma "Price" set 3551:1926 */
+  .dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+  .dsp.xxl  { --dsp-num:24px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+  .dsp.xl   { --dsp-num:20px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+  .dsp.lg   { --dsp-num:18px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+  .dsp.md   { --dsp-num:15px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:12px; }
+  .dsp.sm   { --dsp-num:14px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+  .dsp.xs   { --dsp-num:12px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:8px;  }
+  .dsp.xxs  { --dsp-num:10px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+  .dsp.tertiary { --dsp-cur:8px; --dsp-dec:8px; --dsp-per:8px; }
+  /* Arabic: one typeface for every part, and the row mirrors */
+  .dsp.rtl { direction: rtl; --k-num: .074; --k-sat: .074;
+    --dsp-numfam: 'Avenir Next World', sans-serif; }
+  .dsp.rtl .num, .dsp.rtl .cur, .dsp.rtl .dec, .dsp.rtl .per, .dsp.rtl .minus,
+  .dsp.rtl .was > * { font-family: 'Avenir Next World', sans-serif; }
+  .dsp.rtl .cur { padding-right: 0; padding-left: 2px; }
+  .dsp.rtl .was { padding-right: 0; padding-left: 6px; }
+  /* ============================================================================== */
+
+  .stage { margin-top: 16px; border: 0.5px solid var(--line); border-radius: 14px;
+    background: var(--ground); padding: 26px 20px; display: flex;
+    align-items: center; justify-content: center; min-height: 96px; }
+  .stage.dark { background: #1d1d1f; }
+
+  /* anatomy */
+  .anat { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .anat .rule { width: 100%; max-width: 300px; border-top: 1px dashed var(--red);
+    margin-bottom: 6px; position: relative; }
+  .anat .rule span { position: absolute; right: 0; top: -17px; font: 600 9.5px/1 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--red); }
+  .legend { display: grid; grid-template-columns: 118px 1fr; gap: 0; margin-top: 16px;
+    border: 0.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .legend > div { padding: 10px 13px; font-size: 12.5px; line-height: 1.5; }
+  .legend .k { background: var(--ground); font: 12px/1.5 ui-monospace, Menlo, monospace;
+    color: var(--red); border-top: 0.5px solid var(--line); }
+  .legend .v { border-top: 0.5px solid var(--line); color: var(--ink); }
+  .legend > div:nth-child(1), .legend > div:nth-child(2) { border-top: 0; }
+  @media (max-width: 600px) { .legend { grid-template-columns: 1fr; }
+    .legend .v { border-top: 0; padding-top: 0; } }
+
+  /* builder */
+  .ctl { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; align-items: center; }
+  .ctl .lab { font: 600 10px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--ink-soft); width: 100%; margin-top: 6px; }
+  .ctl button { cursor: pointer; border: 0.5px solid var(--line); background: #fff;
+    border-radius: 999px; padding: 8px 13px; font: 500 12.5px/1 'Urbane Rounded', sans-serif;
+    color: var(--ink); transition: background .12s ease, transform .12s cubic-bezier(.3,.8,.3,1); }
+  .ctl button:active { transform: scale(.95); }
+  .ctl button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .ctl button.off { opacity: .55; }
+  .ctl button[disabled] { opacity: .3; cursor: not-allowed; }
+
+  /* ramp table */
+  .ramp { margin-top: 14px; border: 0.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .ramp .r { display: grid; grid-template-columns: 62px 1fr 84px 84px; align-items: center; }
+  .ramp .r + .r { border-top: 0.5px solid var(--line); }
+  .ramp .r.hd { background: var(--ground); }
+  .ramp .r.hd > div { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--ink-soft); padding: 11px 13px; }
+  .ramp .r > div { padding: 11px 13px; font-size: 12px; }
+  .ramp .r .sz { font: 600 12px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .ramp .r .nums { font: 11.5px/1.5 ui-monospace, Menlo, monospace; color: var(--ink-soft); }
+  .ramp .grp { background: var(--ground); font: 600 10.5px/1 'Urbane Rounded', sans-serif;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft);
+    padding: 9px 13px; border-top: 0.5px solid var(--line); }
+  @media (max-width: 640px) {
+    .ramp .r { grid-template-columns: 54px 1fr; }
+    .ramp .r.hd > div:nth-child(3), .ramp .r.hd > div:nth-child(4),
+    .ramp .r > div:nth-child(3), .ramp .r > div:nth-child(4) { display: none; }
+  }
+
+  .pair { margin-top: 16px; border: 0.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .pair .ph { padding: 12px 16px; background: var(--ground);
+    font: 600 13.5px/1.35 'Urbane Rounded', sans-serif; display: flex; gap: 10px;
+    align-items: baseline; flex-wrap: wrap; }
+  .pair .ph small { font: 400 12px/1.4 'Proxima Nova', sans-serif; color: var(--ink-soft); }
+  .pair .cols { display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 600px) { .pair .cols { grid-template-columns: 1fr; } }
+  .pair .col { padding: 14px 16px 16px; }
+  .pair .col + .col { border-left: 0.5px solid var(--line); }
+  @media (max-width: 600px) { .pair .col + .col { border-left: 0; border-top: 0.5px solid var(--line); } }
+  .pair .ct { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .1em; margin-bottom: 10px; }
+  .pair .ct.good { color: var(--ok); }
+  .pair .ct.bad { color: var(--red); }
+  .pair .cb { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); margin-top: 10px; }
+
+  .flags { margin-top: 14px; border-radius: 14px; background: var(--red-soft);
+    border: 0.5px solid rgba(237,28,36,.18); padding: 15px 17px; }
+  .flags .ft { font: 600 12.5px/1.4 'Urbane Rounded', sans-serif; color: var(--red); }
+  .flags ol { margin: 10px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.65;
+    color: var(--ink); }
+  .flags li + li { margin-top: 9px; }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <a class="backc" href="../#design-system" aria-label="Back to Design System">
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M10 3.2 5.4 8l4.6 4.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>Price</h1>
+  <p>One big number, and a single row of smaller parts hanging off it. Every price in the
+    product is this component at a different size with different slots switched on — values
+    read from the Figma <b>Price</b> set, nothing invented.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>The law</h2>
+    <div class="stage">
+      <span class="dsp primary xxxl"><span class="cur">KD</span><span class="num">139</span><span class="dec">.000</span></span>
+    </div>
+    <div class="slab">
+      <div class="sl">The price is one row</div>
+      <div class="sq">ONE NUMERAL CARRIES THE SIZE. EVERYTHING ELSE IS A SATELLITE, AND EVERY
+        SATELLITE HANGS FROM THE SAME TOP EDGE.</div>
+      <div class="sb">The currency, the decimals, the struck old price, the <i>/day</i> — none of
+        them competes with the numeral, and none of them sits on its own line. They align to the
+        <b>top</b>, not the bottom and not the baseline, so the row reads as one object however
+        many parts are switched on. In CSS that is one property:
+        <code>align-items: flex-start</code>. Bottom-aligning is the single most common way this
+        gets broken, and it is the thing to look for in review.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Anatomy</h2>
+    <p class="desc">Six slots, always in this order. Only the numeral is mandatory — every other
+      slot is a switch, which is what makes one component cover every price in the app.</p>
+    <div class="stage">
+      <div class="anat">
+        <div class="rule"><span>one top edge</span></div>
+        <span class="dsp primary xxxl">
+          <span class="minus">−</span>
+          <span class="was"><span class="cur">KD</span><span class="num">159</span><span class="dec">.000</span></span>
+          <span class="cur">KD</span><span class="num">139</span><span class="dec">.000</span><span class="per">/day</span>
+        </span>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="k">minus</div>
+      <div class="v">Optional &ldquo;&minus;&rdquo; prefix. Used where the price is a deduction — a
+        coupon line, a saving — never on a price the customer pays.</div>
+      <div class="k">was</div>
+      <div class="v">The old price, struck through, in grey (<code>#999999</code>) at Semibold.
+        A whole price in miniature: it carries its own currency and decimals.</div>
+      <div class="k">cur</div>
+      <div class="v">The currency. Bound in Figma to the <code>Reusable/KD</code> <b>string
+        variable</b>, so it becomes <span dir="rtl">د.ك</span> in the Arabic mode rather than being retyped.</div>
+      <div class="k">num</div>
+      <div class="v">The numeral — the only part that changes typeface by type, and the only one
+        that carries the size of the component.</div>
+      <div class="k">dec</div>
+      <div class="v">The decimals, including the separator. Its own component in Figma
+        (<code>Decimal</code>), always smaller than the numeral, always top-aligned.</div>
+      <div class="k">per</div>
+      <div class="v">The period suffix — <code>/day</code>, <code>/Month</code>. Bound to the
+        <code>Results A/Day</code> string variable, so it localises with the rest.</div>
+    </div>
+    <p class="meta">Figma property names, for the handoff:
+      <code>Minus</code>, <code>Discount</code>, <code>KD</code>, <code>Price</code> (text),
+      <code>Decimal</code>, <code>per day</code> — booleans except <code>Price</code>. Defaults:
+      currency and decimals <b>on</b>, discount, minus and per-period <b>off</b>.</p>
+  </section>
+
+  <section class="card">
+    <h2>Pick and choose</h2>
+    <p class="desc">The methodology, live. Choose a type and a size, switch slots on and off, and
+      take the markup — the same three decisions a designer makes in Figma and a developer makes
+      in code.</p>
+    <div class="stage" id="bstage">
+      <span class="dsp primary xxxl" id="bprice"></span>
+    </div>
+    <div class="ctl" id="bctl">
+      <div class="lab">Type</div>
+      <button data-t="primary" class="on">Primary</button>
+      <button data-t="secondary">Secondary</button>
+      <button data-t="tertiary">Tertiary</button>
+      <button data-t="struck">Struck</button>
+      <div class="lab">Size</div>
+      <span id="bsizes"></span>
+      <div class="lab">Slots</div>
+      <button data-s="cur" class="on">Currency</button>
+      <button data-s="dec" class="on">Decimals</button>
+      <button data-s="was" class="off">Was-price</button>
+      <button data-s="minus" class="off">Minus</button>
+      <button data-s="per" class="off">/day</button>
+      <button data-s="rtl" class="off">Arabic</button>
+    </div>
+    <div class="codewrap">
+      <pre id="bcode"></pre>
+      <button class="copycode" data-copy="bcode">Copy</button>
+    </div>
+    <p class="meta" id="bnote"></p>
+  </section>
+
+  <section class="card">
+    <h2>The ramp</h2>
+    <p class="desc">Eight sizes. The numeral&rsquo;s typeface is what separates the types:
+      <b>Primary</b> is Urbane Rounded in brand red and is for the price a screen is <i>about</i>;
+      <b>Secondary</b> is Proxima Nova in ink for prices inside lists, rows and cards;
+      <b>Tertiary</b> is the unit-rate line, where the numeral shrinks to make room for the
+      suffix. Every value below was read from the Figma set, not eyeballed.</p>
+    <div class="ramp" id="ramp"></div>
+    <p class="meta">Read as <code>numeral / line-height · currency · decimals</code>. The
+      line-heights are <b>Figma&rsquo;s</b> and belong to the Figma file — see the next card for
+      why they must not be copied into CSS.</p>
+  </section>
+
+  <section class="card">
+    <h2>What &ldquo;top-aligned&rdquo; actually means</h2>
+    <p class="desc">Worth its own card, because getting this wrong is what every broken price in
+      the product has in common — and because the obvious implementation is the wrong one.</p>
+
+    <div class="slab">
+      <div class="sl">Measured, not assumed</div>
+      <div class="sq">IT IS THE INK THAT ALIGNS, NOT THE TEXT BOXES.</div>
+      <div class="sb">Asked for the tight render bounds of every part of Primary xxxl and
+        Tertiary md, Figma answers <code>0</code>, <code>0</code>, <code>−0.3</code>,
+        <code>−0.4</code>, <code>−0.5</code> — every part&rsquo;s first painted pixel on one
+        line, to within half a pixel. Not baselines, which differ; not line boxes, which differ
+        more. <b>Cap tops.</b></div>
+    </div>
+
+    <h3>Why copying the line-heights fails</h3>
+    <p class="desc" style="font-size:13.5px">The Figma file achieves that with per-part
+      line-heights — 19px on a 30px numeral, 22 on the currency, 28 on the decimals. Those
+      numbers are tuned to <i>Figma&rsquo;s</i> text layout, and putting them in CSS does not
+      reproduce the result. Measured in the browser with the exact same values, the ink tops of
+      Primary xxxl land at <code>−0.52</code>, <code>5.76</code> and <code>8.61</code> — a 9px
+      spread, with the decimals visibly sagging. That is the same defect the audit found in
+      checkout, arrived at from the opposite direction: there by bottom-aligning on purpose, here
+      by copying the spec faithfully.</p>
+
+    <h3>What works instead</h3>
+    <p class="desc" style="font-size:13.5px">Give every part <code>line-height: 1</code>, then
+      push each satellite down by the difference between its cap offset and the
+      numeral&rsquo;s. That offset is a fixed fraction of font-size for a given family, so it is
+      one constant per typeface and one <code>calc()</code> per slot — no magic numbers per size,
+      and it survives a size being changed. Verified on this page: across all six slots the ink
+      tops agree to <b>0.01px</b>.</p>
+    <div class="codewrap">
+      <pre id="kmeasure">/* the per-family constant — re-measure it if a font file is ever replaced */
+const ctx = document.createElement('canvas').getContext('2d');
+function capOffsetRatio(weight, family) {
+  ctx.font = `${weight} 100px ${family}`;
+  const m = ctx.measureText('139');
+  const halfLeading = (100 - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2;
+  return (halfLeading + m.fontBoundingBoxAscent - m.actualBoundingBoxAscent) / 100;
+}
+// Urbane Rounded 600 → .1811   Proxima Nova 700 → .1164   Avenir Next World 600 → .074</pre>
+      <button class="copycode" data-copy="kmeasure">Copy</button>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">Two things not to reach for.</b>
+      <code>align-items: baseline</code> looks like the right answer and is not — these parts do
+      not share a baseline. Measured at xxxl it puts the currency and decimals
+      <b>11.8px</b> below the numeral&rsquo;s cap, which is most of the numeral&rsquo;s height.
+      <code>text-box: trim-both cap alphabetic</code> is the modern primitive for exactly this
+      and would make the whole card unnecessary, but it trusts the font&rsquo;s declared cap
+      height: our Urbane Rounded reports 0.354em, roughly half its true cap, so the trim lands in
+      the wrong place. It is worth retrying whenever the Urbane files are regenerated — and worth
+      knowing that the browser will not tell you it went wrong.</p>
+  </section>
+
+  <section class="card">
+    <h2>Arabic</h2>
+    <p class="desc">The row mirrors and the typeface changes — the structure does not. Numerals
+      stay Western, as they do everywhere else in the product, and the currency becomes
+      <span dir="rtl">د.ك</span> through the string variable rather than a second component.</p>
+    <div class="pair">
+      <div class="ph">Same component, two directions</div>
+      <div class="cols">
+        <div class="col"><div class="ct">English</div>
+          <span class="dsp primary xl"><span class="was"><span class="cur">KD</span><span class="num">139</span></span><span class="cur">KD</span><span class="num">90</span><span class="dec">.880</span></span>
+          <div class="cb">Currency leads, decimals trail.</div></div>
+        <div class="col"><div class="ct">العربية</div>
+          <span class="dsp primary xl rtl"><span class="was"><span class="cur">د.ك</span><span class="num">139</span></span><span class="cur">د.ك</span><span class="num">90</span><span class="dec">.880</span></span>
+          <div class="cb">Avenir Next World throughout, row mirrored, top edge unchanged.</div></div>
+      </div>
+    </div>
+    <p class="meta">Both directions live in the same Figma set under the <code>RTL</code> variant
+      property, and the Arabic variants bind the same <code>Reusable/KD</code> and
+      <code>Results A/Day</code> string variables — which is the point of their being variables.
+      See <a href="typography.html" style="color:var(--red)">Typography</a> for the Avenir ramp
+      and <a href="variables.html" style="color:var(--red)">Variables</a> for the mode chain.</p>
+  </section>
+
+  <section class="card">
+    <h2>In the flows</h2>
+    <p class="desc">Checkout is where prices live, and it currently draws them six different ways
+      — six sets of class names, six sets of values. Audited against the Figma set before writing
+      this:</p>
+    <div class="pair">
+      <div class="ph">What the audit found <small>— checkout/index.html, before alignment</small></div>
+      <div class="cols">
+        <div class="col"><div class="ct good">Already right</div>
+          <div class="cb" style="margin-top:0">
+            <code>.pbig</code> + <code>.pkd</code> — 30/19 Urbane with a 15/22 currency: Primary
+            xxxl, exactly.<br><br>
+            <code>.now</code> + <code>.now-kd</code> — 18/28 Proxima with a 14/22 currency:
+            Secondary lg, exactly.<br><br>
+            <code>.pay-price</code> — already tops-aligned with a 12px currency.</div></div>
+        <div class="col"><div class="ct bad">Against the law</div>
+          <div class="cb" style="margin-top:0">
+            <code>.was</code>, <code>.pb-was</code>, <code>.pw</code> — all
+            <code>align-items: flex-end</code>. The struck price bottom-aligns to the numeral
+            instead of hanging from the top edge.<br><br>
+            <code>.now-dec</code> — <code>align-self: flex-end</code> and 12px where the ramp says
+            14px, so the decimals drop <i>and</i> shrink.<br><br>
+            <code>.pb-kd</code> — a 20px currency where Primary xxxl says 15px: the satellite
+            starts competing with the numeral.</div></div>
+      </div>
+    </div>
+    <p class="meta">Not a criticism of that lane — the pattern only became a rule today. Half of
+      checkout already matched the Figma set by eye, which is a fair sign the law was real before
+      it was written down. The alignment pass replaces all six with this component.</p>
+  </section>
+
+  <section class="card">
+    <h2>Dev handoff</h2>
+    <h3>Web — the whole component</h3>
+    <div class="codewrap">
+      <pre id="csskit">/* THE LAW: one row, cap-tops on one line. line-height:1 everywhere, and each
+   satellite is pushed down by the difference between its cap offset and the
+   numeral's. --k is that offset per px of font-size, measured per family. */
+.dsp { display: inline-flex; align-items: flex-start; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  --k-num: .1164; --k-sat: .1164;                      /* Proxima Nova */
+  --dsp-numfam: 'Proxima Nova'; --dsp-numwt: 700; --dsp-ink: #0B0E12;
+  --dsp-per: var(--dsp-cur); }
+.dsp.primary { --dsp-numfam:'Urbane Rounded'; --dsp-numwt:600; --dsp-ink:#ED1C24;
+               --k-num: .1811; }
+.dsp > *, .dsp .was > * { display: block; line-height: 1; }
+
+.dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
+  font-size: var(--dsp-num); color: var(--dsp-ink); }
+.dsp .cur, .dsp .dec, .dsp .per { font-family: 'Proxima Nova'; font-weight: 700;
+  color: var(--dsp-ink); }
+.dsp .cur { font-size: var(--dsp-cur);
+  margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-cur)*var(--k-sat)); }
+.dsp .dec { font-size: var(--dsp-dec);
+  margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-dec)*var(--k-sat)); }
+.dsp .per { font-size: var(--dsp-per);
+  margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-per)*var(--k-sat)); }
+.dsp .was { display: inline-flex; align-items: flex-start; padding-right: 6px;
+  text-decoration: line-through;
+  margin-top: calc(var(--dsp-num)*var(--k-num) - var(--dsp-was)*var(--k-sat)); }
+.dsp .was > * { font: 600 var(--dsp-was)/1 'Proxima Nova'; color: #999; margin-top: 0; }
+
+/* size — font sizes only; the ramp's line-heights are Figma's, not the web's */
+.dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+.dsp.xxl  { --dsp-num:24px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+.dsp.xl   { --dsp-num:20px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+.dsp.lg   { --dsp-num:18px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+.dsp.md   { --dsp-num:15px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:12px; }
+.dsp.sm   { --dsp-num:14px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+.dsp.xs   { --dsp-num:12px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:8px;  }
+.dsp.xxs  { --dsp-num:10px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+.dsp.tertiary { --dsp-cur:8px; --dsp-dec:8px; --dsp-per:8px; }
+
+/* Arabic */
+.dsp.rtl { direction: rtl; --dsp-numfam:'Avenir Next World';
+           --k-num: .074; --k-sat: .074; }
+.dsp.rtl .num, .dsp.rtl .cur, .dsp.rtl .dec, .dsp.rtl .per, .dsp.rtl .was > * {
+  font-family: 'Avenir Next World'; }</pre>
+      <button class="copycode" data-copy="csskit">Copy</button>
+    </div>
+
+    <h3>Web — one call site</h3>
+    <div class="codewrap">
+      <pre id="jskit">// price(139.000) → the markup below. Slots are options, never string concatenation.
+function dsPrice(v, o = {}) {
+  const n = Math.abs(v), whole = Math.floor(n);
+  const dec = o.decimals === false ? '' : '.' + String(Math.round((n - whole) * 1000)).padStart(3, '0');
+  const cur = o.currency === false ? '' : `&lt;span class="cur"&gt;${o.cur || 'KD'}&lt;/span&gt;`;
+  const was = o.was ? `&lt;span class="was"&gt;&lt;span class="cur"&gt;${o.cur || 'KD'}&lt;/span&gt;` +
+      `&lt;span class="num"&gt;${Math.floor(o.was)}&lt;/span&gt;&lt;/span&gt;` : '';
+  const per = o.per ? `&lt;span class="per"&gt;${o.per}&lt;/span&gt;` : '';
+  const minus = o.minus ? '&lt;span class="minus"&gt;&minus;&lt;/span&gt;' : '';
+  return `&lt;span class="dsp ${o.type || 'secondary'} ${o.size || 'md'}"&gt;` +
+    `${minus}${was}${cur}&lt;span class="num"&gt;${whole}&lt;/span&gt;` +
+    `&lt;span class="dec"&gt;${dec}&lt;/span&gt;${per}&lt;/span&gt;`;
+}
+
+// the six checkout call sites become six option objects:
+dsPrice(q.total, { type:'primary', size:'xxxl', was:q.list })   // payment dock
+dsPrice(d.perMo, { type:'tertiary', size:'md', per:'/Month' })  // duration row
+dsPrice(m.price, { size:'md' })                                 // payment method</pre>
+      <button class="copycode" data-copy="jskit">Copy</button>
+    </div>
+
+    <h3>Native</h3>
+    <div class="codewrap">
+      <pre id="swiftkit">// Same trap as the web: .top aligns FRAMES and .firstTextBaseline aligns BASELINES.
+// Neither is the law. Align cap tops with an explicit guide.
+extension VerticalAlignment {
+    private enum CapTop: AlignmentID {
+        static func defaultValue(in d: ViewDimensions) -> CGFloat { d[.top] }
+    }
+    static let capTop = VerticalAlignment(CapTop.self)
+}
+
+// capOffset(for:) = (ascender − capHeight) × pointSize, from the UIFont metrics —
+// the native twin of the --k constants. Read it from the font, never hardcode it.
+func capOffset(_ font: UIFont) -> CGFloat {
+    (font.ascender - font.capHeight)
+}
+
+HStack(alignment: .capTop, spacing: 0) {
+    if let was { StrikePrice(was).padding(.trailing, 6) }
+    Text(verbatim: currency).font(.dsCurrency(size))
+        .alignmentGuide(.capTop) { _ in capOffset(.dsCurrency(size)) }
+    Text(verbatim: whole).font(.dsNumeral(size, type))
+        .alignmentGuide(.capTop) { _ in capOffset(.dsNumeral(size, type)) }
+    Text(verbatim: decimals).font(.dsDecimal(size))
+        .alignmentGuide(.capTop) { _ in capOffset(.dsDecimal(size)) }
+}
+.monospacedDigit()                       // see system/motion.html — counting numbers
+.foregroundStyle(type == .primary ? Color.dsRed : Color.dsInk)
+
+// Primary numeral = Urbane Rounded Demi Bold; Secondary/Tertiary = Proxima Nova Bold.
+// Arabic: one family for every part (Avenir Next World) — the layout direction
+// flips with the environment, the structure does not change.</pre>
+      <button class="copycode" data-copy="swiftkit">Copy</button>
+    </div>
+    <p class="meta">The SwiftUI above is the <b>specified</b> approach, not a compiled one —
+      this lane has no build. The web half is measured and shipping; a native lane adopting it
+      should verify the guide on device and send back the correction if
+      <code>ascender − capHeight</code> needs a descender term for the Arabic face.</p>
+    <p class="meta">A price that animates — the kcal-style count — takes
+      <code>.monospacedDigit()</code> and the counting rules from
+      <a href="motion.html" style="color:var(--red)">Motion</a>. A price never counts when the
+      <i>thing being priced</i> changes; it counts only when the same thing gets cheaper or dearer.</p>
+  </section>
+
+  <section class="card">
+    <h2>On Rashid&rsquo;s sheet</h2>
+    <p class="desc">Three things the Figma set says that look like drift rather than intent. Left
+      as-is and documented rather than &ldquo;fixed&rdquo; — they are his calls:</p>
+    <div class="flags">
+      <div class="ft">Not blocking anything — the component ships either way</div>
+      <ol>
+        <li><b>xs and xxs lose the size contrast.</b> At every step from xxxl down to sm the
+          numeral is larger than its currency. At <code>xs</code> both are 12px and at
+          <code>xxs</code> both are 10px, so the numeral stops leading and the row reads as flat
+          text. Either that is deliberate for the smallest labels, or the currency should drop a
+          step to 10 and 8.</li>
+        <li><b>The Decimal sub-component&rsquo;s own size is overridden everywhere.</b> Its
+          <code>Size</code> property is set to <code>lg</code> on xs and xxs but <code>md</code>
+          on lg/md/sm, and in every case the font size is overridden on the instance anyway. The
+          property currently carries no meaning — worth either wiring it to the ramp or removing
+          it, so the next person doesn&rsquo;t trust it.</li>
+        <li><b>Three type names describe positions, not roles.</b> <code>Secondary sm</code>,
+          <code>Secondary sm 2</code> and <code>Secondary L</code> sit beside a
+          <code>Size</code> property that already says sm and lg, and two of the three appear
+          only in the Arabic variants. This page documents them by what they do — struck
+          was-price, and the Arabic secondary pair — but the names will mislead a developer
+          reading the set cold.</li>
+      </ol>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+
+  /* ---- the ramp, values read from Figma set 3551:1926 ---- */
+  const RAMP = [
+    { g: 'Primary — Urbane Rounded, brand red' },
+    { sz: 'xxxl', t: 'primary', num: 30, lh: 19, cur: 15, dec: 15, use: 'The payment dock total' },
+    { sz: 'xxl',  t: 'primary', num: 24, lh: 14, cur: 15, dec: 15, use: 'Hero price on a plan page' },
+    { sz: 'xl',   t: 'primary', num: 20, lh: 14, cur: 14, dec: 14, use: 'Offer price in a promo card' },
+    { g: 'Secondary — Proxima Nova, ink' },
+    { sz: 'lg',   t: 'secondary', num: 18, lh: 28, cur: 14, dec: 14, use: 'Plan card price' },
+    { sz: 'md',   t: 'secondary', num: 15, lh: 22, cur: 12, dec: 12, use: 'Payment method row' },
+    { sz: 'sm',   t: 'secondary', num: 14, lh: 20, cur: 10, dec: 10, use: 'Line item in a summary' },
+    { sz: 'xs',   t: 'secondary', num: 12, lh: 16, cur: 12, dec: 12, use: 'Dense list row' },
+    { sz: 'xxs',  t: 'secondary', num: 10, lh: 16, cur: 10, dec: 10, use: 'Chip or badge' },
+    { g: 'Tertiary — the unit rate' },
+    { sz: 'md',   t: 'tertiary', num: 15, lh: 22, cur: 8, dec: 8, per: '/day', use: 'Per-day rate under a plan' }
+  ];
+  const ramp = document.getElementById('ramp');
+  ramp.insertAdjacentHTML('beforeend',
+    '<div class="r hd"><div>Size</div><div>Specimen</div><div>Numeral</div><div>Satellites</div></div>');
+  RAMP.forEach(r => {
+    if (r.g) { ramp.insertAdjacentHTML('beforeend', `<div class="grp">${r.g}</div>`); return; }
+    const per = r.per ? `<span class="per">${r.per}</span>` : '';
+    ramp.insertAdjacentHTML('beforeend',
+      `<div class="r"><div class="sz">${r.sz}</div>` +
+      `<div><span class="dsp ${r.t} ${r.sz}"><span class="cur">KD</span>` +
+      `<span class="num">139</span><span class="dec">.000</span>${per}</span></div>` +
+      `<div class="nums">${r.num}/${r.lh}</div>` +
+      `<div class="nums">${r.cur} · ${r.dec}</div></div>`);
+  });
+
+  /* ---- the builder ---- */
+  const SIZES = { primary: ['xxxl','xxl','xl'], secondary: ['lg','md','sm','xs','xxs'],
+                  tertiary: ['md'], struck: ['md'] };
+  const st = { type: 'primary', size: 'xxxl',
+               cur: true, dec: true, was: false, minus: false, per: false, rtl: false };
+  const el = document.getElementById('bprice');
+  const code = document.getElementById('bcode');
+  const note = document.getElementById('bnote');
+  const sizesWrap = document.getElementById('bsizes');
+
+  function drawSizes() {
+    sizesWrap.innerHTML = SIZES[st.type].map(s =>
+      `<button data-z="${s}" class="${s === st.size ? 'on' : ''}">${s}</button>`).join(' ');
+  }
+  function build() {
+    const CUR = st.rtl ? 'د.ك' : 'KD';
+    const parts = [];
+    if (st.minus) parts.push('<span class="minus">−</span>');
+    if (st.was) parts.push(`<span class="was"><span class="cur">${CUR}</span>` +
+      `<span class="num">159</span>${st.dec ? '<span class="dec">.000</span>' : ''}</span>`);
+    if (st.cur) parts.push(`<span class="cur">${CUR}</span>`);
+    parts.push('<span class="num">139</span>');
+    if (st.dec) parts.push('<span class="dec">.000</span>');
+    if (st.per) parts.push(`<span class="per">${st.rtl ? '/يوم' : '/day'}</span>`);
+    const cls = `dsp ${st.type} ${st.size}${st.rtl ? ' rtl' : ''}`;
+    el.className = cls;
+    el.innerHTML = parts.join('');
+    code.textContent = `<span class="${cls}">\n  ` +
+      parts.join('\n  ').replace(/</g, '<') + '\n</span>';
+    const t = st.type === 'primary' ? 'Urbane Rounded Demi Bold, brand red'
+      : st.type === 'tertiary' ? 'Proxima Nova Bold with 8px satellites'
+      : st.type === 'struck' ? 'Proxima Nova Semibold, struck — a was-price standing alone'
+      : 'Proxima Nova Bold, ink';
+    const on = ['cur','dec','was','minus','per'].filter(k => st[k]).length;
+    note.innerHTML = `<b style="color:var(--ink)">${st.type} · ${st.size}</b> — ${t}. ` +
+      `${on} slot${on === 1 ? '' : 's'} on${st.rtl ? ', Arabic' : ''}. ` +
+      `In Figma: Type=${st.type[0].toUpperCase() + st.type.slice(1)}, Size=${st.size}, ` +
+      `RTL=${st.rtl ? 'True' : 'False'}.`;
+  }
+  document.getElementById('bctl').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.t) {
+      st.type = b.dataset.t;
+      if (!SIZES[st.type].includes(st.size)) st.size = SIZES[st.type][0];
+      document.querySelectorAll('#bctl [data-t]').forEach(x =>
+        x.classList.toggle('on', x.dataset.t === st.type));
+      drawSizes();
+    } else if (b.dataset.z) {
+      st.size = b.dataset.z;
+      document.querySelectorAll('#bctl [data-z]').forEach(x =>
+        x.classList.toggle('on', x.dataset.z === st.size));
+    } else if (b.dataset.s) {
+      st[b.dataset.s] = !st[b.dataset.s];
+      b.classList.toggle('on', st[b.dataset.s]);
+      b.classList.toggle('off', !st[b.dataset.s]);
+    }
+    build();
+  });
+  drawSizes();
+  build();
+  window.__dsPrice = { state: st, build };
+})();
+</script>
+</body>
+</html>

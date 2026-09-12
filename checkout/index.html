@@ -153,13 +153,22 @@
     justify-content: center; flex: none; }
   .dur .dur-price { padding-right: 30px; }
   .dur.sel .dur-price { padding-right: 0; }
-  /* the price line, duration variant — same rule as the plan cards */
+  /* ---- DS price law — system/price.html ---------------------------------------
+     A price is ONE ROW and every part's cap top sits on ONE LINE. Note the
+     mechanism: line-height:1 puts a run's cap a fixed fraction OF ITS OWN
+     FONT-SIZE below its box top — so flex-start alone leaves the small parts
+     sitting high. Each satellite drops by  numeralSize*kNum − ownSize*kSat,
+     where k is that fraction, measured per family:
+       Urbane Rounded 600 .1811 · Proxima Nova 700 .1164 · Avenir Next World .074
+     `1em` inside a satellite resolves to its own size, so one rule covers a group. */
   .price-row { display: flex; align-items: flex-start; }
   .was { padding-right: 4px; font: 600 14px/1 'Proxima Nova', sans-serif;
     color: var(--muted); text-decoration: line-through; }
   .now-kd { padding-right: 1px; font: 700 14px/1 'Proxima Nova', sans-serif; color: var(--ink); }
   .now { font: 700 18px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  .now-dec { font: 700 12px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .now-dec { font: 700 14px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  /* numeral 18px Proxima → cap offset 18 × .1164 */
+  .was, .now-kd, .now-dec { margin-top: calc(18px * .1164 - 1em * .1164); }
   .per-mo { display: flex; font: 500 10px/16px 'Proxima Nova', sans-serif; color: var(--muted); }
   .dur-check { width: 20px; height: 20px; flex: none; opacity: 0; transform: scale(.6);
     transition: opacity .2s ease, transform .3s var(--ease); }
@@ -212,13 +221,15 @@
   /* the price line, dock variant — same rule again */
   .pb-line { display: flex; align-items: flex-start; }
   .pb-was { position: relative; padding-right: 4px;
-    font: 600 20px/1 'Proxima Nova', sans-serif; color: var(--red); }
+    font: 600 15px/1 'Proxima Nova', sans-serif; color: var(--red); }
   /* the crossing rule rides the number itself, so it tracks any price width */
   .pb-was .sl { position: absolute; left: -2px; right: 2px; top: 50%; height: 11px;
     margin-top: -5px; display: flex; align-items: center; pointer-events: none; }
   .pb-was .sl img { width: 100%; height: 1px; display: block; transform: rotate(-9.5deg); }
-  .pb-kd { padding-right: 1px; font: 700 20px/1 'Proxima Nova', sans-serif; color: var(--ink); }
+  .pb-kd { padding-right: 1px; font: 700 15px/1 'Proxima Nova', sans-serif; color: var(--ink); }
   .pb-now { font: 600 30px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+  /* numeral 30px Urbane → cap offset 30 × .1811 */
+  .pb-was, .pb-kd { margin-top: calc(30px * .1811 - 1em * .1164); }
   .pb-before { position: absolute; left: 0; top: -13px; pointer-events: none;
     font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
   .cta { flex: 1; min-width: 0; height: 54px; border: none; cursor: pointer;
@@ -260,7 +271,9 @@
   .pay-name .sv { color: var(--green); font-weight: 700; }
   .pay-price { flex: none; display: flex; align-items: flex-start;
     font: 700 15px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  .pay-price .kd { font-size: 12px; line-height: 1; padding-right: 1px; }
+  /* numeral 15px Proxima → cap offset 15 × .1164 */
+  .pay-price .kd { font-size: 12px; line-height: 1; padding-right: 1px;
+    margin-top: calc(15px * .1164 - 1em * .1164); }
   .pay-check { position: absolute; right: 11px; top: 50%; transform: translateY(-50%) scale(.6);
     width: 20px; height: 20px; opacity: 0; transition: opacity .2s ease, transform .3s var(--ease); }
   .pay-opt.sel .pay-check { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -483,8 +496,9 @@
     padding-top: 3px; flex: none; }
   /* THE PRICE LINE (Rashid, 2026-09-12): only the main figure is large; the
      struck price, the KD and the /mo all sit on one line, cap-top aligned with
-     it. line-height:1 puts every run's cap the same distance below its own box
-     top, so flex-start alignment lands them on a single optical line. */
+     it. line-height:1 puts every run's cap a fixed fraction of ITS OWN font-size
+     below its box top — so the offsets below are what actually lands them on a
+     single optical line; flex-start alone leaves the small parts high. */
   .pprice-row { position: relative; display: flex; align-items: flex-start; }
   .pw { padding-right: 4px; font: 600 15px/1 'Proxima Nova', sans-serif;
     color: var(--muted); text-decoration: line-through; }
@@ -493,6 +507,8 @@
   .pbig { font: 600 30px/1 'Urbane Rounded', sans-serif; color: transparent;
     background-clip: text; -webkit-background-clip: text; white-space: nowrap; }
   .pmo { font: 500 15px/1 'Proxima Nova', sans-serif; color: var(--muted); }
+  /* numeral 30px Urbane → cap offset 30 × .1811 */
+  .pw, .pkd, .pmo { margin-top: calc(30px * .1811 - 1em * .1164); }
   /* The crossing rule rides the struck number itself rather than a fixed
      offset — the price changes with every coupon, so a fixed rule drifts off
      it (it was cutting through the KD too). Same fix as the dock. */

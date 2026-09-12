@@ -419,6 +419,19 @@
     background: var(--ok-soft); color: var(--ok); }
   .motionpeek { position: relative; margin-top: 16px; height: 56px; border-radius: 14px;
     background: var(--ground); overflow: hidden; }
+  /* price card peek (Design System session) */
+  .pricepeek { position: relative; margin-top: 16px; height: 56px; border-radius: 14px;
+    background: var(--ground); overflow: hidden; display: flex;
+    align-items: center; justify-content: center; }
+  .pricepeek .pp { display: inline-flex; align-items: flex-start; color: #ED1C24;
+    font-variant-numeric: tabular-nums; }
+  .pricepeek .pp > span { display: block; line-height: 1; }
+  .pricepeek .pp .c { font: 700 14px/1 'Proxima Nova', sans-serif; margin-top: 3.4px;
+    padding-right: 1px; }
+  .pricepeek .pp .n { font: 600 28px/1 'Urbane Rounded', sans-serif; }
+  .pricepeek .pp .d { font: 700 14px/1 'Proxima Nova', sans-serif; margin-top: 3.4px; }
+  .pricepeek .rule { position: absolute; left: 50%; transform: translateX(-50%);
+    width: 156px; top: 19px; border-top: 1px dashed rgba(237,28,36,.55); }
   .motionpeek i { position: absolute; top: 20px; left: 18px; width: 16px; height: 16px;
     border-radius: 50%; background: var(--red); box-shadow: 0 3px 8px rgba(237,28,36,.4);
     animation: mpeek 2.4s cubic-bezier(.3,.8,.3,1) infinite alternate; }
@@ -899,7 +912,7 @@
         <h1>Design System</h1>
         <p>The shared materials every prototype builds on — dial them once
           here and every flow on every device follows.</p>
-        <div class="count" id="syscount">11 elements</div>
+        <div class="count" id="syscount">12 elements</div>
       </div>
       <div class="viewtog" role="group" aria-label="View">
         <button class="vt-cards on" aria-label="Card view"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.4" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -1087,6 +1100,26 @@
       </div>
       <p class="meta">Durations are part of the token &middot; Reanimated + SwiftUI mappings
         included.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Price</h2>
+        <span class="tag">Component &middot; 8 sizes</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">One big number and a row of smaller parts &mdash; currency, decimals, the
+        struck old price, <i>/day</i> &mdash; every one of them a switch. Every price in the
+        product is this component. Build one and take the markup.</p>
+      <div class="pricepeek" aria-hidden="true">
+        <div class="rule"></div>
+        <span class="pp"><span class="c">KD</span><span class="n">139</span><span class="d">.000</span></span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/price.html">Open Price</a>
+      </div>
+      <p class="meta">Read from the Figma Price set &middot; cap-top alignment, measured
+        &middot; checkout aligned.</p>
     </section>
 
     <section class="card">
