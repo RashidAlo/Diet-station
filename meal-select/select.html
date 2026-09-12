@@ -3322,7 +3322,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 196 (the exit mirrors the entry)';
+const BUILD = 'build 2026-09-12 · 197 (say why the close bailed)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4081,8 +4081,24 @@ if (QS.get('solo') === '1') {
     /* no twin on screen means there is no rect to interpolate and the web
        CSS owns the whole collapse — say so, so the caller leaves it alone */
     if (!el || !to || !SCRUB_TWIN || !nativeConfirmed || scrubHold) {
+      /* WHY IT BAILED, out loud. A close that declines to drive hands the
+         collapse to the web CSS — which in-shell is an element at opacity 0,
+         so NOTHING visibly travels and the tile simply appears at full size.
+         That is exactly the snap Rashid reported, and from outside it is
+         indistinguishable from a close that ran badly. Name the reason. */
+      try {
+        webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+          m: 'calmeals close BAIL el=' + !!el + ' to=' + !!to +
+             ' twin=' + SCRUB_TWIN + ' conf=' + nativeConfirmed +
+             ' hold=' + scrubHold });
+      } catch (_) {}
       closeRect = null; closeR = null; return false;
     }
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+        m: 'calmeals close START ms=' + ms + ' to=' + Math.round(to.w) + 'x' +
+           Math.round(to.h) });
+    } catch (_) {}
     var r = from || el.getBoundingClientRect();
     var f = { x: r.left, y: r.top, w: r.width, h: r.height };
     var t0 = 0;
