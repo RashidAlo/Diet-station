@@ -3027,7 +3027,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 171 (diagnostic: repaint probe, ?rpt=1)';
+const BUILD = 'build 2026-09-12 · 172 (the ball goes to nothing; no residue on the date)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3689,8 +3689,21 @@ if (QS.get('solo') === '1') {
          ease-in-out keeps the rect moving until it lands, so the frame it
          stops is the frame it is replaced — no parked state to notice. */
       var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-      closeRect = { left: f.x + (to.x - f.x) * e, top: f.y + (to.y - f.y) * e,
-        width: f.w + (to.w - f.w) * e, height: f.h + (to.h - f.h) * e };
+      var cw = f.w + (to.w - f.w) * e, ch = f.h + (to.h - f.h) * e;
+      var cx = f.x + (to.x - f.x) * e + cw / 2, cy = f.y + (to.y - f.y) * e + ch / 2;
+      /* AND THEN THE BALL GOES TO NOTHING. Taped: the collapse reaches a true
+         28.7x28.7 circle and holds it, and the renderer's removal fades that
+         circle out OVER the date label that has just un-hidden beneath it — a
+         pink dot sitting on the "0" of "30th" for ~150ms. Landing on the
+         label's own rect used to hide this, because a fading remnant coincided
+         exactly with the text; a ball lands in the middle of it instead.
+         So the last fifth of the close keeps the shape round and shrinks it to
+         a speck: it is unmistakably a ball at 0.8, and by 1.0 there is nothing
+         left for the fade to show. Same defect class as every other residue
+         tonight — something still on screen after its job is done. */
+      var k = p > 0.8 ? 1 - ((p - 0.8) / 0.2) * 0.88 : 1;
+      cw *= k; ch *= k;
+      closeRect = { left: cx - cw / 2, top: cy - ch / 2, width: cw, height: ch };
       if (p < 1) { closeRaf = requestAnimationFrame(tick); return; }
       /* LAND IN ONE FRAME, AND IN THIS ORDER. The DOM pill is handed back
          to plain-label geometry FIRST, and only then is the twin dropped,
