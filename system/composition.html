@@ -304,6 +304,45 @@
       never per surface. The web-only fallback pairing is part of the same ruling: every
       composited surface names what it becomes where there is no native twin. A surface without
       that pairing is not specified, it is half-specified.</p>
+
+    <h3>&hellip; and whether the native side consumes the touch</h3>
+    <p class="desc" style="font-size:13.5px">The other half of the same decision, and it is
+      <b>not</b> a blanket rule — it is blanket for one class of surface and actively wrong for
+      the other. <b>Every native surface states, per element, whether it consumes.</b> Never
+      leave it to the default: SwiftUI&rsquo;s default (hit-test only where there is interactive
+      content) is wrong for the first class, and &ldquo;consume because we drew it&rdquo; is
+      wrong for the second.</p>
+    <div class="lad">
+      <div class="r"><b>Native-owned chrome &mdash; consumes its whole silhouette</b>
+        <p>A bar, panel or control the shell draws entirely, with no web element beneath that
+          anyone needs to touch. <code>contentShape</code> over the whole silhouette plus a no-op
+          consumer, always. Without it the padding ring and rounded ends leak straight through —
+          Rashid: <i>&ldquo;sometimes it taps items underneath the tab bar.&rdquo;</i> Measured
+          A/B on one point: <b>56.5% of the screen changed without it</b> (a flow opened),
+          <b>0.5% with it</b>.</p></div>
+      <div class="r"><b>A twin &mdash; consumes if and only if the element beneath is inert</b>
+        <p><b>Page element INERT</b> (yields pixels and touches) &rArr; the twin <i>must</i> take
+          the tap and route it back to the page. It is the only thing there; if it doesn&rsquo;t
+          consume, the control is dead.<br>
+          <b>Page element VISUAL-ONLY</b> (keeps its gesture) &rArr; the twin must not hit-test
+          <i>at all</i> — <code>.allowsHitTesting(false)</code>, not a smaller contentShape. A
+          twin that consumes here silently steals a gesture the page is still listening for, and
+          the element goes inert while looking perfect. This is what the resting date tile
+          requires: the page owns arm-on-touch, so its twin is non-hit-testing by
+          construction.</p></div>
+    </div>
+    <div class="slab">
+      <div class="sl">Why this is load-bearing rather than pedantic</div>
+      <div class="sq">BOTH FAILURE MODES ARE INVISIBLE IN A SCREENSHOT.</div>
+      <div class="sb">A leaking bar looks perfect until a tap opens something behind it. A
+        gesture-stealing twin looks perfect until someone tries to use the control. Neither shows
+        up in the pixels, which is why both reached Rashid rather than being caught in
+        review.<br><br>
+        And the two columns are <b>one decision stated twice</b>: visual-only on the page side
+        and non-hit-testing on the native side must be decided together. Mark an element
+        visual-only while its twin consumes and the page&rsquo;s <code>pointer-events</code>
+        exception is pointless — the touch never reaches the webview to be excepted.</div>
+    </div>
   </section>
 
   <section class="card">
@@ -409,6 +448,10 @@ TWIN         yes / no — and if no, stop here
 DRAWS        who draws the content: native, or web. The same side must draw
              the glass AND the rows (failure 01) — there is no in-between
 WEB DOES     per element: visual-only / inert / keeps everything
+CONSUMES     per element, native side: whole silhouette (native-owned
+             chrome) / consumes (twin over an inert element) / does not
+             hit-test at all (twin over a visual-only element). Paired
+             with WEB DOES — one decision, stated twice
 FIELDS       every field, and EVERY construction and parse site — both
              relays, hub and pilot (failure 03)
 GEOMETRY     the shared rule both sides quote (never two derivations)
