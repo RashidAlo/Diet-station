@@ -342,6 +342,37 @@
       top .44s cubic-bezier(.32,1.2,.42,1),
       border-radius .44s cubic-bezier(.32,1.2,.42,1),
       background .34s ease, box-shadow .34s ease; }
+  /* ---- THE SQUARE'S EXIT MIRRORS ITS ENTRY (Rashid, 2026-09-12: "at the
+     scrubber's exit when it forms back into the square tile, make sure the
+     smoothness is there too — there's a snap into the square state. The
+     start of the animation and the end should all feel the same in terms of
+     rounding and turning it from a full width scrubber back to the tile") ----
+     The close above was written when the thing being returned to was a small
+     TEXT LABEL, and every number in it is wrong for a 52pt squircle:
+       top  --top-pad + 20  is the label's optical line, 11pt BELOW the tile's
+                            +9 — so the capsule sank 11pt on its way home
+       radius 22            neither the capsule's 26 nor the tile's 16, so the
+                            corner travelled to a third value and then jumped
+       .44s / (.32,1.2,.42,1)  a different duration AND curve from the entry's
+                            .48s / (.3,1.22,.36,1)
+     Same duration, same curve, and the geometry is the tile's own: entry and
+     exit are now the same move played in opposite directions. */
+  .nav.tile-mode .ttl.scrub.closing { width: 52px !important; height: 52px;
+    top: calc(var(--top-pad) + 9px); border-radius: 16px;
+    transition: width .48s cubic-bezier(.3,1.22,.36,1),
+      height .48s cubic-bezier(.3,1.22,.36,1),
+      top .48s cubic-bezier(.3,1.22,.36,1),
+      border-radius .48s cubic-bezier(.3,1.22,.36,1),
+      background .34s ease, box-shadow .34s ease; }
+  /* and NOT the plain date label on the way back. `.closing` fades #dayLabel
+     in, which in this variation is the wrong element entirely — the bare
+     "Mar 15th" text, which then gets replaced by the square's three rows the
+     moment deflate() restores .tile. In-shell it is invisible either way (the
+     web pill is hidden), so this only shows in a browser or an unconfirmed
+     shell — but a wrong element flashing is still a wrong element. The
+     container closes empty and the tile arrives with its own content. */
+  .nav.tile-mode .ttl.scrub.closing #dayLabel { display: none !important;
+    animation: none !important; }
   /* EXIT ORDER (Rashid: "the container should morph down, and the new date
      animates in"). Strictly SEQUENTIAL, never overlapping. Cross-fading
      the label over the dissolving ladder is what read as "it morphs into
@@ -2697,7 +2728,13 @@ confirmBtn.onclick = () => {
          a departure — which is the "glass blob that forms down, gets stuck,
          then disappears". The web label is held back until that lands, so
          the two never coexist. */
-      var CLOSE_MS = 270;
+      /* SAME DURATION AS THE ENTRY, for the square. 270 against the entry's
+         480 is nearly twice as fast, and "it snaps" is what a close that
+         outruns its own open feels like. The label variation keeps 270: it
+         returns to text, travels a far shorter distance, and 480 there reads
+         as sluggish. */
+      var isTileExit = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile');
+      var CLOSE_MS = isTileExit ? 480 : 270;
       /* the native close reports whether it is actually driving a twin.
          When it is, the DOM pill is shed by deflate() on the frame the
          capsule lands — it must never outlive the twin wearing its armed
@@ -2721,7 +2758,10 @@ confirmBtn.onclick = () => {
         y: formRect.y + formRect.h / 2 - ballD / 2, w: ballD, h: ballD };
       var native = (window.DSScrubClose && formRect)
         ? DSScrubClose(ball, CLOSE_MS, deflate, fromRect) : false;
-      closeT = setTimeout(deflate, native ? CLOSE_MS + 200 : 470);
+      /* the no-twin path is owned by the CSS collapse, so this watchdog has
+         to outlast it: .48s for the square, .44s for the label. */
+      closeT = setTimeout(deflate,
+        native ? CLOSE_MS + 200 : (isTileExit ? 510 : 470));
     } else {
       deflate();                        /* never armed: nothing to collapse */
     }
@@ -3282,7 +3322,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 195 (one el builder, rest and track)';
+const BUILD = 'build 2026-09-12 · 196 (the exit mirrors the entry)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3795,7 +3835,13 @@ if (QS.get('solo') === '1') {
     var e = { id: 'scrub', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
       /* fully round for every frame of the close, so the capsule rounds off
          into a ball instead of staying a rounded rectangle that shrinks */
-      r: closeRect ? Math.min(r.width, r.height) / 2 : radiusOf(el, r),
+      /* during the close the radius comes from the interpolator too, not
+         from the element: closeR travels the capsule's 26 down to the tile's
+         16 so the corner ARRIVES rounded correctly instead of landing fully
+         round and being swapped. Null keeps the old ball behaviour, which is
+         still what the glass variation wants. */
+      r: closeRect ? (closeR != null ? closeR
+            : Math.min(r.width, r.height) / 2) : radiusOf(el, r),
       /* a CONSTANT, not a switch — see the note above. Both surviving
          variations wear the same glass; they differ in SIZE, which the
          renderer reads from the rect's height, not from this key. */
@@ -4002,7 +4048,7 @@ if (QS.get('solo') === '1') {
     if (closeRaf) return;
     scrubHold = true;
     clearTimeout(scrubFbT);
-    closeRect = null;
+    closeRect = null; closeR = null;
     cancelAnimationFrame(closeRaf);
     report();
   };
@@ -4019,7 +4065,7 @@ if (QS.get('solo') === '1') {
      omits the el. The renderer does nothing new; it follows rects, as it
      has all along. One layer exists at every instant, because only one is
      ever created. */
-  var closeRaf = null, closeRect = null;
+  var closeRaf = null, closeRect = null, closeR = null;
   /* `from` is passed in by the caller, measured BEFORE .closing is applied.
      It cannot be measured here. .closing sets width with !important while
      height is left normal, so the class beats the inline width the morph
@@ -4035,11 +4081,20 @@ if (QS.get('solo') === '1') {
     /* no twin on screen means there is no rect to interpolate and the web
        CSS owns the whole collapse — say so, so the caller leaves it alone */
     if (!el || !to || !SCRUB_TWIN || !nativeConfirmed || scrubHold) {
-      closeRect = null; return false;
+      closeRect = null; closeR = null; return false;
     }
     var r = from || el.getBoundingClientRect();
     var f = { x: r.left, y: r.top, w: r.width, h: r.height };
     var t0 = 0;
+    /* THE SQUARE CLOSES AS A SQUARE, THE LABEL CLOSES AS A BALL. Everything
+       below about rounding off and shrinking to a speck exists because the
+       label variation returns to TEXT: a round remnant fading over the digits
+       is the residue it was built to avoid. The square returns to a 52pt
+       squircle that exactly covers the capsule's landing footprint, so there
+       is no residue to hide — and both tricks actively hurt there, because a
+       shape that goes fully round and then vanishes has to be replaced by the
+       tile rather than becoming it. That replacement IS the snap. */
+    var isTile = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile');
     var tick = function (now) {
       if (!t0) t0 = now;
       var p = Math.min(1, (now - t0) / ms);
@@ -4067,9 +4122,13 @@ if (QS.get('solo') === '1') {
          faintly visible on the "3" of "30th" for two frames. At 0.97 the ball
          finishes under a point across — nothing to see, and the shape is still
          unmistakably round from p=0.8 onward, which is the part that reads. */
-      var k = p > 0.8 ? 1 - ((p - 0.8) / 0.2) * 0.97 : 1;
+      var k = (!isTile && p > 0.8) ? 1 - ((p - 0.8) / 0.2) * 0.97 : 1;
       cw *= k; ch *= k;
       closeRect = { left: cx - cw / 2, top: cy - ch / 2, width: cw, height: ch };
+      /* the corner travels with the size: 26 (armed capsule) -> 16 (tile), on
+         the same eased progress as the rect, so width and rounding land on the
+         same frame. The label variation keeps the fully-round stream. */
+      closeR = isTile ? 26 + (16 - 26) * e : null;
       if (p < 1) { closeRaf = requestAnimationFrame(tick); return; }
       /* LAND IN ONE FRAME, AND IN THIS ORDER. The DOM pill is handed back
          to plain-label geometry FIRST, and only then is the twin dropped,
@@ -4081,7 +4140,7 @@ if (QS.get('solo') === '1') {
          never the native layer; it was this one, un-hidden too early. */
       closeRaf = null;
       if (done) done();
-      closeRect = null; scrubHold = true;
+      closeRect = null; closeR = null; scrubHold = true;
       report();
     };
     closeRaf = requestAnimationFrame(tick);
