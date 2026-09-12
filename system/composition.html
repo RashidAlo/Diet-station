@@ -811,6 +811,12 @@ EVIDENCE     what measurement, on which surface, on a build in Rashid's
       small deliberate difference in the output is the cheapest instrument for telling which one
       did. The page-side <code>TILE_NATIVE_PROVEN</code> remains as an emergency brake — flip it
       false and the date is readable again in one deploy, no install.</p>
+    <p class="meta"><b style="color:var(--ink)">The contract and the brake are not redundant, and
+      one is not a reason to delete the other.</b> A versioned cap protects against a build that
+      <i>announces</i> what it cannot do. It does nothing about a capability that is correctly
+      announced and then <i>breaks</i> — a regression inside a shipped renderer — which is what
+      the flag closes, in one page-side line, with no build and no wait.
+      <b>The contract prevents the lie; the flag survives the mistake.</b> Keep both.</p>
   </section>
 
 </div>
