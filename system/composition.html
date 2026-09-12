@@ -291,6 +291,68 @@
       renderer. Put the guard where the evidence is.</p>
   </section>
 
+  <section class="card" id="ruling-slots" style="scroll-margin-top:80px">
+    <h2>Ruling 2 — the date widget is one component, and it declares its slot count</h2>
+    <p class="desc">First surface ruled <i>before</i> it was built, which is what the charter
+      exists for. Rashid&rsquo;s outcome — <i>&ldquo;make them one true native
+      component&rdquo;</i> — was already settled; what came here was the <b>shape</b>. The page
+      reported one element as two ids (<code>tile</code> and <code>scrub</code>) with two
+      renderers, and the shell&rsquo;s own log showed the handover as a swap. Mitigating a swap
+      is not removing one.</p>
+    <p class="desc" style="font-size:13.5px">Two candidate shapes were put up. <b>A:</b> make
+      <code>scrub</code> the single component and express the resting square as a one-slot ladder
+      in the vocabulary the shell already parses — eight empty slots, <code>center 4.0</code> —
+      needing no new field. <b>B:</b> carry an explicit <code>slots: 1|9</code> and have the
+      renderer size from it rather than from the width.</p>
+    <div class="slab">
+      <div class="sl">Ruling</div>
+      <div class="sq">SHAPE B. THE ELEMENT DECLARES ITS SLOT COUNT; THE RENDERER NEVER INFERS IT.</div>
+      <div class="sb">
+        <b style="color:#f5f5f7">1 &middot; A already means something else.</b> The element
+        contract states that <code>''</code> is <i>legitimate</i> — the day-status map only
+        arrives from the parent calendar frame, so a direct page load has none. Shape A makes
+        eight empty slots <i>also</i> mean &ldquo;resting, one slot&rdquo;. One wire value, two
+        meanings, and a receiver that cannot tell &ldquo;I am at rest&rdquo; from &ldquo;I have no
+        data&rdquo;. That is failure 02&rsquo;s family, arriving by a different door.<br><br>
+        <b style="color:#f5f5f7">2 &middot; A makes the renderer read a mode off animated
+        geometry.</b> The morph runs 52&rarr;370 continuously. Inferring slot count from width
+        means choosing a threshold and sampling it on <i>every tracked frame</i> — which is
+        failure 10 exactly, and failure 10 has already cost this very surface a round. A declared
+        <code>slots</code> lets the <b>sender</b> latch the decision, which is what that rule
+        asks for.<br><br>
+        <b style="color:#f5f5f7">3 &middot; &ldquo;No new field&rdquo; is worth least right
+        now.</b> A cap bump is already in this diff. A field added alongside it costs one line in
+        two parses; the same field added later costs a migration. The one moment a field is
+        nearly free is the moment the version is moving anyway.<br><br>
+        <b style="color:#f5f5f7">Carry it as a count, not a flag.</b> <code>slots: 1</code> and
+        <code>slots: 9</code> extend to a five-slot week without a protocol change;
+        <code>isResting: true</code> does not, and would need the same argument again.</div>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">Everything else in that spec stands.</b> One id
+      across both states; native draws glass and content in every state; the web element
+      visual-only, keeping the gesture that arms the scrubber; the ladder vocabulary in every
+      post, rest and track; height and top fixed with only width and radius moving, from one
+      formula quoted by both sides. The migration is right too — while
+      <code>caps.dateWidget</code> is absent the page keeps today&rsquo;s two-id behaviour, so
+      there is no window in which the date goes missing again.</p>
+    <p class="meta"><b style="color:var(--red)">One correction to the spec, and it is yesterday&rsquo;s
+      lesson one day old.</b> The material line reads &ldquo;<code>.34</code> tint &hellip; inside
+      the 0.07&ndash;0.2 band&rdquo;. Those are not the same quantity.
+      <code>rgba(255,255,255,.34)</code> is a <b>CSS background alpha</b> — the opacity of a white
+      layer over what is behind it. <code>tintOpacity</code> is a <b>shader mix factor</b>:
+      <code>mix(color.rgb, gradientTint, u_tintOpacity)</code>, which blends the refracted colour
+      toward a tint and does not touch alpha at all. The band governs the second and says nothing
+      about the first. The material is unchanged either way, so nothing is blocked — but the two
+      numbers must not be compared, and a spec that compares them will be built against.
+      <b>A number without its scope is an opinion with a decimal point in it</b>, and this is what
+      that looks like when it reaches a spec instead of a page.</p>
+    <p class="meta">On the evidence line: it asks for a measurement on the pilot on an installed
+      build, which is <i>more</i> than Ruling 1 clause 5 requires — and correctly so. The cap
+      makes the inference about <b>capability</b> sound without a per-build measurement; the first
+      measurement of a <b>new renderer</b> establishes that it draws at all. Different claims,
+      both worth having, and only the first is replaced by the version.</p>
+  </section>
+
   <section class="card">
     <h2>What the web does underneath a twin</h2>
     <p class="desc">Three options, and picking the wrong one is failures 01 and 03. The choice
