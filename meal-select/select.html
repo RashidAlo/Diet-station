@@ -1460,7 +1460,13 @@ const CATS = [
   { id: 'snacks', title: 'Snacks', quota: 1 },
   { id: 'dessert', title: 'Dessert', quota: 0 },
 ];
-const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add' };
+const MODS = { idle: 2.0, target: 1860, confetti: 14, tapMode: 'add',
+  /* the date scrubber's resting presentation. 'tile' is the house default
+     from 2026-09-12 (Rashid): the date sits in a rounded square on the
+     buttons' own material, and THAT square is what morphs open into the
+     scrubber and back. 'glass' and 'portal' stay available in the
+     triple-tap menu and via ?scrub=. */
+  scrubStyle: 'tile' };
 /* primer settings from the app launcher (hub Settings sheet) */
 try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}')); } catch (_) {}
 /* headless A/B primer: ?scrub=portal|glass seeds the scrubber mode so lane
@@ -3090,7 +3096,7 @@ document.querySelectorAll('#scrubSeg button').forEach(b =>
     syncTileMode();          /* the resting presentation changes with it */
   });
 document.querySelectorAll('#scrubSeg button').forEach(x =>   /* primer sync */
-  x.classList.toggle('on', x.dataset.v === (MODS.scrubStyle || 'glass')));
+  x.classList.toggle('on', x.dataset.v === (MODS.scrubStyle || 'tile')));
 document.getElementById('tapMode').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODS.tapMode = b.dataset.mode;
@@ -3262,7 +3268,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 183 (the bounce the reporter can see)';
+const BUILD = 'build 2026-09-12 · 184 (the square is the default now)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
