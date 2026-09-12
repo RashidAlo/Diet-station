@@ -2146,16 +2146,21 @@ addEventListener('message', e => {
        then dismisses. ADDRESSED, never broadcast — the same source check as
        ds-close, so a grandchild's message can't be delivered to an opener
        that never asked it anything. `from` is what the HUB knows the
-       posting frame to be, not what the message claims to be. */
-    if (!src) return;
+       posting frame to be, not what the message claims to be.
+       NOBODY ASKED = NO-OP, not a close. A flow the hub itself presented
+       (from a card) has no opener, and rewards will post a result on every
+       rip once it learns how — dismissing the sheet for a lab visitor just
+       browsing coupons would be a bug, not a feature. It closes only if it
+       ALSO asks to, so the pop is the delivery's consequence, not the
+       message's: no delivery, no pop. */
+    if (!src || !src.opener) return;
     const to = src.opener;
-    if (to && to.frame.contentWindow) {
-      try {
-        to.frame.contentWindow.postMessage(
-          { t: 'ds-result', from: src.id || d.from || null, payload: d.payload }, '*');
-      } catch (_) {}
-    }
-    popFlow(src);                           /* answered or not, it closes */
+    if (!to.frame.contentWindow) return;    /* opener already gone */
+    try {
+      to.frame.contentWindow.postMessage(
+        { t: 'ds-result', from: src.id || d.from || null, payload: d.payload }, '*');
+    } catch (_) { return; }
+    popFlow(src);
   } else if (d.t === 'ds-nav') {
     const f = (NAV_FLOWS || []).find(x => x.id === d.to);
     if (!f || flowHiddenNow(f)) { showUnbuilt(d.to, f); return; }
