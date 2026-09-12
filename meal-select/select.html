@@ -3334,7 +3334,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 202 (native tile proven on the pilot surface)';
+const BUILD = 'build 2026-09-13 · 203 (the cap cannot tell 48 from 49 — closed again)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3729,7 +3729,23 @@ if (QS.get('solo') === '1') {
      Flip this back to false the moment a row goes missing again — that is
      cheaper than any re-diagnosis, and it is page-side so it costs no
      install. ?tilenative=1 still forces the handover for lane verification. */
-  var TILE_NATIVE_PROVEN = true;
+  /* CLOSED AGAIN, AND ·202 WAS MY MISTAKE. I measured the native rows on
+     build 49 and flipped this true — but `caps.tileRows` is announced by 48
+     TOO (both confirm sites got it in the same edit, before 49 existed), and
+     Rashid's last screenshot was 48. So with this true, anyone still on 48
+     hands the tile over to a relay that drops `date` and `status`, and the
+     number vanishes a FOURTH time. I re-opened the exact hole the gate exists
+     to close, one message after closing it.
+     THE CAP CANNOT DISTINGUISH A BUILD THAT ANNOUNCES THE CAPABILITY FROM ONE
+     THAT HAS IT. 48 and 49 are indistinguishable from here, so no measurement
+     on 49 can license the handover for a user who may be on 48.
+     TO RE-ENABLE: the shell must announce something only the FIXED relay can
+     send — a distinct key or a version (`caps.tileRows >= 2`) added in the
+     same commit as the parse fix, so announcing it and having it cannot come
+     apart. Then this flips on a signal that is evidence rather than a promise
+     about which build you are on. Asked for; ?tilenative=1 still forces the
+     handover meanwhile. */
+  var TILE_NATIVE_PROVEN = false;
   /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
      he actually has. The flag above is meant to be flipped on evidence, and
      with it false the page never sends `tile` — which left the Shell lane with
