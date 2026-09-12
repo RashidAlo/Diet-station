@@ -3282,7 +3282,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-12 · 194 (the square must still feel the finger)';
+const BUILD = 'build 2026-09-12 · 195 (one el builder, rest and track)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3856,14 +3856,43 @@ if (QS.get('solo') === '1') {
     clearTimeout(restoreT);
     restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
     var off = frameOffset();
+    var els = chromeEls(off);
+    var se = scrubEl(off, frac);
+    if (se) els.push(se);
+    try {
+      var msg = { t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: currentMode(), els: els };
+      /* instant: apply the WHOLE post with animation disabled (Shell). An
+         omitted el is torn down on that frame instead of springing away,
+         which is the only way to guarantee one glass per frame at a
+         handover. Scope is the whole post, so only send it where nothing
+         else is meant to animate to new geometry. */
+      if (instant) msg.instant = true;
+      webkit.messageHandlers.ds.postMessage(msg);
+    } catch (_) {}
+  }
+  /* ONE BUILDER FOR EVERY POST, REST AND TRACK ALIKE.
+     These were two separate loops: report() built the full entry and
+     postTrack() rebuilt a bare { id, x, y, w, h }. So every scroll frame
+     stripped the corner radius, the dual's check state, and — once ·191 added
+     them — the TILE'S THREE ROWS, leaving the renderer to cache or re-derive
+     what the page had stopped sending. Shell defends against exactly this
+     ("the rebuild law"), and the page should not need them to: a payload that
+     is complete at rest and partial in motion makes the twin's correctness
+     depend on which post it last heard.
+     If a field belongs to an el, it belongs in every post about that el. */
+  function chromeEls(off) {
     var els = [];
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (!el) return;
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      var entry = { id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-        r: radiusOf(el, r) };
+      /* protocol v2 (Home lane): w/h on every frame so twins can ride live
+         SIZE changes, not just position — and `r` with them, because the
+         radius travels too (tile 16 -> capsule 26) */
+      var entry = { id: id, x: r.left + off.x, y: r.top + off.y,
+        w: r.width, h: r.height, r: radiusOf(el, r) };
       /* stateful glyphs: the twin must mirror the web state exactly —
          the dual's check is gray until the day completes, then red-trims */
       if (id === 'dual') entry.on = !!(confirmBtn && confirmBtn.classList.contains('on'));
@@ -3881,19 +3910,7 @@ if (QS.get('solo') === '1') {
       }
       els.push(entry);
     });
-    var se = scrubEl(off, frac);
-    if (se) els.push(se);
-    try {
-      var msg = { t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: currentMode(), els: els };
-      /* instant: apply the WHOLE post with animation disabled (Shell). An
-         omitted el is torn down on that frame instead of springing away,
-         which is the only way to guarantee one glass per frame at a
-         handover. Scope is the whole post, so only send it where nothing
-         else is meant to animate to new geometry. */
-      if (instant) msg.instant = true;
-      webkit.messageHandlers.ds.postMessage(msg);
-    } catch (_) {}
+    return els;
   }
   function clearChrome() {
     try {
@@ -4246,16 +4263,7 @@ if (QS.get('solo') === '1') {
     trackRaf = null;
     if (layerUp) return;
     var off = frameOffset();
-    var els = [];
-    Object.keys(ELS).forEach(function (id) {
-      var el = document.querySelector(ELS[id]);
-      if (!el) return;
-      var r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return;
-      /* protocol v2 (Home lane): track frames carry w/h so twins can
-         ride live SIZE changes (the scrub grow morph), not just position */
-      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height });
-    });
+    var els = chromeEls(off);   /* same builder as the rest post — see chromeEls */
     var se = scrubEl(off, true);   /* track frames carry the FRACTIONAL center */
     if (se) els.push(se);
     if (!els.length) return;
