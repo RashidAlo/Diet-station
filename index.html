@@ -2120,9 +2120,14 @@ function presentFlow(f, present, context, from, opener) {
     const top = flowStack[flowStack.length - 1];
     top.frame.src = url;                    /* instant swap, no animation */
     top.id = f.id;
-    /* the slot keeps its opener: a tab swap replaces the occupant, not the
-       frame that summoned it (and a flow that swaps ITSELF away has no one
-       left to answer — its opener was the hub, i.e. null) */
+    /* AN OPENER IS CREATED ONLY BY A ds-nav THAT PRESENTS A FLOW ON TOP OF
+       THE OPENER (sheet/push). A swap is navigation, not summoning: nobody
+       asked the new occupant a question, so it inherits nobody to answer.
+       Keeping it would reintroduce the very bug the no-opener rule fixed —
+       a flow the user merely NAVIGATED to could post something
+       result-shaped, get a successful delivery, and dismiss itself under
+       them (Coordinator's ruling, 2026-09-12). */
+    top.opener = null;
     return;
   }
   const fr = document.createElement('iframe');
