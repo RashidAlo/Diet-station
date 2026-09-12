@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 210 (sized arrays and a slot count, per DS ruling 2)';
+const BUILD = 'build 2026-09-13 · 211 (the receipt reports every cap it read)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4174,9 +4174,17 @@ if (QS.get('solo') === '1') {
        class: the value, its type, and the verdict, in the log.  */
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-        m: 'calmeals caps.tileRows=' + (caps ? JSON.stringify(caps.tileRows) : 'no-caps') +
+        m: 'calmeals caps tileRows=' + (caps ? JSON.stringify(caps.tileRows) : 'no-caps') +
+           ' dateWidget=' + (caps ? JSON.stringify(caps.dateWidget) : 'no-caps') +
            ' proven=' + TILE_NATIVE_PROVEN +
-           ' -> tileNative=' + !!(TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) });
+           ' -> tileNative=' + !!(TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) +
+           ' dateWidgetNative=' + !!(caps && caps.dateWidget >= 1) +
+           ' r=' + (function () {
+             try {
+               var t = document.querySelector('.nav .ttl');
+               return t ? radiusOf(t, t.getBoundingClientRect()) : '?';
+             } catch (_) { return '?'; }
+           })() });
     } catch (_) {}
     /* the tile's rows are a capability, not an assumption — see tileNative.
        HAND OVER ON THE CAP, NOT ON THE NEXT ORGANIC REPORT. The confirm that
