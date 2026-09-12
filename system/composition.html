@@ -328,6 +328,42 @@
         <code>slots: 9</code> extend to a five-slot week without a protocol change;
         <code>isResting: true</code> does not, and would need the same argument again.</div>
     </div>
+    <h3>The shape, as the Shell lane specified it</h3>
+    <p class="desc" style="font-size:13.5px">Three clauses, and the third improves the ruling
+      rather than implementing it — my version fixed the mode-inference problem and left the
+      <code>''</code> overload only half-solved.</p>
+    <div class="lad">
+      <div class="r"><b>1 &middot; <code>slots</code> is an integer count, not an enum</b>
+        <p>1 and 9 are today&rsquo;s values; the renderer must not assume they are the only two,
+          and lays out exactly <code>slots</code> slots. <b>No thresholds anywhere.</b></p></div>
+      <div class="r"><b>2 &middot; Carried in the shape of both posts, always populated</b>
+        <p>Not because it changes during a morph — it changes at <i>arm</i>, 1&rarr;9, before the
+          width travels — but because a field present in one post&rsquo;s shape and absent from
+          the other&rsquo;s is exactly the drift that cost the radius, the stateful
+          <code>on</code>, and the tile&rsquo;s rows (failure 04). Receiver rule:
+          <b>absent means &ldquo;unchanged&rdquo;, never a default</b>, so an older page keeps
+          working and a dropped key cannot silently reset the layout.</p></div>
+      <div class="r"><b>3 &middot; The arrays are sized to <code>slots</code></b>
+        <p><code>dates</code>, <code>dayNames</code> and <code>statuses</code> have length ==
+          <code>slots</code>, and <code>center</code> indexes within that array — so at rest they
+          are <i>one-element</i> arrays with <code>center: 0</code>, not nine-element arrays with
+          eight empties.<br>
+          <b>This is what actually retires the <code>''</code> objection.</b> With fixed-nine
+          arrays, <code>''</code> would still carry both &ldquo;no day-status map&rdquo; and
+          &ldquo;not a real slot&rdquo; — now with a <code>slots</code> field standing beside it
+          rather than instead of it. Sized arrays leave <code>''</code> meaning exactly one thing
+          again, which is what the objection was about.</p></div>
+    </div>
+    <p class="meta"><b style="color:var(--ink)">Two renderer changes clause 3 forces</b>, named
+      here so the page lane knows what moves underneath it and so they are tracked rather than
+      discovered: the opacity ladder is a fixed nine-long table indexed by <i>absolute</i> index —
+      at length 1 it would draw the resting numeral at 15% opacity — and the size taper is
+      hardcoded around index 4. Both become <b>distance from centre</b>, and both land in the same
+      diff as <code>caps.dateWidget</code>.<br>
+      <b>Neither is visible in the nine-slot case</b>, which is precisely why they would have
+      shipped broken had the arrays stayed fixed-length. A ruling that only changed the wire
+      format would have hidden them; sizing the arrays surfaced them before anyone built.</p>
+
     <p class="meta"><b style="color:var(--ink)">Everything else in that spec stands.</b> One id
       across both states; native draws glass and content in every state; the web element
       visual-only, keeping the gesture that arms the scrubber; the ladder vocabulary in every
@@ -507,6 +543,24 @@ date, status: String?    the numeral and the chip
           (<code>rgba(255,255,255,.34)</code>, <code>blur(12px) saturate(1.6)</code>) and it
           still read flat. <b>Native, or accept that it reads as a panel</b> — do not spend
           iterations closing that gap.</p></div>
+    </div>
+    <div class="slab">
+      <div class="sl">Three quantities, not one band</div>
+      <div class="sq">&ldquo;TINT&rdquo; NAMES THREE DIFFERENT NUMBERS ON THIS PROJECT. A TABLE
+        OF THEM NEEDS THREE COLUMNS.</div>
+      <div class="sb">
+        <b style="color:#f5f5f7">CSS background alpha</b> — <code>rgba(255,255,255,.34)</code>,
+        the opacity of a white layer over what is behind it.<br>
+        <b style="color:#f5f5f7">Shader mix factor</b> — <code>tintOpacity</code>, used as
+        <code>mix(color.rgb, gradientTint, u_tintOpacity)</code>; it blends the refracted colour
+        and never touches alpha. <b>This is the quantity the 0.07&ndash;0.2 band governs</b>, and
+        it says nothing about the other two.<br>
+        <b style="color:#f5f5f7">SwiftUI tint colour</b> —
+        <code>.tint(.white.opacity(x))</code> handed to Apple&rsquo;s material; neither an alpha
+        over a background nor a mix factor.<br><br>
+        A spec that puts a number from one column inside another column&rsquo;s range will be
+        implemented against. This was caught once in a page and once in a spec on consecutive
+        days — the second time by comparing <code>.34</code> to the band.</div>
     </div>
   </section>
 
