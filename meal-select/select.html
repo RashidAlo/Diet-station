@@ -3353,7 +3353,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 209 (one element, rest and armed, behind the cap)';
+const BUILD = 'build 2026-09-13 · 210 (sized arrays and a slot count, per DS ruling 2)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3984,18 +3984,26 @@ if (QS.get('solo') === '1') {
       w: r.width, h: r.height, r: radiusOf(el, r), mode: 'glass' };
     try {
       var td = dateFor(typeof dayIdx === 'number' ? dayIdx : 0);
-      var dd = [], dn = [], st = [];
-      for (var k = 0; k < 9; k++) { dd.push(''); dn.push(''); st.push(''); }
-      dd[4] = String(td.getDate());
-      dn[4] = td.toLocaleDateString('en', { weekday: 'short' });
-      st[4] = DAY_STATUS[td.getDate() + ':' + td.getMonth()] || '';
-      e.dates = dd; e.dayNames = dn; e.statuses = st;
-      e.center = 4;                       /* the populated slot, dead centre */
-      e.dayName = dn[4];
+      /* SIZED ARRAYS, NOT NINE WITH EIGHT EMPTIES — Design System ruling 2,
+         and it corrects what I built in ·209 from Shell's feasibility answer.
+         `''` ALREADY MEANS "no day-status map for this day"; reusing it to
+         mean "not a real slot" gives one wire value two meanings, and the bug
+         that produces stays invisible until a day legitimately has no status.
+         So the arrays are length `slots` and `center` indexes within them. */
+      e.dates    = [String(td.getDate())];
+      e.dayNames = [td.toLocaleDateString('en', { weekday: 'short' })];
+      e.statuses = [DAY_STATUS[td.getDate() + ':' + td.getMonth()] || ''];
+      e.center   = 0;                     /* the only slot */
+      e.dayName  = e.dayNames[0];
       e.monthLabel = MONS[td.getMonth()];
       /* no `from`: there is nothing to spring out of at rest, and sending an
          origin would ask the renderer to animate a state it is simply in. */
     } catch (_) {}
+    /* DERIVED, never written twice. `slots` and the array lengths are the
+       same fact, so taking it from the array means a post cannot claim a
+       count its arrays don't have — the rebuild law applied to one el's
+       internal consistency rather than across posts. */
+    if (e.dates) e.slots = e.dates.length;
     return e;
   }
   function scrubEl(off, frac) {
@@ -4038,6 +4046,12 @@ if (QS.get('solo') === '1') {
       e.monthLabel = st.monthLabel;
       e.dayName = st.dayName;
     }
+    /* `slots` is in the shape of EVERY post, rest and armed alike (DS ruling
+       2), and derived from the array rather than written a second time — a
+       post cannot claim a count its arrays don't have. Armed this is 9;
+       resting dateEl() sends 1. Absent means UNCHANGED on the shell side,
+       never a default, so a page mid-deploy breaks nothing. */
+    if (e.dates) e.slots = e.dates.length;
     return e;
   }
   /* THE REPORTED RADIUS IS IN POINTS, ALWAYS (Shell, 2026-09-11: the twin
