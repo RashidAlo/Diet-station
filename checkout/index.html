@@ -153,22 +153,61 @@
     justify-content: center; flex: none; }
   .dur .dur-price { padding-right: 30px; }
   .dur.sel .dur-price { padding-right: 0; }
-  /* ---- DS price law — system/price.html ---------------------------------------
-     A price is ONE ROW and every part's cap top sits on ONE LINE. Note the
-     mechanism: line-height:1 puts a run's cap a fixed fraction OF ITS OWN
-     FONT-SIZE below its box top — so flex-start alone leaves the small parts
-     sitting high. Each satellite drops by  numeralSize*kNum − ownSize*kSat,
-     where k is that fraction, measured per family:
-       Urbane Rounded 600 .1811 · Proxima Nova 700 .1164 · Avenir Next World .074
-     `1em` inside a satellite resolves to its own size, so one rule covers a group. */
-  .price-row { display: flex; align-items: flex-start; }
-  .was { padding-right: 4px; font: 600 14px/1 'Proxima Nova', sans-serif;
-    color: var(--muted); text-decoration: line-through; }
-  .now-kd { padding-right: 1px; font: 700 14px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  .now { font: 700 18px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  .now-dec { font: 700 14px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  /* numeral 18px Proxima → cap offset 18 × .1164 */
-  .was, .now-kd, .now-dec { margin-top: calc(18px * .1164 - 1em * .1164); }
+  /* ============ DS PRICE COMPONENT — vendored from /system/price.html ==========
+     The law is CAP-TOP alignment: every part's first painted pixel on one line.
+     The component owns the row, the sizes and the alignment; PAINT IS
+     CONFIGURATION — set it through the tokens below, per instance. Vendored
+     rather than linked because a flow folder is self-contained; re-copy from
+     the system page when it changes. */
+  .dsp { display: inline-flex; align-items: flex-start; white-space: nowrap; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; --k-num: .1164; --k-sat: .1164; /* Proxima Nova */ --dsp-numfam: 'Proxima Nova', sans-serif; --dsp-numwt: 700; --dsp-ink: #0B0E12; --dsp-satwt: 700; /* satellite weight */ --dsp-was-ink: #999999; /* struck old price */ --dsp-per: var(--dsp-cur); /* per-slot paint — each falls back to the satellite default, so a flow can mute one slot without restating the others */ --dsp-curwt: var(--dsp-satwt); --dsp-cur-ink: var(--dsp-ink); --dsp-decwt: var(--dsp-satwt); --dsp-dec-ink: var(--dsp-ink); --dsp-perwt: var(--dsp-satwt); --dsp-per-ink: var(--dsp-ink); }
+  .dsp.primary { --dsp-numfam: 'Urbane Rounded', sans-serif; --dsp-numwt: 600; --dsp-ink: var(--red); --k-num: .1811; }
+  .dsp.struck { --dsp-numwt: 600; }
+  .dsp.struck .num, .dsp.struck .dec { text-decoration: line-through; }
+  .dsp > *, .dsp .was > * { display: block; line-height: 1; }
+  .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt); font-size: var(--dsp-num); color: var(--dsp-ink); }
+  .dsp .cur, .dsp .dec, .dsp .per, .dsp .minus { font-family: 'Proxima Nova', sans-serif; font-weight: var(--dsp-satwt); color: var(--dsp-ink); }
+  .dsp .cur { font-size: var(--dsp-cur); padding-right: 1px; font-weight: var(--dsp-curwt); color: var(--dsp-cur-ink); margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
+  .dsp .dec { font-size: var(--dsp-dec); font-weight: var(--dsp-decwt); color: var(--dsp-dec-ink); margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-dec) * var(--k-sat)); }
+  .dsp .per { font-size: var(--dsp-per); padding-left: 1px; font-weight: var(--dsp-perwt); color: var(--dsp-per-ink); margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-per) * var(--k-sat)); }
+  .dsp .minus { font-size: var(--dsp-cur); font-weight: 400; padding-right: 2px; margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
+  .dsp .was { display: inline-flex; align-items: flex-start; padding-right: 6px; text-decoration: line-through; margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-was) * var(--k-sat)); }
+  .dsp .was > * { font-family: 'Proxima Nova', sans-serif; font-weight: 600; color: var(--dsp-was-ink); font-size: var(--dsp-was); margin-top: 0; padding: 0; }
+  .dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+  .dsp.xxl { --dsp-num:24px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
+  .dsp.xl { --dsp-num:20px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+  .dsp.lg { --dsp-num:18px; --dsp-cur:14px; --dsp-dec:14px; --dsp-was:14px; }
+  .dsp.md { --dsp-num:15px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:12px; }
+  .dsp.sm { --dsp-num:14px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+  .dsp.xs { --dsp-num:12px; --dsp-cur:12px; --dsp-dec:12px; --dsp-was:8px; }
+  .dsp.xxs { --dsp-num:10px; --dsp-cur:10px; --dsp-dec:10px; --dsp-was:10px; }
+  .dsp.tertiary { --dsp-cur:8px; --dsp-dec:8px; --dsp-per:8px; }
+  .dsp.rtl { direction: rtl; --k-num: .074; --k-sat: .074; --dsp-numfam: 'Avenir Next World', sans-serif; }
+  .dsp.rtl .num, .dsp.rtl .cur, .dsp.rtl .dec, .dsp.rtl .per, .dsp.rtl .minus, .dsp.rtl .was > * { font-family: 'Avenir Next World', sans-serif; }
+  .dsp.rtl .cur { padding-right: 0; padding-left: 2px; }
+  .dsp.rtl .was { padding-right: 0; padding-left: 6px; }
+
+  /* ---- checkout's configuration of it ---- */
+  /* plan cards: Urbane numeral, per-plan gradient on numeral + currency,
+     and a Medium #999 /mo (checkout frame, Decimal node 3831:2092) */
+  .pcard .dsp { --dsp-ink: var(--ink); --dsp-perwt: 500; --dsp-per-ink: var(--muted); }
+  .pcard .dsp .num, .pcard .dsp .cur { color: transparent;
+    background-image: var(--g); -webkit-background-clip: text; background-clip: text; }
+  .pcard .dsp .was { position: relative; }
+  /* dock: ink numeral, red struck price */
+  .paybar .dsp { --dsp-ink: var(--ink); --dsp-was-ink: var(--red); }
+  .paybar .dsp .was { position: relative; }
+  /* duration rows + payment rows: Proxima numerals, so base .dsp */
+  .dur .dsp, .pay-opt .dsp { --dsp-ink: var(--ink); }
+  .per-mo .dsp, .dur .permo { --dsp-ink: var(--muted); --dsp-cur-ink: var(--muted); }
+  /* savings total reads green */
+  .savings-row .dsp { --dsp-ink: var(--green); --dsp-cur-ink: var(--green); }
+  /* the crossing rule rides the struck number and spans it — a price changes
+     with every coupon, so fixed geometry drifts off it. Figma exports these at
+     near-180deg; a line is symmetric under a half-turn, so the angle is
+     Figma's minus 180 (170.13 -> -9.87). */
+  .dsp .was .pstrike { position: absolute; left: -1px; right: 3px; top: 50%;
+    height: 8px; margin-top: -4px; pointer-events: none; display: flex; align-items: center; }
+  .dsp .was .pstrike img { width: 100%; height: 1px; display: block; transform: rotate(-9.87deg); }
   .per-mo { display: flex; font: 500 10px/16px 'Proxima Nova', sans-serif; color: var(--muted); }
   .dur-check { width: 20px; height: 20px; flex: none; opacity: 0; transform: scale(.6);
     transition: opacity .2s ease, transform .3s var(--ease); }
@@ -218,18 +257,6 @@
   .pb-price { flex: 1; min-width: 0; display: flex; align-items: center;
     justify-content: space-between; padding: 8px 0 12px; }
   .pb-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
-  /* the price line, dock variant — same rule again */
-  .pb-line { display: flex; align-items: flex-start; }
-  .pb-was { position: relative; padding-right: 4px;
-    font: 600 15px/1 'Proxima Nova', sans-serif; color: var(--red); }
-  /* the crossing rule rides the number itself, so it tracks any price width */
-  .pb-was .sl { position: absolute; left: -2px; right: 2px; top: 50%; height: 11px;
-    margin-top: -5px; display: flex; align-items: center; pointer-events: none; }
-  .pb-was .sl img { width: 100%; height: 1px; display: block; transform: rotate(-9.5deg); }
-  .pb-kd { padding-right: 1px; font: 700 15px/1 'Proxima Nova', sans-serif; color: var(--ink); }
-  .pb-now { font: 600 30px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
-  /* numeral 30px Urbane → cap offset 30 × .1811 */
-  .pb-was, .pb-kd { margin-top: calc(30px * .1811 - 1em * .1164); }
   .pb-before { position: absolute; left: 0; top: -13px; pointer-events: none;
     font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
   .cta { flex: 1; min-width: 0; height: 54px; border: none; cursor: pointer;
@@ -494,28 +521,6 @@
     flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
   .pprice { display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
     padding-top: 3px; flex: none; }
-  /* THE PRICE LINE (Rashid, 2026-09-12): only the main figure is large; the
-     struck price, the KD and the /mo all sit on one line, cap-top aligned with
-     it. line-height:1 puts every run's cap a fixed fraction of ITS OWN font-size
-     below its box top — so the offsets below are what actually lands them on a
-     single optical line; flex-start alone leaves the small parts high. */
-  .pprice-row { position: relative; display: flex; align-items: flex-start; }
-  .pw { padding-right: 4px; font: 600 15px/1 'Proxima Nova', sans-serif;
-    color: var(--muted); text-decoration: line-through; }
-  .pkd { padding-right: 1px; font: 700 15px/1 'Proxima Nova', sans-serif; color: transparent;
-    background-clip: text; -webkit-background-clip: text; }
-  .pbig { font: 600 30px/1 'Urbane Rounded', sans-serif; color: transparent;
-    background-clip: text; -webkit-background-clip: text; white-space: nowrap; }
-  .pmo { font: 500 15px/1 'Proxima Nova', sans-serif; color: var(--muted); }
-  /* numeral 30px Urbane → cap offset 30 × .1811 */
-  .pw, .pkd, .pmo { margin-top: calc(30px * .1811 - 1em * .1164); }
-  /* The crossing rule rides the struck number itself rather than a fixed
-     offset — the price changes with every coupon, so a fixed rule drifts off
-     it (it was cutting through the KD too). Same fix as the dock. */
-  .pw { position: relative; }
-  .pstrike { position: absolute; left: -1px; right: 3px; top: 50%; height: 8px;
-    margin-top: -4px; pointer-events: none; display: flex; align-items: center; }
-  .pstrike img { width: 100%; height: 1px; display: block; transform: rotate(-9.87deg); }
   .pchip { flex: none; height: 24px; display: flex; align-items: center;
     justify-content: center; padding: 2px 10px; border-radius: 300px;
     border: 1px solid rgba(0,0,0,.03); background: rgba(0,0,0,0);
@@ -650,7 +655,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·8</div>
+  <div class="s-foot" id="buildInfo">checkout ·9</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -670,7 +675,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·8';
+const BUILD = 'checkout ·9';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -862,10 +867,7 @@ function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': 
 function priceBlock(was, now, opts) {
   opts = opts || {};
   const m = money(now);
-  return `<div class="price-row">
-    ${was ? `<span class="was">KD${was}</span>` : ''}
-    <span class="now-kd">KD</span><span class="now">${m.whole}</span>${m.dec ? `<span class="now-dec">${m.dec}</span>` : ''}
-  </div>`;
+  return `<span class="dsp lg">${was ? `<span class="was"><span>KD${was}</span></span>` : ''}<span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span>`;
 }
 
 function payLogo(kind) {
@@ -922,19 +924,17 @@ function payDock(label, action, opts) {
       <span class="savings-lbl">Your Savings Today</span>
       <img class="savings-spark" src="${A}sparkle.png" alt="">
       <img class="savings-chev" src="${A}chevron.svg" alt="">
-      <span class="savings-amt">- KD${money(q.saved).whole}${money(q.saved).dec}</span>
+      <span class="savings-amt"><span class="dsp md"><span class="minus">-</span><span class="cur">KD</span><span class="num">${money(q.saved).whole}${money(q.saved).dec}</span></span></span>
     </div>` : ''}
     ${opts.savings ? `<div class="total-row"><span class="total-lbl">Total</span>
       <div class="pb-stack">
-        <div class="pb-line"><span class="pb-was">KD${q.list}<span class="sl"><img src="${A}strike-line.svg" alt=""></span></span>
-          <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
+        <div class="pb-line"><span class="dsp primary xxxl"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span></span></div>
         <div class="pb-before">Before</div>
       </div></div>
       <button class="cta grad" data-act="${action}">${label}</button>`
     : `<div class="paybar-row">
         <div class="pb-price"><div class="pb-stack">
-          <div class="pb-line"><span class="pb-was">KD${q.list}<span class="sl"><img src="${A}strike-line.svg" alt=""></span></span>
-            <span class="pb-kd">KD</span><span class="pb-now">${m.whole}${m.dec}</span></div>
+          <div class="pb-line"><span class="dsp primary xxxl"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span></span></div>
           <div class="pb-before">Before</div>
         </div></div>
         <button class="cta" data-act="${action}">${label}
@@ -960,7 +960,7 @@ function screenPlans() {
         </div>
         <div class="pcard-right">
           <div class="pprice"><div class="pprice-row">
-            <span class="pw">KD${p.was}<span class="pstrike"><img src="${A}strike-plan.svg" alt=""></span></span><span class="pkd">KD</span><span class="pbig">${m.whole}${m.dec}</span><span class="pmo">/mo</span>
+            <span class="dsp primary xxxl"><span class="was"><span>KD${p.was}</span><span class="pstrike"><img src="${A}strike-plan.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span><span class="per">/mo</span></span>
           </div></div>
           ${pr.cut ? `<div class="pchip">${AR_CHIP(pr.cut)}</div>` : ''}
           <span class="ppill"><span><span class="a">${esc(p.pill[0])}</span><span class="b">${esc(p.pill[1])}</span></span></span>
@@ -1036,7 +1036,7 @@ function screenDuration() {
             </div>
             <div class="dur-price">
               ${priceBlock(d.was, d.now)}
-              ${d.perMo ? `<div class="per-mo">KD${d.perMo}/Month</div>` : ''}
+              ${d.perMo ? `<div class="per-mo"><span class="dsp xxs"><span class="cur">KD</span><span class="num">${d.perMo}</span><span class="per">/Month</span></span></div>` : ''}
             </div>
             <img class="dur-check" src="${A}check-circle.svg" alt="">
           </div>
@@ -1059,7 +1059,7 @@ function screenPayment() {
     return `<button class="pay-opt${m.id === S.method ? ' sel' : ''}" data-method="${m.id}" data-act="method">
       ${payLogo(m.logo)}
       <span class="pay-name">${m.save ? `<span class="sv">Save KD${m.save}</span> with ` : ''}${m.logo === 'deema' ? '' : esc(m.name)}${m.logo === 'deema' ? 'deema' : ''}</span>
-      <span class="pay-price"><span class="kd">KD</span>${mm.whole}${mm.dec}</span>
+      <span class="pay-price"><span class="dsp md"><span class="cur">KD</span><span class="num">${mm.whole}${mm.dec}</span></span></span>
       <img class="pay-check" src="${A}check-circle.svg" alt="">
       ${m.badge ? `<span class="pay-badge">${esc(m.badge)}</span>` : ''}
     </button>`;
