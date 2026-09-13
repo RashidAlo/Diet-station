@@ -3398,7 +3398,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 219 (log-only: why is the tile blank?)';
+const BUILD = 'build 2026-09-13 · 220 (the tile waits for its own date to be sent)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3733,6 +3733,8 @@ if (QS.get('solo') === '1') {
   var ELS = { close: '#closeBtn', dual: '.dual', tile: '.nav .ttl.tile' };
   var TAPS = { 'dual-clear': '#clearBtn', 'dual-confirm': '#confirmBtn', 'gauge-next': '#dock' };
   var nativeConfirmed = false;
+  /* set the first time a post actually CARRIES the date el — see prehide() */
+  var datePosted = false;
   /* WHICH IDS THE SHELL HAS ACTUALLY CONFIRMED IT RENDERS. Declared HERE,
      with the rest of the module's state, and not beside prehide() where it is
      read — because `prehide()` is CALLED AT SETUP on line ~3680 ("hidden from
@@ -3955,44 +3957,25 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
-  /* TEMPORARY — ·219. Two hypotheses for the blank tile during the entry, and
-     one sample settles both: is the CONTENT missing, or is it there and
-     invisible? Log the innerHTML length and the resolved colour/opacity every
-     100ms through the entry. font-display: swap did not fix it, so FOIT was
-     not the cause and I am not shipping a third guess unmeasured. */
-  (function tileWatch() {
-    var n = 0;
-    var iv = setInterval(function () {
-      if (n++ > 14) { clearInterval(iv); return; }
-      try {
-        var ttl = document.querySelector('.nav .ttl');
-        var dt = document.getElementById('dayTile');
-        var tn = dt && dt.querySelector('.t-n');
-        var cs = tn && getComputedStyle(tn);
-        var tcs = ttl && getComputedStyle(ttl);
-        webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-          m: 'TILEW ' + Math.round(performance.now()) +
-             ' cls=[' + (ttl ? ttl.className : '?') + ']' +
-             ' len=' + (dt ? dt.innerHTML.length : -1) +
-             ' num=' + (cs ? cs.color.replace(/\s/g, '') : '?') +
-             ' op=' + (tcs ? tcs.opacity : '?') +
-             ' vis=' + (cs ? cs.visibility : '?') +
-             ' fs=' + (cs ? cs.fontSize : '?') });
-      } catch (_) {}
-    }, 100);
-  })();
-  var ndb2 = 0;
-  function navdbg2(m) {                 /* TEMPORARY — ·215 */
-    if (ndb2++ > 60) return;
-    try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-      m: 'NAVE ' + Math.round(performance.now()) + ' ' + m }); } catch (_) {}
-  }
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       /* suppression covers BOTH handover shapes: the separate tile twin, and
          the unified one-element form where the same web element is yielded
          to a single native component. */
-      if (id === 'tile' && !(tileNative || dateWidgetNative)) return;
+      /* AND NOT UNTIL A DATE HAS ACTUALLY GONE OUT (·220). The confirm sets
+         dateWidgetNative, but dateEl() returns null until it is set — so the
+         post that triggers the confirm carries close and dual and NO scrub
+         el. Hiding the tile on that confirm blanks the date one whole post
+         before any date has been sent, and Rashid sees an empty glass square
+         mid-entry: "there's this frame for the tile before it becomes a
+         glass." Measured: the web tile holds its date, opacity 1, until
+         696ms, and goes to opacity 0 on that first post while the sheet is
+         still arriving.
+         ·190 learned this for a capability nothing drew; this is the same
+         law for a payload nothing had carried yet. An echo says "I heard
+         you", never "I can draw it" — and a post without the el is not even
+         an echo. */
+      if (id === 'tile' && !((tileNative || dateWidgetNative) && datePosted)) return;
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
@@ -4179,11 +4162,7 @@ if (QS.get('solo') === '1') {
      becomes invisible and the ladder just travels. */
   window.DSScrubRepost = function () { if (!layerUp) report(false, true); };
   function report(instant, frac) {
-    if (moving || layerUp) {
-      navdbg2('REFUSED moving=' + moving + ' layerUp=' + layerUp);
-      return;   /* twins only at rest, topmost layer only */
-    }
-    prehide();
+    if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
     restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
@@ -4192,11 +4171,9 @@ if (QS.get('solo') === '1') {
     var se = dateEl(off, frac);
     if (se) els.push(se);
     try {
+      if (se) datePosted = true;   /* a date is now on the wire — see prehide() */
       var msg = { t: 'glasschrome', flow: FLOW,
         surface: SURFACE, mode: currentMode(), els: els };
-      navdbg2('REST ' + els.map(function (e) {
-        return e.id + '@' + Math.round(e.y); }).join(' ') +
-        ' confirmed=' + nativeConfirmed);
       /* instant: apply the WHOLE post with animation disabled (Shell). An
          omitted el is torn down on that frame instead of springing away,
          which is the only way to guarantee one glass per frame at a
@@ -4205,6 +4182,11 @@ if (QS.get('solo') === '1') {
       if (instant) msg.instant = true;
       webkit.messageHandlers.ds.postMessage(msg);
     } catch (_) {}
+    /* AFTER the post, not before (·220). prehide() reads datePosted, and that
+       flag is only true once THIS post has carried the date el — running it
+       first would read a flag one post behind and blank the tile exactly as
+       before. Ordering is the fix as much as the flag is. */
+    prehide();
   }
   /* ONE BUILDER FOR EVERY POST, REST AND TRACK ALIKE.
      These were two separate loops: report() built the full entry and
@@ -4727,21 +4709,6 @@ if (QS.get('solo') === '1') {
      so the twins are glued to the surface. The rest report still lands the
      exact anchor (canonical top line when docked). */
   var trackRaf = null;
-  /* TEMPORARY — ·214. Do the three controls' POSTED rects move together? If
-     the tile's y trails close/dual, the lagging thing is the web element and
-     the twin is faithfully mirroring it; if they agree and only the drawn
-     twin trails, it is the renderer. Bounded so it cannot run forever. */
-  var navdbgN = 0;
-  function navdbg(els) {
-    if (navdbgN >= 70) return;
-    var y = {};
-    els.forEach(function (e) { y[e.id] = Math.round(e.y * 10) / 10; });
-    if (y.close === undefined && y.scrub === undefined) return;
-    navdbgN++;
-    try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-      m: 'NAVY ' + Math.round(performance.now()) + ' close=' + y.close +
-         ' dual=' + y.dual + ' scrub=' + y.scrub }); } catch (_) {}
-  }
   function postTrack() {
     trackRaf = null;
     if (layerUp) return;
@@ -4750,7 +4717,6 @@ if (QS.get('solo') === '1') {
     var se = dateEl(off, true);   /* track frames carry the FRACTIONAL center */
     if (se) els.push(se);
     if (!els.length) return;
-    navdbg(els);                /* TEMPORARY — ·214, remove once proven */
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'chrometrack', flow: FLOW, els: els });
     } catch (_) {}
