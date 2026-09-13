@@ -1904,24 +1904,24 @@ function makeCard(cat, d, i) {
       if (failed) el.classList.add('img-failed');
       el.classList.remove('loading');
       el.classList.add('revealing');
-      setTimeout(() => el.classList.remove('revealing'), 560);
-      /* TEMPORARY — log-only. On device the content measured skeleton -> photo
-         in ~35ms, not .5s, while the logic test showed .revealing applied.
-         Sample the image's real opacity and animation state across the fade. */
-      if ((window.__skelN = (window.__skelN || 0) + 1) <= 3) {
-        const id = key, t0 = performance.now();
-        [0, 100, 250, 450].forEach(dt => setTimeout(() => {
-          try {
-            const an = cardImg.getAnimations ? cardImg.getAnimations() : [];
-            webkit.messageHandlers.ds.postMessage({ t: 'dsdebug', m: 'SKEL ' + id +
-              ' +' + dt + ' op=' + (+getComputedStyle(cardImg).opacity).toFixed(2) +
-              ' anims=' + an.length +
-              (an[0] ? ' ' + an[0].animationName + ':' + an[0].playState +
-                ':' + Math.round(an[0].currentTime) : '') +
-              ' cls=' + el.className + ' vis=' + document.visibilityState });
-          } catch (_) {}
-        }, dt));
-      }
+      /* END THE FADE ON ITS OWN EVENT, NEVER ON A TIMER. The first build used
+         setTimeout(560) to clear .revealing, and on device the fade never
+         played: skeleton to photo in ~35ms. Logged, not guessed — the first
+         cards reveal while the overlay's document is visibilityState HIDDEN,
+         where the animation clock is frozen while the animation still reports
+         `running` (currentTime held at 0 through +450ms, opacity 0). Timers do
+         NOT freeze. So the timer removed the class, the frozen animation was
+         discarded, and the content jumped to full opacity before anyone could
+         see a frame of the fade.
+         animationend only fires when the animation has actually run, so a card
+         revealed while hidden waits at opacity 0 and plays its whole fade once
+         the overlay is visible. With `both` fill the end state holds even if
+         this never fires, so a missed event is harmless. */
+      cardImg.addEventListener('animationend', function done(e) {
+        if (e.animationName !== 'cardContentIn') return;
+        cardImg.removeEventListener('animationend', done);
+        el.classList.remove('revealing');
+      });
     };
     cardImg.addEventListener('load', () => {
       const dec = cardImg.decode ? cardImg.decode() : Promise.resolve();
@@ -3487,7 +3487,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 226 (log-only: does the card fade run on device?)';
+const BUILD = 'build 2026-09-13 · 227 (the fade ends on its own clock)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
