@@ -467,6 +467,27 @@
       <b>riding</b> (twins travel with the sheet on a shell-owned entry, one clock). Rashid chooses
       the motion; Shell measures both. An amendment allowing the material to hand over at rest was
       proposed and declined, because that handover is the complaint this ruling answers.</p>
+    <p class="meta"><b>Shell&rsquo;s read (2026-09-13), scoped, for the choice:</b><br>
+      <b>Clause 1 needs no cache:</b> capabilities are fixed per build, so the shell can inject
+      <code>window.DSNativeCaps</code> as a document-start user script, present before any page
+      script runs. That gives zero round trips inside the visible window. Not built. The invariant is
+      unchanged and the mechanism is simpler.<br>
+      <b>Pinned hides a material handover.</b> Meal selection posts <code>surface: 'light'</code>
+      (<code>.regular</code>). Over the dimmed calendar before the sheet arrives, that material
+      &ldquo;goes milky-bright&rdquo;, and Rashid has rejected that look before. Posting
+      <code>'dark'</code> during entry means switching material when the white sheet lands, which is
+      a visible handover. The only way out is one material tuned for both grounds, which is
+      untested and would be a design decision in its own right. Shell&rsquo;s post-to-appear is
+      10ms (log timestamps, build 54 source, pilot); the page&rsquo;s own post time is not
+      measured.<br>
+      <b>Riding has no handover by construction.</b> The web view and the twin layer are siblings
+      in one native container, and twins sit in the web view&rsquo;s own coordinates. So one
+      native offset on that container, <code>.timingCurve(.32,.72,0,1, .55s)</code> from 103%,
+      moves both on one clock, and the rest rects stay valid throughout. Cost: modest native work,
+      not built. Page-side requirement: the meal selection sheet must <b>stop animating its own
+      entry</b>. Unlike the calendar, that entry does run (measured, transitionend at 934ms).
+      Scope it to the meal selection overlay: the calendar keeps its snap (&middot;33), and riding
+      there would reverse that decision.</p>
     <p class="meta"><b>What a strict ruling hides, and does not fix.</b> The web tile&rsquo;s numeral
       was painted <i>under</i> its own backdrop-filter glass for months. It was invisible because the
       native twin covered it at rest, and it only showed once &middot;217 let the web bar render during
