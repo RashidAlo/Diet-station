@@ -1015,8 +1015,8 @@ body.lab-comp-on .side-resizer { display: none; }\
     });
   }
 
-  /* outline: rect() × scale, 4px outset, red 1.5px, radius follows the
-     component (rect may carry r; 8px when it does not) */
+  /* outline (contract 30373bc): rect() × scale, 4px outset, red 1.5px,
+     radius = (r + 4) × scale, or 8px × scale when the page gives no r */
   function compPlace() {
     var o = compQ('.lc-outline');
     if (!o) return;
@@ -1029,7 +1029,7 @@ body.lab-comp-on .side-resizer { display: none; }\
     o.style.top = (r.y * k - pad) + 'px';
     o.style.width = (r.w * k + pad * 2) + 'px';
     o.style.height = (r.h * k + pad * 2) + 'px';
-    o.style.borderRadius = ((typeof r.r === 'number' ? r.r : 8) * k + pad) + 'px';
+    o.style.borderRadius = ((typeof r.r === 'number' ? r.r + 4 : 8) * k) + 'px';
     o.hidden = false;
   }
 
