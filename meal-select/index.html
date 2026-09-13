@@ -90,6 +90,23 @@
   /* ================= calendar page (Figma 14994-86172) ================= */
   .cal { position: absolute; inset: 0; display: flex; flex-direction: column;
     background: #ED1C24; }
+  /* THE ENTRY SNAPS, AND THAT IS A DECISION, NOT A BUG — do not "restore" it.
+     These two rules read as a spring-up entrance: start 103% low, then ride a
+     .55s curve home. It has never run. `springing` (which supplies the
+     transition) and the removal of `embed-enter` (which changes the
+     transform) land in one style recalculation 60ms after boot, so WebKit
+     applies the new transform with no transition and the sheet SNAPS.
+     Measured 2026-09-13 by logging transitionstart as well as transitionend:
+     no transition fires at boot.
+     Put to Rashid as a design choice rather than fixed, because the snap is
+     what he had been looking at and approving for as long as this code
+     existed, and restoring the spring would have changed working motion to
+     match what the code MEANT. His answer: "snap".
+     Left in place deliberately. Deleting these would move the calendar's
+     first visible frame 60ms earlier (it currently sits 103% low until the
+     snap), which is a change nobody asked for — and the badge's .62s delay was
+     measured against today's timing. If the spring is ever wanted, it is one
+     forced reflow between adding `springing` and removing `embed-enter`. */
   body.embed-enter .cal { transform: translateY(103%); }
   .cal.springing { transition: transform .55s cubic-bezier(.32,.72,0,1); }
   .cal.presenting { border-radius: 44px 44px 0 0; overflow: hidden; }
@@ -438,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-13 · 32 (the plain delay, for the measured reason)';
+const BUILD = 'calendar 2026-09-13 · 33 (the entry snaps, by decision)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
