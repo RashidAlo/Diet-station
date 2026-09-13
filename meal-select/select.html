@@ -1906,38 +1906,23 @@ function makeCard(cat, d, i) {
       el.classList.add('revealing');
       /* END THE FADE ON ITS OWN EVENT, NEVER ON A TIMER. The first build used
          setTimeout(560) to clear .revealing, and on device the fade never
-         played: skeleton to photo in ~35ms. Logged, not guessed — the first
-         cards reveal while the overlay's document is visibilityState HIDDEN,
-         where the animation clock is frozen while the animation still reports
-         `running` (currentTime held at 0 through +450ms, opacity 0). Timers do
-         NOT freeze. So the timer removed the class, the frozen animation was
-         discarded, and the content jumped to full opacity before anyone could
-         see a frame of the fade.
-         animationend only fires when the animation has actually run, so a card
-         revealed while hidden waits at opacity 0 and plays its whole fade once
-         the overlay is visible. With `both` fill the end state holds even if
-         this never fires, so a missed event is harmless. */
+         played: skeleton to photo in ~35ms. Logged on device: the animation
+         sat at currentTime 0 / opacity 0 while it still reported `running`,
+         and timers kept firing on schedule — so the timer removed the class,
+         the paused animation was discarded, and content jumped to full opacity.
+         WHAT PAUSES IT, corrected after a longer trace: this overlay's document
+         reports visibilityState `hidden` PERMANENTLY, even while plainly on
+         screen, so that value says nothing about what the user can see. The
+         cards held at 0 were BELOW THE FOLD — WebKit pauses animations there —
+         and faded normally once scrolled into view. The first explanation
+         (document hidden freezes the clock) was wrong; the fix is right under
+         either, because animationend only fires once the animation has truly
+         run. With `both` fill the end state holds if it never fires. */
       cardImg.addEventListener('animationend', function done(e) {
         if (e.animationName !== 'cardContentIn') return;
         cardImg.removeEventListener('animationend', done);
         el.classList.remove('revealing');
-        if (el.__fadeLog) el.__fadeLog('END');
       });
-      /* TEMPORARY — log-only. The video could not separate the fade from the
-         sheet's rise (recorder dropped frames mid-entry). Sample the image's
-         real opacity every 60ms from reveal to animationend, first 2 cards. */
-      if ((window.__fadeN = (window.__fadeN || 0) + 1) <= 2) {
-        const t0 = performance.now(), key0 = key;
-        el.__fadeLog = (tag) => { try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-          m: 'FADE ' + key0 + ' ' + tag + ' +' + Math.round(performance.now() - t0) +
-          ' op=' + (+getComputedStyle(cardImg).opacity).toFixed(2) +
-          ' vis=' + document.visibilityState }); } catch (_) {} };
-        el.__fadeLog('REVEAL');
-        let k = 0; const iv = setInterval(() => {
-          if (++k > 40 || !el.classList.contains('revealing')) { clearInterval(iv); return; }
-          el.__fadeLog('t');
-        }, 60);
-      }
     };
     cardImg.addEventListener('load', () => {
       const dec = cardImg.decode ? cardImg.decode() : Promise.resolve();
@@ -3503,7 +3488,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 228 (log-only: the fade curve on device)';
+const BUILD = 'build 2026-09-13 · 229 (skeleton cards, fade verified)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
