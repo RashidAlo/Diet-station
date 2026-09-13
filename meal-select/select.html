@@ -510,9 +510,25 @@
     box-shadow: inset 0 1px 1px rgba(255,255,255,.5),
       inset 0 0 0 .6px rgba(255,255,255,.4),
       0 4px 14px -8px rgba(0,0,0,.22);
+    /* NO `top` HERE. `top` is calc(var(--top-pad) + 9px) and --top-pad is
+       rewritten EVERY FRAME of a sheet dock, so a transition on it chases a
+       moving target: the tile trails the bar by up to .48s and, with this
+       curve's 1.22 overshoot, arrives late and settles past its mark while
+       the X and the dual — which transition transform only, never top — are
+       exactly on the bar. Rashid: "the tile doesn't track with the overlay's
+       position, it's always too late to snap back into its place... it
+       doesn't match the x and the dual button."
+       This is the hazard the base `.nav .ttl` rule two rules up already
+       documents in its own comment ("top rides --top-pad every frame of a
+       sheet drag, and a top transition here chases it"). The tile rule
+       reintroduced it. Measured: computed transitionProperty was
+       `width, height, top, border-radius, box-shadow` on the tile against
+       `background, color, opacity, transform` on both neighbours.
+       The morph keeps its top curve: .tile is removed the same statement
+       .scrub is added, so tile/forming/scrub never coexist and .forming,
+       .unforming and .closing carry their own top transitions. */
     transition: width .48s cubic-bezier(.3,1.22,.36,1),
       height .48s cubic-bezier(.3,1.22,.36,1),
-      top .48s cubic-bezier(.3,1.22,.36,1),
       border-radius .48s cubic-bezier(.3,1.22,.36,1),
       box-shadow .34s ease; }
   .nav .ttl.tile .glassbg { background: rgba(255,255,255,.34);
@@ -3370,7 +3386,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 213 (commit the day that was on screen)';
+const BUILD = 'build 2026-09-13 · 214 (the tile stops chasing the dock)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4645,6 +4661,21 @@ if (QS.get('solo') === '1') {
      so the twins are glued to the surface. The rest report still lands the
      exact anchor (canonical top line when docked). */
   var trackRaf = null;
+  /* TEMPORARY — ·214. Do the three controls' POSTED rects move together? If
+     the tile's y trails close/dual, the lagging thing is the web element and
+     the twin is faithfully mirroring it; if they agree and only the drawn
+     twin trails, it is the renderer. Bounded so it cannot run forever. */
+  var navdbgN = 0;
+  function navdbg(els) {
+    if (navdbgN >= 70) return;
+    var y = {};
+    els.forEach(function (e) { y[e.id] = Math.round(e.y * 10) / 10; });
+    if (y.close === undefined && y.scrub === undefined) return;
+    navdbgN++;
+    try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+      m: 'NAVY ' + Math.round(performance.now()) + ' close=' + y.close +
+         ' dual=' + y.dual + ' scrub=' + y.scrub }); } catch (_) {}
+  }
   function postTrack() {
     trackRaf = null;
     if (layerUp) return;
@@ -4653,6 +4684,7 @@ if (QS.get('solo') === '1') {
     var se = dateEl(off, true);   /* track frames carry the FRACTIONAL center */
     if (se) els.push(se);
     if (!els.length) return;
+    navdbg(els);                /* TEMPORARY — ·214, remove once proven */
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'chrometrack', flow: FLOW, els: els });
     } catch (_) {}
