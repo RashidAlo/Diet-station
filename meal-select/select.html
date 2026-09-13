@@ -3394,7 +3394,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 221 (correct the font-display claim)';
+const BUILD = 'build 2026-09-13 · 222 (log-only: is the numeral hidden or clipped?)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3953,6 +3953,36 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
+  /* TEMPORARY — ·222, log only. A box that FOLLOWS the sheet says the tile
+     carries zero ink through the entry while the X and dual carry ~430 each,
+     and this is BEFORE the handover — so the empty square is the web tile
+     painting its container without its numeral. Computed styles said
+     visible/opaque/dark, so the remaining candidates are geometric: the
+     numeral collapsed, or clipped by the tile's own `overflow: hidden` while
+     its .48s width/height transitions are still running. Log the rects. */
+  (function numeralWatch() {
+    var n = 0;
+    var iv = setInterval(function () {
+      if (n++ > 26) { clearInterval(iv); return; }
+      try {
+        var ttl = document.querySelector('.nav .ttl');
+        var dt = document.getElementById('dayTile');
+        var tn = dt && dt.querySelector('.t-n');
+        var tr = ttl && ttl.getBoundingClientRect();
+        var dr = dt && dt.getBoundingClientRect();
+        var nr = tn && tn.getBoundingClientRect();
+        var f = function (r) { return r ? Math.round(r.width) + 'x' + Math.round(r.height) +
+          '@' + Math.round(r.left) + ',' + Math.round(r.top) : '-'; };
+        webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+          m: 'NUM ' + Math.round(performance.now()) +
+             ' ttl=' + f(tr) + ' dayTile=' + f(dr) + ' num=' + f(nr) +
+             ' txt=' + (tn ? JSON.stringify(tn.textContent) : '-') +
+             ' ovf=' + (ttl ? getComputedStyle(ttl).overflow : '?') +
+             ' op=' + (ttl ? getComputedStyle(ttl).opacity : '?') +
+             ' dtDisp=' + (dt ? getComputedStyle(dt).display : '?') });
+      } catch (_) {}
+    }, 40);
+  })();
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       /* suppression covers BOTH handover shapes: the separate tile twin, and
