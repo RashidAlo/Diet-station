@@ -379,6 +379,22 @@
     liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
   }
   window.addEventListener('resize', refit);
+  /* THE SAFE AREA ARRIVES LATE IN THE SHELL (Shell's in-shell probe, 2026-09-13):
+     at didFinish and again 2s later #safeProbe read 62px while --satd was 0.0,
+     because refit() ran before env(safe-area-inset-top) resolved and no resize
+     ever followed, so the whole layout sat 62pt high and the X posted y 37 against
+     DS-CHROME-TOP's 70. The probe's padding IS env(), so its content box shrinks
+     the moment the inset lands. Observe that instead of hoping for a resize. */
+  /* Two nets, because neither alone is proven: a ResizeObserver on the probe
+     (its content box shrinks when the inset lands), and timed re-reads across
+     the first 2.5s. Each re-lays out ONLY when the inset actually changed. */
+  let lastSafeTop = safeInsets().top;
+  const recheckSafe = () => {
+    const t = safeInsets().top;
+    if (t !== lastSafeTop) { lastSafeTop = t; refit(); }
+  };
+  if (window.ResizeObserver) new ResizeObserver(recheckSafe).observe($('safeProbe'));
+  [60, 250, 600, 1200, 2500].forEach(ms => setTimeout(recheckSafe, ms));
   if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
   window.addEventListener('orientationchange', () => setTimeout(refit, 250));
   refit();
