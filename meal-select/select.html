@@ -11,18 +11,14 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Meal Selector</title>
 <style>
-  /* font-display: swap, and it is not a typography preference — it is why the
-     date tile was EMPTY for the whole overlay entry (Rashid: "there's this
-     frame for the tile before it becomes a glass. I think the state is
-     stale"). The default, `auto`, makes WebKit hide text until the face
-     loads, so every glyph on the sheet was invisible until ~900ms. The X and
-     the check survived because they are SVG. Measured on the device: the
-     page heading's ink appears at 10.10s and the tile's own text NEVER does
-     — prehide() runs on the first chrome post at ~10.13s and hides the web
-     tile three hundredths of a second after the font would have let it draw,
-     so the square was on screen for the entire entry with nothing in it.
-     With `swap` the tile carries its date in the fallback face from the first
-     frame and swaps when the real one lands. */
+  /* font-display: swap is a genuine improvement on a cold load — the default,
+     `auto`, makes WebKit hide text until the face arrives — but IT IS NOT THE
+     FIX FOR THE EMPTY DATE TILE, and ·218 shipped saying it was. It changed
+     nothing on device, and it could not have: on a repeat run the faces are
+     already cached, so there was no invisible-text window to remove. I had
+     not tested the hypothesis before shipping it. Keeping the declaration,
+     correcting the claim. The blank tile during the overlay entry is still
+     open — see the note in prehide(). */
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; font-display: swap; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; font-display: swap; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; font-display: swap; }
@@ -3398,7 +3394,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 220 (the tile waits for its own date to be sent)';
+const BUILD = 'build 2026-09-13 · 221 (correct the font-display claim)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
