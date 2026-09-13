@@ -568,7 +568,7 @@ SEND SITES   EVERY DISMISSAL from a hosted sheet goes through sheet-close, never
              nothing yet; it exists for the first message that is not a dismissal.
              select.html  dismiss: X close ds-close (~2504) &middot; confirm ds-done (~2518)
                           &middot; lab Exit (~3443)
-             lab-shell.js dismiss: lab Exit (~1042). Future-proofing for hosted surfaces
+             lab-shell.js dismiss: lab Exit (~1034-1049, 5fa88bf). Future-proofing for hosted surfaces
                           that use lab-shell's menu. NOT meal selection's path: select.html
                           sets window.dsOwnLabMenu, so lab-shell builds no Exit there.
              calendar     postDayStatus (~680): {t:'ds-down', msg} when the host is up,
@@ -588,7 +588,7 @@ PREDICATE    hosted   = window.parent === window
              entirely. The fallthrough loads the lab hub INSIDE the sheet.
                select.html  lab Exit (~3442)  THE site that loads the hub inside the
                             sheet today (Calendar &amp; Meals)
-               lab-shell.js lab Exit (~1034)  landed e81f585 (Hub, gated); future-proofing
+               lab-shell.js lab Exit (~1034-1049)  landed 5fa88bf (Hub, gated); future-proofing
              NOT the calendar's own guards (index.html ~913, ~1000). The calendar is
              top-level in both models; leave them as they are.
 
@@ -646,8 +646,8 @@ STORAGE      assumed shared (WKWebsiteDataStore.default() in both relays, read f
 OWNERS       Shell: host view, relay, caps injection, entry/exit, both relays
              Calendar &amp; Meals: select.html + calendar send sites, predicate,
              entry and exit gate
-             Hub: lab-shell.js Exit predicate (landed e81f585) plus the dismiss()
-             send, through the shared-script gate
+             Hub: lab-shell.js Exit predicate plus dismiss() send, landed 5fa88bf
+             through the shared-script gate (DONE)
              Design System: this spec
 
 EVIDENCE     filmed at 60fps on the simulator first (pilot, meal selection opened from
