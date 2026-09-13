@@ -536,8 +536,11 @@ OPEN         calendar -&gt; native  {t:'sheet-open', url}
              as today. Native creates the host view above the calendar's view,
              off-screen at 103%, and loads url.
 
-RELAY        payload-blind. page -&gt; native  {t:'ds-relay', msg}
-             native -&gt; the OTHER view:
+RELAY        payload-blind, and directional by sending view (Shell's names; no schema):
+               selector view -&gt; native  {t:'ds-up',   msg}
+               calendar view -&gt; native  {t:'ds-down', msg}
+             A ds-up from the calendar view or a ds-down from the selector is
+             dropped and logged. native -&gt; the OTHER view:
                window.dispatchEvent(new MessageEvent('message', { data: msg }))
              Existing handlers stay as they are (no e.origin / e.source / ports /
              isTrusted anywhere in either page or lab-shell.js). Messages DOWN
@@ -550,12 +553,12 @@ CROSSING     the whole inventory: down  ds-daystatus {map}
              ds-nav / ds-router / ds-result, BroadcastChannel, cookies or shared DOM.
 
 SEND SITES   every site goes through one rule, quoted verbatim:
-               post(msg) = hosted ? webkit ds {t:'ds-relay', msg}
-                                  : parent.postMessage(msg, '*')
+               post(msg) = hosted ? webkit ds {t:'ds-up', msg}
+                                  : parent.postMessage(msg, '*')      (selector side)
              select.html  X close ds-close (~2504) &middot; confirm ds-done (~2518) &middot;
                           lab Exit (~3443)
-             calendar     postDayStatus (~680): relay down instead of
-                          ovFrame.contentWindow.postMessage
+             calendar     postDayStatus (~680): {t:'ds-down', msg} when the host is up,
+                          instead of ovFrame.contentWindow.postMessage
 PREDICATE    hosted   = !!(window.DSNativeCaps &amp;&amp; DSNativeCaps.sheetHost &gt;= 1)
                         &amp;&amp; /[?&amp;]embed=1/.test(location.search)
                         &amp;&amp; !/[?&amp;]sheethost=0/.test(location.search)
@@ -573,7 +576,8 @@ ENTRY        page (hosted): no CSS sheet entry (at rest from first paint), web c
              tile with its date).
              native: hold the host off-screen until that post, then 103% -&gt; 0 on
              .timingCurve(.32, .72, 0, 1, duration: .55), then call
-             DSSheet('presented') in both views.
+             DSSheet('presented') in both views, from the animation's real
+             completion callback, never a timer.
              watchdog: no first post by 1400ms -&gt; present anyway and call
              DSSheet('fallback'). The page un-hides its web chrome and never hands
              over for that surface's life.
@@ -587,6 +591,14 @@ EXIT         page (hosted): posts {t:'sheet-close', then: msg} INSTEAD of slidin
              400ms). Rashid's call. If it reads late, native exposes a named progress
              point (match a flag, not a curve).
 
+IN-SHEET     unchanged by this spec. The day sheet has NO drag-to-dismiss. Its motion
+             inside the host is the scroll-linked dock (syncSheet: translateY = gap
+             - scroll, --top-pad), still web-driven with per-frame chrometrack as
+             today. Hosted, the page skips sheet-enter/springing and sits at
+             sheetGap() from first paint. Meal-details drag-to-close is an in-page
+             layer. Any FUTURE drag-to-dismiss on a hosted sheet needs its own pass,
+             and the default expectation is container-driven: a motion that moves
+             the controls shares their clock.
 GEOMETRY     twins in the host view's own viewport; mode stays 'sheet' (posted y
              verbatim). Rest rects stay valid through the move because they are
              relative to the moving view.
