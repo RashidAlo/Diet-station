@@ -539,7 +539,16 @@
       height .48s cubic-bezier(.3,1.22,.36,1),
       border-radius .48s cubic-bezier(.3,1.22,.36,1),
       box-shadow .34s ease; }
-  .nav .ttl.tile .glassbg { background: rgba(255,255,255,.34);
+  /* TEMPORARY — ·223 A/B. Everything the page can report says the numeral is
+     painted: txt="16", box 16x17 correctly placed inside the tile, opacity 1,
+     display flex, colour rgb(11,14,18), and #dayTile is already
+     position:relative z-index:1 ABOVE this layer. The screen says zero ink.
+     Four hypotheses are dead (font gate, stale DOM, pre-hide ordering,
+     stacking), so stop hypothesising and make the invisible layer visible:
+     paint it red. If the square goes red with no numeral, this layer covers
+     the text despite the z-index. If it goes red WITH the numeral on top,
+     the glass is innocent and the numeral is being lost somewhere else. */
+  .nav .ttl.tile .glassbg { background: rgba(255,0,0,.55);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
     transition: background .34s ease, -webkit-backdrop-filter .34s ease,
@@ -3394,7 +3403,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 222 (log-only: is the numeral hidden or clipped?)';
+const BUILD = 'build 2026-09-13 · 223 (A/B: paint the tile glass red)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
