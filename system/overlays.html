@@ -140,6 +140,184 @@
     letter-spacing: .07em; padding: 6px 10px 5px; border-radius: 999px; }
   .badge.ok { background: var(--ok-soft); color: var(--ok); }
   .badge.todo { background: var(--red-soft); color: var(--red); }
+
+  /* ---- sheet anatomy (data-ds-section sheet-anatomy-v1) ----
+     Values are lifted from meal-select/select.html, the reference bar. The web
+     material below is what the page draws when no shell twins it; in-shell the
+     X, dual and tile are native Liquid Glass (composition Ruling 3). */
+  .an-law { font: 600 13.5px/1.45 'Urbane Rounded', sans-serif; background: var(--red-soft);
+    color: #7F1D1D; border-radius: 12px; padding: 14px 16px; margin-top: 16px; }
+  .an-law span { display: block; font: 400 13px/1.55 'Proxima Nova', sans-serif; margin-top: 6px; }
+  .an-phone { position: relative; width: 100%; max-width: 360px; margin: 18px auto 0;
+    border-radius: 34px; overflow: hidden; background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 18px 40px -26px rgba(0,0,0,.35); }
+  .an-phone.tall { height: 520px; background: #cfd2d8; }
+  .an-phone.spec { height: 330px; }
+  .an-behind { position: absolute; inset: 0; padding: 18px 20px; }
+  .an-behind i { display: block; height: 70px; border-radius: 16px; background: #eef0f3; margin-bottom: 10px; }
+  .an-scrim { position: absolute; inset: 0; background: rgba(11,14,18,.45); }
+  .an-sheet { position: absolute; left: 0; right: 0; top: 40px; bottom: 0; background: #fff;
+    border-radius: 24px 24px 0 0; box-shadow: 0 -14px 44px rgba(0,0,0,.24); overflow: hidden; }
+
+  /* the bar and its seats */
+  .an-bar { position: absolute; left: 0; right: 0; top: 0; height: 68px; z-index: 5; --tp: 10px; }
+  .an-surface { position: absolute; inset: 0 0 auto 0; height: 68px; background: #fff;
+    opacity: 0; transition: opacity .25s ease; }
+  .an-bar.scrolled .an-surface, .an-bar.docked .an-surface { opacity: 1; }
+  .an-dock { position: absolute; left: 0; right: 0; top: 66px; height: 34px; background: #fff;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    opacity: 0; transition: opacity .15s ease; }
+  .an-bar.docked .an-dock { opacity: 1; transition: opacity 0s; }
+  .an-dock b { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .an-dock em { font: normal 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .an-glass { background: rgba(255,255,255,.34);
+    -webkit-backdrop-filter: blur(12px) saturate(160%); backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
+      0 4px 14px -8px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.06); }
+  .an-x, .an-dual { position: absolute; top: calc(var(--tp) + 9px); color: #0b0e12; z-index: 2;
+    transition: background .35s ease, color .35s ease, opacity .28s ease,
+      transform .78s cubic-bezier(.22,1.28,.32,1) .06s; }
+  .an-x { width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0;
+    display: flex; align-items: center; justify-content: center; left: 24px; }
+  .an-x svg { width: 16px; height: 16px; }
+  .an-dual { right: 16px; height: 44px; border-radius: 22px; display: flex; align-items: center; overflow: hidden; }
+  .an-dual button { width: 50px; height: 100%; border: 0; background: transparent; padding: 0; color: inherit;
+    display: flex; align-items: center; justify-content: center; }
+  .an-dual button svg { width: 18px; height: 18px; }
+  .an-dual .sep { width: 1px; height: 22px; background: rgba(11,14,18,.16); flex: none; }
+  .an-dual .ck-base { stroke: #b9bcc2; }
+  .an-dual .ck-fill { stroke: #ed1c24; stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0;
+    transition: stroke-dashoffset .55s cubic-bezier(.3,.7,.3,1.08), opacity .05s; }
+  .an-bar.ready .an-dual .ck-fill { stroke-dashoffset: 0; opacity: 1; }
+  /* seat law: with no actions, the X takes the trailing seat */
+  .an-bar.x-only .an-x, .an-bar.title-x .an-x { left: auto; right: 16px; }
+  .an-bar.x-only .an-dual, .an-bar.title-x .an-dual, .an-bar.x-only .an-ttl { display: none; }
+  /* tile rows are 52 tall; every control in the row matches */
+  .an-bar.tile-row .an-x { width: 52px; height: 52px; }
+  .an-bar.tile-row .an-dual { height: 52px; border-radius: 26px; }
+  /* over imagery: the dark material */
+  .an-bar.dark .an-x, .an-bar.dark .an-dual { background: rgba(72,72,78,.30); color: #fff; }
+  .an-bar.dark .an-dual .sep { background: rgba(255,255,255,.3); }
+  .an-bar.dark .an-dual .ck-base { stroke: rgba(255,255,255,.55); }
+  .an-bar.dark .an-title { color: #fff; text-shadow: 0 1px 5px rgba(0,0,0,.5); }
+  /* scrub takeover: out fast, accelerating; back slow on a spring (rule above) */
+  .an-bar.scrubbing .an-x, .an-bar.scrubbing .an-dual { pointer-events: none;
+    transition: background .35s ease, color .35s ease, opacity .28s ease,
+      transform .42s cubic-bezier(.42,0,.62,.28); }
+  .an-bar.scrubbing .an-x { transform: translateX(-120px); }
+  .an-bar.scrubbing .an-dual { transform: translateX(150px); }
+  /* center seat: a TITLE (label) or a TILE (control) */
+  .an-title { position: absolute; left: 50%; top: calc(var(--tp) + 20px); transform: translateX(-50%);
+    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; white-space: nowrap;
+    transition: color .35s ease, text-shadow .35s ease; }
+  .an-bar.tile-row .an-title { display: none; }
+  .an-ttl { display: none; position: absolute; left: 50%; top: calc(var(--tp) + 9px); z-index: 3;
+    transform: translateX(-50%); width: 52px; height: 52px; border-radius: 16px; overflow: hidden;
+    transition: width .48s cubic-bezier(.3,1.22,.36,1), border-radius .48s cubic-bezier(.3,1.22,.36,1); }
+  .an-bar.tile-row .an-ttl { display: block; }
+  .an-bar.scrubbing .an-ttl { width: calc(100% - 32px); border-radius: 26px; }
+  .an-stack, .an-ladder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .an-stack { flex-direction: column; gap: 1px; transition: opacity .2s ease .28s; }
+  .an-stack .d { font: 400 9px/10px 'Proxima Nova', sans-serif; letter-spacing: .05em; color: rgba(11,14,18,.55); }
+  .an-stack .n { font: 600 15px/17px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .an-stack svg { width: 10px; height: 10px; }
+  .an-ladder { padding: 18px 0 9px; opacity: 0; transition: opacity .13s ease; }
+  .an-ladder .h { position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    font: 400 9px/10px 'Proxima Nova', sans-serif; letter-spacing: .05em; color: rgba(11,14,18,.55); }
+  .an-ladder i { font: normal 600 13px/15px 'Urbane Rounded', sans-serif; color: rgba(11,14,18,.5);
+    width: 11%; text-align: center; flex: none; }
+  .an-ladder i.near { font-size: 14px; color: rgba(11,14,18,.72); }
+  .an-ladder i.c { font-size: 15px; color: #0b0e12; }
+  .an-bar.scrubbing .an-stack { opacity: 0; transition: opacity .08s ease; }
+  .an-bar.scrubbing .an-ladder { opacity: 1; transition: opacity .2s ease .12s; }
+
+  /* specimen ground: a list, or imagery for the dark material */
+  .an-content { position: absolute; left: 0; right: 0; top: 0; padding: 78px 16px 0;
+    transition: transform .45s cubic-bezier(.32,.72,0,1); }
+  .an-content .an-hero { height: 150px; margin: -78px -16px 12px; opacity: 0; transition: opacity .3s ease;
+    background: radial-gradient(60% 70% at 30% 40%, #8a5a33 0, rgba(138,90,51,0) 70%),
+      radial-gradient(50% 60% at 75% 55%, #4d6b35 0, rgba(77,107,53,0) 70%),
+      linear-gradient(160deg, #3a2618, #1b140f); }
+  .an-content .cat { font: 600 18px/24px 'Urbane Rounded', sans-serif; margin: 2px 4px 10px;
+    display: flex; justify-content: space-between; }
+  .an-content .cat em { font: normal 600 12px/24px 'Urbane Rounded', sans-serif; color: #ed1c24; }
+  .an-content .row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .an-content .row i { width: 64px; height: 64px; border-radius: 14px; flex: none;
+    background: linear-gradient(135deg, #f2d7b5, #e7b98e); }
+  .an-content .row:nth-child(odd) i { background: linear-gradient(135deg, #dfe9c9, #b9cf94); }
+  .an-content .row b { display: block; height: 10px; width: 70%; border-radius: 5px; background: #e9e9ec; }
+  .an-content .row b + b { width: 40%; margin-top: 8px; }
+  .an-phone.imagery .an-content .an-hero { opacity: 1; }
+  .an-phone.scrolled .an-content { transform: translateY(-96px); }
+
+  /* pins */
+  .an-pin { position: absolute; z-index: 9; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--red); color: #fff; font: 600 11px/20px 'Urbane Rounded', sans-serif;
+    text-align: center; box-shadow: 0 0 0 2px #fff, 0 3px 8px rgba(0,0,0,.25); pointer-events: none; }
+  .an-legend { counter-reset: an; list-style: none; padding: 0; margin: 18px 0 0; }
+  .an-legend li { position: relative; padding: 9px 0 9px 32px; border-bottom: .5px solid var(--line);
+    font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+  .an-legend li:last-child { border-bottom: 0; }
+  .an-legend li::before { counter-increment: an; content: counter(an); position: absolute; left: 0; top: 9px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff;
+    font: 600 11px/20px 'Urbane Rounded', sans-serif; text-align: center; }
+  .an-legend b { color: var(--ink); font-family: 'Urbane Rounded', sans-serif; font-weight: 600; }
+
+  /* configurations */
+  .an-cfg { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 14px; }
+  .an-cfgrow { border-radius: 14px; background: var(--ground); padding: 10px 12px 12px; }
+  .an-cfgrow.bad { background: var(--red-soft); }
+  .an-cfgrow .cap { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+    font: 600 12.5px/1.4 'Urbane Rounded', sans-serif; margin-bottom: 8px; }
+  .an-cfgrow .cap small { font: 400 12px/1.4 'Proxima Nova', sans-serif; color: var(--ink-soft); }
+  .an-mini { position: relative; height: 44px; border-radius: 12px; background: #fff;
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06); }
+  .an-mini > * { position: absolute; top: 6px; }
+  .an-mini .mx { width: 32px; height: 32px; border-radius: 50%; background: #f0f0f2;
+    display: flex; align-items: center; justify-content: center; }
+  .an-mini .mx svg { width: 11px; height: 11px; }
+  .an-mini .md { width: 72px; height: 32px; border-radius: 16px; background: #f0f0f2; display: flex;
+    align-items: center; justify-content: space-around; }
+  .an-mini .md svg { width: 13px; height: 13px; }
+  .an-mini .mt { font: 600 13px/32px 'Urbane Rounded', sans-serif; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .an-mini .mtile { width: 32px; height: 32px; border-radius: 10px; background: #f0f0f2; left: 50%;
+    transform: translateX(-50%); font: 600 11px/32px 'Urbane Rounded', sans-serif; text-align: center; }
+  .an-mini .L { left: 12px; } .an-mini .R { right: 10px; }
+
+  /* the controls, one by one */
+  .an-ctls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 14px; }
+  .an-ctl { border-radius: 14px; background: var(--ground); padding: 14px; }
+  .an-ctl .vis { height: 92px; border-radius: 10px; margin-bottom: 10px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #e9edf2, #f7f3ee); }
+  .an-ctl .vis > .an-x, .an-ctl .vis > .an-dual, .an-ctl .vis > .an-ttl { position: relative; left: auto; right: auto; top: auto;
+    transform: none; display: flex; }
+  .an-ctl .vis > .an-ttl { display: block; }
+  @media (min-width: 640px) { .an-ctl.wide { grid-column: span 2; } }
+  .an-ctl h4 { font: 600 14px/1.3 'Urbane Rounded', sans-serif; }
+  .an-ctl p { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); margin-top: 6px; }
+  .an-ctl code, .an-tbl code { font: 11px/1.5 ui-monospace, Menlo, monospace; }
+
+  /* interactive state specimen */
+  .an-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; justify-content: center; }
+  .an-seg + .an-seg { margin-top: 8px; }
+  .an-seg .k { font: 500 10.5px/28px 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--ink-soft); margin-right: 2px; }
+  .an-seg button { font: 500 12.5px/1 'Urbane Rounded', sans-serif; border: 0; cursor: pointer;
+    border-radius: 999px; padding: 8px 12px; background: var(--ground); color: var(--ink); }
+  .an-seg button.on { background: var(--ink); color: #fff; }
+  .an-seg button:disabled { opacity: .35; cursor: default; }
+  .an-seg button.play { background: var(--red); color: #fff; }
+  .an-note { text-align: center; font: 500 11.5px/1.5 'Urbane Rounded', sans-serif; color: var(--ink-soft);
+    margin-top: 10px; min-height: 18px; }
+  .an-tbl { margin-top: 16px; }
+  .an-tbl .mrow .mn { width: 140px; }
+  .an-ready .ck-fill { stroke-dashoffset: 0; opacity: 1; }
+  .an-title[hidden] { display: none; }
+  .an-phone.spec .an-ttl { touch-action: none; cursor: grab; }
+  .an-content .an-hero { display: none; }
+  .an-phone.imagery .an-content .an-hero { display: block; }
+  .badge.open { background: #FFF4DC; color: #8A5A00; }
 </style>
 <script>
   if (/DietStationLab/.test(navigator.userAgent))
@@ -181,6 +359,166 @@
       <i>(under review: auth's Figma frame draws 38 and ships 38 — whether the radius law
       or Figma fidelity wins is Rashid's call; don't &ldquo;fix&rdquo; auth to 24
       meanwhile)</i> &middot; sheet shadow <code>0 -14px 44px rgba(0,0,0,.24)</code>.</p>
+  </section>
+
+  <section class="card" id="anatomy" data-ds-section="sheet-anatomy-v1" style="scroll-margin-top:80px">
+    <h2>Sheet anatomy</h2>
+    <p class="desc">Every overlay is a <b>sheet</b>, and every sheet is built from the same parts:
+      a scrim, the sheet, a <b>control bar</b> with three seats, an optional docked title, and one
+      body. Meal selection carries every part, so it is the figure; simpler sheets leave seats
+      empty, they never add new ones.</p>
+    <div class="an-phone tall">
+      <div class="an-behind"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="an-scrim"></div>
+      <div class="an-sheet">
+        <div class="an-content" style="padding-top:112px"><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div></div>
+        <div class="an-bar tile-row docked">
+          <div class="an-surface"></div>
+          <div class="an-dock"><b>Lunch</b><em>1 of 2</em></div>
+          <button class="an-x an-glass" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="an-pin" style="top:-6px;right:-8px">4</span></button>
+          <div class="an-ttl an-glass"><div class="an-stack"><span class="d">Wed</span><span class="n">15</span><svg viewBox="0 0 14 14" fill="none"><path d="M3.2 7.4l2.6 2.6 5-5.8" stroke="rgba(11,14,18,.34)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="an-ladder"><span class="h">Wed</span><i class="">11</i><i class="">12</i><i class="">13</i><i class="near">14</i><i class="c">15</i><i class="near">16</i><i class="">17</i><i class="">18</i><i class="">19</i></div></div>
+          <div class="an-dual an-glass "><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+          <span class="an-pin" style="left:calc(50% + 20px);top:5px">5</span>
+          <span class="an-pin" style="right:6px;top:5px">6</span>
+        </div>
+      </div>
+      <span class="an-pin" style="left:20px;top:10px">1</span>
+      <span class="an-pin" style="left:4px;top:300px">2</span>
+      <span class="an-pin" style="left:4px;top:74px">3</span>
+      <span class="an-pin" style="left:96px;top:115px">7</span>
+      <span class="an-pin" style="right:22px;top:200px">8</span>
+    </div>
+    <ol class="an-legend">
+      <li><b>Scrim.</b> The screen behind dims under <code>rgba(11,14,18,.45)</code>. It dissolves in
+        place over <code>.32s</code>; it never travels.</li>
+      <li><b>Sheet.</b> Slides up, <code>translateY(103%) &rarr; 0</code> on the house spring
+        (<code>.55s cubic-bezier(.32,.72,0,1)</code>). Radius 24 partial, 44 near-full.</li>
+      <li><b>Control bar.</b> Screen-anchored chrome, not content: <code>top-pad + 58</code> tall,
+        transparent at rest, white once the body scrolls. It is on screen from the sheet&rsquo;s first
+        visible frame and follows it through every state (composition <a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>).</li>
+      <li><b>Leading seat.</b> The X, when the trailing seat holds actions. <code>left: 24</code>.</li>
+      <li><b>Center seat.</b> A <b>title</b> (a label) or a <b>tile</b> (a control). Optional.</li>
+      <li><b>Trailing seat.</b> The actions: the dual capsule, clear | confirm, at
+        <code>right: 16</code>. When a sheet has no actions, the X sits here instead.</li>
+      <li><b>Docked title.</b> A 34pt band under the bar: the section you are in, with its count.
+        It exists only while a section is docked.</li>
+      <li><b>Body.</b> One scroller. Everything passes under the bar; nothing scrolls the bar.</li>
+    </ol>
+  </section>
+
+  <section class="card" id="seats" data-ds-section="sheet-seats-v1" style="scroll-margin-top:80px">
+    <h2>The control bar: three seats</h2>
+    <p class="desc">Seats are fixed positions, not a layout that flows. A control keeps its seat
+      through every state of the sheet, which is what lets the native twins be placed once and
+      tracked, instead of re-placed as content changes.</p>
+    <p class="an-law">ACTIONS OWN THE TRAILING SEAT. THE X SITS THERE WHEN A SHEET HAS NO ACTIONS,
+      AND MOVES TO THE LEADING SEAT WHEN IT DOES.
+      <span>The X is always in the bar. It is the one exit that does not depend on state. It never
+      shares a side with the actions, and clear is not a way out, so the dual capsule never
+      replaces it.</span></p>
+    <h3>Legal configurations</h3>
+    <div class="an-cfg">
+      <div class="an-cfgrow"><div class="cap">A · X only <small>Coupons (rewards), meal details</small></div><div class="an-mini"><span class="mx R"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span></div></div>
+      <div class="an-cfgrow"><div class="cap">B · Title + X <small>Sign in (auth), modify plan (checkout). A leading title or pill is fine here only because the leading seat is empty.</small></div><div class="an-mini"><span class="mt">Sign in</span><span class="mx R"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span></div></div>
+      <div class="an-cfgrow"><div class="cap">C · X · tile · dual <small>Meal selection. The full bar.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mtile">15</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
+      <div class="an-cfgrow"><div class="cap">D · X · title · dual <small>Legal, not shipped yet: the full bar with a plain title.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Mar 15th</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
+    </div>
+    <h3>Not legal</h3>
+    <div class="an-cfg">
+      <div class="an-cfgrow bad"><div class="cap">&times; X leading, trailing empty <small>Reads as back and leaves the action side empty. Checkout&rsquo;s Payment Method header ships this (see Adoption).</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Payment Method</span></div></div>
+      <div class="an-cfgrow bad"><div class="cap">&times; Dual with no X <small>The only way out would change data.</small></div><div class="an-mini"><span class="mt">Mar 15th</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
+    </div>
+    <p class="spec">bar <code>top-pad + 58</code> &middot; controls at <code>top-pad + 9</code>
+      &middot; X leading <code>24</code>, trailing <code>16</code> (rewards keeps its own 24, see
+      Adoption) &middot; dual trailing <code>16</code> &middot; text title centered at
+      <code>top-pad + 20</code> &middot; row height <b>44</b>. When the row holds a tile, <b>every
+      control in it is 52</b>, so the tile never outgrows its neighbours. The height belongs to
+      the row, not to a state, so nothing resizes when the tile arms.</p>
+  </section>
+
+  <section class="card" id="controls" data-ds-section="sheet-controls-v1" style="scroll-margin-top:80px">
+    <h2>The controls</h2>
+    <p class="desc">Five parts can sit in the bar. The first three are controls and share one
+      material. The last two are labels and never take a tap.</p>
+    <div class="an-ctls">
+      <div class="an-ctl"><div class="vis"><button class="an-x an-glass" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div>
+        <h4>X &middot; close</h4>
+        <p>44 circle (52 in a tile row), glyph 16 at stroke 1.7. Press scales to <code>.92</code>
+          over <code>.18s</code>. Tap: the sheet slides away and the host closes it at 380ms.</p></div>
+      <div class="an-ctl"><div class="vis" style="height:auto;padding:10px 0;flex-direction:column;gap:8px"><div class="an-dual an-glass "><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="an-dual an-glass an-ready"><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+        <h4>Dual capsule &middot; clear | confirm</h4>
+        <p>Two 50pt buttons with a 1&times;22 divider, radius 22 (26 at 52), glyphs 18. <b>Confirm
+          is always outermost.</b> Confirm stays grey (<code>#b9bcc2</code>) and inert until the
+          task is complete. Then its red stroke draws in (bottom). Tap: <code>ds-done</code> at
+          400ms. Clear never acts on the tap; it asks first, in an alert with a destructive
+          <i>Clear</i>.</p></div>
+      <div class="an-ctl"><div class="vis"><div class="an-ttl an-glass"><div class="an-stack"><span class="d">Wed</span><span class="n">15</span><svg viewBox="0 0 14 14" fill="none"><path d="M3.2 7.4l2.6 2.6 5-5.8" stroke="rgba(11,14,18,.34)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="an-ladder"><span class="h">Wed</span><i class="">11</i><i class="">12</i><i class="">13</i><i class="near">14</i><i class="c">15</i><i class="near">16</i><i class="">17</i><i class="">18</i><i class="">19</i></div></div></div>
+        <h4>Tile</h4>
+        <p>52 square, radius 16, the buttons&rsquo; material. Three rows: weekday 9 Proxima at 55%,
+          numeral 15 Urbane 600, status chip 10. <b>A control, not a label</b>: hold it and it
+          becomes the scrubber. The tile&rsquo;s own container is the capsule it grows into.</p></div>
+      <div class="an-ctl"><div class="vis"><span class="an-title" style="position:static;transform:none">Mar 15th</span></div>
+        <h4>Title</h4>
+        <p>16 Urbane 600, centered at <code>top-pad + 20</code>. Over imagery it goes white with a
+          soft shadow. <b>A label, not a control</b>: it never arms, never morphs, and never takes
+          the tile&rsquo;s place in motion.</p></div>
+      <div class="an-ctl wide"><div class="vis" style="align-items:flex-start;padding-top:22px"><div class="an-dock" style="position:static;opacity:1;width:100%;border-radius:8px"><b>Lunch</b><em>1 of 2</em></div></div>
+        <h4>Docked title</h4>
+        <p>A 34pt white band under the bar: title 18 Urbane 600, count 12 in red. It appears on the
+          same frame the section&rsquo;s own head hides, so the two are never both on screen. The
+          incoming section pushes it out over a 34px scroll-linked handoff. It fades out in
+          <code>.15s</code> on undock.</p></div>
+    </div>
+    <p class="spec"><b>Material, web path:</b> <code>rgba(255,255,255,.34)</code> +
+      <code>blur(12px) saturate(160%)</code> + a light rim. Over imagery each control switches to
+      <code>rgba(72,72,78,.30)</code> with a white glyph. The page measures the luminance under
+      each control&rsquo;s centre (below .52 is dark), and skips that check once the white surface
+      is up. <b>In the app shell</b>, the X, the dual and the tile are native Liquid Glass from the
+      first visible frame, and the web versions above never render there (<a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>). What is drawn
+      here is the fallback, and the native look is the design.</p>
+  </section>
+
+  <section class="card" id="states" data-ds-section="sheet-states-v1" style="scroll-margin-top:80px">
+    <h2>States &amp; motion</h2>
+    <p class="desc">The bar changes with what is happening under it. Pick a configuration and a
+      state, or hold the tile to arm the scrubber. Timings are the shipped ones.</p>
+    <div class="an-phone spec" id="anSpec">
+      <div class="an-content"><div class="an-hero"></div><div class="cat">Breakfast <em>0 of 1</em></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div></div>
+      <div class="an-bar tile-row">
+        <div class="an-surface"></div>
+        <div class="an-dock"><b>Lunch</b><em>1 of 2</em></div>
+        <button class="an-x an-glass" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+        <span class="an-title" id="anTitle">Mar 15th</span>
+        <div class="an-ttl an-glass"><div class="an-stack"><span class="d">Wed</span><span class="n">15</span><svg viewBox="0 0 14 14" fill="none"><path d="M3.2 7.4l2.6 2.6 5-5.8" stroke="rgba(11,14,18,.34)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="an-ladder"><span class="h">Wed</span><i class="">11</i><i class="">12</i><i class="">13</i><i class="near">14</i><i class="c">15</i><i class="near">16</i><i class="">17</i><i class="">18</i><i class="">19</i></div></div>
+        <div class="an-dual an-glass "><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      </div>
+    </div>
+    <div class="an-seg" data-k="seats"><span class="k">Seats</span>
+      <button data-v="full" class="on">X · center · dual</button><button data-v="title">Title + X</button><button data-v="x">X only</button></div>
+    <div class="an-seg" data-k="center"><span class="k">Center</span>
+      <button data-v="tile" class="on">Tile</button><button data-v="title">Title</button></div>
+    <div class="an-seg" data-k="state"><span class="k">State</span>
+      <button data-v="rest" class="on">Rest</button><button data-v="dark">Over imagery</button><button data-v="scrolled">Scrolled</button><button data-v="docked">Docked</button><button data-v="ready">Ready to confirm</button><button data-v="scrub">Scrubbing</button><button class="play" id="anPlay">Play arm &rarr; release</button></div>
+    <p class="an-note" id="anNote"></p>
+
+    <p class="an-law">CONTROLS LEAVE FAST AND COME BACK SLOW.
+      <span>Leaving means getting out of the way of something the user just did, so it is brief
+      and speeds up as it goes. Coming back is a spring with a short delay, so whatever the
+      controls made room for lands first and they arrive after it. One curve for both directions
+      reads as a snap-back.</span></p>
+
+    <div class="an-tbl">
+      <div class="mrow"><span class="mn">Presenting</span><span class="mt">The bar is on screen from the sheet&rsquo;s first visible frame, with each control already in its final material. It never crossfades from web controls to glass (<a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>).</span></div>
+      <div class="mrow"><span class="mn">Rest</span><span class="mt">Surface transparent. The body passes under glass controls.</span></div>
+      <div class="mrow"><span class="mn">Over imagery</span><span class="mt">Dark material, chosen per control. Background and colour change over <code>.35s ease</code>.</span></div>
+      <div class="mrow"><span class="mn">Scrolled</span><span class="mt">Past <code>scrollTop 8</code>, the white surface fades in over <code>.25s ease</code> and the dark material turns off. Only opacity animates; the height is locked to the frame.</span></div>
+      <div class="mrow"><span class="mn">Docked</span><span class="mt">The band appears in <code>0s</code> on the same frame the head hides, and fades out over <code>.15s</code>.</span></div>
+      <div class="mrow"><span class="mn">Ready to confirm</span><span class="mt">The check draws over <code>.55s cubic-bezier(.3,.7,.3,1.08)</code>. It turns back off the moment the task is incomplete again.</span></div>
+      <div class="mrow"><span class="mn">Pressed</span><span class="mt">X to <code>.92</code> over <code>.18s cubic-bezier(.3,.8,.3,1)</code>; dual buttons to <code>.9</code> over <code>.15s</code>.</span></div>
+      <div class="mrow"><span class="mn">Scrub &middot; arm</span><span class="mt">Tile to capsule, <b>width only</b>, <code>.48s cubic-bezier(.3,1.22,.36,1)</code>. Height stays 52 so it clears the notch at full screen. At the same moment the X slides <code>-120px</code> and the dual <code>+150px</code> over <code>.42s cubic-bezier(.42,0,.62,.28)</code>, and both stop taking taps. Haptic 6.</span></div>
+      <div class="mrow"><span class="mn">Scrub &middot; release</span><span class="mt">Capsule back to tile on the <b>same</b> <code>.48s</code> curve, so entry and exit are one move reversed. The neighbour days fade first, and the held numeral stays until the tile lands. X and dual return over <code>.78s cubic-bezier(.22,1.28,.32,1)</code> after <code>.06s</code>. Haptic 12 if the day changed, 6 if not.</span></div>
+      <div class="mrow"><span class="mn">Leaving</span><span class="mt">X: the sheet slides to <code>103%</code> and the host closes at 380ms. Confirm: the same, with <code>ds-done</code> at 400ms. Clear: an alert first, and nothing leaves.</span></div>
+    </div>
   </section>
 
   <section class="card">
@@ -225,9 +563,9 @@
               <span class="ottl">Meal details</span>
               <span class="spacer"></span>
               <div class="odual">
-                <button aria-label="Confirm"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><path d="M3.2 9.6l3.6 3.6 8-8.4" stroke="#ED1C24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button aria-label="Clear"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><g stroke="#1d1d1f" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button>
                 <span class="sep"></span>
-                <button data-close="ex" aria-label="Clear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#1d1d1f" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+                <button data-close="ex" aria-label="Confirm"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><path d="M3.2 9.6l3.6 3.6 8-8.4" stroke="#ED1C24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               </div>
             </div>
             <div class="ovbody"><div class="fk-t"></div><div class="fk-c"></div><div class="fk-c"></div><div class="fk-t" style="width:44%"></div></div>
@@ -303,32 +641,6 @@
   </section>
 
   <section class="card">
-    <h2>The action bar</h2>
-    <p class="desc">Every overlay carries a top action bar. Its content is feature-dependent
-      — but placement is law: <b>actions live on the right.</b></p>
-    <h3>With controls</h3>
-    <p class="desc" style="font-size:13.5px">When the overlay has simple controls, they form
-      the Apple-style dual capsule — confirm (check) and clear (X), divider between — pinned
-      right. Reference: meal selection's capsule at <code>right: 16px</code>, 44px tall,
-      radius 22, frosted glass.</p>
-    <div class="barfig"><span class="bf-t">Select meals</span><span class="spacer"></span>
-      <span class="lbl">check &middot; clear &rarr;</span>
-      <div class="odual"><button aria-label="Confirm"><svg viewBox="0 0 18 18" width="16" height="16" fill="none"><path d="M3.2 9.6l3.6 3.6 8-8.4" stroke="#ED1C24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="sep"></span><button aria-label="Clear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#1d1d1f" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>
-    </div>
-    <h3>Without controls</h3>
-    <p class="desc" style="font-size:13.5px">When an overlay has nothing to confirm, the lone
-      X takes the same right-side seat. Never left, never floating elsewhere.</p>
-    <div class="barfig"><span class="bf-t">Sign in</span><span class="spacer"></span>
-      <span class="lbl">x &rarr;</span>
-      <button class="oxb" aria-label="Close"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-    </div>
-    <p class="meta">Over imagery the bar sits on a top gradient
-      (<code>rgba(0,0,0,.22) &rarr; 0</code>) with a glass X (blur 12 + saturate 160%) —
-      meal details is the reference. Navigation steps, titles and feature controls fill the
-      left and center as each feature needs.</p>
-  </section>
-
-  <section class="card">
     <h2>Optional trait: drag-to-close</h2>
     <p class="desc">Sheets whose exit needs no confirmation may close by pulling down — an
       opt-in trait, granted per screen. Values from the meal-details reference:</p>
@@ -370,6 +682,28 @@
         <span class="mt">Present per the contract via the intent router (sheet/push); flows
         inside own their action bars.</span></div>
     </div>
+    <h3 style="margin-top:26px">Control bar: diff against what shipped</h3>
+    <div>
+      <div class="mrow"><span class="mn">Checkout &middot; Payment Method</span><span class="badge todo">Flag</span>
+        <span class="mt">Close glyph in the <b>leading</b> seat with the trailing seat empty
+        (<code>data-act="back"</code> drawing <code>close.svg</code>). If it goes back a screen it
+        should be a back chevron. If it dismisses, it moves to the trailing seat. Owner: Checkout.</span></div>
+      <div class="mrow"><span class="mn">X size</span><span class="badge open">Open</span>
+        <span class="mt">44 on meal selection and meal details &middot; 40 on auth, rewards and
+        checkout headers &middot; 36 on checkout&rsquo;s modify sheet. Choosing one size is
+        Rashid&rsquo;s call and doesn&rsquo;t block anything.</span></div>
+      <div class="mrow"><span class="mn">X material</span><span class="badge open">Open</span>
+        <span class="mt">Glass on meal selection, meal details and rewards &middot; white with a 1px
+        hairline on auth and checkout. Native-first makes glass the standard, but auth&rsquo;s
+        Figma frame draws the hairline. Rashid&rsquo;s call; nobody restyles in the meantime.</span></div>
+      <div class="mrow"><span class="mn">Title size</span><span class="badge open">Open</span>
+        <span class="mt">16 on meal selection &middot; 22 on auth (centered) &middot; 18 on checkout
+        (leading, beside the leading X above).</span></div>
+      <div class="mrow"><span class="mn">This page</span><span class="badge ok">Corrected</span>
+        <span class="mt">The earlier action-bar card said the dual was <i>confirm | clear</i> and the
+        X always sat right. What shipped is <b>clear | confirm</b>, with the X leading whenever
+        actions exist. The seat law above is written from the shipped bar.</span></div>
+    </div>
   </section>
 
   <section class="card">
@@ -396,8 +730,12 @@
 //         [rest height, full (top −10px)] on the house spring
 // drag-to-close (opt-in): only when scrollTop <= 0; follow at dy*0.42;
 //         release > 195px → close, else spring back
-// action bar: actions RIGHT — dual capsule (confirm|clear, 44h r22, frost)
-//         when controls exist; lone X right otherwise; top gradient over imagery</pre>
+// control bar: seats leading · center · trailing. Actions own trailing:
+//         dual (clear|confirm, 50+1+50 × 44h r22; 52h r26 in a tile row).
+//         X trailing when there are no actions, leading (left 24) when there are.
+//         controls leave .42s cubic-bezier(.42,0,.62,.28); return .78s
+//         cubic-bezier(.22,1.28,.32,1) after .06s. Over imagery rgba(72,72,78,.30).
+//         In the shell X/dual/tile are native twins from the first frame (Ruling 3).</pre>
       <button class="copycode" data-copy="ovKit">Copy</button>
     </div>
     <p class="meta">Values extracted from meal-select/select.html (meal details overlay +
@@ -475,6 +813,76 @@
 
   wireSheet('st', { dragClose: true, expanding: false, restPct: 46 });
   wireSheet('ex', { dragClose: true, expanding: true, restPct: 58 });
+})();
+
+/* ---- sheet anatomy: state specimen ---- */
+(() => {
+  const ph = document.getElementById('anSpec');
+  if (!ph) return;
+  const bar = ph.querySelector('.an-bar'), note = document.getElementById('anNote');
+  const title = document.getElementById('anTitle'), tileEl = ph.querySelector('.an-ttl');
+  const S = { seats: 'full', center: 'tile', state: 'rest' };
+  const NOTES = {
+    rest: 'Transparent surface; the body passes under the controls.',
+    dark: 'Over imagery: dark material, picked per control by the luminance under it.',
+    scrolled: 'Scrolled: the white surface fades in and the dark material turns off.',
+    docked: 'Docked: the section title moves into a band under the bar.',
+    ready: 'Task complete: the confirm stroke draws in red and becomes tappable.',
+    scrub: 'Armed: the tile widens into the scrubber; X exits left, dual exits right.'
+  };
+  const segs = [...document.querySelectorAll('.an-seg[data-k]')];
+  let playT = null;
+  function apply() {
+    const full = S.seats === 'full', tile = full && S.center === 'tile';
+    if (S.state === 'ready' && !full) S.state = 'rest';
+    if (S.state === 'scrub' && !tile) S.state = 'rest';
+    bar.classList.toggle('x-only', S.seats === 'x');
+    bar.classList.toggle('title-x', S.seats === 'title');
+    bar.classList.toggle('tile-row', tile);
+    title.hidden = S.seats === 'x';
+    title.textContent = S.seats === 'title' ? 'Sign in' : 'Mar 15th';
+    const st = S.state, sc = st === 'scrolled' || st === 'docked';
+    ph.classList.toggle('imagery', st === 'dark');
+    ph.classList.toggle('scrolled', sc);
+    bar.classList.toggle('dark', st === 'dark');
+    bar.classList.toggle('scrolled', sc);
+    bar.classList.toggle('docked', st === 'docked');
+    bar.classList.toggle('ready', st === 'ready');
+    bar.classList.toggle('scrubbing', st === 'scrub');
+    segs.forEach(sg => sg.querySelectorAll('button[data-v]').forEach(b => {
+      b.classList.toggle('on', S[sg.dataset.k] === b.dataset.v);
+      b.disabled = (sg.dataset.k === 'center' && !full) ||
+        (b.dataset.v === 'ready' && !full) || (b.dataset.v === 'scrub' && !tile);
+    }));
+    document.getElementById('anPlay').disabled = !tile;
+    note.textContent = NOTES[st];
+  }
+  segs.forEach(sg => sg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if (!b || b.disabled) return;
+    clearTimeout(playT);
+    S[sg.dataset.k] = b.dataset.v;
+    apply();
+  }));
+  document.getElementById('anPlay').addEventListener('click', () => {
+    clearTimeout(playT);
+    S.state = 'rest'; apply();
+    playT = setTimeout(() => {
+      S.state = 'scrub'; apply();
+      playT = setTimeout(() => { S.state = 'rest'; apply(); }, 1500);
+    }, 250);
+  });
+  /* hold the tile: arm while pressed, release on lift */
+  tileEl.addEventListener('pointerdown', e => {
+    if (!bar.classList.contains('tile-row')) return;
+    clearTimeout(playT);
+    try { tileEl.setPointerCapture(e.pointerId); } catch (_) {}
+    S.state = 'scrub'; apply();
+  });
+  const lift = () => { if (S.state === 'scrub') { S.state = 'rest'; apply(); } };
+  tileEl.addEventListener('pointerup', lift);
+  tileEl.addEventListener('pointercancel', lift);
+  apply();
 })();
 </script>
 </body>
