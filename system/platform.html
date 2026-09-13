@@ -257,6 +257,13 @@ window.DSChromeTap('close');
 // the rule. Precondition for any future "twins go hit-test transparent
 // and the web control underneath takes the tap": glass and control must
 // coincide on EVERY device, which only this shared rule guarantees.
+//
+// SEATS PICK THE SIDE, NEVER THE HEIGHT (ruling, 2026-09-13). The sheet
+// seat law (overlays.html#seats) moves a control left or right; it never
+// licenses a flow-specific top. A page placing chrome with its own pad
+// (satd + 20, satd + 22) is off this line by definition. The fix is the
+// page quoting the rule, not the twin following the page. Retiring the
+// normalization, or adding a per-post opt-out, were both declined.
 
 // TOUCH LAW (2026-09-10, after the meal-selector dead-zone forensics):
 // a twin must NEVER create a touch dead-zone over scrollable content.

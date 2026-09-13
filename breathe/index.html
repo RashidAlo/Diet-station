@@ -112,8 +112,12 @@
   .glass-dark-content { color: #0b0e12 !important; }
   .glass-dark-content svg { filter: brightness(0) opacity(.88); }
   /* sheet seat law: no actions in the bar, so the X takes the TRAILING seat;
-     40pt like every X outside meal selection. Same centre line as the old 44. */
-  .chrome .closebtn { position: absolute; right: 21px; top: calc(var(--satd, 0px) + 22px);
+     40pt like every X outside meal selection. Its TOP quotes DS-CHROME-TOP
+     (system/platform.html): max(28, safe-top - 1) + 9, the one line every
+     flow's chrome and every native twin share. It used to sit at satd + 20,
+     this page's own pad, which the shell's page-mode twin ignored, so glass
+     and control disagreed by ~12pt. Seats pick the side, never the height. */
+  .chrome .closebtn { position: absolute; right: 21px; top: calc(max(28px, var(--satd, 0px) - 1px) + 9px);
     width: 40px; height: 40px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; }
   .chrome .closebtn:active { transform: scale(.92); }
