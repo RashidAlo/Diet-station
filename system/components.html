@@ -181,7 +181,11 @@
       against it.</p>
     <div class="codewrap">
       <pre id="comptab">LAYOUT       desktop flow page, 4th lab tab after Prototype &middot; User flow &middot; Dev handoff.
-             Not rendered on mobile or in the app shell.
+             Not rendered on mobile or in the app shell; resizing into mobile while on
+             it returns to Prototype. It covers the WHOLE viewport (three panes plus a
+             device frame do not fit beside the sidebar) and repeats the tab switcher
+             in its own header. Every flow has the tab. Without a registry entry it
+             shows "No components documented for this flow yet".
                left    screens, each listing its components
                middle  the selected component: summary, anatomy/values, states,
                        link to its /system/ page
@@ -201,6 +205,9 @@ REGISTRY     system/components.json, owned by Design System (the documentation i
              flow (sheet-x, dual-capsule, date-tile, price), so docs are written once.
 
 INSTANCE     iframe src = the flow's own path + ?labframe=1&amp;v=&lt;now&gt;
+             Created when the tab opens and REMOVED when it closes. A second live copy
+             behind the Prototype tab would cost CPU and could play sound. Every visit
+             boots fresh. Selecting a component drives its FIRST state.
              labframe=1 means lab-shell builds NO chrome (tabs, chip, menus) and the
              flow renders its mobile layout at scale 1 with no desktop sidebar and no
              triple-tap lab menu.
@@ -211,7 +218,8 @@ PAGE API     each flow page defines, once it can drive itself:
                  show(componentId, stateId)  -&gt; Promise&lt;{ ok: bool, why? }&gt;
                      navigates to the component's screen, puts it in the state, and
                      resolves when the motion has SETTLED (a flag, not a timer)
-                 rect(componentId)           -&gt; { x, y, w, h } | null   viewport px
+                 rect(componentId)           -&gt; { x, y, w, h, r? } | null  viewport px;
+                                                r = corner radius, optional
                  reset()                     -&gt; Promise   back to the boot state
                }
              and then posts parent.postMessage({ t: 'ds-components', v: 1,
@@ -219,6 +227,10 @@ PAGE API     each flow page defines, once it can drive itself:
              The tab calls the API directly on contentWindow (same origin) and
              treats the post as "ready". Ids the page does not list, or a show()
              resolving ok:false, render as DOCS ONLY with the reason.
+             Tab-side watchdogs only stop a stuck page from hanging the tab; the page
+             still owns the settle flag. No ds-components within 6s -&gt; everything is
+             docs only ("this flow hasn't adopted the Components contract yet"). A
+             show() unsettled after 5s -&gt; "didn't settle".
 
 STATE RULE   a state is a REAL CODE PATH. show() calls the same function the user's
              gesture calls (setLevel, the rip's completion, the scrubber's arm), never
@@ -230,16 +242,21 @@ STATE RULE   a state is a REAL CODE PATH. show() calls the same function the use
              needs to, and the tab never assumes an order.
 
 OUTLINE      the tab draws the outline over the iframe from rect() x scale, re-read
-             every frame for the duration of the settle, so moving components stay
-             boxed. Red 1.5px, radius follows the component, 4px outset.
+             every frame for the duration of the settle, AND on the instance's scroll
+             and resize events, so moving or scrolled components stay boxed. Red
+             1.5px, 4px outset, radius = (r + 4) x scale, or 8px x scale when the page
+             gives no r.
 
 NATIVE       the playground shows the WEB rendering. Where the app draws the
              component natively (twins), the state's note says so and links Ruling 3.
              The tab never claims to preview native glass.
 
 OWNERS       Design System  this contract, system/components.json, every doc
-             Hub            the tab in lab-shell.js, labframe=1 in lab-shell, outline
-             each flow lane labframe=1 in its page, window.DSComponents, the
+             Hub            the tab in lab-shell.js, labframe=1 in lab-shell (no tabs,
+                            tab bar, chip, back, lab menu, three-finger gesture or
+                            sidebar resizer), outline, watchdogs
+             each flow lane labframe=1 in its page (its own desktop sidebar and lab
+                            menus), window.DSComponents, the
                             ds-components post, extracting state paths into functions
 PILOT        rewards (idle lane, small, setLevel already exists): sheet-x, coupon
              (bronze &middot; silver &middot; gold &middot; vip &middot; redeemed), level badge.
