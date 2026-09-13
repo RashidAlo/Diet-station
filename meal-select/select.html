@@ -321,6 +321,16 @@
      Before this the tile carried its own background and backdrop-filter, so
      arming SWAPPED one material for another and the container appeared to
      pop rather than grow. Now only width, height, radius and top change. */
+  /* BOOT: the bar lands at its final geometry without animating. `.tile` is
+     applied at script load over the base .ttl (radius 22), and its .48s
+     border-radius transition then ran on first paint. Hosted, the complete
+     post goes out at DOMContentLoaded — measured, it carried the tile at r=22
+     where rest is 16, so the native tile rode in with the wrong corners and
+     changed shape as it landed (shell log: r=19.35 at the first confirm, 16 at
+     presented). Ruling 3 asks for each control already in its final form on
+     the first visible frame. Suppressed only until the load-time class is
+     applied and resolved — see the flush after syncTileMode(). */
+  html.ds-booting .nav .ttl, html.ds-booting .nav .ttl * { transition: none !important; }
   .nav .ttl.tile, .nav .ttl.forming, .nav .ttl.scrub, .nav .ttl.unforming { padding: 0; overflow: hidden;
     transform: translateX(-50%);
     box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.62),
@@ -1537,6 +1547,7 @@ var DS_HOSTED = window.parent === window
   && /[?&]embed=1/.test(location.search)
   && !/[?&]sheethost=0/.test(location.search);
 var DS_EMBEDDED = window.parent !== window || DS_HOSTED;
+document.documentElement.classList.add('ds-booting');   /* see html.ds-booting */
 /* A hosted dismissal must be a sheet-close, never a bare relayed ds-close /
    ds-done: a relayed close tells the calendar "closed" while the host view is
    still on screen. Native runs the exit, tears the host down, THEN relays
@@ -3536,7 +3547,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 230 (native sheet host, page side, gated)';
+const BUILD = 'build 2026-09-13 · 231 (the tile lands at its final radius)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3734,6 +3745,14 @@ buildScreen();
 applyDay(0);
 document.getElementById('dayLabel').textContent = MON_LBL + ' ' + ordinal(DAY_START);
 syncTileMode();   /* third option; a no-op unless MODS.scrubStyle is 'tile' */
+/* land at the final radius, THEN allow transitions again. Reading a computed
+   value forces the style resolution that applies `.tile` with transitions
+   off; after that nothing changes value, so re-enabling them animates
+   nothing. Deliberately not requestAnimationFrame: rAF timing in this
+   document is not trustworthy (its visibilityState reads hidden while on
+   screen), and a ds-booting that lingered would silence the scrubber's morph. */
+try { void getComputedStyle(document.querySelector('.nav .ttl')).borderTopLeftRadius; } catch (_) {}
+document.documentElement.classList.remove('ds-booting');
 
 /* ---- native sheet presentation (HIG): spring in, then scroll-linked ---- */
 const sheetEl = document.getElementById('sheet');
