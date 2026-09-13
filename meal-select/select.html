@@ -1553,13 +1553,6 @@ var DS_HOSTED = window.parent === window
   && /[?&]embed=1/.test(location.search)
   && !/[?&]sheethost=0/.test(location.search);
 var DS_EMBEDDED = window.parent !== window || DS_HOSTED;
-/* TEMPORARY — log-only: where do Next taps go? Bounded. */
-var __nxN = 0;
-function nxLog(m) {
-  if (__nxN++ > 80) return;
-  try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-    m: 'NEXT ' + Math.round(performance.now()) + ' ' + m }); } catch (_) {}
-}
 document.documentElement.classList.add('ds-booting');   /* see html.ds-booting */
 /* A hosted dismissal must be a sheet-close, never a bare relayed ds-close /
    ds-done: a relayed close tells the calendar "closed" while the host view is
@@ -2275,21 +2268,13 @@ function celebrate() {
           dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
           dock.onclick = nextTapped;
           dock.classList.add('show', 'wide');
-          nxLog('celebrate armed Next');
         }, 1500);
       }, 320);
     }
   }, 50);
 }
 
-if (!window.__nxTouch) { window.__nxTouch = true;
-  document.addEventListener('pointerdown', function (e) {
-    if (e.target && e.target.closest && e.target.closest('#dock'))
-      nxLog('web pointerdown on #dock onclickSet=' + !!dock.onclick + ' turning=' + turning);
-  }, true);
-}
 function armNextDock() {
-  nxLog('armNextDock');
   dock.innerHTML = '<span class="d-label" style="opacity:1;display:flex;align-items:center;gap:7px">Next ' + ICON.arrow + '</span>';
   dock.onclick = nextTapped;
   dock.classList.add('show', 'wide');
@@ -2592,13 +2577,37 @@ function turnDay(dir, target) {
         scrollArea.style.transition = ''; scrollArea.style.transform = '';
         scrollArea.classList.remove('stagger');
         turning = false;
+        /* a Next tapped during this arrival: go now that it has landed. A short
+           beat so the loader reads as a response, not a flicker. */
+        if (nextQueued) { nextQueued = false; setTimeout(() => turnDay(1), 120); }
       }, 760);
     }, 30);
   }, 340);
 }
+/* A Next tap that lands while the new day is still arriving is HONOURED, not
+   dropped. Rashid: "the Next button still takes a few taps to actually work".
+   The earlier fix (loader 2000ms -> 650ms, below) was right that a tap on a
+   settled day always registered — but it never tested the tap that matters
+   when stepping through days. Measured: Next reappears on the new day 1017ms
+   after the tap, while `turning` is still true, and stays visible-but-dead
+   for another 803ms until the arrival animation ends. A second tap in that
+   window showed nothing and never advanced. That window is exactly where
+   someone stepping day by day taps, so it took several tries.
+   Now: the tap gets its loader and haptic at once, and the turn runs the
+   moment the arrival lands (see turnDay's end). One queued tap at most, so a
+   double tap can't skip a day. */
+let nextQueued = false;
 function nextTapped() {
-  nxLog('nextTapped turning=' + turning + ' onclickSet=' + !!dock.onclick + ' cls=' + dock.className);
-  if (turning) { nxLog('IGNORED: turning'); return; }
+  if (nextQueued) return;
+  if (turning) {
+    nextQueued = true;
+    dock.onclick = null;
+    vibrate(10);
+    dock.classList.remove('wide');
+    dock.innerHTML = '<span class="loader"></span>';
+    if (CAL) calDone.add(DAY_START + dayIdx);   /* dayIdx is already the arrived day */
+    return;
+  }
   dock.onclick = null;
   vibrate(10);
   dock.classList.remove('wide');
@@ -3589,7 +3598,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 235 (log-only: where do Next taps go?)';
+const BUILD = 'build 2026-09-13 · 236 (Next works on the first tap)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4593,9 +4602,6 @@ if (QS.get('solo') === '1') {
      tile is allowed to appear — see deflate() */
   window.DSTileNative = function () { return tileNative; };
   window.DSChromeTap = function (id) {
-    nxLog('DSChromeTap id=' + id + ' sel=' + (TAPS[id] || ELS[id]) +
-      ' found=' + !!document.querySelector(TAPS[id] || ELS[id] || '#__none') +
-      ' dockCls=' + dock.className + ' onclickSet=' + !!dock.onclick + ' turning=' + turning);
     /* gauge-next used to hand the bar back to the web here — gone: the
        native twin now owns the loader morph and every other state */
     var sel = TAPS[id] || ELS[id];
@@ -4918,11 +4924,8 @@ if (QS.get('solo') === '1') {
     instantHide = false;
     return s;
   }
-  var __lastDockKind = null;
   function postGauge() {
     if (!gaugeArmed || layerUp) return;   /* the gauge belongs to the base layer */
-    try { var __g = gaugeState(); if (__g.dock !== __lastDockKind) { __lastDockKind = __g.dock;
-      nxLog('gauge posts dock=' + __g.dock + ' next=' + __g.next); } } catch (_) {}
     try { webkit.messageHandlers.ds.postMessage(gaugeState()); gaugeOn = true; } catch (_) {}
   }
   function clearGauge() {
