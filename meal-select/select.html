@@ -1905,6 +1905,23 @@ function makeCard(cat, d, i) {
       el.classList.remove('loading');
       el.classList.add('revealing');
       setTimeout(() => el.classList.remove('revealing'), 560);
+      /* TEMPORARY — log-only. On device the content measured skeleton -> photo
+         in ~35ms, not .5s, while the logic test showed .revealing applied.
+         Sample the image's real opacity and animation state across the fade. */
+      if ((window.__skelN = (window.__skelN || 0) + 1) <= 3) {
+        const id = key, t0 = performance.now();
+        [0, 100, 250, 450].forEach(dt => setTimeout(() => {
+          try {
+            const an = cardImg.getAnimations ? cardImg.getAnimations() : [];
+            webkit.messageHandlers.ds.postMessage({ t: 'dsdebug', m: 'SKEL ' + id +
+              ' +' + dt + ' op=' + (+getComputedStyle(cardImg).opacity).toFixed(2) +
+              ' anims=' + an.length +
+              (an[0] ? ' ' + an[0].animationName + ':' + an[0].playState +
+                ':' + Math.round(an[0].currentTime) : '') +
+              ' cls=' + el.className + ' vis=' + document.visibilityState });
+          } catch (_) {}
+        }, dt));
+      }
     };
     cardImg.addEventListener('load', () => {
       const dec = cardImg.decode ? cardImg.decode() : Promise.resolve();
@@ -3470,7 +3487,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 225 (skeleton cards, content fades in)';
+const BUILD = 'build 2026-09-13 · 226 (log-only: does the card fade run on device?)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
