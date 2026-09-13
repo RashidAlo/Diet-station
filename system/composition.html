@@ -524,7 +524,12 @@
 TWIN         yes: the host view itself (position), plus the existing close, dual, tile
 DRAWS        native: the host view's motion, the twins. web: all sheet content. The
              calendar draws the scrim (#ovVeil) in its own view, beneath the host.
-CAP          DSNativeCaps.sheetHost &gt;= 1, injected at document start into BOTH views,
+CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
+             { tileRows: 2, dateWidget: 1 }, all in the one injected object. The page
+             reads tileRows / dateWidget from it at document start (tileNative still
+             also needs TILE_NATIVE_PROVEN). Without them dateEl() and the tile stay
+             null until the confirm, and the first post can never be complete.
+             Injected main-frame-only, at document start, into BOTH views,
              in the same diff as the host, the relay and the entry/exit. PER SURFACE:
              only a relay that actually hosts sheets announces it. First build: the
              PILOT (Rashid's surface). The hub webview keeps the iframe path, with web
@@ -566,12 +571,13 @@ SEND SITES   EVERY DISMISSAL from a hosted sheet goes through sheet-close, never
                                      : parent.postMessage(msg, '*')   (non-dismissal)
              Today every selector -&gt; calendar message is a dismissal, so ds-up carries
              nothing yet; it exists for the first message that is not a dismissal.
-             select.html  dismiss: X close ds-close (~2504) &middot; confirm ds-done (~2518)
-                          &middot; lab Exit (~3443)
+             Sites are anchored by IDENTIFIER, not line (lines drift with every edit):
+             select.html  dismiss: closeBtn.onclick ds-close &middot; confirmBtn.onclick
+                          ds-done &middot; labExit.onclick. These are all of them.
              lab-shell.js dismiss: lab Exit (~1034-1049, 5fa88bf). Future-proofing for hosted surfaces
                           that use lab-shell's menu. NOT meal selection's path: select.html
                           sets window.dsOwnLabMenu, so lab-shell builds no Exit there.
-             calendar     postDayStatus (~680): {t:'ds-down', msg} when the host is up,
+             calendar     postDayStatus: {t:'ds-down', msg} when the host is up,
                           instead of ovFrame.contentWindow.postMessage
 PREDICATE    hosted   = window.parent === window
                         &amp;&amp; !!(window.DSNativeCaps &amp;&amp; DSNativeCaps.sheetHost &gt;= 1)
@@ -586,10 +592,11 @@ PREDICATE    hosted   = window.parent === window
              EVERY framing guard reads embedded, never a window comparison, because
              in its own view parent === window and the guard skips the relay
              entirely. The fallthrough loads the lab hub INSIDE the sheet.
-               select.html  lab Exit (~3442)  THE site that loads the hub inside the
+               select.html  labExit.onclick  THE site that loads the hub inside the
                             sheet today (Calendar &amp; Meals)
                lab-shell.js lab Exit (~1034-1049)  landed 5fa88bf (Hub, gated); future-proofing
-             NOT the calendar's own guards (index.html ~913, ~1000). The calendar is
+             NOT the calendar's own guards (its labExit and the chrome module's
+             FRAMED check in meal-select/index.html). The calendar is
              top-level in both models; leave them as they are.
 
 ENTRY        page (hosted): no CSS sheet entry (at rest from first paint), web chrome
@@ -625,6 +632,18 @@ EXIT         page (hosted): posts {t:'sheet-close', then: msg} INSTEAD of slidin
              400ms). Rashid's call. If it reads late, native exposes a named progress
              point (match a flag, not a curve).
 
+HOSTED PAGE  select.html, hosted only. Each line is a site (Calendar &amp; Meals):
+             1  closeBtn / confirmBtn: SKIP the CSS slide-out (springing + translateY
+                103%). The native container owns the exit; a web slide inside it doubles
+                the motion.
+             2  dismiss() posts IMMEDIATELY. Drop the 380 / 400ms timers that waited for
+                the CSS slide, or a dead pause precedes the exit.
+             3  read tileRows / dateWidget from DSNativeCaps at setup (see CAP).
+             4  prehide() at SETUP, reinstated for hosted only (&middot;217 removed it so the
+                web bar could ride the iframe). No cap: stays off (clause 5).
+             5  boot()'s go() (watchDock, gauge) runs on DSSheet('presented'), not on
+                the sheet's transitionend, which never fires without a CSS entry.
+             6  DSSheet('fallback') handler: un-hide web chrome for the surface's life.
 IN-SHEET     unchanged by this spec. The day sheet has NO drag-to-dismiss. Its motion
              inside the host is the scroll-linked dock (syncSheet: translateY = gap
              - scroll, --top-pad), still web-driven with per-frame chrometrack as
@@ -659,7 +678,13 @@ EVIDENCE     filmed at 60fps on the simulator first (pilot, meal selection opene
              4  confirm pops the days on the calendar &middot; X closes &middot; lab Exit closes
                 the sheet (does not load the hub inside it)
              5  storage key round-trips
-             6  ?sheethost=0 -&gt; iframe path, web controls whole-life, no handover</pre>
+             6  ?sheethost=0 -&gt; iframe path, web controls whole-life, no handover
+             7  probe in the host: document.visibilityState and timer cadence. In the
+                iframe, visibility reads hidden PERMANENTLY and timers throttle to ~1Hz
+                after ~370ms (Calendar &amp; Meals, skeleton work). A separate web view
+                may differ, and every timer-driven page behaviour depends on it.
+                Anything tied to a timer must be re-checked; WebKit also pauses
+                animations below the fold.</pre>
       <button class="copycode" data-copy="spechost">Copy</button>
     </div>
     <p class="meta"><b>What this spec does NOT cover:</b> the calendar&rsquo;s own entry (it snaps), the
