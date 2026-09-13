@@ -3567,7 +3567,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 232 (hosted sheet rests at the designed height)';
+const BUILD = 'build 2026-09-13 · 233 (hosted exit leaves the controls to native)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4377,6 +4377,11 @@ if (QS.get('solo') === '1') {
   window.DSScrubRepost = function () { if (!layerUp) report(false, true); };
   function report(instant, frac) {
     if (sheetFallback) return;       /* fallback surface never hands over */
+    /* after a hosted dismissal, post NOTHING: native froze the controls at
+       closing and owns them until teardown. chromeExit's moving=true is not
+       enough — a scroll during the exit re-arms the dock watcher's rest timer,
+       which flips moving back and reports again (caught in the harness). */
+    if (window.dsSheetClosing) return;
     if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
     /* iOS<26 shells never confirm — hand chrome back to the web bar.
        NOT IN HOSTED MODE. A shell that announces sheetHost is a shell that
@@ -4962,6 +4967,7 @@ if (QS.get('solo') === '1') {
   function postTrack() {
     trackRaf = null;
     if (sheetFallback) return;
+    if (window.dsSheetClosing) return;   /* see report() */
     if (layerUp) return;
     var off = frameOffset();
     var els = chromeEls(off);   /* same builder as the rest post — see chromeEls */
@@ -4994,6 +5000,14 @@ if (QS.get('solo') === '1') {
     clearTimeout(restT);
     if (trackRaf) { cancelAnimationFrame(trackRaf); trackRaf = null; }
     docked = false;
+    /* HOSTED: stop posting, but DO NOT CLEAR. Native owns the exit — it freezes
+       the on-screen controls at `closing` and rides them out with the sheet
+       until teardown. Clearing here posted els:[] on the very next frame
+       (shell log: closing els=3, then els=0 while the sheet was still leaving),
+       so the page's state contradicted the screen, and on the build before
+       native froze them it left X, date and dual fading AT REST over the
+       calendar mid-exit. Teardown removes everything. */
+    if (window.DS_HOSTED) return;
     clearChrome();
     clearGauge();
   }
