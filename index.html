@@ -405,7 +405,7 @@
     box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06); }
   .fndpeek .fr14 { border-radius: 10px; }
   .tspeek { margin-top: 16px; padding: 16px 20px; border-radius: 14px; background: var(--ground);
-    display: flex; gap: 22px; align-items: baseline; overflow: hidden; }
+    display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: baseline; }
   .tspeek b { font: 600 34px/1 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
   .tspeek s { text-decoration: none; font: 400 34px/1 'Proxima Nova', sans-serif; color: var(--ink-soft); }
   .tspeek u { text-decoration: none; font: 500 34px/1 'DietStation Dot', monospace; color: var(--red); }
@@ -457,8 +457,9 @@
   @keyframes bpeek { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
   .brandpeek span { font: 500 24px/1 'DietStation Dot', monospace; color: #fff; white-space: nowrap; }
   .varpeek { margin-top: 16px; padding: 16px 18px; border-radius: 14px; background: var(--ground);
-    display: flex; gap: 10px; align-items: center; overflow-x: auto; scrollbar-width: none; }
-  .varpeek::-webkit-scrollbar { display: none; }
+    display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  /* wraps rather than scrolls: at grid-card width (~268px) a hidden sideways
+     scroller clipped the specimen on desktop, where nobody swipes (Hub, bbbacdf) */
   .varpeek .vp { display: inline-flex; align-items: center; gap: 6px; flex: none;
     font: 600 12px/1 'Urbane Rounded', sans-serif; padding: 10px 14px; border-radius: 999px; }
   .varpeek .vp i { width: 14px; height: 14px; border-radius: 50%; }
@@ -469,10 +470,9 @@
   .varpeek .vp-m { background: #E9F1D0; color: #365512; }
   .varpeek .vp-a { color: #c9c9cf; flex: none; }
   .platpeek { margin-top: 16px; padding: 16px 18px; border-radius: 14px; background: var(--ground);
-    display: flex; gap: 10px; align-items: center; overflow-x: auto; scrollbar-width: none; }
-  .platpeek::-webkit-scrollbar { display: none; }
-  .platpeek .pp { flex: none; font: 500 11px/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
-    padding: 9px 13px; border-radius: 999px; white-space: nowrap; }
+    display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  .platpeek .pp { flex: 0 1 auto; max-width: 100%; font: 500 11px/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+    padding: 9px 13px; border-radius: 16px; overflow-wrap: anywhere; }
   .platpeek .pp-n { background: #1d1d1f; color: #f5f5f7; }
   .platpeek .pp-w { background: #fff; color: var(--ink-soft); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
   .platpeek .pp-a { color: #c9c9cf; flex: none; }
