@@ -461,12 +461,26 @@
       the <code>0.05</code> case in the material rules. Whether one tint reads correctly across
       that change, or the twin needs its tint to follow the ground, is theirs to measure. Nothing
       else in the ruling depends on the answer.</p>
-    <p class="meta"><b style="color:var(--red)">Status (2026-09-13): not shipped.</b> Since &middot;217
-      the web bar rides the entry and hands over at rest, with ~80ms blank. Two motions comply:
-      <b>pinned</b> (as written above: controls fixed at the chrome line, sheet rises beneath) or
-      <b>riding</b> (twins travel with the sheet on a shell-owned entry, one clock). Rashid chooses
-      the motion; Shell measures both. An amendment allowing the material to hand over at rest was
-      proposed and declined, because that handover is the complaint this ruling answers.</p>
+    <p class="meta"><b style="color:var(--red)">Status (2026-09-13): motion chosen, not built.</b>
+      Rashid picked <b>riding</b>: the controls come up with the sheet, already native. One native
+      container moves the overlay&rsquo;s web view and its twins on one clock, on the house curve
+      (<code>.55s cubic-bezier(.32,.72,0,1)</code> from 103%). <b>Pinned</b> was set aside because it
+      hides a material handover (see Shell&rsquo;s read below). An amendment allowing the material to
+      hand over at rest was declined, because that handover is the complaint this ruling answers.<br>
+      <b>Contract, proposed and awaiting Shell&rsquo;s confirmation.</b> Page side, gated on a
+      versioned <code>DSNativeCaps.sheetEntry</code> injected at document start: no CSS sheet entry,
+      web chrome pre-hidden from setup, and a first chrome post that is complete, carrying the date
+      too. Shell side: hold the container off-screen until that first post, run the curve, then
+      fire <code>presented</code>.<br>
+      <b>Scope, ruled here.</b> The law reads &ldquo;before the first visible frame, or after the
+      last one&rdquo;, so it binds the <b>exit</b> as well as the entry. Dismissal rides the same
+      container on the way out; a CSS slide-out with twins trailing it is the same ~78pt bug in
+      reverse. <b>Open with Shell:</b> what the container holds. It must move the overlay only,
+      while the scrim and the calendar beneath stay put. A single offset on a view that also holds
+      the calendar would move both.<br>
+      <b>Until it ships:</b> in the shell, &middot;217&rsquo;s at-rest handover remains, tracked as
+      non-compliant. Off the shell nothing changes, and clause 5&rsquo;s whole-life web controls
+      are the fallback. The calendar keeps its snap (&middot;33).</p>
     <p class="meta"><b>Shell&rsquo;s read (2026-09-13), scoped, for the choice:</b><br>
       <b>Clause 1 needs no cache:</b> capabilities are fixed per build, so the shell can inject
       <code>window.DSNativeCaps</code> as a document-start user script, present before any page
