@@ -1023,23 +1023,24 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
          NATIVE SHEET HOST (composition.html#spec-sheethost): a page hosted
          in its own native web view has parent === window, so a window
          comparison alone would skip the close and load the hub INSIDE the
-         sheet. The guard reads `embedded` and sends through the spec's rule.
-         One clause beyond the spec's predicate: hosted also requires
-         parent === window. A truly hosted page always satisfies it, so the
-         hosted case is unchanged — but the app injects its bridge scripts
-         into iframes too (forMainFrameOnly: false), and every hub flow
-         frame carries embed=1, so without it a cap visible in an iframe
-         would route every flow's Exit to native instead of the hub.
+         sheet. The guard reads `embedded`; Exit is a DISMISSAL, so hosted it
+         goes through the spec's dismiss() rule — sheet-close, never a bare
+         relayed ds-close, which would tell the opener "closed" while the
+         host view stayed on screen (spec head ed94902).
+         The parent === window clause is load-bearing: the app injects its
+         bridge scripts into iframes too, and every hub flow frame carries
+         embed=1, so without it a cap visible in an iframe would route every
+         flow's Exit to native instead of the hub.
          No cap present: identical to the old behaviour. */
-      var hosted = !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1) &&
+      var hosted = window.parent === window &&
+        !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1) &&
         /[?&]embed=1/.test(location.search) &&
-        !/[?&]sheethost=0/.test(location.search) &&
-        window.parent === window;
+        !/[?&]sheethost=0/.test(location.search);
       var embedded = window.parent !== window || hosted;
       if (embedded) {
         try {
           if (hosted) {
-            window.webkit.messageHandlers.ds.postMessage({ t: 'ds-relay', msg: { t: 'ds-close' } });
+            window.webkit.messageHandlers.ds.postMessage({ t: 'sheet-close', then: { t: 'ds-close' } });
           } else {
             window.parent.postMessage({ t: 'ds-close' }, '*');
           }
