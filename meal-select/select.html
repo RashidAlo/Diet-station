@@ -1921,7 +1921,23 @@ function makeCard(cat, d, i) {
         if (e.animationName !== 'cardContentIn') return;
         cardImg.removeEventListener('animationend', done);
         el.classList.remove('revealing');
+        if (el.__fadeLog) el.__fadeLog('END');
       });
+      /* TEMPORARY — log-only. The video could not separate the fade from the
+         sheet's rise (recorder dropped frames mid-entry). Sample the image's
+         real opacity every 60ms from reveal to animationend, first 2 cards. */
+      if ((window.__fadeN = (window.__fadeN || 0) + 1) <= 2) {
+        const t0 = performance.now(), key0 = key;
+        el.__fadeLog = (tag) => { try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+          m: 'FADE ' + key0 + ' ' + tag + ' +' + Math.round(performance.now() - t0) +
+          ' op=' + (+getComputedStyle(cardImg).opacity).toFixed(2) +
+          ' vis=' + document.visibilityState }); } catch (_) {} };
+        el.__fadeLog('REVEAL');
+        let k = 0; const iv = setInterval(() => {
+          if (++k > 40 || !el.classList.contains('revealing')) { clearInterval(iv); return; }
+          el.__fadeLog('t');
+        }, 60);
+      }
     };
     cardImg.addEventListener('load', () => {
       const dec = cardImg.decode ? cardImg.decode() : Promise.resolve();
@@ -3487,7 +3503,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 227 (the fade ends on its own clock)';
+const BUILD = 'build 2026-09-13 · 228 (log-only: the fade curve on device)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
