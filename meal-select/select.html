@@ -845,6 +845,32 @@
   .card .grad { position: absolute; left: 0; right: 0; bottom: 0; height: 114px;
     border-radius: 0 0 24px 24px; pointer-events: none;
     background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.41) 35.1%, rgba(0,0,0,.81)); }
+  /* SKELETON LOADING (Rashid, 2026-09-13: "placeholders for the meal
+     thumbnails, static, and feed in the card data when it loads, faded in —
+     during load, empty containers, and the content loads in with a smooth
+     fade").
+     The dish data is static and renders immediately; only the IMAGES arrive
+     late. So the placeholder is the card's own container — same 183x259, same
+     24 radius, no layout shift when content lands — in a quiet neutral, with
+     NO fake text bars: he asked for empty containers.
+     Everything layered on the photo is hidden with it, not just the image.
+     The name, macros and rating are white over a dark scrim; shown before the
+     photo they are white on grey, which reads as broken rather than loading.
+     So the card's content arrives as ONE piece.
+     Fade is a keyframe ANIMATION, deliberately not a transition: adding
+     `transition` to these layers would replace any transition list they
+     carry, and a future one would silently lose to this. Static — no shimmer,
+     per "static". */
+  .card.loading .photo { background: #eef0f3; }
+  .card.loading .photo img, .card.loading .grad, .card.loading .toprow,
+  .card.loading .autobadge, .card.loading .details { opacity: 0; }
+  @keyframes cardContentIn { from { opacity: 0; } }
+  .card.revealing .photo img, .card.revealing .grad,
+  .card.revealing .toprow, .card.revealing .details {
+    animation: cardContentIn .5s cubic-bezier(.22,.61,.36,1) both; }
+  /* an image that fails still has to let the dish be read: a darker ground so
+     the white name and macros stay legible over the scrim */
+  .card.img-failed .photo { background: #c5c9cf; }
   /* selection border springs in — Figma track: 0 -> 3.5px, bezier(.633,2.581,.761,1.433) */
   .card .sel-border { position: absolute; inset: 0; border-radius: 24px; pointer-events: none;
     border: 0 solid var(--selc); z-index: 3;
@@ -1864,6 +1890,34 @@ function makeCard(cat, d, i) {
     '</div>';
   cardEls[key] = el;
   el.style.setProperty('--ci', String(cardSeq++));
+  /* skeleton — see .card.loading. A cached image is already decoded when the
+     element is created, so it gets NO skeleton: showing a placeholder for one
+     frame and then fading would be a flicker, not a load state. Anything that
+     actually showed a placeholder always fades, however fast it arrived. The
+     reveal waits for decode(), not just `load`, so the fade never starts on a
+     half-decoded image and hitches partway through. */
+  const cardImg = el.querySelector('.photo img');
+  if (cardImg && !(cardImg.complete && cardImg.naturalWidth)) {
+    el.classList.add('loading');
+    const reveal = (failed) => {
+      if (!el.classList.contains('loading')) return;
+      if (failed) el.classList.add('img-failed');
+      el.classList.remove('loading');
+      el.classList.add('revealing');
+      setTimeout(() => el.classList.remove('revealing'), 560);
+    };
+    cardImg.addEventListener('load', () => {
+      const dec = cardImg.decode ? cardImg.decode() : Promise.resolve();
+      dec.catch(() => {}).then(() => reveal(false));
+    }, { once: true });
+    cardImg.addEventListener('error', () => reveal(true), { once: true });
+    /* WATCHDOG. The content is hidden until an event arrives; if neither load
+       nor error ever does (a stalled request, an element swapped out from under
+       its listener) the dish would stay invisible for good, which is far worse
+       than a slow photo. Reveal regardless after 4s — the fade still runs, and
+       reveal() is idempotent so a late load is a no-op. */
+    setTimeout(() => reveal(false), 4000);
+  }
   el.addEventListener('click', e => {
     if (e.target.closest('.q-minus')) return step(key, -1);
     if (e.target.closest('.q-plus')) return step(key, +1);
@@ -3416,7 +3470,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 224 (the date paints above its own glass)';
+const BUILD = 'build 2026-09-13 · 225 (skeleton cards, content fades in)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
