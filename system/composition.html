@@ -588,7 +588,11 @@ ENTRY        page (hosted): no CSS sheet entry (at rest from first paint), web c
              watchdog: no complete post in time -&gt; present anyway and call
              DSSheet('fallback'). The time is MEASURED, not chosen: first-complete-post
              latency from sheet-open on the pilot, cached and uncached, set just above
-             the uncached p95. 1400ms is a provisional ceiling until measured. The page un-hides its web chrome and never hands
+             the uncached p95. 1400ms is a provisional ceiling until measured.
+             Only number so far: first chrome post ~696ms after the overlay began
+             (web tile at 192ms). WARM cache, pilot, iframe model, from Calendar &amp;
+             Meals' DOM log. Uncached is unmeasured; Shell measures it first, using
+             the DSSELECTOR(pilot) up= log. The page un-hides its web chrome and never hands
              over for that surface's life.
 EXIT         page (hosted): posts {t:'sheet-close', then: msg} INSTEAD of sliding
              its own sheet (X: then = ds-close &middot; confirm: then = ds-done {days, mon}).
