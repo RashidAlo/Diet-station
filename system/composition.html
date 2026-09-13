@@ -526,9 +526,10 @@ DRAWS        native: the host view's motion, the twins. web: all sheet content. 
              calendar draws the scrim (#ovVeil) in its own view, beneath the host.
 CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              { tileRows: 2, dateWidget: 1 }, all in the one injected object. The page
-             reads tileRows / dateWidget from it at document start (tileNative still
-             also needs TILE_NATIVE_PROVEN). Without them dateEl() and the tile stay
-             null until the confirm, and the first post can never be complete.
+             reads tileRows / dateWidget from it at document start. Without them
+             dateEl() stays null until the confirm and the first post can never be
+             complete. (With dateWidget the dated tile travels as the scrub el, and
+             the separate tile el is skipped, so TILE_NATIVE_PROVEN does not gate it.)
              Injected main-frame-only, at document start, into BOTH views,
              in the same diff as the host, the relay and the entry/exit. PER SURFACE:
              only a relay that actually hosts sheets announces it. First build: the
@@ -600,9 +601,17 @@ PREDICATE    hosted   = window.parent === window
              top-level in both models; leave them as they are.
 
 ENTRY        page (hosted): no CSS sheet entry (at rest from first paint), web chrome
-             pre-hidden from setup, and the first post carrying close, dual AND the
-             tile with its date sets complete: true. The PAGE owns what complete
-             means; native keeps no id list (match a flag, not a curve).
+             pre-hidden from setup, and the first complete post sets complete: true.
+             The PAGE owns what complete means; native keeps no id list (match a flag,
+             not a curve). Defined by Calendar &amp; Meals:
+               complete = els has close AND dual AND scrub with dates.length &gt;= 1
+             statuses may be empty, because '' already means no status (Ruling 2).
+             ?scrubtwin=0 makes dateEl() null, so complete is never true and the
+             watchdog forces clause 5. That is INTENDED: a lab opt-out resolving to
+             the honest fallback. Hosted mode does not ignore the primer.
+             Do not "fix": under setup prehide the web tile is not hidden until
+             datePosted (&middot;220). report() sets it and runs prehide() in the same call
+             that sends the complete post, while the host is still off-screen.
              native: hold the host off-screen until a post with complete: true, then
              103% -&gt; 0 on
              .timingCurve(.32, .72, 0, 1, duration: .55), then call
