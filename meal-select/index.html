@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-13 · 33 (the entry snaps, by decision)';
+const BUILD = 'calendar 2026-09-13 · 34 (opens the native sheet host when it exists)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -629,15 +629,22 @@ setInterval(() => syncClock(), 1000);
 /* ================= meal-selection overlay ================= */
 const ovVeil = document.getElementById('ovVeil');
 let ovFrame = null;
-function openDay(mon, day, auto) {
-  if (ovFrame) return;
-  vibrate(8);
-  ovVeil.classList.add('show');
-  ovFrame = document.createElement('iframe');
-  ovFrame.className = 'ov-frame';
-  /* v= keeps the overlay out of the WKWebView cache — Rashid kept getting
-     stale builds because this iframe src was the one unbusted URL */
-  ovFrame.src = 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day +
+/* NATIVE SHEET HOST (Ruling 3, "riding"; /system/composition.html#spec-sheethost).
+   When the relay hosting this page can host sheets, the selector opens in its
+   OWN native web view that rises with its controls on one clock, instead of as
+   an iframe here — an iframe cannot be moved independently of this page.
+   Gated on DSNativeCaps.sheetHost, injected main-frame-only at document start;
+   every build before that announces nothing and the iframe path is unchanged.
+   parent === window: the calendar is top-level on the pilot; inside the hub it
+   is itself an iframe and keeps the iframe path (the hub has no host yet). */
+const HOST_SHEETS = window.parent === window
+  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1)
+  && !/[?&]sheethost=0/.test(location.search);
+let ovHosted = false;
+/* ONE builder for both paths, so the hosted URL is the iframe src byte for
+   byte — same query, same primers, same cache-busting v. */
+function overlaySrc(mon, day, auto) {
+  return 'select.html?embed=1&cal=1&mon=' + mon + '&day=' + day +
     '&auto=' + (auto ? 1 : 0) +
     /* headless primers ride through: ?scrub=portal|glass seeds the mode,
        ?scrubtwin=1 enables the gated native twin for lane test runs */
@@ -657,6 +664,31 @@ function openDay(mon, day, auto) {
     ((new URLSearchParams(location.search)).get('rpt')
       ? '&rpt=' + (new URLSearchParams(location.search)).get('rpt') : '') +
     '&v=' + Date.now();
+}
+function openDay(mon, day, auto) {
+  if (ovFrame || ovHosted) return;
+  vibrate(8);
+  /* the tap's feedback is ours and immediate in both paths: the veil dissolves
+     in place and the haptic fires while the host loads */
+  ovVeil.classList.add('show');
+  if (HOST_SHEETS) {
+    ovHosted = true;
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'sheet-open',
+        /* resolved exactly as the browser resolves an iframe src — against the
+           document's base, not location — so the two paths load the same URL */
+        url: new URL(overlaySrc(mon, day, auto), document.baseURI).href });
+    } catch (_) {}
+    /* native buffers down-messages until the host posts ds-ready, so the
+       statuses can go now; the selector's late-repaint path covers order */
+    postDayStatus(day);
+    return;
+  }
+  ovFrame = document.createElement('iframe');
+  ovFrame.className = 'ov-frame';
+  /* v= keeps the overlay out of the WKWebView cache — Rashid kept getting
+     stale builds because this iframe src was the one unbusted URL */
+  ovFrame.src = overlaySrc(mon, day, auto);
   document.getElementById('phone').appendChild(ovFrame);
   /* the scrubber shows each day's STATUS (Rashid) and only the calendar
      knows it — dayStatus() needs the whole month model, the lock clock and
@@ -668,7 +700,7 @@ function openDay(mon, day, auto) {
 /* the window either side of the opened day, keyed day:monthIndex — the
    selector's ladder can travel a month, so send more than it can show */
 function postDayStatus(day) {
-  if (!ovFrame) return;
+  if (!ovFrame && !ovHosted) return;
   try {
     const M = computeModel();
     const base = new Date(M.today.getFullYear(), M.today.getMonth(), day);
@@ -677,15 +709,31 @@ function postDayStatus(day) {
       const D = new Date(base.getTime() + k * DAYMS);
       map[D.getDate() + ':' + D.getMonth()] = dayStatus(D, M);
     }
-    ovFrame.contentWindow.postMessage({ t: 'ds-daystatus', map: map }, '*');
+    const msg = { t: 'ds-daystatus', map: map };
+    if (ovHosted) webkit.messageHandlers.ds.postMessage({ t: 'ds-down', msg: msg });
+    else ovFrame.contentWindow.postMessage(msg, '*');
   } catch (_) {}
 }
 function closeOverlay() {
+  if (ovHosted) {
+    /* native has already run the exit and torn the host down before relaying
+       this; there is no iframe to remove, only the veil (idempotent — closing
+       usually dissolved it already) */
+    ovHosted = false;
+    ovVeil.classList.remove('show');
+    return;
+  }
   if (!ovFrame) return;
   ovVeil.classList.remove('show');
   const fr = ovFrame; ovFrame = null;
   setTimeout(() => fr.remove(), 420);
 }
+/* DSSheet, calendar side. closing: the host's exit has STARTED — dissolve the
+   veil in place now, alongside the sheet going down, rather than after it has
+   gone. presented / fallback concern the selector's view, not this one. */
+window.DSSheet = function (phase) {
+  if (phase === 'closing') ovVeil.classList.remove('show');
+};
 addEventListener('message', e => {
   const d = e.data;
   if (!d || !d.t) return;

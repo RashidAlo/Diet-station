@@ -1517,6 +1517,49 @@
 <div class="lab-veil" id="labVeil"></div>
 
 <script>
+/* ================= native sheet host — page side (Ruling 3, "riding") =========
+   Spec: /system/composition.html#spec-sheethost. Rashid chose riding: the
+   sheet and its native controls rise and close as one native piece. The
+   selector gets its own web view and the shell moves it; this page stops
+   animating its own entry and exit and sends dismissals through the host.
+   EVERYTHING HERE IS GATED on DSNativeCaps.sheetHost, injected at document
+   start by a relay that actually hosts sheets (the pilot, first). Every build
+   before that announces nothing, so DS_HOSTED is false and the iframe path is
+   today's behaviour unchanged.
+   parent === window is LOAD-BEARING (Hub proved it): the app's bridge is
+   injected into iframes too, so without it a cap visible inside an ordinary
+   embed=1 flow iframe would send that flow's Exit native instead of home.
+   Every framing guard reads DS_EMBEDDED, never a window comparison — in its
+   own view parent === window, and a guard that compares windows skips the
+   relay and navigates the lab hub INSIDE the sheet. */
+var DS_HOSTED = window.parent === window
+  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1)
+  && /[?&]embed=1/.test(location.search)
+  && !/[?&]sheethost=0/.test(location.search);
+var DS_EMBEDDED = window.parent !== window || DS_HOSTED;
+/* A hosted dismissal must be a sheet-close, never a bare relayed ds-close /
+   ds-done: a relayed close tells the calendar "closed" while the host view is
+   still on screen. Native runs the exit, tears the host down, THEN relays
+   `then`. The guard stops a double tap posting two exits, which would relay
+   `then` twice and close the calendar's overlay twice. */
+var dsSheetClosing = false;
+function dsDismiss(msg) {
+  if (DS_HOSTED) {
+    if (dsSheetClosing) return;
+    dsSheetClosing = true;
+    try { webkit.messageHandlers.ds.postMessage({ t: 'sheet-close', then: msg }); } catch (_) {}
+    return;
+  }
+  parent.postMessage(msg, '*');
+}
+/* non-dismissal up-messages. None exist today; this is for the first one. */
+function dsPost(msg) {
+  if (DS_HOSTED) {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'ds-up', msg: msg }); } catch (_) {}
+    return;
+  }
+  parent.postMessage(msg, '*');
+}
 /* THROW BEACON (diagnostic). ·191 stopped posting chrome to the shell
    entirely — no DSCHROME lines at all — and the chrome module is gated on the
    DietStationLab user agent, so it cannot be reproduced or read in a desktop
@@ -2570,10 +2613,14 @@ if (EMBED) {
 }
 document.getElementById('closeBtn').onclick = () => {
   if (EMBED) {
+    /* HOSTED: no CSS slide — the native container owns the exit, and a web
+       slide inside it would double the motion — and no 380ms wait, which only
+       existed to let that slide finish and would now be a dead pause. */
+    if (DS_HOSTED) { dsDismiss({ t: 'ds-close' }); return; }
     /* slide the sheet away, then let the launcher dismiss the overlay */
     sheetEl.classList.add('springing');
     sheetEl.style.transform = 'translateY(103%)';
-    setTimeout(() => parent.postMessage({ t: 'ds-close' }, '*'), 380);
+    setTimeout(() => dsDismiss({ t: 'ds-close' }), 380);
   } else {
     location.href = '../';
   }
@@ -2585,10 +2632,11 @@ confirmBtn.onclick = () => {
     if (turning) return;
     calDone.add(DAY_START + dayIdx);
     vibrate(10);
+    /* HOSTED: as the X — native exit, posted at once */
+    if (DS_HOSTED) { dsDismiss({ t: 'ds-done', days: [...calDone], mon: MON_LBL }); return; }
     sheetEl.classList.add('springing');
     sheetEl.style.transform = 'translateY(103%)';
-    setTimeout(() => parent.postMessage(
-      { t: 'ds-done', days: [...calDone], mon: MON_LBL }, '*'), 400);
+    setTimeout(() => dsDismiss({ t: 'ds-done', days: [...calDone], mon: MON_LBL }), 400);
     return;
   }
   nextTapped();
@@ -3488,7 +3536,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 229 (skeleton cards, fade verified)';
+const BUILD = 'build 2026-09-13 · 230 (native sheet host, page side, gated)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3511,8 +3559,11 @@ document.getElementById('labRestart').onclick = () => {
   location.replace(location.pathname + '?' + q.join('&'));
 };
 document.getElementById('labExit').onclick = () => {
-  if (window.parent !== window) {
-    try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {}
+  /* DS_EMBEDDED, not a window comparison: in a hosted view parent === window,
+     and the old guard fell through to the navigation below — loading the lab
+     hub INSIDE the sheet instead of closing it. */
+  if (DS_EMBEDDED) {
+    try { dsDismiss({ t: 'ds-close' }); return; } catch (_) {}
   }
   location.href = '../?v=' + Date.now();
 };
@@ -3720,11 +3771,24 @@ function syncSheet() {
       '--top-pad', (14 + (REAL_PAD - 14) * p).toFixed(1) + 'px');
   }
 }
-document.body.classList.add('sheet-mode', 'sheet-enter');
+document.body.classList.add('sheet-mode');
+/* HOSTED: no sheet-enter / springing. The native container rises from 103%
+   carrying this whole view; a CSS entry inside it would double the motion.
+   (This entry DOES run in the iframe model — transitionend measured at 934ms
+   — unlike the calendar's, which snaps by decision.) */
+if (!DS_HOSTED) document.body.classList.add('sheet-enter');
 SHEET_GAP = EMBED ? REAL_PAD + 16
   : document.body.classList.contains('desktop') ? 56
   : Math.max(22, (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66 - 12);
-setTimeout(() => {
+if (DS_HOSTED) {
+  /* at rest from the first paint: the end state the iframe entry reaches,
+     applied at once, so the first chrome post measures the rects the controls
+     will actually occupy */
+  sheetEl.style.transform = 'translateY(' + sheetGap() + 'px)';
+  placeNavigator(sheetGap());
+  sheetLive = true;
+  syncSheet();
+} else setTimeout(() => {
   sheetEl.classList.add('springing');
   document.body.classList.remove('sheet-enter');
   sheetEl.style.transform = 'translateY(' + sheetGap() + 'px)';
@@ -3930,6 +3994,18 @@ if (QS.get('solo') === '1') {
      today's two-id behaviour EXACTLY — the safe direction by construction,
      and no window where the date can go missing again. */
   var dateWidgetNative = false;
+  /* HOSTED: read the confirm's caps from the injected object at setup. The
+     confirm arrives only AFTER the first post, so without this dateEl() is null
+     on that post and it can never be complete. With dateWidget the dated tile
+     travels as the scrub el and the separate tile el is skipped, so
+     TILE_NATIVE_PROVEN does not gate the complete post. */
+  if (window.DS_HOSTED && window.DSNativeCaps) {
+    if (TILE_NATIVE_PROVEN && DSNativeCaps.tileRows >= 2) tileNative = true;
+    if (DSNativeCaps.dateWidget >= 1) dateWidgetNative = true;
+  }
+  /* DSSheet('fallback'): the host presented without a complete post, so this
+     surface keeps its web chrome for its whole life and never hands over. */
+  var sheetFallback = false;
   /* ?tilenative=1 FORCES THE HANDOVER, so the proof can be taken on the build
      he actually has. The flag above is meant to be flipped on evidence, and
      with it false the page never sends `tile` — which left the Shell lane with
@@ -4030,6 +4106,14 @@ if (QS.get('solo') === '1') {
      IS ONLY SAFE ONCE SOMETHING IS ACTUALLY REPLACING IT — ·190 learned it for
      an id no renderer drew, and this is the same mistake in the time
      dimension rather than the capability one. */
+  /* HOSTED ONLY: pre-hide IS right again, because in hosted mode something
+     does replace the bar from the first visible frame — the host stays
+     off-screen until the complete post, and native presents the twins with
+     it. No cap: stays off, so the web bar still rides the iframe entry
+     (clause 5). The tile is NOT hidden here by design: its gate also needs
+     datePosted (·220), which the complete post itself sets, in the same call,
+     while the host is still off-screen. */
+  if (window.DS_HOSTED) prehide();
 
   function unhide() {
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
@@ -4048,6 +4132,7 @@ if (QS.get('solo') === '1') {
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
   function prehide() {
+    if (sheetFallback) return;    /* fallback surface: web chrome for life */
     Object.keys(ELS).forEach(function (id) {
       /* suppression covers BOTH handover shapes: the separate tile twin, and
          the unified one-element form where the same web element is yielded
@@ -4252,10 +4337,18 @@ if (QS.get('solo') === '1') {
      becomes invisible and the ladder just travels. */
   window.DSScrubRepost = function () { if (!layerUp) report(false, true); };
   function report(instant, frac) {
+    if (sheetFallback) return;       /* fallback surface never hands over */
     if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
-    /* iOS<26 shells never confirm — hand chrome back to the web bar */
-    clearTimeout(restoreT);
-    restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
+    /* iOS<26 shells never confirm — hand chrome back to the web bar.
+       NOT IN HOSTED MODE. A shell that announces sheetHost is a shell that
+       confirms, and here a SLOW confirm would put the web bar back on top of
+       native twins that are already up — two bars, the exact thing Ruling 3
+       forbids. The host's own watchdog decides that case, through
+       DSSheet('fallback'). Caught by the harness, where no confirm ever comes. */
+    if (!window.DS_HOSTED) {
+      clearTimeout(restoreT);
+      restoreT = setTimeout(function () { if (!nativeConfirmed) unhide(); }, 900);
+    }
     var off = frameOffset();
     var els = chromeEls(off);
     var se = dateEl(off, frac);
@@ -4270,6 +4363,17 @@ if (QS.get('solo') === '1') {
          handover. Scope is the whole post, so only send it where nothing
          else is meant to animate to new geometry. */
       if (instant) msg.instant = true;
+      /* COMPLETE — the page owns what it means; native keeps no id list.
+         complete = els has close AND dual AND scrub with dates.length >= 1.
+         statuses may be empty: '' already means "no status" (Ruling 2).
+         This flag is what releases the native entry, so it is set only when
+         everything Ruling 3 needs on the first visible frame is in the post. */
+      if (window.DS_HOSTED) {
+        var have = {};
+        els.forEach(function (e) { have[e.id] = e; });
+        if (have.close && have.dual && have.scrub &&
+            have.scrub.dates && have.scrub.dates.length >= 1) msg.complete = true;
+      }
       webkit.messageHandlers.ds.postMessage(msg);
     } catch (_) {}
     /* AFTER the post, not before (·220). prehide() reads datePosted, and that
@@ -4329,6 +4433,23 @@ if (QS.get('solo') === '1') {
         surface: SURFACE, mode: currentMode(), els: [] });
     } catch (_) {}
   }
+  /* DSSheet — the host's lifecycle, called into this view by native.
+     presented: the entry finished (from the animation's real completion
+       callback, never a timer) — start the dock watcher and the gauge.
+     fallback: native presented WITHOUT a complete post. This surface keeps
+       its web chrome for its whole life: clear any twins that went up from an
+       incomplete post (or there are two bars), un-hide the web controls, and
+       stop posting chrome for good. */
+  var sheetGo = null;
+  window.DSSheet = function (phase) {
+    if (phase === 'presented') { if (sheetGo) sheetGo(); return; }
+    if (phase === 'fallback') {
+      sheetFallback = true;
+      clearChrome();
+      unhide();
+      if (sheetGo) sheetGo();
+    }
+  };
   window.DSNativeChrome = function (ids, caps) {
     nativeConfirmed = true;
     ids = ids || [];
@@ -4801,6 +4922,7 @@ if (QS.get('solo') === '1') {
   var trackRaf = null;
   function postTrack() {
     trackRaf = null;
+    if (sheetFallback) return;
     if (layerUp) return;
     var off = frameOffset();
     var els = chromeEls(off);   /* same builder as the rest post — see chromeEls */
@@ -4858,6 +4980,22 @@ if (QS.get('solo') === '1') {
   function boot() {
     var sh = document.getElementById('sheet'), done = false;
     function go() { if (done) return; done = true; watchDock(); gaugeArmed = true; postGauge(); }
+    /* HOSTED — AND THE ORDER IS THE WHOLE POINT. The spec moves go() onto
+       DSSheet('presented'). But today the FIRST chrome post comes from
+       watchDock(), which only go() calls — and native only presents after a
+       complete post. Taken literally that is a deadlock: the page waits for
+       presented, native waits for a post, and the sheet never appears. So in
+       hosted mode the complete post goes out HERE, at DOMContentLoaded, with
+       the sheet already at rest; go() (the dock watcher, the gauge) then waits
+       for presented as the spec says. A page-side ceiling stops the dock and
+       gauge ever staying dead if the host misbehaves — native's own watchdog
+       is the real guarantee, this is only the belt. */
+    if (window.DS_HOSTED) {
+      sheetGo = go;
+      report();
+      setTimeout(go, 3000);
+      return;
+    }
     /* ·216 posted the twins from frame one and streamed the entry. It fixed
        the empty bar and replaced it with a worse one: MEASURED, the twins
        trailed the rising sheet by ~78pt mid-entry — a second chrome row
