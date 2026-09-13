@@ -530,6 +530,11 @@ CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              dateEl() stays null until the confirm and the first post can never be
              complete. (With dateWidget the dated tile travels as the scrub el, and
              the separate tile el is skipped, so TILE_NATIVE_PROVEN does not gate it.)
+             The host view must ALSO carry the DietStationLab UA token. It is set per
+             view (customUserAgent), so a new view does not inherit it. select.html's
+             chrome module returns without it and lab-shell keys html.ds-native off it.
+             Missing, it looks exactly like a timing bug: no posts, no complete, a
+             fallback on every open.
              Injected main-frame-only, at document start, into BOTH views,
              in the same diff as the host, the relay and the entry/exit. PER SURFACE:
              only a relay that actually hosts sheets announces it. First build: the
@@ -540,7 +545,9 @@ CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
 
 OPEN         calendar -&gt; native  {t:'sheet-open', url}   (the tap's feedback is the calendar's
              own #ovVeil dissolve and haptic, shown at once, while the host loads)
-             url = today's iframe src, byte for byte (embed, cal, mon, day, auto,
+             url = today's iframe src RESOLVED against document.baseURI, exactly as
+             the browser resolves an iframe src. A separate view has no base for the
+             relative string. Same resource, same query (embed, cal, mon, day, auto,
              scrub/scrubtwin/tilenative/rpt primers, v). The calendar shows #ovVeil
              as today. Native creates the host view above the calendar's view,
              off-screen at 103%, and loads url.
@@ -650,9 +657,16 @@ HOSTED PAGE  select.html, hosted only. Each line is a site (Calendar &amp; Meals
              3  read tileRows / dateWidget from DSNativeCaps at setup (see CAP).
              4  prehide() at SETUP, reinstated for hosted only (&middot;217 removed it so the
                 web bar could ride the iframe). No cap: stays off (clause 5).
-             5  boot()'s go() (watchDock, gauge) runs on DSSheet('presented'), not on
-                the sheet's transitionend, which never fires without a CSS entry.
+             5  ORDER THAT TERMINATES: complete post at DOMContentLoaded -&gt; presented
+                -&gt; go(). The complete post must NOT wait for go(). Otherwise page and
+                host each wait for the other (the first post used to come from
+                watchDock(), which only go() calls). go() (watchDock, gauge) then runs
+                on DSSheet('presented'), not on transitionend, which never fires without
+                a CSS entry. Built: complete post at DCL+4ms (1af912f).
              6  DSSheet('fallback') handler: un-hide web chrome for the surface's life.
+                It is the ONLY fallback owner when hosted. The iOS&lt;26 path (no
+                DSNativeChrome confirm in 900ms -&gt; un-hide) is disabled, because a slow
+                confirm would put the web bar over twins that are already up.
 IN-SHEET     unchanged by this spec. The day sheet has NO drag-to-dismiss. Its motion
              inside the host is the scroll-linked dock (syncSheet: translateY = gap
              - scroll, --top-pad), still web-driven with per-frame chrometrack as
@@ -688,6 +702,8 @@ EVIDENCE     filmed at 60fps on the simulator first (pilot, meal selection opene
                 the sheet (does not load the hub inside it)
              5  storage key round-trips
              6  ?sheethost=0 -&gt; iframe path, web controls whole-life, no handover
+                (page side verified in a served harness, both paths, 1af912f; end to end
+                on the sim with Shell's host build still to come)
              7  probe in the host: document.visibilityState and timer cadence. In the
                 iframe, visibility reads hidden PERMANENTLY and timers throttle to ~1Hz
                 after ~370ms (Calendar &amp; Meals, skeleton work). A separate web view
