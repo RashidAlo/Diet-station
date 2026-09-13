@@ -392,7 +392,9 @@
       <li><b>Scrim.</b> The screen behind dims under <code>rgba(11,14,18,.45)</code>. It dissolves in
         place over <code>.32s</code>; it never travels.</li>
       <li><b>Sheet.</b> Slides up, <code>translateY(103%) &rarr; 0</code> on the house spring
-        (<code>.55s cubic-bezier(.32,.72,0,1)</code>). Radius 24 partial, 44 near-full.</li>
+        (<code>.55s cubic-bezier(.32,.72,0,1)</code>). Radius 24 partial, 44 near-full. <i>The calendar
+        page carries the same two rules, but they land in one style recalculation there, so it
+        snaps. Snapping is the decision for the calendar (&middot;33), and the spring does not cover it.</i></li>
       <li><b>Control bar.</b> Screen-anchored chrome, not content: <code>top-pad + 58</code> tall,
         transparent at rest, white once the body scrolls. It is on screen from the sheet&rsquo;s first
         visible frame and follows it through every state (composition <a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>).</li>
@@ -477,15 +479,23 @@
       <code>blur(12px) saturate(160%)</code> + a light rim. Over imagery each control switches to
       <code>rgba(72,72,78,.30)</code> with a white glyph. The page measures the luminance under
       each control&rsquo;s centre (below .52 is dark), and skips that check once the white surface
-      is up. <b>In the app shell</b>, the X, the dual and the tile are native Liquid Glass from the
-      first visible frame, and the web versions above never render there (<a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>). What is drawn
-      here is the fallback, and the native look is the design.</p>
+      is up. <b>In the app shell</b>, the X, the dual and the tile are native Liquid Glass. What is
+      drawn here is the fallback, and the native look is the design.</p>
+    <p class="spec" style="background:var(--red-soft);color:#7F1D1D;border-radius:10px;padding:10px 12px">
+      <b>Rule vs. shipped.</b> <a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>
+      requires the native controls from the first visible frame, with the web versions never
+      rendering in the shell. <b>That has not shipped.</b> Since &middot;217 the web bar renders
+      through the sheet&rsquo;s entry, and the native twins take over at rest, with a measured
+      ~80ms (2 frames) where all three controls are blank. &middot;217 replaced something worse:
+      an empty bar for 934ms of every entry. It is still the seam the ruling exists to remove.
+      The mechanism is open with Calendar &amp; Meals and Shell (see Adoption).</p>
   </section>
 
   <section class="card" id="states" data-ds-section="sheet-states-v1" style="scroll-margin-top:80px">
     <h2>States &amp; motion</h2>
     <p class="desc">The bar changes with what is happening under it. Pick a configuration and a
-      state, or hold the tile to arm the scrubber. Timings are the shipped ones.</p>
+      state, or hold the tile to arm the scrubber. Timings are the <b>web path&rsquo;s</b>, read
+      from the CSS. Where the shell&rsquo;s native motion differs, the row says so.</p>
     <div class="an-phone spec" id="anSpec">
       <div class="an-content"><div class="an-hero"></div><div class="cat">Breakfast <em>0 of 1</em></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="row"><i></i><div style="flex:1"><b></b><b></b></div></div></div>
       <div class="an-bar tile-row">
@@ -512,15 +522,15 @@
       reads as a snap-back.</span></p>
 
     <div class="an-tbl">
-      <div class="mrow"><span class="mn">Presenting</span><span class="mt">The bar is on screen from the sheet&rsquo;s first visible frame, with each control already in its final material. It never crossfades from web controls to glass (<a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>).</span></div>
+      <div class="mrow"><span class="mn">Presenting</span><span class="mt"><b>Rule:</b> the bar is on screen from the sheet&rsquo;s first visible frame, with each control already in its final material, and it never crossfades from web controls to glass (<a href="composition.html#ruling-overlay-chrome" style="color:var(--red)">Ruling 3</a>). <b>Shipped today, not compliant:</b> the web bar rides the entry and hands over to native at rest, with ~80ms blank in between (&middot;217).</span></div>
       <div class="mrow"><span class="mn">Rest</span><span class="mt">Surface transparent. The body passes under glass controls.</span></div>
       <div class="mrow"><span class="mn">Over imagery</span><span class="mt">Dark material, chosen per control. Background and colour change over <code>.35s ease</code>.</span></div>
       <div class="mrow"><span class="mn">Scrolled</span><span class="mt">Past <code>scrollTop 8</code>, the white surface fades in over <code>.25s ease</code> and the dark material turns off. Only opacity animates; the height is locked to the frame.</span></div>
       <div class="mrow"><span class="mn">Docked</span><span class="mt">The band appears in <code>0s</code> on the same frame the head hides, and fades out over <code>.15s</code>.</span></div>
       <div class="mrow"><span class="mn">Ready to confirm</span><span class="mt">The check draws over <code>.55s cubic-bezier(.3,.7,.3,1.08)</code>. It turns back off the moment the task is incomplete again.</span></div>
       <div class="mrow"><span class="mn">Pressed</span><span class="mt">X to <code>.92</code> over <code>.18s cubic-bezier(.3,.8,.3,1)</code>; dual buttons to <code>.9</code> over <code>.15s</code>.</span></div>
-      <div class="mrow"><span class="mn">Scrub &middot; arm</span><span class="mt">Tile to capsule, <b>width only</b>, <code>.48s cubic-bezier(.3,1.22,.36,1)</code>. Height stays 52 so it clears the notch at full screen. At the same moment the X slides <code>-120px</code> and the dual <code>+150px</code> over <code>.42s cubic-bezier(.42,0,.62,.28)</code>, and both stop taking taps. Haptic 6.</span></div>
-      <div class="mrow"><span class="mn">Scrub &middot; release</span><span class="mt">Capsule back to tile on the <b>same</b> <code>.48s</code> curve, so entry and exit are one move reversed. The neighbour days fade first, and the held numeral stays until the tile lands. X and dual return over <code>.78s cubic-bezier(.22,1.28,.32,1)</code> after <code>.06s</code>. Haptic 12 if the day changed, 6 if not.</span></div>
+      <div class="mrow"><span class="mn">Scrub &middot; arm</span><span class="mt">Tile to capsule, <b>width only</b>, <code>.48s cubic-bezier(.3,1.22,.36,1)</code>. Height stays 52 so it clears the notch at full screen. At the same moment the X slides <code>-120px</code> and the dual <code>+150px</code> over <code>.42s cubic-bezier(.42,0,.62,.28)</code>, and both stop taking taps. Haptic 6. <i>Web path. Computed on <code>.ttl.scrub</code> in tile mode.</i></span></div>
+      <div class="mrow"><span class="mn">Scrub &middot; release</span><span class="mt">Capsule back to tile on the <b>same</b> <code>.48s</code> curve, so entry and exit are one move reversed. The neighbour days fade first, and the held numeral stays until the tile lands. X and dual return over <code>.78s cubic-bezier(.22,1.28,.32,1)</code> after <code>.06s</code>. Haptic 12 if the day changed, 6 if not. <i>Web path only. In the shell the capsule is Shell&rsquo;s native twin, whose close splits travel and settle 78% / 22% with a 5pt settle. Whether the exit should mirror the entry&rsquo;s overshoot is open for Rashid, so on device the two are not yet one move reversed. Provisional until Shell and Calendar &amp; Meals agree which curve is on screen.</i></span></div>
       <div class="mrow"><span class="mn">Leaving</span><span class="mt">X: the sheet slides to <code>103%</code> and the host closes at 380ms. Confirm: the same, with <code>ds-done</code> at 400ms. Clear: an alert first, and nothing leaves.</span></div>
     </div>
   </section>
@@ -688,6 +698,14 @@
     </div>
     <h3 style="margin-top:26px">Control bar: diff against what shipped</h3>
     <div>
+      <div class="mrow"><span class="mn">Meal selection &middot; Ruling 3</span><span class="badge todo">In progress</span>
+        <span class="mt">In the shell the web bar renders through the entry and hands over to the
+        native twins at rest, with ~80ms blank between them (&middot;217). Streaming the twins
+        during the entry was measured at &middot;216 and lags the sheet by ~78pt. Two mechanisms
+        satisfy the ruling: <b>(a)</b> the controls are pinned at the chrome line and the sheet
+        rises beneath them, as Ruling 3 is written; <b>(b)</b> the controls ride the sheet, with
+        the shell owning the entry so twins and sheet share one clock. Which motion is
+        right is Rashid&rsquo;s call. Feasibility is with Shell. A visible handover is not an option either way.</span></div>
       <div class="mrow"><span class="mn">Checkout &middot; Payment Method</span><span class="badge ok">Fixed</span>
         <span class="mt">Had a close glyph in the leading seat with the trailing seat empty. The
         screen is a push, so it now uses the back arrow the Duration screen already has (77944d4).</span></div>
