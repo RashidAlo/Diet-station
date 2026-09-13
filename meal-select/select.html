@@ -3386,7 +3386,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 215 (instrumented: the entry frames)';
+const BUILD = 'build 2026-09-13 · 216 (the bar arrives with the overlay)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4745,9 +4745,40 @@ if (QS.get('solo') === '1') {
     }
     addEventListener('pagehide', chromeExit);
   })();
+  /* A SELF-LIMITING BURST. Deliberately not trackBurst(): that one continues
+     while `!scrubHold || elapsed < ms`, which is correct for a gesture that
+     may outlast its timer and an infinite loop for anything else — scrubHold
+     is false at boot, so reusing it here would stream forever. */
+  function entryBurst(ms) {
+    var t0 = performance.now();
+    var step = function () {
+      postTrack();
+      if (performance.now() - t0 < ms) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
   function boot() {
     var sh = document.getElementById('sheet'), done = false;
     function go() { if (done) return; done = true; watchDock(); gaugeArmed = true; postGauge(); }
+    /* THE BAR IS PART OF THE OVERLAY, NOT SOMETHING THAT ARRIVES AFTER IT
+       (Rashid: "when the overlay comes in, the action bar on top is empty,
+       and there's this frame for the tile before it becomes a glass... the
+       action bar should still be part of the overlay when it comes up from
+       the start").
+       The chrome used to be posted from go(), which waits for the sheet's
+       entry transitionend — measured at 934ms on the device, with the web
+       chrome already hidden by prehide() since frame one. So for the whole
+       entry the bar was empty by construction, and the twins popped in once
+       the sheet had stopped. The tile ghost is the same clock: dateEl()
+       returns nothing until a confirm names the widget, and the confirm
+       cannot arrive before the first post, so the bare web tile showed for
+       that entire second instead of for a frame.
+       Post immediately and then stream the entry, exactly as the dock does.
+       The rect on frame one is the sheet's pre-entry rect — off-screen low —
+       which is correct: the twins ride up with the surface rather than
+       waiting at the top for it. */
+    report();
+    entryBurst(1100);   /* covers the entry with margin; go() still anchors */
     if (sh) sh.addEventListener('transitionend', function h(e) {
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionend', h); go();
