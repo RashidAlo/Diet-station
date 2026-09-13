@@ -3386,7 +3386,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 214 (the tile stops chasing the dock)';
+const BUILD = 'build 2026-09-13 · 215 (instrumented: the entry frames)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3927,6 +3927,12 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
+  var ndb2 = 0;
+  function navdbg2(m) {                 /* TEMPORARY — ·215 */
+    if (ndb2++ > 60) return;
+    try { webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+      m: 'NAVE ' + Math.round(performance.now()) + ' ' + m }); } catch (_) {}
+  }
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       /* suppression covers BOTH handover shapes: the separate tile twin, and
@@ -4119,7 +4125,10 @@ if (QS.get('solo') === '1') {
      becomes invisible and the ladder just travels. */
   window.DSScrubRepost = function () { if (!layerUp) report(false, true); };
   function report(instant, frac) {
-    if (moving || layerUp) return;   /* twins only at rest, topmost layer only */
+    if (moving || layerUp) {
+      navdbg2('REFUSED moving=' + moving + ' layerUp=' + layerUp);
+      return;   /* twins only at rest, topmost layer only */
+    }
     prehide();
     /* iOS<26 shells never confirm — hand chrome back to the web bar */
     clearTimeout(restoreT);
@@ -4131,6 +4140,9 @@ if (QS.get('solo') === '1') {
     try {
       var msg = { t: 'glasschrome', flow: FLOW,
         surface: SURFACE, mode: currentMode(), els: els };
+      navdbg2('REST ' + els.map(function (e) {
+        return e.id + '@' + Math.round(e.y); }).join(' ') +
+        ' confirmed=' + nativeConfirmed);
       /* instant: apply the WHOLE post with animation disabled (Shell). An
          omitted el is torn down on that frame instead of springing away,
          which is the only way to guarantee one glass per frame at a
