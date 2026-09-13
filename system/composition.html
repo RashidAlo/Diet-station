@@ -461,13 +461,13 @@
       the <code>0.05</code> case in the material rules. Whether one tint reads correctly across
       that change, or the twin needs its tint to follow the ground, is theirs to measure. Nothing
       else in the ruling depends on the answer.</p>
-    <p class="meta"><b style="color:var(--red)">Status (2026-09-13): motion chosen, not built.</b>
+    <p class="meta"><b style="color:var(--red)">Status (2026-09-13): riding confirmed as (b1), spec written, not built.</b> Rashid reconfirmed after the true cost was known: the selector gets its own native web view, specified in <a href="#spec-sheethost" style="color:var(--red)">Spec &middot; native sheet host</a>.
       Rashid picked <b>riding</b>: the controls come up with the sheet, already native. One native
       container moves the overlay&rsquo;s web view and its twins on one clock, on the house curve
       (<code>.55s cubic-bezier(.32,.72,0,1)</code> from 103%). <b>Pinned</b> was set aside because it
       hides a material handover (see Shell&rsquo;s read below). An amendment allowing the material to
       hand over at rest was declined, because that handover is the complaint this ruling answers.<br>
-      <b>Contract, proposed and awaiting Shell&rsquo;s confirmation.</b> Page side, gated on a
+      <b>Contract, proposed and awaiting Shell&rsquo;s confirmation.</b> Superseded by the spec (one cap, <code>sheetHost</code>). Originally: page side, gated on a
       versioned <code>DSNativeCaps.sheetEntry</code> injected at document start: no CSS sheet entry,
       web chrome pre-hidden from setup, and a first chrome post that is complete, carrying the date
       too. Shell side: hold the container off-screen until that first post, run the curve, then
@@ -508,6 +508,116 @@
       the entry (fixed &middot;224). Clause 2 makes web controls unseen in the shell, not correct. They
       remain the whole-life fallback (clause 5) and still need their own verification. Test them
       outside the shell.</p>
+  </section>
+
+  <section class="card" id="spec-sheethost" data-ds-section="spec-sheethost-v1" style="scroll-margin-top:80px">
+    <h2>Spec &middot; native sheet host (meal selection)</h2>
+    <p class="desc">Ruling 3&rsquo;s chosen motion, <b>riding</b>, as the one-pass spec. The selector
+      is an iframe inside the calendar&rsquo;s web view, so a native offset on that view would move
+      the calendar too. It gets its own native web view instead, and everything that crosses the
+      iframe boundary today becomes a relay. Inventory from Calendar &amp; Meals and Shell, checked
+      against both pages and lab-shell.js at canon.</p>
+    <div class="codewrap">
+      <pre id="spechost">SURFACE      meal selection overlay (select.html?embed=1&amp;cal=1&amp;&hellip;), opened from the
+             calendar (meal-select/index.html). The calendar keeps its snap (&middot;33). The
+             meal-details layer inside the selector is unchanged.
+TWIN         yes: the host view itself (position), plus the existing close, dual, tile
+DRAWS        native: the host view's motion, the twins. web: all sheet content. The
+             calendar draws the scrim (#ovVeil) in its own view, beneath the host.
+CAP          DSNativeCaps.sheetHost &gt;= 1, injected at document start into BOTH views,
+             in the same diff as the host, the relay and the entry/exit, in BOTH relays
+             (hub LabWebView + pilot). ONE cap, not two: they ship together or not at
+             all. It replaces the proposed sheetEntry. Primer ?sheethost=0 forces the
+             iframe path. Cap absent: today's iframe path, whole life (clause 5).
+
+OPEN         calendar -&gt; native  {t:'sheet-open', url}
+             url = today's iframe src, byte for byte (embed, cal, mon, day, auto,
+             scrub/scrubtwin/tilenative/rpt primers, v). The calendar shows #ovVeil
+             as today. Native creates the host view above the calendar's view,
+             off-screen at 103%, and loads url.
+
+RELAY        payload-blind. page -&gt; native  {t:'ds-relay', msg}
+             native -&gt; the OTHER view:
+               window.dispatchEvent(new MessageEvent('message', { data: msg }))
+             Existing handlers stay as they are (no e.origin / e.source / ports /
+             isTrusted anywhere in either page or lab-shell.js). Messages DOWN
+             before the host document is ready are BUFFERED and delivered in order
+             at its DOMContentLoaded.
+CROSSING     the whole inventory: down  ds-daystatus {map}
+                                  up    ds-close  &middot;  ds-done {days, mon}
+             plus the query string (carried by url) and the frameElement walk
+             (null in its own view, so offset 0, which is correct). Nothing else: no
+             ds-nav / ds-router / ds-result, BroadcastChannel, cookies or shared DOM.
+
+SEND SITES   every site goes through one rule, quoted verbatim:
+               post(msg) = hosted ? webkit ds {t:'ds-relay', msg}
+                                  : parent.postMessage(msg, '*')
+             select.html  X close ds-close (~2504) &middot; confirm ds-done (~2518) &middot;
+                          lab Exit (~3443)
+             calendar     postDayStatus (~680): relay down instead of
+                          ovFrame.contentWindow.postMessage
+PREDICATE    hosted   = !!(window.DSNativeCaps &amp;&amp; DSNativeCaps.sheetHost &gt;= 1)
+                        &amp;&amp; /[?&amp;]embed=1/.test(location.search)
+                        &amp;&amp; !/[?&amp;]sheethost=0/.test(location.search)
+             embedded = window.parent !== window || hosted
+             EVERY framing guard reads embedded, never a window comparison, because
+             in its own view parent === window and the guard skips the relay
+             entirely. The fallthrough loads the lab hub INSIDE the sheet.
+               select.html  lab Exit (~3442)
+               lab-shell.js lab Exit (~1023)  SHARED: Hub lane, shared-script gate
+             NOT the calendar's own guards (index.html ~913, ~1000). The calendar is
+             top-level in both models; leave them as they are.
+
+ENTRY        page (hosted): no CSS sheet entry (at rest from first paint), web chrome
+             pre-hidden from setup, first glasschrome post COMPLETE (close, dual,
+             tile with its date).
+             native: hold the host off-screen until that post, then 103% -&gt; 0 on
+             .timingCurve(.32, .72, 0, 1, duration: .55), then call
+             DSSheet('presented') in both views.
+             watchdog: no first post by 1400ms -&gt; present anyway and call
+             DSSheet('fallback'). The page un-hides its web chrome and never hands
+             over for that surface's life.
+EXIT         page (hosted): posts {t:'sheet-close', then: msg} INSTEAD of sliding
+             its own sheet (X: then = ds-close &middot; confirm: then = ds-done {days, mon}).
+             native: DSSheet('closing') to the calendar (#ovVeil dissolves in place),
+             0 -&gt; 103% on the same curve, tear the host down, THEN relay `then` up.
+             The calendar's handler runs closeOverlay / markSelected as today, and
+             closeOverlay removes no iframe when hosted.
+             Feel note: ds-done lands ~150ms later than today (at completion, not at
+             400ms). Rashid's call. If it reads late, native exposes a named progress
+             point (match a flag, not a curve).
+
+GEOMETRY     twins in the host view's own viewport; mode stays 'sheet' (posted y
+             verbatim). Rest rects stay valid through the move because they are
+             relative to the moving view.
+MATERIAL     unchanged (surface 'light', .regular). From frame one the sheet is
+             under the controls, so the ground never changes beneath the glass. That
+             is why riding complies and pinned does not.
+STORAGE      assumed shared (WKWebsiteDataStore.default() in both relays, read from
+             configuration code, not probed). Verify: set a key in the calendar,
+             read it in the host.
+
+OWNERS       Shell: host view, relay, caps injection, entry/exit, both relays
+             Calendar &amp; Meals: select.html + calendar send sites, predicate,
+             entry and exit gate
+             Hub: lab-shell.js Exit predicate, through jscheck with a negative
+             control, landing BEFORE the others ship
+             Design System: this spec
+
+EVIDENCE     build in Rashid's hands, pilot, meal selection opened from the calendar,
+             filmed at 60fps:
+             1  zero frames where X, dual or tile is blank or web-drawn: entry AND exit
+             2  twin-to-sheet-top offset constant to &plusmn;1pt through entry and exit
+             3  calendar and scrim do not move (static control in frame)
+             4  confirm pops the days on the calendar &middot; X closes &middot; lab Exit closes
+                the sheet (does not load the hub inside it)
+             5  storage key round-trips
+             6  ?sheethost=0 -&gt; iframe path, web controls whole-life, no handover</pre>
+      <button class="copycode" data-copy="spechost">Copy</button>
+    </div>
+    <p class="meta"><b>What this spec does NOT cover:</b> the calendar&rsquo;s own entry (it snaps), the
+      meal-details sheet inside the selector (an in-page layer, still web-animated), and any other
+      flow&rsquo;s overlays. Each of those needs its own pass before it goes native.</p>
   </section>
 
   <section class="card">
