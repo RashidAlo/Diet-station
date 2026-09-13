@@ -11,10 +11,22 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Meal Selector</title>
 <style>
-  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
-  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
-  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
-  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; }
+  /* font-display: swap, and it is not a typography preference — it is why the
+     date tile was EMPTY for the whole overlay entry (Rashid: "there's this
+     frame for the tile before it becomes a glass. I think the state is
+     stale"). The default, `auto`, makes WebKit hide text until the face
+     loads, so every glyph on the sheet was invisible until ~900ms. The X and
+     the check survived because they are SVG. Measured on the device: the
+     page heading's ink appears at 10.10s and the tile's own text NEVER does
+     — prehide() runs on the first chrome post at ~10.13s and hides the web
+     tile three hundredths of a second after the font would have let it draw,
+     so the square was on screen for the entire entry with nothing in it.
+     With `swap` the tile carries its date in the fallback face from the first
+     frame and swaps when the real one lands. */
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; font-display: swap; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
@@ -3386,7 +3398,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 217 (the web bar rides in, the twins take over at rest)';
+const BUILD = 'build 2026-09-13 · 218 (the tile has its date during the entry)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
