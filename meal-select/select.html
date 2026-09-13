@@ -487,8 +487,27 @@
      scrubber changes — this is the state you see BEFORE you touch it, and it
      is what makes the affordance legible.
      Behind the triple-tap menu as a third option, never the default. */
+  /* z-index 1 WAS NOT ENOUGH, and the reason is worth keeping. `.glassbg`
+     carries a -webkit-backdrop-filter, which WebKit promotes to its own
+     compositing layer, and a composited layer paints above a non-composited
+     sibling REGARDLESS of z-index. So the date sat under its own glass for
+     the whole overlay entry: everything the page could report said the
+     numeral was painted — text "16", box 16x17 correctly placed, opacity 1,
+     dark colour, z-index above — and the screen showed an empty square.
+     Proved by painting the glass red: the square went fully red with no
+     numeral on top.
+     It was invisible as a bug because at rest the native twin covers this
+     element, so the only window where the web tile is what you actually see
+     is the entry — which is exactly where Rashid saw it: "there's this frame
+     for the tile before it becomes a glass."
+     The fix is to promote the content too, so the two layers order by
+     z-index again. This is the same failure Rashid reported in ·186 — "the
+     text might be under it... the text needs to be above" — which was fixed
+     for the ARMED strip (.scb has the same promotion) and never for the
+     resting tile. Fixing one instance of a class does not fix the class. */
   #dayTile { display: none; flex-direction: column; align-items: center;
-    justify-content: center; gap: 1px; position: relative; z-index: 1; }
+    justify-content: center; gap: 1px; position: relative; z-index: 2;
+    transform: translateZ(0); }
   /* +8 ON THIS OPTION ONLY (Rashid: "I don't mind for this page if you give
      the buttons an extra height of eight pixels, including this date widget —
      I think this will give it more room, but I still want them to match").
@@ -539,16 +558,7 @@
       height .48s cubic-bezier(.3,1.22,.36,1),
       border-radius .48s cubic-bezier(.3,1.22,.36,1),
       box-shadow .34s ease; }
-  /* TEMPORARY — ·223 A/B. Everything the page can report says the numeral is
-     painted: txt="16", box 16x17 correctly placed inside the tile, opacity 1,
-     display flex, colour rgb(11,14,18), and #dayTile is already
-     position:relative z-index:1 ABOVE this layer. The screen says zero ink.
-     Four hypotheses are dead (font gate, stale DOM, pre-hide ordering,
-     stacking), so stop hypothesising and make the invisible layer visible:
-     paint it red. If the square goes red with no numeral, this layer covers
-     the text despite the z-index. If it goes red WITH the numeral on top,
-     the glass is innocent and the numeral is being lost somewhere else. */
-  .nav .ttl.tile .glassbg { background: rgba(255,0,0,.55);
+  .nav .ttl.tile .glassbg { background: rgba(255,255,255,.34);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
     transition: background .34s ease, -webkit-backdrop-filter .34s ease,
@@ -3403,7 +3413,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 223 (A/B: paint the tile glass red)';
+const BUILD = 'build 2026-09-13 · 224 (the date paints above its own glass)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3962,36 +3972,6 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
-  /* TEMPORARY — ·222, log only. A box that FOLLOWS the sheet says the tile
-     carries zero ink through the entry while the X and dual carry ~430 each,
-     and this is BEFORE the handover — so the empty square is the web tile
-     painting its container without its numeral. Computed styles said
-     visible/opaque/dark, so the remaining candidates are geometric: the
-     numeral collapsed, or clipped by the tile's own `overflow: hidden` while
-     its .48s width/height transitions are still running. Log the rects. */
-  (function numeralWatch() {
-    var n = 0;
-    var iv = setInterval(function () {
-      if (n++ > 26) { clearInterval(iv); return; }
-      try {
-        var ttl = document.querySelector('.nav .ttl');
-        var dt = document.getElementById('dayTile');
-        var tn = dt && dt.querySelector('.t-n');
-        var tr = ttl && ttl.getBoundingClientRect();
-        var dr = dt && dt.getBoundingClientRect();
-        var nr = tn && tn.getBoundingClientRect();
-        var f = function (r) { return r ? Math.round(r.width) + 'x' + Math.round(r.height) +
-          '@' + Math.round(r.left) + ',' + Math.round(r.top) : '-'; };
-        webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
-          m: 'NUM ' + Math.round(performance.now()) +
-             ' ttl=' + f(tr) + ' dayTile=' + f(dr) + ' num=' + f(nr) +
-             ' txt=' + (tn ? JSON.stringify(tn.textContent) : '-') +
-             ' ovf=' + (ttl ? getComputedStyle(ttl).overflow : '?') +
-             ' op=' + (ttl ? getComputedStyle(ttl).opacity : '?') +
-             ' dtDisp=' + (dt ? getComputedStyle(dt).display : '?') });
-      } catch (_) {}
-    }, 40);
-  })();
   function prehide() {
     Object.keys(ELS).forEach(function (id) {
       /* suppression covers BOTH handover shapes: the separate tile twin, and
