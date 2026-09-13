@@ -171,13 +171,19 @@
   /* the docked extension IS the cat-dock band: it brings its own white,
      so nothing animates height. Appears atomically with the title swap
      (the head hides the same instant); fades out on undock. */
+  /* 52 = the in-page .cat-head (16 top + 24 line + 12 bottom). Rashid: the
+     docked band "needs more padding top and bottom" — at 34 it held the same
+     title with ~5pt either side, touching the controls above. It now keeps the
+     spacing of the heading it replaces, so docking doesn't tighten it.
+     KEEP IN STEP WITH DOCK_H in updateCatDock(): the rows, the handoff distance
+     and the heading-hide threshold all derive from this height. */
   .cat-dock { position: absolute; left: 0; right: 0;
-    top: calc(var(--top-pad) + 56px); height: 34px; z-index: 2;
+    top: calc(var(--top-pad) + 56px); height: 52px; z-index: 2;
     overflow: hidden; pointer-events: none; background: #ffffff;
     opacity: 0; transition: opacity .15s ease; }
   .nav.docked .cat-dock { opacity: 1; transition: opacity 0s; }
-  .dock-row { height: 34px; display: flex; align-items: center;
-    justify-content: space-between; padding: 0 20px; }
+  .dock-row { height: 52px; box-sizing: border-box; display: flex; align-items: baseline;
+    justify-content: space-between; padding: 16px 20px 12px; }
   .cat-dock h3 { font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .cat-dock .of { font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #ed1c24; }
   /* nav buttons: transparent frosted circles — content blurs through */
@@ -3567,7 +3573,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 233 (hosted exit leaves the controls to native)';
+const BUILD = 'build 2026-09-13 · 234 (docked title breathes like its heading)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3704,6 +3710,7 @@ function adaptNav() {
 /* the active category docks INTO the nav bar; the handoff is scroll-linked:
    the incoming section's header pushes the docked title out as it arrives */
 let dockedCatId = null;
+const DOCK_H = 52;   /* the .cat-dock / .dock-row height — keep in step with the CSS */
 function updateCatDock() {
   const tp = (parseFloat(getComputedStyle(scrollArea).paddingTop) || 100) - 66;
   const line = scrollArea.scrollTop + tp + 56;      /* dock top edge */
@@ -3726,7 +3733,7 @@ function updateCatDock() {
   secs.forEach((sec, i) => {
     const h = sec.querySelector('.cat-head');
     if (h) h.style.visibility =
-      (i <= ai || sec.offsetTop < line + 44) ? 'hidden' : '';
+      (i <= ai || sec.offsetTop < line + DOCK_H + 10) ? 'hidden' : '';
   });
   const A = secs[ai], B = secs[ai + 1];
   const catA = CATS.find(c => c.id === A.querySelector('[data-of]').dataset.of);
@@ -3735,13 +3742,13 @@ function updateCatDock() {
   renderOf(document.getElementById('dockOf'), catCount(catA.id), catA.quota);
   let p = 0;
   if (B) {
-    p = Math.max(0, Math.min(1, (line + 34 - B.offsetTop) / 34));
+    p = Math.max(0, Math.min(1, (line + DOCK_H - B.offsetTop) / DOCK_H));
     const catB = CATS.find(c => c.id === B.querySelector('[data-of]').dataset.of);
     document.getElementById('dockTitle2').textContent = catB.title;
     renderOf(document.getElementById('dockOf2'), catCount(catB.id), catB.quota);
   }
   document.getElementById('dockTrack').style.transform =
-    p > 0 ? 'translateY(' + (-p * 34) + 'px)' : '';
+    p > 0 ? 'translateY(' + (-p * DOCK_H) + 'px)' : '';
 }
 function syncDockCounter() {
   if (dockedCatId) updateCatDock();
