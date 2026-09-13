@@ -425,15 +425,19 @@
     </div>
     <h3>Not legal</h3>
     <div class="an-cfg">
-      <div class="an-cfgrow bad"><div class="cap">&times; X leading, trailing empty <small>Reads as back and leaves the action side empty. Checkout&rsquo;s Payment Method header ships this (see Adoption).</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Payment Method</span></div></div>
+      <div class="an-cfgrow bad"><div class="cap">&times; X leading, trailing empty <small>Reads as back and leaves the action side empty. Checkout&rsquo;s Payment Method header, breathe and the plan-quiz intro shipped this; all three fixed in 77944d4.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Payment Method</span></div></div>
       <div class="an-cfgrow bad"><div class="cap">&times; Dual with no X <small>The only way out would change data.</small></div><div class="an-mini"><span class="mt">Mar 15th</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
     </div>
     <p class="spec">bar <code>top-pad + 58</code> &middot; controls at <code>top-pad + 9</code>
       &middot; X leading <code>24</code>, trailing <code>16</code> (rewards keeps its own 24, see
       Adoption) &middot; dual trailing <code>16</code> &middot; text title centered at
-      <code>top-pad + 20</code> &middot; row height <b>44</b>. When the row holds a tile, <b>every
-      control in it is 52</b>, so the tile never outgrows its neighbours. The height belongs to
-      the row, not to a state, so nothing resizes when the tile arms.</p>
+      <code>top-pad + 20</code>.</p>
+    <p class="an-law">EVERY X IS 40. MEAL SELECTION IS THE ONE EXCEPTION, AT 44.
+      <span>Rashid, 2026-09-13. The glyph scales with the circle, &times;1.1 over the 40pt
+      standard (16 &rarr; 17.6), so it doesn&rsquo;t look undersized in the bigger button. On
+      meal selection the row height is 44, and when the row holds a tile every control in it is
+      52, so the tile never outgrows its neighbours. That height belongs to the row, not to a
+      state, so nothing resizes when the tile arms.</span></p>
   </section>
 
   <section class="card" id="controls" data-ds-section="sheet-controls-v1" style="scroll-margin-top:80px">
@@ -443,7 +447,7 @@
     <div class="an-ctls">
       <div class="an-ctl"><div class="vis"><button class="an-x an-glass" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div>
         <h4>X &middot; close</h4>
-        <p>44 circle (52 in a tile row), glyph 16 at stroke 1.7. Press scales to <code>.92</code>
+        <p><b>40 circle everywhere</b>, glyph ink &asymp;11. Meal selection only: 44 (52 in a tile row) with the glyph at 17.6. Press scales to <code>.92</code>
           over <code>.18s</code>. Tap: the sheet slides away and the host closes it at 380ms.</p></div>
       <div class="an-ctl"><div class="vis" style="height:auto;padding:10px 0;flex-direction:column;gap:8px"><div class="an-dual an-glass "><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="an-dual an-glass an-ready"><button aria-label="Clear" tabindex="-1"><svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg></button><span class="sep"></span><button aria-label="Confirm" tabindex="-1"><svg viewBox="0 0 15.5 11.5" fill="none"><path class="ck-base" d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path class="ck-fill" d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
         <h4>Dual capsule &middot; clear | confirm</h4>
@@ -684,14 +688,21 @@
     </div>
     <h3 style="margin-top:26px">Control bar: diff against what shipped</h3>
     <div>
-      <div class="mrow"><span class="mn">Checkout &middot; Payment Method</span><span class="badge todo">Flag</span>
-        <span class="mt">Close glyph in the <b>leading</b> seat with the trailing seat empty
-        (<code>data-act="back"</code> drawing <code>close.svg</code>). If it goes back a screen it
-        should be a back chevron. If it dismisses, it moves to the trailing seat. Owner: Checkout.</span></div>
-      <div class="mrow"><span class="mn">X size</span><span class="badge open">Open</span>
-        <span class="mt">44 on meal selection and meal details &middot; 40 on auth, rewards and
-        checkout headers &middot; 36 on checkout&rsquo;s modify sheet. Choosing one size is
-        Rashid&rsquo;s call and doesn&rsquo;t block anything.</span></div>
+      <div class="mrow"><span class="mn">Checkout &middot; Payment Method</span><span class="badge ok">Fixed</span>
+        <span class="mt">Had a close glyph in the leading seat with the trailing seat empty. The
+        screen is a push, so it now uses the back arrow the Duration screen already has (77944d4).</span></div>
+      <div class="mrow"><span class="mn">Breathe &middot; plan-quiz intro</span><span class="badge ok">Fixed</span>
+        <span class="mt">The X was 44 in the leading seat with nothing trailing. It is now 40 in the
+        trailing seat (right 21, same centre line), and the native twins follow the posted rect
+        (77944d4).</span></div>
+      <div class="mrow"><span class="mn">X size</span><span class="badge ok">Ruled</span>
+        <span class="mt">40 everywhere, 44 on meal selection only, with its glyph &times;1.1
+        (Rashid). Checkout&rsquo;s modify sheet went 36 &rarr; 40 and breathe and the plan-quiz
+        intro went 44 &rarr; 40. <b>Native side open:</b> in the shell the X glyph is drawn by
+        Shell, so the 17.6 glyph on meal selection needs their twin to match (sent to Shell).</span></div>
+      <div class="mrow"><span class="mn">Overlay scrims</span><span class="badge ok">Fixed</span>
+        <span class="mt">Home and the calendar dimmed embedded overlays with
+        <code>rgba(0,0,0,.42)</code>. Both now use the contract&rsquo;s <code>rgba(11,14,18,.45)</code>.</span></div>
       <div class="mrow"><span class="mn">X material</span><span class="badge open">Open</span>
         <span class="mt">Glass on meal selection, meal details and rewards &middot; white with a 1px
         hairline on auth and checkout. Native-first makes glass the standard, but auth&rsquo;s
