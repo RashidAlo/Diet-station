@@ -1,0 +1,56 @@
+{
+  "v": 1,
+  "note": "Design System registry for the Components lab tab. Contract: system/components.html#components-tab. Ids are shared across flows when it is the same component.",
+  "flows": {
+    "rewards": {
+      "screens": [
+        { "id": "coupons", "name": "Coupons sheet" }
+      ],
+      "components": [
+        {
+          "id": "sheet-x",
+          "name": "X · close",
+          "screen": "coupons",
+          "kind": "control",
+          "summary": "The sheet's one exit. It sits in the trailing seat because this sheet has no actions.",
+          "values": ["40pt circle, glyph ink ≈11pt", "trailing seat, right 24 · top 24 (rewards' own inset)", "liquid-glass-js material; native Liquid Glass twin in the app"],
+          "doc": "system/overlays.html#controls",
+          "states": [
+            { "id": "rest", "label": "Rest", "note": "In the app this X is a native twin; the tab shows the web rendering." }
+          ]
+        },
+        {
+          "id": "coupon",
+          "name": "Coupon card",
+          "screen": "coupons",
+          "kind": "surface",
+          "summary": "A member coupon with a punched perforation. Pulling the stub pops the holes one by one until the tab rips free and the card heals into its redeemed state with the promo code.",
+          "values": ["theme follows the member tier", "tear point 62% · stretch 96px (lab defaults)", "confetti 14 on redeem"],
+          "doc": "",
+          "states": [
+            { "id": "bronze", "label": "Bronze" },
+            { "id": "silver", "label": "Silver" },
+            { "id": "gold", "label": "Gold" },
+            { "id": "vip", "label": "VIP" },
+            { "id": "redeemed", "label": "Redeemed", "note": "The state the rip gesture ends in. Try the gesture itself on the Prototype tab." }
+          ]
+        },
+        {
+          "id": "level-badge",
+          "name": "Level badge",
+          "screen": "coupons",
+          "kind": "content",
+          "summary": "The member's tier, shown as a pill on the sheet.",
+          "values": ["label from the tier: Bronze · Silver · Gold · VIP"],
+          "doc": "",
+          "states": [
+            { "id": "bronze", "label": "Bronze" },
+            { "id": "silver", "label": "Silver" },
+            { "id": "gold", "label": "Gold" },
+            { "id": "vip", "label": "VIP" }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -172,6 +172,94 @@
 
 <div class="wrap">
 
+  <section class="card" id="components-tab" data-ds-section="components-tab-v1" style="scroll-margin-top:80px">
+    <h2>The Components tab &mdash; contract</h2>
+    <p class="desc">Rashid, 2026-09-13: every flow on the desktop hub gets a <b>Components</b> tab.
+      It lists the components on each screen with their documentation, and it doubles as a
+      playground for trying their states. It drives the <b>real prototype</b>, not rebuilt copies,
+      so the playground cannot drift from what ships. This is the one-pass spec; three lanes build
+      against it.</p>
+    <div class="codewrap">
+      <pre id="comptab">LAYOUT       desktop flow page, 4th lab tab after Prototype &middot; User flow &middot; Dev handoff.
+             Not rendered on mobile or in the app shell.
+               left    screens, each listing its components
+               middle  the selected component: summary, anatomy/values, states,
+                       link to its /system/ page
+               right   a LIVE instance of this flow in a device frame (402 x 874,
+                       scaled). Picking a state drives it; the component is outlined.
+
+REGISTRY     system/components.json, owned by Design System (the documentation is
+             ours). It is NOT in flows.json, which the admin publish writes.
+             { "v": 1, "flows": { "&lt;flow-id&gt;": {
+                 "screens":    [ { "id", "name" } ],
+                 "components": [ { "id", "name", "screen", "kind",
+                                   "summary", "values": [ "..." ],
+                                   "doc": "system/overlays.html#controls",
+                                   "states": [ { "id", "label", "note"? } ] } ] } } }
+             kind: control | surface | content | feedback
+             ids: kebab-case and SHARED when it is the same component in another
+             flow (sheet-x, dual-capsule, date-tile, price), so docs are written once.
+
+INSTANCE     iframe src = the flow's own path + ?labframe=1&amp;v=&lt;now&gt;
+             labframe=1 means lab-shell builds NO chrome (tabs, chip, menus) and the
+             flow renders its mobile layout at scale 1 with no desktop sidebar and no
+             triple-tap lab menu.
+
+PAGE API     each flow page defines, once it can drive itself:
+               window.DSComponents = {
+                 v: 1,
+                 show(componentId, stateId)  -&gt; Promise&lt;{ ok: bool, why? }&gt;
+                     navigates to the component's screen, puts it in the state, and
+                     resolves when the motion has SETTLED (a flag, not a timer)
+                 rect(componentId)           -&gt; { x, y, w, h } | null   viewport px
+                 reset()                     -&gt; Promise   back to the boot state
+               }
+             and then posts parent.postMessage({ t: 'ds-components', v: 1,
+               ids: [ ...componentIds it can drive ] }, '*').
+             The tab calls the API directly on contentWindow (same origin) and
+             treats the post as "ready". Ids the page does not list, or a show()
+             resolving ok:false, render as DOCS ONLY with the reason.
+
+STATE RULE   a state is a REAL CODE PATH. show() calls the same function the user's
+             gesture calls (setLevel, the rip's completion, the scrubber's arm), never
+             a class toggled to look right. If the path lives inline in a gesture
+             handler, extract it into a function both call; that refactor is part of
+             adopting the tab. Only when no path exists may a state be faked, marked
+             "simulated": true in the registry and labelled as such in the tab.
+             A state must be reachable from ANY other state: show() resets what it
+             needs to, and the tab never assumes an order.
+
+OUTLINE      the tab draws the outline over the iframe from rect() x scale, re-read
+             every frame for the duration of the settle, so moving components stay
+             boxed. Red 1.5px, radius follows the component, 4px outset.
+
+NATIVE       the playground shows the WEB rendering. Where the app draws the
+             component natively (twins), the state's note says so and links Ruling 3.
+             The tab never claims to preview native glass.
+
+OWNERS       Design System  this contract, system/components.json, every doc
+             Hub            the tab in lab-shell.js, labframe=1 in lab-shell, outline
+             each flow lane labframe=1 in its page, window.DSComponents, the
+                            ds-components post, extracting state paths into functions
+PILOT        rewards (idle lane, small, setLevel already exists): sheet-x, coupon
+             (bronze &middot; silver &middot; gold &middot; vip &middot; redeemed), level badge.
+
+EVIDENCE     on the desktop hub, rewards &rarr; Components:
+             1  every registry component is listed under its screen, with its doc
+             2  each state drives the live instance, reachable from every other state
+                in any order, and the outline boxes the component when settled
+             3  a state the page cannot drive shows as docs only, with the reason
+             4  the Prototype tab is unchanged, and the mobile/app views show no
+                Components tab
+             5  labframe=1 shows no lab chrome inside the instance</pre>
+      <button class="copycode" data-copy="comptab">Copy</button>
+    </div>
+    <p class="meta"><b>What this does NOT cover:</b> interactions that need a finger (the rip gesture,
+      the scrub drag). The tab can put a component into the state a gesture ENDS in, but the
+      gesture itself is tried on the Prototype tab. No component is rebuilt in isolation either:
+      if a component needs a standalone specimen, that belongs on its /system/ page.</p>
+  </section>
+
   <section class="card">
     <h2>Buttons</h2>
     <p class="desc">Always a full pill, always Urbane Medium 14. One red voice per view —
