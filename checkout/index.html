@@ -354,9 +354,9 @@
   .sheet-hdr { flex: none; display: flex; align-items: center; justify-content: space-between;
     padding: 24px 20px 12px; }
   .sheet-hdr h2 { font: 600 18px/28px 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .sheet-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair);
+  .sheet-x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--hair);
     background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .sheet-x img { width: 18px; height: 18px; display: block; }
+  .sheet-x img { width: 20px; height: 20px; display: block; }
 
   /* ---- meal stepper (modify sheet) ---- */
   .meal-row { display: flex; align-items: center; gap: 12px; padding: 0 20px; min-height: 46px; }
@@ -1120,7 +1120,7 @@ function screenPayment() {
   };
   return `<div class="scr" data-scr="payment">
     <div class="hdr"><div class="hdr-row">
-      <button class="icon-btn" data-act="back"><img src="${A}close.svg" alt="Close"></button>
+      <button class="icon-btn" data-act="back"><img src="${A}arrow-back.svg" alt="Back"></button>
       <h1>Payment Method</h1>
     </div></div>
     <div class="scroll">

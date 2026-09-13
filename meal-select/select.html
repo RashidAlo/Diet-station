@@ -191,7 +191,10 @@
       0 4px 14px -8px rgba(0,0,0,.22);
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .navbtn:active { transform: scale(.92); }
-  .navbtn svg { width: 16px; height: 16px; display: block; pointer-events: none; }
+  /* 44 is this page's size only; the rest of the prototype is 40. The glyph
+     scales with it (x1.1 over the 40pt standard's 16), so it doesn't read
+     undersized in the bigger circle (Rashid, 2026-09-13). */
+  .navbtn svg { width: 17.6px; height: 17.6px; display: block; pointer-events: none; }
   /* THE RETURN IS SLOWER AND IT BOUNCES (Rashid: "during the exit animation
      slow down the way the other buttons show up from right to left and give
      them a little bit of a gentle bounce when they move in").
@@ -1154,7 +1157,7 @@
       0 4px 14px -8px rgba(0,0,0,.22);
     transition: transform .18s cubic-bezier(.3,.8,.3,1); }
   .mo-close:active { transform: scale(.92); }
-  .mo-close svg { pointer-events: none; }
+  .mo-close svg { width: 17.6px; height: 17.6px; pointer-events: none; }   /* 44pt glyph, see .navbtn */
   /* ONE scroller drives everything: collapse, list, and the drag-to-close
      all chain inside a single gesture. Layers are JS-positioned off its
      scrollTop; the row list is clipped at the header's bottom edge. */

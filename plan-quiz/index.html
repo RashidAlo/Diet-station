@@ -111,12 +111,14 @@
   .chrome .closebtn canvas, .chrome .cta canvas { box-shadow: none !important; }
   .glass-dark-content { color: #0b0e12 !important; }
   .glass-dark-content svg { filter: brightness(0) opacity(.88); }
-  .chrome .closebtn { position: absolute; left: 21px; top: calc(var(--satd, 0px) + 20px);
-    width: 44px; height: 44px; border-radius: 50%;
+  /* sheet seat law: no actions in the bar, so the X takes the TRAILING seat;
+     40pt like every X outside meal selection. Same centre line as the old 44. */
+  .chrome .closebtn { position: absolute; right: 21px; top: calc(var(--satd, 0px) + 22px);
+    width: 40px; height: 40px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; }
   .chrome .closebtn:active { transform: scale(.92); }
   .chrome .closebtn svg, .chrome .cta .ctalabel { position: relative; pointer-events: none; }
-  .chrome .closebtn svg { width: 16px; height: 16px; display: block; }
+  .chrome .closebtn svg { width: 15px; height: 15px; display: block; }
   .chrome .cta { position: absolute; bottom: calc(var(--sabd, 0px) + 30px); left: 50%;
     transform: translateX(-50%); width: 284px; height: 54px; border-radius: 999px;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -776,7 +778,7 @@
   }
   function buildNav() {
     const chrome = $('chrome');
-    const cb = makeGlass('closebtn', 22);
+    const cb = makeGlass('closebtn', 20);
     cb.element.title = 'close';
     cb.element.insertAdjacentHTML('beforeend',
       '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>');
