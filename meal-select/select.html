@@ -2613,11 +2613,31 @@ scrollArea.addEventListener('touchmove', e => {
 const EMBED = /[?&]embed=1/.test(location.search);
 let REAL_PAD = 34;
 if (EMBED) {
-  const pr = document.createElement('div');
-  pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 1px))';
-  document.body.appendChild(pr);
-  REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
-  pr.remove();
+  /* HOSTED: TAKE THE REST INSET FROM THE HOST, NOT FROM env(). This is read
+     ONCE, at load — and a hosted view loads held off-screen, where it overlaps
+     no status bar. Measured by the shell lane in the host view: at ds-ready
+     native safeAreaInsets.top 0 / env 0px / frameY 900; at presented 62 / 62px
+     / 0. So env() read the 28pt floor and the sheet and bar rested ~33pt above
+     the design (gap 28+16 where the iframe gets 61+16).
+     A pure render-transform entry would have kept env() real and was the better
+     design; it was RULED OUT BY MEASUREMENT, twice: overriding
+     WKWebView.safeAreaInsets changed the native value but not env(), and a
+     render-only effect still left the platform view's frame at y=900 at load.
+     So the host injects its rest inset as DSNativeCaps.safeTop. REAL_PAD is the
+     only load-time safe-area read on this page (swept): every other env() here
+     is live CSS and correct at rest, and --top-pad / the scroller's padding
+     derive from REAL_PAD. */
+  const hostSafeTop = (DS_HOSTED && window.DSNativeCaps &&
+    typeof window.DSNativeCaps.safeTop === 'number') ? window.DSNativeCaps.safeTop : null;
+  if (hostSafeTop !== null) {
+    REAL_PAD = Math.max(28, hostSafeTop - 1);   /* same formula as the probe below */
+  } else {
+    const pr = document.createElement('div');
+    pr.style.cssText = 'position:absolute;visibility:hidden;padding-top:max(28px, calc(env(safe-area-inset-top, 0px) - 1px))';
+    document.body.appendChild(pr);
+    REAL_PAD = parseFloat(getComputedStyle(pr).paddingTop) || 34;
+    pr.remove();
+  }
   document.getElementById('phone').style.setProperty('--real-pad', REAL_PAD + 'px');
   document.documentElement.classList.add('embed');
   document.body.classList.add('embed');
@@ -3547,7 +3567,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 231 (the tile lands at its final radius)';
+const BUILD = 'build 2026-09-13 · 232 (hosted sheet rests at the designed height)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
