@@ -2,8 +2,9 @@
    DietStation Design Lab — shared flow shell
    Drop into any flow page with:
      <script src="../lab-shell.js" data-flow="<flow-id>" defer></script>
-   Adds three lab views on top of the prototype:
+   Adds lab views on top of the prototype:
      Prototype · User flow (auto-laid SVG diagram) · Dev handoff (RN kit + spec)
+     · Components (desktop only — registry docs + a live, drivable instance)
    Desktop: floating segmented control. Mobile: bottom tab bar that collapses
    to a corner chip while the prototype is in use.
    Data source: ../flows.json — fields used: title, description, status, updated,
@@ -14,6 +15,9 @@
 
   var FLOW_ID = (document.currentScript && document.currentScript.dataset.flow) ||
     (location.pathname.replace(/\/(index\.html)?$/, '').split('/').pop());
+  /* ?labframe=1 — this page is the live instance inside the Components tab:
+     build NO lab chrome (tabs, tab bar, chip, back, menu, gestures) */
+  var LABFRAME = /[?&]labframe=1(&|$)/.test(location.search);
 
   /* ---------------- styles ---------------- */
   var css = "\
@@ -209,6 +213,87 @@ body.labshell-menu:not(.desktop) .labshell-links { display: flex; }\
   font: 600 15px/1 -apple-system, sans-serif; }\
 body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
 ";
+  /* ---- Components tab (desktop). Double-quoted JS string: the CSS may use
+     single quotes for font names, and must never contain a double quote ---- */
+  css += "\
+.lab-tabs.in-side .seg button { padding: 8px 6px; }\
+html.ds-native [data-lab-tab=components],\
+body.lab-mobile .lab-tabs [data-lab-tab=components] { display: none; }\
+.lab-view.lab-comp { overflow: hidden; }\
+.lab-view.lab-comp.on { display: flex; flex-direction: column; }\
+body.desktop .lab-view.lab-comp { left: 0 !important; z-index: 75; }\
+body.lab-comp-on .side-resizer { display: none; }\
+.lc-head { flex: none; display: flex; align-items: center; gap: 24px; padding: 16px 28px 14px; }\
+.lc-head .lab-kicker { margin-bottom: 3px; }\
+.lc-head h1 { margin: 0; font-size: 22px; line-height: 28px; }\
+.lc-tabs { margin-left: auto; }\
+.lc-tabs .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: #e9e9ec; }\
+.lc-tabs button { border: none; cursor: pointer; padding: 8px 16px; border-radius: 999px;\
+  background: transparent; color: #6e6e73; font: 600 12.5px/16px 'Urbane Rounded', -apple-system, sans-serif; }\
+.lc-tabs button:hover { color: #1d1d1f; }\
+.lc-tabs button.on { background: #fff; color: #1d1d1f;\
+  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.06); }\
+.lc-body { flex: 1; min-height: 0; display: grid;\
+  grid-template-columns: 248px minmax(300px, 1fr) var(--lc-stage-w, 460px);\
+  border-top: 1px solid rgba(0,0,0,.07); }\
+.lc-body.empty { grid-template-columns: 1fr; }\
+.lc-body.empty .lc-list, .lc-body.empty .lc-stage { display: none; }\
+.lc-list { overflow-y: auto; padding: 18px 12px 40px 16px; border-right: 1px solid rgba(0,0,0,.07); }\
+.lc-screen + .lc-screen { margin-top: 18px; }\
+.lc-sname { font: 600 10.5px/14px 'Urbane Rounded', sans-serif; letter-spacing: 1.6px;\
+  text-transform: uppercase; color: #8e8e93; margin: 0 10px 6px; }\
+.lc-list button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;\
+  border: 0; background: transparent; cursor: pointer; padding: 9px 10px; border-radius: 10px;\
+  color: #1d1d1f; font: 600 13.5px/18px 'Urbane Rounded', sans-serif; }\
+.lc-list button:hover { background: rgba(0,0,0,.04); }\
+.lc-list button.on { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06), inset 0 0 0 .5px rgba(0,0,0,.06); }\
+.lc-cname { flex: 1; min-width: 0; }\
+.lc-kind, .lc-docs { flex: none; font: 600 9.5px/1 'Urbane Rounded', sans-serif; letter-spacing: .05em;\
+  text-transform: uppercase; color: #8e8e93; }\
+.lc-docs { display: none; background: #ececef; border-radius: 999px; padding: 4px 6px 3px; }\
+.lc-list button.docs .lc-docs { display: inline-block; }\
+.lc-list button.docs .lc-kind { display: none; }\
+.lc-detail { overflow-y: auto; padding: 24px 32px 60px; }\
+.lc-detail h2 { font: 600 24px/30px 'Urbane Rounded', sans-serif; color: #1d1d1f;\
+  margin: 0 0 8px; letter-spacing: -.01em; }\
+.lc-id { display: inline-block; margin: 0 0 14px; padding: 2px 8px; border-radius: 6px;\
+  font: 500 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6e6e73;\
+  background: #fff; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.1); }\
+.lc-detail .lab-desc { margin-bottom: 4px; }\
+.lc-values { margin: 0; padding: 0 0 0 18px; font: 400 13px/20px 'Proxima Nova', sans-serif; color: #1d1d1f; }\
+.lc-values li + li { margin-top: 3px; }\
+.lc-states { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }\
+.lc-states button { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;\
+  border: 1px solid rgba(0,0,0,.12); background: #fff; color: #1d1d1f; border-radius: 999px;\
+  padding: 9px 15px; font: 600 12.5px/16px 'Urbane Rounded', sans-serif; }\
+.lc-states button:hover { border-color: rgba(0,0,0,.26); }\
+.lc-states button.on { background: #1d1d1f; border-color: #1d1d1f; color: #fff; }\
+.lc-states button.docs { color: #8e8e93; }\
+.lc-states button.docs.on { background: #8e8e93; border-color: #8e8e93; color: #fff; }\
+.lc-states button em { font: 600 9px/1 'Urbane Rounded', sans-serif; font-style: normal;\
+  letter-spacing: .05em; text-transform: uppercase; opacity: .7; }\
+.lc-status { margin: 14px 0 0; min-height: 18px; font: 500 12.5px/18px 'Proxima Nova', sans-serif; color: #6e6e73; }\
+.lc-status.ok { color: #1f8a4c; }\
+.lc-status.docs { color: #8e8e93; }\
+.lc-note { margin: 6px 0 0; max-width: 60ch; font: 400 12.5px/18px 'Proxima Nova', sans-serif; color: #8e8e93; }\
+.lc-note[hidden] { display: none; }\
+.lc-doc { display: inline-block; margin-top: 26px; color: #ED1C24; text-decoration: none;\
+  font: 600 13px/18px 'Urbane Rounded', sans-serif; border-bottom: 1px solid rgba(237,28,36,.25); }\
+.lc-doc:hover { border-bottom-color: #ED1C24; }\
+.lc-empty { max-width: 460px; margin: 90px auto 0; text-align: center;\
+  font: 400 13.5px/21px 'Proxima Nova', sans-serif; color: #8e8e93; }\
+.lc-empty b { display: block; margin-bottom: 6px; font: 600 18px/24px 'Urbane Rounded', sans-serif; color: #1d1d1f; }\
+.lc-stage { display: flex; align-items: center; justify-content: center; min-width: 0;\
+  border-left: 1px solid rgba(0,0,0,.07); background: #ececef; }\
+.lc-device { position: relative; flex: none; overflow: hidden; background: #fff;\
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 24px 60px -30px rgba(0,0,0,.35); }\
+.lc-frame { position: absolute; left: 0; top: 0; width: 402px; height: 874px; border: 0; transform-origin: 0 0; }\
+.lc-boot { position: absolute; inset: 0; z-index: 3; display: none; align-items: center; justify-content: center;\
+  background: #fff; font: 500 12.5px/18px 'Proxima Nova', sans-serif; color: #8e8e93; }\
+.lc-device.booting .lc-boot { display: flex; }\
+.lc-outline { position: absolute; z-index: 2; box-sizing: border-box; border: 1.5px solid #ED1C24; pointer-events: none; }\
+.lc-outline[hidden] { display: none; }\
+";
   style.textContent = css;
   document.head.appendChild(style);
 
@@ -224,7 +309,9 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
   var TABS = [
     { id: 'proto', label: 'Prototype', icon: IC.proto },
     { id: 'userflow', label: 'User flow', icon: IC.flow },
-    { id: 'handoff', label: 'Dev handoff', icon: IC.code }
+    { id: 'handoff', label: 'Dev handoff', icon: IC.code },
+    /* desktop only: never in the mobile tab bar, never in the app */
+    { id: 'components', label: 'Components', icon: IC.code, desktopOnly: true }
   ];
 
   var tabsEl = document.createElement('div');
@@ -235,7 +322,7 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
 
   var barEl = document.createElement('nav');
   barEl.className = 'lab-tabbar hidden';
-  barEl.innerHTML = TABS.map(function (t) {
+  barEl.innerHTML = TABS.filter(function (t) { return !t.desktopOnly; }).map(function (t) {
     return '<button data-lab-tab="' + t.id + '">' + t.icon + '<span>' + t.label + '</span></button>';
   }).join('');
 
@@ -251,6 +338,10 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
   var handView = document.createElement('section');
   handView.className = 'lab-view';
   handView.id = 'labHandoff';
+
+  var compView = document.createElement('section');
+  compView.className = 'lab-view lab-comp';
+  compView.id = 'labComponents';
 
   var backEl = document.createElement('button');
   backEl.className = 'lab-back';
@@ -286,19 +377,29 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     chipEl.classList.remove('show');
   }
 
+  function canComponents() {
+    return document.body.classList.contains('desktop') && !isMobile() &&
+      !document.documentElement.classList.contains('ds-native');
+  }
+
   function setTab(name, fromHash) {
+    if (name === 'components' && !canComponents()) name = 'proto';
+    var prev = current;
     current = name;
-    tabsEl.querySelectorAll('button').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.labTab === name);
-    });
-    barEl.querySelectorAll('button').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.labTab === name);
+    [tabsEl, barEl, compView].forEach(function (root) {
+      root.querySelectorAll('button[data-lab-tab]').forEach(function (b) {
+        b.classList.toggle('on', b.dataset.labTab === name);
+      });
     });
     flowView.classList.toggle('on', name === 'userflow');
     handView.classList.toggle('on', name === 'handoff');
+    compView.classList.toggle('on', name === 'components');
+    if (name === 'components' && prev !== 'components') compEnter();
+    else if (prev === 'components' && name !== 'components') compLeave();
     backEl.classList.toggle('show', name !== 'proto');
     if (!fromHash) {
-      var h = name === 'userflow' ? '#userflow' : name === 'handoff' ? '#handoff' : ' ';
+      var h = name === 'userflow' ? '#userflow' : name === 'handoff' ? '#handoff'
+        : name === 'components' ? '#components' : ' ';
       try { history.replaceState(null, '', h === ' ' ? location.pathname + location.search : h); } catch (_) {}
     }
     if (isMobile()) {
@@ -321,6 +422,10 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
 
   addEventListener('resize', function () {
     syncMobileClass();
+    if (current === 'components') {
+      /* the page's own fit() runs first and may have dropped body.desktop */
+      if (!canComponents()) setTab('proto'); else compFit();
+    }
     if (!isMobile()) { barEl.classList.add('hidden'); chipEl.classList.remove('show'); }
     else if (current !== 'proto') expandBar();
     else if (!chipEl.classList.contains('show')) collapseBar(0);
@@ -723,9 +828,309 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
     handView.appendChild(col);
   }
 
+  /* ---------------- Components tab (desktop) ----------------
+     Contract: system/components.html#components-tab. Registry:
+     system/components.json (Design System's docs). The right pane is a LIVE
+     instance of this very flow at ?labframe=1, driven through the page's
+     window.DSComponents once it posts {t:'ds-components', v:1, ids}. The
+     instance exists only while the tab is open: a second full copy of the
+     flow (Rive, audio, glass) must not run behind the Prototype tab. */
+  var comp = { reg: undefined, flow: null, built: false, frame: null, api: null,
+    ids: null, adopted: null, why: '', sel: null, state: null, seq: 0,
+    loop: 0, watch: 0, scale: 1, settling: false };
+
+  function compQ(sel) { return compView.querySelector(sel); }
+
+  function compFind(id) {
+    var cs = (comp.flow && comp.flow.components) || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i].id === id) return cs[i];
+    return null;
+  }
+
+  function compLoadRegistry() {
+    if (comp.reg !== undefined) return Promise.resolve(comp.reg);
+    return fetch('../system/components.json?v=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) {
+        comp.reg = d;
+        comp.flow = (d && d.flows && d.flows[FLOW_ID]) || null;
+        return d;
+      });
+  }
+
+  function compBuild() {
+    if (comp.built) return;
+    comp.built = true;
+    compView.innerHTML =
+      '<header class="lc-head"><div><div class="lab-kicker">DietStation · Design Lab</div>' +
+      '<h1>Components</h1></div>' +
+      '<div class="lc-tabs"><div class="seg">' + TABS.map(function (t) {
+        return '<button data-lab-tab="' + t.id + '"' + (t.id === 'components' ? ' class="on"' : '') +
+          '>' + t.label + '</button>';
+      }).join('') + '</div></div></header>' +
+      '<div class="lc-body"><nav class="lc-list" aria-label="Components"></nav>' +
+      '<section class="lc-detail"></section>' +
+      '<div class="lc-stage"><div class="lc-device"><div class="lc-boot">Starting the prototype…</div>' +
+      '<div class="lc-outline" hidden></div></div></div></div>';
+    compQ('.lc-tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-lab-tab]');
+      if (b) setTab(b.dataset.labTab);
+    });
+    compQ('.lc-list').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-comp]');
+      if (b) compSelect(b.dataset.comp);
+    });
+    compQ('.lc-detail').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-state]');
+      if (b && comp.sel) compDrive(comp.sel, b.dataset.state);
+    });
+  }
+
+  function compRender() {
+    var f = comp.flow, body = compQ('.lc-body'), list = compQ('.lc-list');
+    var cs = (f && f.components) || [];
+    body.classList.toggle('empty', !cs.length);
+    if (!cs.length) {
+      list.innerHTML = '';
+      compQ('.lc-detail').innerHTML = '<div class="lc-empty"><b>No components documented for this flow yet</b>' +
+        'Design System adds a flow to system/components.json once its components are written up.</div>';
+      return;
+    }
+    var screens = (f.screens || []).slice(), known = {};
+    screens.forEach(function (s) { known[s.id] = true; });
+    if (cs.some(function (c) { return !known[c.screen]; })) screens.push({ id: '', name: 'Other' });
+    list.innerHTML = screens.map(function (s) {
+      var mine = cs.filter(function (c) { return s.id ? c.screen === s.id : !known[c.screen]; });
+      if (!mine.length) return '';
+      return '<div class="lc-screen"><div class="lc-sname">' + esc(s.name || s.id) + '</div>' +
+        mine.map(function (c) {
+          return '<button data-comp="' + esc(c.id) + '"><span class="lc-cname">' + esc(c.name || c.id) +
+            '</span><span class="lc-kind">' + esc(c.kind || '') + '</span><span class="lc-docs">Docs only</span></button>';
+        }).join('') + '</div>';
+    }).join('');
+    compSelect(compFind(comp.sel) ? comp.sel : cs[0].id);
+  }
+
+  /* selecting a component drives its FIRST state, so the outline has
+     something to box; picking another state drives that one */
+  function compSelect(id) {
+    var c = compFind(id);
+    if (!c) return;
+    comp.sel = id;
+    comp.state = null;
+    compQ('.lc-list').querySelectorAll('button[data-comp]').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.comp === id);
+    });
+    var st = c.states || [];
+    compQ('.lc-detail').innerHTML =
+      '<div class="lab-kicker">' + esc(c.kind || 'component') + '</div>' +
+      '<h2>' + esc(c.name || c.id) + '</h2>' +
+      '<code class="lc-id">' + esc(c.id) + '</code>' +
+      (c.summary ? '<p class="lab-desc">' + esc(c.summary) + '</p>' : '') +
+      ((c.values || []).length ? '<div class="lab-h3">Values</div><ul class="lc-values">' +
+        c.values.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '') +
+      (st.length ? '<div class="lab-h3">States</div><div class="lc-states">' + st.map(function (s) {
+        return '<button data-state="' + esc(s.id) + '">' + esc(s.label || s.id) +
+          (s.simulated ? '<em>Simulated</em>' : '') + '</button>';
+      }).join('') + '</div>' : '') +
+      '<p class="lc-status" aria-live="polite"></p><p class="lc-note" hidden></p>' +
+      (c.doc ? '<a class="lc-doc" href="../' + esc(c.doc) + '" target="_blank" rel="noopener">Open documentation</a>'
+        : '<p class="lab-note" style="margin-top:26px">No documentation page yet.</p>');
+    compDrive(id, st.length ? st[0].id : null);
+  }
+
+  function compStatus(text, kind) {
+    var el = compQ('.lc-status');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'lc-status' + (kind ? ' ' + kind : '');
+  }
+
+  function compMarkDocs() {
+    compQ('.lc-list').querySelectorAll('button[data-comp]').forEach(function (b) {
+      var docs = comp.adopted === false ||
+        (comp.adopted === true && comp.ids.indexOf(b.dataset.comp) < 0);
+      b.classList.toggle('docs', docs);
+    });
+  }
+
+  function compDrive(id, stateId) {
+    var c = compFind(id);
+    if (!c) return;
+    var states = c.states || [];
+    var s = states.filter(function (x) { return x.id === stateId; })[0] || states[0] || null;
+    comp.state = s ? s.id : null;
+    compQ('.lc-detail').querySelectorAll('button[data-state]').forEach(function (b) {
+      b.classList.toggle('on', !!s && b.dataset.state === s.id);
+      b.classList.remove('docs');
+    });
+    var note = compQ('.lc-note');
+    if (note) { note.textContent = (s && s.note) || ''; note.hidden = !(s && s.note); }
+    var my = ++comp.seq;
+    comp.settling = false;
+    cancelAnimationFrame(comp.loop);
+    var docsOnly = function (why) {
+      compStatus('Docs only — ' + why, 'docs');
+      compQ('.lc-outline').hidden = true;
+      var b = s && compQ('.lc-detail').querySelector('button[data-state="' + s.id + '"]');
+      if (b) b.classList.add('docs');
+    };
+    if (comp.adopted === null) { compStatus('Waiting for the prototype to be ready…'); return; }
+    if (comp.adopted === false) { docsOnly(comp.why); return; }
+    if (comp.ids.indexOf(id) < 0) { docsOnly('this flow doesn’t list this component as drivable yet.'); return; }
+    if (!s) { docsOnly('no states are registered for this component.'); return; }
+    var p;
+    try { p = Promise.resolve(comp.api.show(id, s.id)); }
+    catch (e) { docsOnly('show() threw: ' + (e && e.message)); return; }
+    compStatus('Driving…');
+    /* re-read the rect every frame while the settle runs, so a moving
+       component stays boxed */
+    comp.settling = true;
+    (function tick() {
+      if (my !== comp.seq) return;
+      compPlace();
+      if (comp.settling) comp.loop = requestAnimationFrame(tick);
+    })();
+    var watchdog = setTimeout(function () {
+      if (my !== comp.seq || !comp.settling) return;
+      comp.settling = false;
+      compStatus('Didn’t settle within 5s — the page never reported this state as settled.', 'docs');
+    }, 5000);
+    p.then(function (res) {
+      clearTimeout(watchdog);
+      if (my !== comp.seq) return;
+      comp.settling = false;
+      if (!res || res.ok === false) {
+        docsOnly((res && res.why) || 'show() resolved ok:false without a reason.');
+        return;
+      }
+      compPlace();
+      compStatus(s.simulated ? 'Settled · simulated state' : 'Settled', 'ok');
+    }, function (err) {
+      clearTimeout(watchdog);
+      if (my !== comp.seq) return;
+      comp.settling = false;
+      docsOnly('show() failed: ' + ((err && err.message) || err));
+    });
+  }
+
+  /* outline: rect() × scale, 4px outset, red 1.5px, radius follows the
+     component (rect may carry r; 8px when it does not) */
+  function compPlace() {
+    var o = compQ('.lc-outline');
+    if (!o) return;
+    var r = null;
+    try { r = comp.api && comp.sel && comp.ids && comp.ids.indexOf(comp.sel) >= 0
+      ? comp.api.rect(comp.sel) : null; } catch (_) { r = null; }
+    if (!r || !(r.w > 0) || !(r.h > 0)) { o.hidden = true; return; }
+    var k = comp.scale, pad = 4 + 1.5;
+    o.style.left = (r.x * k - pad) + 'px';
+    o.style.top = (r.y * k - pad) + 'px';
+    o.style.width = (r.w * k + pad * 2) + 'px';
+    o.style.height = (r.h * k + pad * 2) + 'px';
+    o.style.borderRadius = ((typeof r.r === 'number' ? r.r : 8) * k + pad) + 'px';
+    o.hidden = false;
+  }
+
+  function compFit() {
+    var dev = compQ('.lc-device'), head = compQ('.lc-head');
+    if (!dev || !head) return;
+    var availH = compView.clientHeight - head.offsetHeight - 48;
+    var availW = innerWidth - 248 - 300 - 64;
+    var k = Math.max(0.3, Math.min(1, availH / 874, availW / 402));
+    comp.scale = k;
+    compView.style.setProperty('--lc-stage-w', Math.round(402 * k + 64) + 'px');
+    dev.style.width = (402 * k) + 'px';
+    dev.style.height = (874 * k) + 'px';
+    dev.style.borderRadius = (54 * k) + 'px';
+    if (comp.frame) comp.frame.style.transform = 'scale(' + k + ')';
+    compPlace();
+  }
+
+  function compAdopt(ok, why) {
+    clearTimeout(comp.watch);
+    comp.adopted = ok;
+    comp.why = why || '';
+    compMarkDocs();
+    if (comp.sel) compDrive(comp.sel, comp.state);
+  }
+
+  function compMount() {
+    compUnmount();
+    var dev = compQ('.lc-device');
+    var fr = document.createElement('iframe');
+    fr.className = 'lc-frame';
+    fr.title = 'Live prototype';
+    fr.src = location.pathname + '?labframe=1&v=' + Date.now();
+    comp.frame = fr;
+    dev.classList.add('booting');
+    dev.insertBefore(fr, dev.firstChild);
+    fr.addEventListener('load', function () {
+      if (comp.frame !== fr) return;
+      dev.classList.remove('booting');
+      /* the outline must follow a scroll or resize inside the instance too */
+      try {
+        var re = function () { if (!comp.settling) compPlace(); };
+        fr.contentWindow.addEventListener('scroll', re, true);
+        fr.contentWindow.addEventListener('resize', re);
+      } catch (_) {}
+    });
+    comp.watch = setTimeout(function () {
+      if (comp.frame === fr && comp.adopted === null)
+        compAdopt(false, 'this flow hasn’t adopted the Components contract yet (no ds-components message).');
+    }, 6000);
+    compFit();
+  }
+
+  function compUnmount() {
+    clearTimeout(comp.watch);
+    cancelAnimationFrame(comp.loop);
+    comp.seq++;
+    comp.settling = false;
+    if (comp.frame) { comp.frame.remove(); comp.frame = null; }
+    comp.api = null; comp.ids = null; comp.adopted = null; comp.why = '';
+    var o = compQ('.lc-outline');
+    if (o) o.hidden = true;
+  }
+
+  addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || d.t !== 'ds-components' || !comp.frame || e.source !== comp.frame.contentWindow) return;
+    if (d.v !== 1) { compAdopt(false, 'the page speaks Components contract v' + d.v + '; this tab reads v1.'); return; }
+    var api = null;
+    try { api = comp.frame.contentWindow.DSComponents; } catch (_) {}
+    if (!api || typeof api.show !== 'function' || typeof api.rect !== 'function') {
+      compAdopt(false, 'the page announced ds-components but window.DSComponents is incomplete.');
+      return;
+    }
+    comp.api = api;
+    comp.ids = Array.isArray(d.ids) ? d.ids.map(String) : [];
+    compAdopt(true);
+  });
+
+  function compEnter() {
+    compBuild();
+    document.body.classList.add('lab-comp-on');
+    compLoadRegistry().then(function () {
+      if (current !== 'components') return;
+      var has = comp.flow && (comp.flow.components || []).length;
+      if (has) compMount(); else compUnmount();
+      compRender();
+      compFit();
+    });
+  }
+
+  function compLeave() {
+    compUnmount();
+    document.body.classList.remove('lab-comp-on');
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
-    document.body.append(tabsEl, barEl, chipEl, flowView, handView, backEl);
+    /* the live instance inside the Components tab: no lab chrome at all */
+    if (LABFRAME) return;
+    document.body.append(tabsEl, barEl, chipEl, flowView, handView, compView, backEl);
     var side = document.getElementById('side');
     if (side) {
       tabsEl.classList.add('in-side');
@@ -742,7 +1147,8 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
         renderUserflow(f);
         renderHandoff(f);
         var initial = location.hash === '#userflow' ? 'userflow'
-          : location.hash === '#handoff' ? 'handoff' : 'proto';
+          : location.hash === '#handoff' ? 'handoff'
+          : location.hash === '#components' ? 'components' : 'proto';
         setTab(initial, true);
         if (isMobile() && initial === 'proto') {
           // brief hello so the tab bar is discoverable, then tuck away
