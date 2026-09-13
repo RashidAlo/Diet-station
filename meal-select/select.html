@@ -3386,7 +3386,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 216 (the bar arrives with the overlay)';
+const BUILD = 'build 2026-09-13 · 217 (the web bar rides in, the twins take over at rest)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3906,10 +3906,26 @@ if (QS.get('solo') === '1') {
     '  transition: none !important; animation: none !important; } ' +
     '';
   document.head.appendChild(st);
-  /* chrome v2: web chrome never renders in-shell — hidden from the FIRST
-     frame (twins fade in at rest); the 900ms/1.6s fallbacks still restore
-     it on shells that never confirm (iOS<26) */
-  prehide();
+  /* NO PRE-HIDE AT SETUP (·217). The old comment here read "web chrome never
+     renders in-shell — hidden from the FIRST frame", and that is exactly what
+     Rashid saw: "when the overlay comes in in the first few frames, the action
+     bar on top is empty, and there's this frame for the tile before it becomes
+     a glass... the action bar should still be part of the overlay when it
+     comes up from the start."
+     It was empty for a measured 934ms, because the first post comes from go()
+     and go() waits for the sheet's entry transitionend — so the web bar was
+     hidden from frame one and nothing replaced it until the sheet stopped.
+     Posting early instead does not work: ·216 tried it and the twins trailed
+     the rising sheet by ~78pt, because the sheet climbs at over 4pt/ms and a
+     cross-process rect is a few frames stale when it lands.
+     THE WEB BAR IS INSIDE THE SHEET, so it rides the entry perfectly for free
+     — same DOM, same compositor, no latency, no protocol. Let it. prehide()
+     still runs on every report(), so the handover happens on the frame the
+     first post goes out, once the surface is at rest and the twins can be
+     placed exactly. This is the pre-hide law from ·190 generalised: PRE-HIDING
+     IS ONLY SAFE ONCE SOMETHING IS ACTUALLY REPLACING IT — ·190 learned it for
+     an id no renderer drew, and this is the same mistake in the time
+     dimension rather than the capability one. */
 
   function unhide() {
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
@@ -4745,40 +4761,17 @@ if (QS.get('solo') === '1') {
     }
     addEventListener('pagehide', chromeExit);
   })();
-  /* A SELF-LIMITING BURST. Deliberately not trackBurst(): that one continues
-     while `!scrubHold || elapsed < ms`, which is correct for a gesture that
-     may outlast its timer and an infinite loop for anything else — scrubHold
-     is false at boot, so reusing it here would stream forever. */
-  function entryBurst(ms) {
-    var t0 = performance.now();
-    var step = function () {
-      postTrack();
-      if (performance.now() - t0 < ms) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
   function boot() {
     var sh = document.getElementById('sheet'), done = false;
     function go() { if (done) return; done = true; watchDock(); gaugeArmed = true; postGauge(); }
-    /* THE BAR IS PART OF THE OVERLAY, NOT SOMETHING THAT ARRIVES AFTER IT
-       (Rashid: "when the overlay comes in, the action bar on top is empty,
-       and there's this frame for the tile before it becomes a glass... the
-       action bar should still be part of the overlay when it comes up from
-       the start").
-       The chrome used to be posted from go(), which waits for the sheet's
-       entry transitionend — measured at 934ms on the device, with the web
-       chrome already hidden by prehide() since frame one. So for the whole
-       entry the bar was empty by construction, and the twins popped in once
-       the sheet had stopped. The tile ghost is the same clock: dateEl()
-       returns nothing until a confirm names the widget, and the confirm
-       cannot arrive before the first post, so the bare web tile showed for
-       that entire second instead of for a frame.
-       Post immediately and then stream the entry, exactly as the dock does.
-       The rect on frame one is the sheet's pre-entry rect — off-screen low —
-       which is correct: the twins ride up with the surface rather than
-       waiting at the top for it. */
-    report();
-    entryBurst(1100);   /* covers the entry with margin; go() still anchors */
+    /* ·216 posted the twins from frame one and streamed the entry. It fixed
+       the empty bar and replaced it with a worse one: MEASURED, the twins
+       trailed the rising sheet by ~78pt mid-entry — a second chrome row
+       visibly chasing the first. The sheet climbs 923pt to 100pt in about
+       600ms, over 4pt per millisecond at peak, and a rect that crosses to
+       another process and back is two or three frames old by the time it is
+       drawn. Per-frame posting is enough for a dock, where the finger sets
+       the pace; it cannot hold a spring this fast. See ·217 below. */
     if (sh) sh.addEventListener('transitionend', function h(e) {
       if (e.target !== sh || e.propertyName !== 'transform') return;
       sh.removeEventListener('transitionend', h); go();
