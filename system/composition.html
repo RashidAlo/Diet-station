@@ -389,6 +389,80 @@
       both worth having, and only the first is replaced by the version.</p>
   </section>
 
+  <section class="card" id="ruling-overlay-chrome" data-ds-section="ruling3-v1" style="scroll-margin-top:80px">
+    <h2>Ruling 3 — overlay controls are chrome, not sheet content</h2>
+    <p class="desc">Rashid, on the meal-select overlay: the action bar <i>&ldquo;loads with web
+      controls, and then they morph or they dissolve into the glass buttons. This is very not
+      clean&hellip; I don&rsquo;t want these workarounds in the middle of the experience.&rdquo;</i>
+      And the shape he asked for: <i>&ldquo;they always sit at the top like this, starting from
+      when the screen loads in, and they track in all different states of the overlay.&rdquo;</i></p>
+
+    <div class="slab">
+      <div class="sl">The law</div>
+      <div class="sq">A HANDOVER THE USER CAN SEE IS A BUG. THE HANDSHAKE BELONGS BEFORE THE FIRST
+        VISIBLE FRAME, OR AFTER THE LAST ONE — NEVER INSIDE THE EXPERIENCE.</div>
+      <div class="sb">Native-first is not &ldquo;native once it settles&rdquo;. A surface that
+        begins as its own fallback and converts in view has shown the seam to the person the
+        fallback exists to protect.</div>
+    </div>
+
+    <h3>Why the seam exists, and why the obvious fix is already dead</h3>
+    <p class="desc" style="font-size:13.5px">The controls are <b>inside the sheet</b>
+      (<code>.nav</code> is absolutely positioned within it), so they inherit the sheet&rsquo;s
+      entry motion. A twin can only be placed where the page says the element is — so while the
+      element is travelling, the twin is chasing a moving target across a process boundary.</p>
+    <p class="desc" style="font-size:13.5px"><b>&ldquo;Stream the geometry during the
+      entry&rdquo; is the obvious answer and it has been measured and killed.</b> ·216 posted
+      early and <b>the twins trailed the rising sheet by ~78pt</b>: the sheet climbs at over
+      <b>4pt/ms</b>, and a cross-process rect is a few frames stale by the time it lands. That is
+      the bridge&rsquo;s physics, not a bug to be tuned out — and it is why the lane&rsquo;s
+      current build waits for rest, which is precisely the seam being complained about. The
+      previous state was worse still: the bar sat <b>empty for a measured 934ms</b>.</p>
+    <p class="desc" style="font-size:13.5px">So the fault is not in the handover&rsquo;s timing.
+      <b>It is that a control which must be native was built as content that moves.</b></p>
+
+    <div class="slab">
+      <div class="sl">Ruling</div>
+      <div class="sq">AN OVERLAY&rsquo;S CONTROLS ARE SCREEN-ANCHORED CHROME OVER THE SHEET, NOT
+        CONTENT INSIDE IT.</div>
+      <div class="sb">They are placed once, at the chrome line, and the sheet arrives
+        <i>underneath</i> them. Their geometry does not move during the entry, so there is nothing
+        to chase, nothing to stream, and no moment at which a web control has to stand in. This is
+        the shape Rashid described — present from the first frame, in the same place, through
+        every state of the overlay.</div>
+    </div>
+
+    <h3>Clauses</h3>
+    <p class="desc" style="font-size:13.5px">
+      <b style="color:var(--ink)">1 &middot; Decided before the first visible frame.</b> Whether
+      this device draws native controls is a <i>session</i> fact — the capability version is known
+      from an earlier surface. Cache it and decide before the overlay opens. No capability
+      handshake inside the visible window.<br>
+      <b style="color:var(--ink)">2 &middot; On a capable shell the web controls never render.</b>
+      There is no morph because there is no web state to leave. This is the clause that answers the
+      complaint: the seam is not badly animated, it is a seam that should not exist.<br>
+      <b style="color:var(--ink)">3 &middot; Armed once per surface, not per state.</b> Placed when
+      the overlay opens and tracked continuously through partial, fullscreen and scrolled — never
+      torn down and re-armed per state, which is failure 08&rsquo;s territory. This is
+      &ldquo;they track in all different states&rdquo;.<br>
+      <b style="color:var(--ink)">4 &middot; Presented with content or not at all.</b> Clauses 1–3
+      make this automatic: a static, pre-decided control is posted complete, so the empty glass
+      square stops being <i>possible</i> rather than being fixed.<br>
+      <b style="color:var(--ink)">5 &middot; The fallback is whole-life.</b> On a device without the
+      capability the web controls render for the entire life of the overlay and never hand over.
+      One decision, made before the first frame, that never changes while the surface is on
+      screen.</p>
+    <p class="meta">This extends failure 01&rsquo;s rule — <i>which lane draws it never changes
+      mid-gesture</i> — to <b>never changes mid-surface</b>. An overlay&rsquo;s entry is a gesture
+      in that sense.</p>
+    <p class="meta"><b style="color:var(--red)">Open, and it is Shell&rsquo;s:</b> a
+      screen-anchored bar sits over the calendar&rsquo;s red ground before the white sheet arrives
+      beneath it, so the glass is momentarily tinting against saturated red rather than white —
+      the <code>0.05</code> case in the material rules. Whether one tint reads correctly across
+      that change, or the twin needs its tint to follow the ground, is theirs to measure. Nothing
+      else in the ruling depends on the answer.</p>
+  </section>
+
   <section class="card">
     <h2>What the web does underneath a twin</h2>
     <p class="desc">Three options, and picking the wrong one is failures 01 and 03. The choice
