@@ -530,6 +530,24 @@ CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              dateEl() stays null until the confirm and the first post can never be
              complete. (With dateWidget the dated tile travels as the scrub el, and
              the separate tile el is skipped, so TILE_NATIVE_PROVEN does not gate it.)
+             HOST ONLY: safeTop (integer pt), the host's REST top inset, taken from the
+             calendar's own inset (full-screen at rest), in the same object. The host
+             loads held off-screen, so at ds-ready its inset reads 0 (safeAreaInsets 0,
+             env() 0px, frame y 900) and only reads 62 at presented. A load-time read
+             would rest the sheet ~33pt high. Page, when hosted: REAL_PAD =
+             max(28, safeTop - 1) (the DS-CHROME-TOP pad), else env(). Built at select
+             &middot;232: safeTop 62 -&gt; REAL_PAD 61 -&gt; SHEET_GAP 77, the iframe's resting
+             height. REAL_PAD is the page's only load-time safe-area read; every other
+             env() is live CSS, reads 0 while held off-screen and 62 at rest, and nothing
+             has been seen shifting during the rise.
+             RULED OUT BY MEASUREMENT, not preference (Shell). Keeping env() real with no
+             key failed both ways: (1) overriding WKWebView.safeAreaInsets to the rest
+             value made the native value 62 but env() stayed 0px, because WebKit derives
+             env() from real geometry; (2) moving the host by a render-only
+             .visualEffect instead of .offset still left the platform view's frame at
+             y 900 at load, because SwiftUI positions representables by frame either
+             way. Both reverted, with a comment at the offset. Do not retry them on the
+             next hosted surface.
              The host view must ALSO carry the DietStationLab UA token. It is set per
              view (customUserAgent), so a new view does not inherit it. select.html's
              chrome module returns without it and lab-shell keys html.ds-native off it.
