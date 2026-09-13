@@ -3398,7 +3398,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 218 (the tile has its date during the entry)';
+const BUILD = 'build 2026-09-13 · 219 (log-only: why is the tile blank?)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3955,6 +3955,32 @@ if (QS.get('solo') === '1') {
      confirm has actually named it, so an older renderer leaves the web tile
      alone and the date stays on screen. Cost on a new renderer: the web tile
      shows for the single frame before the first confirm. */
+  /* TEMPORARY — ·219. Two hypotheses for the blank tile during the entry, and
+     one sample settles both: is the CONTENT missing, or is it there and
+     invisible? Log the innerHTML length and the resolved colour/opacity every
+     100ms through the entry. font-display: swap did not fix it, so FOIT was
+     not the cause and I am not shipping a third guess unmeasured. */
+  (function tileWatch() {
+    var n = 0;
+    var iv = setInterval(function () {
+      if (n++ > 14) { clearInterval(iv); return; }
+      try {
+        var ttl = document.querySelector('.nav .ttl');
+        var dt = document.getElementById('dayTile');
+        var tn = dt && dt.querySelector('.t-n');
+        var cs = tn && getComputedStyle(tn);
+        var tcs = ttl && getComputedStyle(ttl);
+        webkit.messageHandlers.ds.postMessage({ t: 'dsdebug',
+          m: 'TILEW ' + Math.round(performance.now()) +
+             ' cls=[' + (ttl ? ttl.className : '?') + ']' +
+             ' len=' + (dt ? dt.innerHTML.length : -1) +
+             ' num=' + (cs ? cs.color.replace(/\s/g, '') : '?') +
+             ' op=' + (tcs ? tcs.opacity : '?') +
+             ' vis=' + (cs ? cs.visibility : '?') +
+             ' fs=' + (cs ? cs.fontSize : '?') });
+      } catch (_) {}
+    }, 100);
+  })();
   var ndb2 = 0;
   function navdbg2(m) {                 /* TEMPORARY — ·215 */
     if (ndb2++ > 60) return;
