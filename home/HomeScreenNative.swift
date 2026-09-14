@@ -140,6 +140,23 @@ private enum DS {
     }
 }
 
+/// Ink cap top above the baseline, from the glyphs' own bounding rects —
+/// measured once per font, size and sample, then cached.
+enum DSInkTop {
+    private static var cache: [String: CGFloat] = [:]
+    static func top(_ name: String, _ size: CGFloat, _ sample: String) -> CGFloat {
+        let key = "\(name)|\(size)|\(sample)"
+        if let v = cache[key] { return v }
+        let font = CTFontCreateWithName(name as CFString, size, nil)
+        let chars = Array(sample.utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: chars.count)
+        CTFontGetGlyphsForCharacters(font, chars, &glyphs, chars.count)
+        let r = CTFontGetBoundingRectsForGlyphs(font, .horizontal, glyphs, nil, glyphs.count)
+        cache[key] = r.maxY
+        return r.maxY
+    }
+}
+
 // MARK: - State
 
 @available(iOS 26.0, *)
@@ -1283,8 +1300,15 @@ struct HomeScreenNative: View {
             .lineLimit(1).minimumScaleFactor(0.85)
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 0) {
+                // CAP-TOP PRICE LAW (DS ruling 2026-09-14): satellites share
+                // the numeral's baseline, then rise so their INK cap tops meet
+                // the numeral's. Ink bounds, never UIFont.capHeight (Urbane's
+                // OS/2 capHeight is 0.354em, half the real cap).
+                let numTop = DSInkTop.top("UrbaneRounded-DemiBold", 30, "139")
+                let kdTop = DSInkTop.top("ProximaNova-Bold", 15, "KD")
+                let moTop = DSInkTop.top("ProximaNova-Regular", 15, "H")
                 HStack(alignment: .lastTextBaseline, spacing: 0) {
-                    Text("KD139").font(DS.proxima(15)).fontWeight(.semibold)
+                    Text("KD139").font(.custom("ProximaNova-Bold", size: 15))
                         .strikethrough(true, color: Color(white: 0.6))
                         .foregroundStyle(Color(red: 153/255, green: 153/255, blue: 153/255))
                         // the red diagonal strike (Figma Line 79, ~170°)
@@ -1293,13 +1317,16 @@ struct HomeScreenNative: View {
                                 .rotationEffect(.degrees(-9.9))
                                 .padding(.horizontal, -2)
                         }
+                        .offset(y: kdTop - numTop)
                         .padding(.trailing, 4)
-                    Text("KD").font(DS.proxima(15)).fontWeight(.bold)
+                    Text("KD").font(.custom("ProximaNova-Bold", size: 15))
                         .foregroundStyle(plan.solidGradient)
+                        .offset(y: kdTop - numTop)
                     Text(verbatim: "\(price)").font(DS.urbane(30, .semibold))
                         .foregroundStyle(plan.solidGradient)
                     Text("/mo").font(DS.proxima(15)).fontWeight(.medium)
                         .foregroundStyle(Color(red: 153/255, green: 153/255, blue: 153/255))
+                        .offset(y: moTop - numTop)
                 }
                 .lineLimit(1).fixedSize()
                 Spacer(minLength: 6)
@@ -1624,8 +1651,22 @@ struct HomeScreenNative: View {
                         .pickerStyle(.segmented)
                     }
                 }
+                if state.calendarOpen {
+                    // the calendar's own lab controls, reached from this ONE
+                    // menu — its page binds no gesture under the pilot
+                    Section {
+                        Button("Meal selection controls…") {
+                            state.labOpen = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                                FlowPreloader.shared.entry("meal-select").web
+                                    .evaluateJavaScript("window.DSLabMenu && DSLabMenu.open()",
+                                                        completionHandler: nil)
+                            }
+                        }
+                    }
+                }
                 if let onClose {
-                    Section { Button("Exit native pilot", role: .destructive) { onClose() } }
+                    Section { Button("Exit prototype", role: .destructive) { onClose() } }
                 }
             }
             .navigationTitle("Native Home — Lab")
@@ -2150,8 +2191,15 @@ final class FlowPreloader {
     /// One handler for both channels: ds-close relays, the shell's haptics
     /// bridge, and the glasschrome protocol forwarded into a per-overlay
     /// chrome state — flows summoned here get chrome identical to the hub path.
-    final class Relay: NSObject, WKScriptMessageHandler {
+    final class Relay: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         var onClose: (() -> Void)?
+        /// A warm view whose WebContent process iOS killed in the background
+        /// stays dead forever unless we notice; the preloader reloads it.
+        var onTerminate: (() -> Void)?
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            NSLog("DSRECOVER(pilot) warm flow WebContent terminated, reloading")
+            onTerminate?()
+        }
         let chrome = OverlayChrome()
 
         /// Which side of a SHEET HOST this relay sits on
@@ -2561,6 +2609,12 @@ final class FlowPreloader {
     /// that honours it.
     static let capsJS = "window.DSNativeCaps = { sheetHost: 1, tileRows: 2, dateWidget: 1 };"
 
+    /// ONE LAB MENU (Rashid): views that sit under the pilot's own
+    /// three-finger gesture announce it, so lab-shell binds no second web
+    /// menu there. MERGED, never assigned — the calendar's caps are already
+    /// on the object. Main frame only, like every cap.
+    static let labMenuCapsJS = "window.DSNativeCaps = Object.assign(window.DSNativeCaps || {}, { labMenu: 1 });"
+
     /// document-END runs at DOMContentLoaded (didFinish is the later load
     /// event). Down-messages buffer until this edge.
     static let readyJS = "try { webkit.messageHandlers.ds.postMessage({ t: 'ds-ready' }); } catch (_) {}"
@@ -2600,8 +2654,8 @@ final class FlowPreloader {
         if path == "meal-select" {
             relay.role = .calendar
             cfg.userContentController.addUserScript(
-                WKUserScript(source: Self.capsJS, injectionTime: .atDocumentStart,
-                             forMainFrameOnly: true))
+                WKUserScript(source: Self.capsJS + " " + Self.labMenuCapsJS,
+                             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
         let wv = WKWebView(frame: .zero, configuration: cfg)
         wv.isOpaque = false
@@ -2612,6 +2666,8 @@ final class FlowPreloader {
         wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
             + " DietStationLab/2"
         relay.chrome.webView = wv
+        wv.navigationDelegate = relay
+        relay.onTerminate = { [weak self] in self?.reload(path) }
         entries[path] = (wv, relay)
         reload(path)
         return entries[path]!
@@ -2911,6 +2967,9 @@ struct DSGaugeGlassView: View {
     @ViewBuilder private var dockView: some View {
         if model.dock != "none" {
             Button {
+                #if DEBUG
+                NSLog("DSGAUGE native dock tap dock=%@", model.dock)
+                #endif
                 if model.dock == "next" { onNext() }
             } label: {
                 ZStack {
@@ -2958,6 +3017,9 @@ struct DSGaugeGlassView: View {
                 // light was unreadable and dark stopped being glass.
                 .glassEffect(.clear.tint(.white.opacity(0.05)).interactive(),
                              in: .capsule)
+                // the WHOLE capsule is the button: without a shape only the
+                // glyphs were hittable and edge taps fell through to the page
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
             .padding(.trailing, 8)
@@ -3226,7 +3288,7 @@ final class SheetHost: ObservableObject {
         // view that loads while held off-screen, where env() reads 0.
         let restTop = calendar.window?.safeAreaInsets.top ?? calendar.safeAreaInsets.top
         cfg.userContentController.addUserScript(
-            WKUserScript(source: FlowPreloader.capsJS
+            WKUserScript(source: FlowPreloader.capsJS + " " + FlowPreloader.labMenuCapsJS
                             + " window.DSNativeCaps.safeTop = \(Int(restTop.rounded()));",
                          injectionTime: .atDocumentStart, forMainFrameOnly: true))
         cfg.userContentController.addUserScript(

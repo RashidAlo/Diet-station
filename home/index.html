@@ -1305,6 +1305,9 @@ setTimeout(() => {
   if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
 }, 150);
 (function () {
+  /* ONE LAB MENU: a native host that owns the three-finger gesture announces
+     DSNativeCaps.labMenu (main frame) and reaches this menu via DSLabMenu */
+  if (window.parent === window && window.DSNativeCaps && window.DSNativeCaps.labMenu >= 1) return;
   let taps = 0, lastTap = 0, holdTimer = null, holdStart = 0, sx = 0, sy = 0;
   const holdFire = () => {
     holdTimer = null; holdStart = 0;
