@@ -29,6 +29,7 @@
      Home links the same two files: one plan card, one price. -->
 <link rel="stylesheet" href="price.css">
 <link rel="stylesheet" href="plancard.css">
+<link rel="stylesheet" href="glass-control.css">
 <style>
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -235,10 +236,9 @@
   .nav .title { position: absolute; top: 20px; left: var(--title-inset, 64px); right: var(--title-inset, 64px);
     margin: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     font: 600 16px/18px 'Urbane Rounded', sans-serif; color: var(--ink); pointer-events: none; }
-  .glass-btn.glass-pill { width: auto; padding: 0 14px 0 10px; gap: 6px;
-    font: 500 13px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .glass-btn.glass-pill img { width: 16px; height: 16px; }
-  .glass-pill span:not(.gfill):not(.gedge) { position: relative; }
+  /* the Monthly pill: a glass-control capsule; checkout keeps its glyph + label */
+  .nav-period { --gctl-pad: 14px; gap: 6px; font: 500 13px/1 'Urbane Rounded', sans-serif; }
+  .nav-period img { width: 16px; height: 16px; }
 
   /* ---- scroll body ---- */
   .scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
@@ -483,40 +483,18 @@
     background: var(--amber); border-radius: var(--r-round); padding: 2px 10px;
     font: 700 12px/16px 'Proxima Nova', sans-serif; color: var(--oncolor); white-space: nowrap; }
 
-  /* ================= liquid glass (Figma "BG - Small UI" recipe) ==========
-     Glass here floats over LIVE scrolling plan cards, so it is native CSS
-     backdrop-filter rather than a liquid-glass-js Container: the shader
-     refracts a frozen page snapshot and reads fake over moving content. */
-  .glass-btn { position: relative; flex: none; width: 40px; height: 40px; cursor: pointer;
-    border: none; background: none; padding: 6px 8px; border-radius: 1000px;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform .18s var(--ease); }
-  .glass-btn:active { transform: scale(.93); }
-  /* Figma stacks a plus-lighter + luminosity pair over the blur; backdrop-filter
-     opens a stacking context, which isolates those blends and turns the button
-     slate-grey (the coupon-compositing trap). Their net effect on a light page
-     is a bright translucent white, so that is what the fallback paints. */
-  .gfill { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
-    background: rgba(255,255,255,.58);
-    backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
-    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0,
-                0 0 0 .5px #e8e8e8, 0 8px 15px 0 rgba(0,0,0,.02); }
-  .gedge { position: absolute; inset: 0; border-radius: 1000px; pointer-events: none;
-    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
-                inset 0 40px 30px -40px #e6e6e6; }
-  .glass-btn img { position: relative; width: 20px; height: 20px; display: block; }
+  /* ================= glass controls: glass-control.css v1 (Design System) ======
+     Rashid, 2026-09-14: ONE web fallback for glass buttons, meal selection's.
+     Every glass button here is a .gctl (X, back, call, Monthly, sheet X, FAB);
+     in the app the native Liquid Glass twins cover them. Checkout keeps only
+     its glyph sizes and the FAB's seat and badge. */
+  .gctl > img { width: 20px; height: 20px; }
 
-  /* ---- floating coupon FAB (50px round liquid glass, red tag icon) ---- */
+  /* ---- floating coupons FAB (a 50pt glass control, red tag glyph) ---- */
   .fab-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 87px; z-index: 35;
     display: flex; align-items: center; justify-content: flex-end; padding: 0 24px;
     pointer-events: none; }
-  .fab { position: relative; width: 50px; height: 50px; flex: none; border: none; padding: 0;
-    background: none; cursor: pointer; border-radius: 53.6px; pointer-events: auto;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform .2s var(--ease); }
-  .fab:active { transform: scale(.92); }
-  .fab .gfill, .fab .gedge { border-radius: 1000px; }
-  .fab .fico { position: relative; }
+  .fab { --gctl-size: 50px; pointer-events: auto; }
   .fab .dot { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px;
     border-radius: 10px; background: var(--green); border: 2px solid #fff; color: #fff;
     font: 700 10px/16px 'Proxima Nova', sans-serif; display: flex; align-items: center;
@@ -723,7 +701,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·27</div>
+  <div class="s-foot" id="buildInfo">checkout ·28</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -747,7 +725,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·27';
+const BUILD = 'checkout ·28';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -976,16 +954,16 @@ function payLogo(kind) {
 }
 
 /* the Figma "BG - Small UI" glass shell, reused by the nav buttons and the FAB */
-function glassBtn(cls, inner, act, extra) {
-  return `<button class="${cls}" data-act="${act}">
-    <span class="gfill"></span><span class="gedge"></span>${inner}${extra || ''}</button>`;
+function glassBtn(cls, inner, act, extra) {  /* a glass-control (.gctl) */
+  return `<button class="gctl ${cls}" data-act="${act}">
+    ${inner}${extra || ''}</button>`;
 }
 
 /* THE TOP BAR for a full-screen step: back · title · [trailing action].
    One builder so every step's bar is the same component (see .nav). */
 function navBar(title, trail, inset, needs) {
   return `<div class="nav" data-needs="${needs || 'nav'}" style="--title-inset:${inset || 64}px">
-    <div class="seat lead">${glassBtn('glass-btn nav-back', `<img src="${A}arrow-back.svg" alt="Back">`, 'back')}</div>
+    <div class="seat lead">${glassBtn('nav-back', `<img src="${A}arrow-back.svg" alt="Back">`, 'back')}</div>
     <h1 class="title">${esc(title)}</h1>
     ${trail ? `<div class="seat trail">${trail}</div>` : ''}
   </div>`;
@@ -1112,9 +1090,9 @@ function screenPlans() {
     <div class="edge t"></div>
     <div class="edge b"></div>
     <div class="sub-nav" data-needs="nav">
-      ${glassBtn('glass-btn nav-x', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
+      ${glassBtn('nav-x', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
       <span class="spacer">Subscribe</span>
-      ${glassBtn('glass-btn nav-call', `<img src="${A}phone.svg" alt="Call">`, 'call')}
+      ${glassBtn('nav-call', `<img src="${A}phone.svg" alt="Call">`, 'call')}
     </div>
   </div>`;
 }
@@ -1126,7 +1104,7 @@ function screenDuration() {
   const plan = PLANS.find(p => p.id === S.plan);
   return `<div class="scr" data-scr="duration">
     ${navBar(renew ? 'Renew Plan' : 'Select Duration',
-      renew ? '' : `<button class="glass-btn glass-pill nav-period"><span class="gfill"></span><span class="gedge"></span><img src="${A}expand-more.svg" alt=""><span>Monthly</span></button>`,
+      renew ? '' : `<button class="gctl capsule nav-period"><img src="${A}expand-more.svg" alt=""><span>Monthly</span></button>`,
       renew ? 64 : 128, renew ? 'nav' : 'nav pill')}
     <div class="scroll">
       ${renew ? `<div class="plan-tabs">
@@ -1203,7 +1181,7 @@ function sheetModify() {
   return `<div class="sheet" data-sheet="modify">
     <div class="sheet-hdr">
       <span class="ppill" data-plan="${plan.id}"><span><span class="a">${esc(plan.pill[0])}</span><span class="b">${esc(plan.pill[1])}</span></span></span>
-      ${glassBtn('glass-btn sheet-x', `<img src="${A}close.svg" alt="Close">`, 'closeSheet')}
+      ${glassBtn('sheet-x', `<img src="${A}close.svg" alt="Close">`, 'closeSheet')}
     </div>
     <div class="scroll" style="padding:12px 0 4px">
       ${rows.map(([name, macros]) => `<div class="meal-row">
@@ -1847,8 +1825,8 @@ if (pendingArrival) {
   var st = document.createElement('style');
   st.textContent =
     'html.ds-chrome-native .sheet-x,' +
-    'html.ds-chrome-nav [data-needs="nav"] .glass-btn,' +
-    'html.ds-chrome-nav.ds-chrome-pill [data-needs="nav pill"] .glass-btn,' +
+    'html.ds-chrome-nav [data-needs="nav"] .gctl,' +
+    'html.ds-chrome-nav.ds-chrome-pill [data-needs="nav pill"] .gctl,' +
     'html.ds-chrome-fab .fab' +
     '{opacity:0!important;pointer-events:none!important}';
   document.head.appendChild(st);
