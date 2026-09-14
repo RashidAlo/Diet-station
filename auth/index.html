@@ -13,6 +13,7 @@
 <script>class Button {}</script>
 <script src="html2canvas.min.js"></script>
 <script src="liquid-glass-container.js"></script>
+<link rel="stylesheet" href="glass-control.css">
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -129,22 +130,12 @@
   .topnav .title { position: absolute; left: 50%; transform: translateX(-50%);
     top: calc(var(--top-pad) + 18px); white-space: nowrap;   /* centred on the 40pt control row (DS 735e9f3) */
     font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  /* the X's web material is the lab's one glass control (glass-control.css,
+     vendored). The sheet is white, so no .on-dark. In the app shell the X is
+     a native Liquid Glass twin. */
   .authx { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px);
     pointer-events: auto; }
-  /* the X's web material: rewards' simplified glass, on-light ground (the
-     sheet is white). In the app shell the X is a native Liquid Glass twin. */
-  .ds-glass { width: 40px; height: 40px; border-radius: 50%;
-    border: none; padding: 0; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
-    backdrop-filter: blur(10px) saturate(160%);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-  .ds-glass:active { transform: scale(.92); }
-  .ds-glass img { width: 20px; height: 20px; display: block; pointer-events: none; }
-  .ds-glass.on-light { background: rgba(240,240,242,.86);
-    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06),
-      inset 0 1px 0 rgba(255,255,255,.9), 0 3px 12px rgba(0,0,0,.10); }
-  .ds-glass.on-light img { filter: brightness(0) opacity(.88); }
+  .authx img { width: 20px; height: 20px; }
 
   /* --- sliding screens (iOS push inside the sheet) --- */
   .scr { position: absolute; left: 0; right: 0; top: 72px; bottom: 0;
@@ -386,7 +377,7 @@
 
         <div class="topnav">
           <div class="title">Sign in</div>
-          <button class="authx ds-glass on-light" id="closeBtn" aria-label="Close"><img src="auth-close.svg" alt=""></button>
+          <button class="authx gctl" id="closeBtn" aria-label="Close"><img src="auth-close.svg" alt=""></button>
         </div>
 
         <!-- ============ screen 1: sign in ============ -->
