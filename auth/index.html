@@ -121,13 +121,13 @@
   /* UNIFIED SHEET BAR (system/overlays.html#seats, canon ced7710 — Rashid:
      Sign in follows the unified bar over its Figma frame). Config B, title +
      X: bar top-pad + 58, controls at top-pad + 9, a lone X in the trailing
-     seat at 16, text title 16 Urbane 600 centred at top-pad + 20. top-pad is
+     seat at 16, text title 16 Urbane 600 centred on the control row. top-pad is
      the sheet-embedded value meal selection uses (14), so the bar stays 72
      and every screen below keeps its Figma rhythm. */
   .topnav { --top-pad: 14px; position: absolute; left: 0; right: 0; top: 0;
     height: calc(var(--top-pad) + 58px); z-index: 20; pointer-events: none; }
   .topnav .title { position: absolute; left: 50%; transform: translateX(-50%);
-    top: calc(var(--top-pad) + 20px); white-space: nowrap;
+    top: calc(var(--top-pad) + 18px); white-space: nowrap;   /* centred on the 40pt control row (DS 735e9f3) */
     font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   .authx { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px);
     pointer-events: auto; }
