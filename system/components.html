@@ -199,7 +199,11 @@ REGISTRY     system/components.json, owned by Design System (the documentation i
                  "components": [ { "id", "name", "screen", "kind",
                                    "summary", "values": [ "..." ],
                                    "doc": "system/overlays.html#controls",
-                                   "states": [ { "id", "label", "note"? } ] } ] } } }
+                                   "states": [ { "id", "label", "note"?,
+                                                 "screen"? } ] } ] } } }
+             a state's "screen" overrides its component's: the SAME component on
+             another screen is a state of that component, not a second id
+             (rewards' X on coupons vs the loyalty sheet). show() navigates there.
              kind: control | surface | content | feedback
              ids: kebab-case and SHARED when it is the same component in another
              flow (sheet-x, dual-capsule, date-tile, price), so docs are written once.

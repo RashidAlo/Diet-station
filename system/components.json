@@ -4,7 +4,14 @@
   "flows": {
     "rewards": {
       "screens": [
-        { "id": "coupons", "name": "Coupons sheet" }
+        {
+          "id": "coupons",
+          "name": "Coupons sheet"
+        },
+        {
+          "id": "loyalty",
+          "name": "Loyalty tiers"
+        }
       ],
       "components": [
         {
@@ -12,11 +19,26 @@
           "name": "X · close",
           "screen": "coupons",
           "kind": "control",
-          "summary": "The sheet's one exit. It sits in the trailing seat because this sheet has no actions.",
-          "values": ["40pt circle, glyph ink ≈11pt", "trailing seat, right 24 · top 24 (rewards' own inset)", "liquid-glass-js material; native Liquid Glass twin in the app"],
+          "summary": "The sheet's one exit, in the trailing seat because neither sheet has actions. Same component on both screens; its material follows the ground.",
+          "values": [
+            "40pt circle, glyph ink ≈11pt",
+            "trailing seat · coupons: right 24 · top 24 (rewards' own inset)",
+            "on colour: liquid-glass-js, native Liquid Glass twin in the app",
+            "on white (loyalty): light glass #f8f8f8 with the Figma rim (16828:83647)"
+          ],
           "doc": "system/overlays.html#controls",
           "states": [
-            { "id": "rest", "label": "Rest", "note": "In the app this X is a native twin; the tab shows the web rendering." }
+            {
+              "id": "rest",
+              "label": "On colour",
+              "note": "Coupons sheet. In the app this X is a native twin; the tab shows the web rendering."
+            },
+            {
+              "id": "on-white",
+              "label": "On white",
+              "screen": "loyalty",
+              "note": "The loyalty tiers sheet's X."
+            }
           ]
         },
         {
@@ -25,14 +47,34 @@
           "screen": "coupons",
           "kind": "surface",
           "summary": "A member coupon with a punched perforation. Pulling the stub pops the holes one by one until the tab rips free and the card heals into its redeemed state with the promo code.",
-          "values": ["theme follows the member tier", "tear point 62% · stretch 96px (lab defaults)", "confetti 14 on redeem"],
+          "values": [
+            "theme follows the member tier",
+            "tear point 62% · stretch 96px (lab defaults)",
+            "confetti 14 on redeem"
+          ],
           "doc": "",
           "states": [
-            { "id": "bronze", "label": "Bronze" },
-            { "id": "silver", "label": "Silver" },
-            { "id": "gold", "label": "Gold" },
-            { "id": "vip", "label": "VIP" },
-            { "id": "redeemed", "label": "Redeemed", "note": "The state the rip gesture ends in. Try the gesture itself on the Prototype tab." }
+            {
+              "id": "bronze",
+              "label": "Bronze"
+            },
+            {
+              "id": "silver",
+              "label": "Silver"
+            },
+            {
+              "id": "gold",
+              "label": "Gold"
+            },
+            {
+              "id": "vip",
+              "label": "VIP"
+            },
+            {
+              "id": "redeemed",
+              "label": "Redeemed",
+              "note": "The state the rip gesture ends in. Try the gesture itself on the Prototype tab."
+            }
           ]
         },
         {
@@ -41,13 +83,81 @@
           "screen": "coupons",
           "kind": "content",
           "summary": "The member's tier, shown as a pill on the sheet.",
-          "values": ["label from the tier: Bronze · Silver · Gold · VIP"],
+          "values": [
+            "label from the tier: Bronze · Silver · Gold · VIP"
+          ],
           "doc": "",
           "states": [
-            { "id": "bronze", "label": "Bronze" },
-            { "id": "silver", "label": "Silver" },
-            { "id": "gold", "label": "Gold" },
-            { "id": "vip", "label": "VIP" }
+            {
+              "id": "bronze",
+              "label": "Bronze"
+            },
+            {
+              "id": "silver",
+              "label": "Silver"
+            },
+            {
+              "id": "gold",
+              "label": "Gold"
+            },
+            {
+              "id": "vip",
+              "label": "VIP"
+            }
+          ]
+        },
+        {
+          "id": "loyalty-sheet",
+          "name": "Loyalty tiers sheet",
+          "screen": "loyalty",
+          "kind": "surface",
+          "summary": "Explains the four member tiers, opened by the ? on the coupons sheet. Per the sheet contract: the scrim dissolves in place, the sheet rises on the house spring, and the X sits in the trailing seat. On open the tier steps fill up to the member's tier.",
+          "values": [
+            "near-fullscreen: radius 44 44 0 0 · max-height 100% - 44",
+            "scrim rgba(11,14,18,.45) · .32s ease",
+            "sheet translateY(103%) → 0 · .55s cubic-bezier(.32,.72,0,1)",
+            "current tier's card is highlighted"
+          ],
+          "doc": "system/overlays.html#anatomy",
+          "states": [
+            {
+              "id": "bronze",
+              "label": "Open · Bronze"
+            },
+            {
+              "id": "silver",
+              "label": "Open · Silver"
+            },
+            {
+              "id": "gold",
+              "label": "Open · Gold"
+            },
+            {
+              "id": "vip",
+              "label": "Open · VIP"
+            }
+          ]
+        },
+        {
+          "id": "tier-step",
+          "name": "Tier step",
+          "screen": "loyalty",
+          "kind": "feedback",
+          "summary": "The circle beside each tier card. It fills up to the member's current tier when the sheet opens.",
+          "values": [
+            "18pt glyph in a 49pt column",
+            "off / on artwork swap"
+          ],
+          "doc": "",
+          "states": [
+            {
+              "id": "empty",
+              "label": "Empty"
+            },
+            {
+              "id": "filled",
+              "label": "Filled"
+            }
           ]
         }
       ]
