@@ -803,7 +803,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·18</div>
+  <div class="s-foot" id="buildInfo">checkout ·19</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -827,7 +827,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·18';
+const BUILD = 'checkout ·19';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1065,8 +1065,8 @@ function glassBtn(cls, inner, act, extra) {
 
 /* THE TOP BAR for a full-screen step: back · title · [trailing action].
    One builder so every step's bar is the same component (see .nav). */
-function navBar(title, trail, inset) {
-  return `<div class="nav" style="--title-inset:${inset || 64}px">
+function navBar(title, trail, inset, needs) {
+  return `<div class="nav" data-needs="${needs || 'nav'}" style="--title-inset:${inset || 64}px">
     <div class="seat lead">${glassBtn('glass-btn nav-back', `<img src="${A}arrow-back.svg" alt="Back">`, 'back')}</div>
     <h1 class="title">${esc(title)}</h1>
     ${trail ? `<div class="seat trail">${trail}</div>` : ''}
@@ -1204,7 +1204,7 @@ function screenPlans() {
     </div>
     <div class="edge t"></div>
     <div class="edge b"></div>
-    <div class="sub-nav">
+    <div class="sub-nav" data-needs="nav">
       ${glassBtn('glass-btn nav-x', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
       <span class="spacer">Subscribe</span>
       ${glassBtn('glass-btn nav-call', `<img src="${A}phone.svg" alt="Call">`, 'call')}
@@ -1220,7 +1220,7 @@ function screenDuration() {
   return `<div class="scr" data-scr="duration">
     ${navBar(renew ? 'Renew Plan' : 'Select Duration',
       renew ? '' : `<button class="glass-btn glass-pill nav-period"><span class="gfill"></span><span class="gedge"></span><img src="${A}expand-more.svg" alt=""><span>Monthly</span></button>`,
-      renew ? 64 : 128)}
+      renew ? 64 : 128, renew ? 'nav' : 'nav pill')}
     <div class="scroll">
       ${renew ? `<div class="plan-tabs">
         ${PLANS.filter(p => p.id !== 'kids').map(p => `<button class="ppill plan-tab${p.id === S.plan ? ' on' : ''}"
@@ -1908,9 +1908,14 @@ if (pendingArrival) {
      modify sheet open   close  = the sheet X        mode sheet
      duration / payment  back   = the bar back       mode page
      coupons hosted      nothing (rewards reports its own X)
-   Only ids the shell can DRAW are handed over: 'close' today. 'back' and
-   'call' wait for caps.navGlyphs >= 1 in DSNativeChrome(ids, caps) — an id
-   the shell doesn't know renders as an empty glass circle.
+   ONE RENDERER PER BAR (overlays.html#seats, dc74086): a bar goes native only
+   when the shell can draw EVERY control in it — a web control beside native
+   glass shows two materials in one bar. Each bar declares data-needs:
+     nav       close · back · call      caps.navGlyphs >= 1
+     nav pill  + the Monthly pill       caps.navPill   >= 1
+   The modify sheet's bar holds only an X, which every shell draws. An id the
+   shell doesn't know renders as an empty glass circle, so nothing is handed
+   over on a promise.
    Web glass must never paint under a twin: root-class rules hide every
    handed-over control, including ones render() rebuilds. Geometry is only
    reported once it has stopped moving (push 420, sheet 550, drag release).
@@ -1921,7 +1926,7 @@ if (pendingArrival) {
   var EMBED = /[?&]embed=1/.test(location.search);
   var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
   var root = document.documentElement;
-  var navGlyphs = false, confirmed = false, settled = false, syncT = null;
+  var navGlyphs = false, navPill = false, confirmed = false, settled = false, syncT = null;
 
   /* a hosted page loads off-screen: take the rest inset from the host */
   var caps = window.DSNativeCaps;
@@ -1930,9 +1935,9 @@ if (pendingArrival) {
 
   var st = document.createElement('style');
   st.textContent =
-    'html.ds-chrome-native .nav-x, html.ds-chrome-native .sheet-x' +
-    '{opacity:0!important;pointer-events:none!important}' +
-    'html.ds-chrome-nav .nav-back, html.ds-chrome-nav .nav-call' +
+    'html.ds-chrome-native .sheet-x,' +
+    'html.ds-chrome-nav [data-needs="nav"] .glass-btn,' +
+    'html.ds-chrome-nav.ds-chrome-pill [data-needs="nav pill"] .glass-btn' +
     '{opacity:0!important;pointer-events:none!important}';
   document.head.appendChild(st);
   root.classList.add('ds-chrome-native');
@@ -1941,12 +1946,15 @@ if (pendingArrival) {
     if (typeof cpFrame !== 'undefined' && cpFrame) return { mode: 'sheet', els: {} };
     if (phone.querySelector('.sheet.on'))
       return { mode: 'sheet', els: { close: '.sheet.on .sheet-x' } };
-    if (S.screen === 'plans') {
-      var p = { close: '.sub-nav .nav-x' };
-      if (navGlyphs) p.call = '.sub-nav .nav-call';
-      return { mode: 'sheet', els: p };
-    }
-    return { mode: 'page', els: navGlyphs ? { back: '.scr[data-scr="' + S.screen + '"] .nav-back' } : {} };
+    if (S.screen === 'plans')
+      return { mode: 'sheet', els: navGlyphs ? { close: '.sub-nav .nav-x', call: '.sub-nav .nav-call' } : {} };
+    var scr = '.scr[data-scr="' + S.screen + '"] ';
+    var bar = document.querySelector(scr + '.nav');
+    var needsPill = bar && bar.dataset.needs === 'nav pill';
+    if (!navGlyphs || (needsPill && !navPill)) return { mode: 'page', els: {} };
+    var els = { back: scr + '.nav-back' };
+    if (needsPill) els.period = scr + '.nav-period';
+    return { mode: 'page', els: els };
   }
   function post(mode, els, instant) {
     try {
@@ -1982,11 +1990,10 @@ if (pendingArrival) {
   };
   window.DSNativeChrome = function (ids, caps2) {
     confirmed = true;
-    if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) {
-      navGlyphs = true;
-      root.classList.add('ds-chrome-nav');
-      report();
-    }
+    var grew = false;
+    if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) { navGlyphs = true; root.classList.add('ds-chrome-nav'); grew = true; }
+    if (caps2 && caps2.navPill >= 1 && !navPill) { navPill = true; root.classList.add('ds-chrome-pill'); grew = true; }
+    if (grew) report();
   };
   window.DSChromeTap = function (id) {
     var sel = current().els[id];
@@ -2008,7 +2015,7 @@ if (pendingArrival) {
   setTimeout(function () { if (!settled) { settled = true; report(); } }, (EMBED || FRAMED) ? 1200 : 760);
   setTimeout(function () {
     if (confirmed) return;
-    root.classList.remove('ds-chrome-native', 'ds-chrome-nav');
+    root.classList.remove('ds-chrome-native', 'ds-chrome-nav', 'ds-chrome-pill');
     window.DSNativeChrome = function () {};
     window.DSChrome = { sync: function () {}, clear: function () {} };
   }, (EMBED || FRAMED) ? 1900 : 1600);
