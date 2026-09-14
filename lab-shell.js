@@ -291,7 +291,8 @@ body.lab-comp-on .side-resizer { display: none; }\
 .lc-boot { position: absolute; inset: 0; z-index: 3; display: none; align-items: center; justify-content: center;\
   background: #fff; font: 500 12.5px/18px 'Proxima Nova', sans-serif; color: #8e8e93; }\
 .lc-device.booting .lc-boot { display: flex; }\
-.lc-outline { position: absolute; z-index: 2; box-sizing: border-box; border: 1.5px solid #ED1C24; pointer-events: none; }\
+.lc-outline { position: absolute; z-index: 2; box-sizing: border-box; pointer-events: none;\
+  border: 1.5px solid #0A84FF; box-shadow: 0 0 0 1px rgba(255,255,255,.9); }\
 .lc-outline[hidden] { display: none; }\
 ";
   style.textContent = css;
