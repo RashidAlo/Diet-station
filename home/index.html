@@ -19,6 +19,11 @@
   @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Medium.otf'); font-weight: 500; }
   @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Demi.otf'); font-weight: 600; }
   @font-face { font-family: 'Avenir Next World'; src: url('fonts/AvenirNextWorld-Bold.otf'); font-weight: 700; }
+</style>
+<!-- Design System components, vendored (system/components/; drift-check against the source) -->
+<link rel="stylesheet" href="price.css">
+<link rel="stylesheet" href="plancard.css">
+<style>
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
@@ -446,131 +451,6 @@
   /* ---- plans sheet ---- */
   .lo-sheet { display: none; padding: 0 20px; }
   .home.logged-out .lo-sheet { display: block; }
-  /* summer offer banner card — white platter over the sheet (Figma: 100pt,
-     monogram 46 at a deep 28 inset) */
-  .lo-offer { display: flex; align-items: center; gap: 16px; height: 100px;
-    width: 100%; background: #fff; border-radius: 30px; padding: 0 16px 0 28px;
-    border: 1px solid rgba(0,0,0,.05);
-    box-shadow: 0 12px 34px -22px rgba(56,64,74,.35); cursor: pointer; }
-  .lo-offer .mono { flex: none; width: 46px; height: 46px; }
-  .lo-off-t { flex: 1; min-width: 0; text-align: right; }
-  .lo-off-t b { display: block; font: 600 17px/22px 'Urbane Rounded', sans-serif;
-    color: #0b0e12; }
-  .lo-off-t span { display: block;
-    font: 500 15px/21px 'Avenir Next World', 'Proxima Nova', sans-serif;
-    color: #0b0e12; }
-  .lo-arrow { flex: none; width: 44px; height: 44px; border-radius: 50%;
-    border: none; cursor: pointer; background: #fff;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 18px -6px rgba(56,64,74,.28); }
-  .lo-arrow svg { width: 20px; height: 20px; display: block; }
-  /* "or try a different plan" — plain hairline flanks, inset from the
-     edges (Figma: straight ~95pt lines, not curves) */
-  .lo-or { display: flex; align-items: center; justify-content: center;
-    gap: 12px; margin: 28px 20px 28px;
-    font: 400 12px/16px 'Proxima Nova', sans-serif; color: #8e8e93;
-    white-space: nowrap; }
-  .lo-or i { flex: none; width: 95px; height: 1px; background: #dcdcdf;
-    border-radius: 1px; }
-  /* subscription plan card — Design System 4539-10208 VARIANT A verbatim:
-     the "Liquid Glass - Regular - Medium" platter (r32, hairline #dbdbdb ring,
-     0 8 37 shadow) holding meal rows w/ 18px circle badges, the transparent
-     hairline chips, gradient price + the r28 gradient plan pill */
-  /* THE UNIFORM-PADDING LAW (Rashid): cards like these wear ONE padding on
-     all four sides — nothing sits closer to one edge than another */
-  .plancard { position: relative; border-radius: 32px; padding: 20px;
-    margin-bottom: 24px; cursor: pointer; overflow: hidden;
-    background: rgba(255,255,255,.7);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
-    box-shadow: 0 0 0 .5px #dbdbdb,
-      inset 0 1px 1px rgba(255,255,255,.9),
-      0 8px 37px rgba(0,0,0,.08);
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .plancard:active { transform: scale(.98); }
-  .pc-cols { position: relative; z-index: 2; display: flex; gap: 12px;
-    height: 122px; }
-  .pc-list { flex: 1; min-width: 0; display: flex; flex-direction: column;
-    justify-content: space-between; align-items: flex-start; }
-  .pc-row { display: flex; gap: 6px; align-items: center; height: 18px; }
-  .pc-row i { width: 18px; height: 18px; border-radius: 50%; flex: none;
-    background: rgba(244,244,244,.6);
-    display: flex; align-items: center; justify-content: center;
-    font: 600 12px/16px 'Proxima Nova', sans-serif; color: #0b0e12;
-    font-style: normal; }
-  .pc-row span { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .pc-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px;
-    padding: 2px 10px; border-radius: 300px; box-sizing: border-box;
-    border: 1px solid rgba(0,0,0,.06); white-space: nowrap; color: #0b0e12; }
-  .pc-chip b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
-  .pc-chip span { font: 400 12px/16px 'Proxima Nova', sans-serif; }
-  .pc-chip span b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
-  .pc-right { flex: none; display: flex; flex-direction: column;
-    align-items: flex-end; justify-content: space-between; padding-top: 3px; }
-  /* THE PRICE COMPONENT (system/price.html, Primary xxxl) — verbatim core.
-     Cap tops share one line through the k constants; Figma's 30/19
-     line-height does not transfer to CSS and clipped the numeral's gradient. */
-  .dsp { display: inline-flex; align-items: flex-start; white-space: nowrap;
-    font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1;
-    --k-num: .1164; --k-sat: .1164;
-    --dsp-numfam: 'Proxima Nova', sans-serif; --dsp-numwt: 700; --dsp-ink: #0B0E12;
-    --dsp-satwt: 700; --dsp-was-ink: #999999; --dsp-per: var(--dsp-cur);
-    --dsp-curwt: var(--dsp-satwt); --dsp-cur-ink: var(--dsp-ink);
-    --dsp-decwt: var(--dsp-satwt); --dsp-dec-ink: var(--dsp-ink);
-    --dsp-perwt: var(--dsp-satwt); --dsp-per-ink: var(--dsp-ink); }
-  .dsp.primary { --dsp-numfam: 'Urbane Rounded', sans-serif; --dsp-numwt: 600;
-    --dsp-ink: #ED1C24; --k-num: .1811; }
-  .dsp > *, .dsp .was > * { display: block; line-height: 1; }
-  .dsp .num { font-family: var(--dsp-numfam); font-weight: var(--dsp-numwt);
-    font-size: var(--dsp-num); color: var(--dsp-ink); }
-  .dsp .cur, .dsp .dec, .dsp .per {
-    font-family: 'Proxima Nova', sans-serif; font-weight: var(--dsp-satwt);
-    color: var(--dsp-ink); }
-  .dsp .cur { font-size: var(--dsp-cur); padding-right: 1px;
-    font-weight: var(--dsp-curwt); color: var(--dsp-cur-ink);
-    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-cur) * var(--k-sat)); }
-  .dsp .dec { font-size: var(--dsp-dec);
-    font-weight: var(--dsp-decwt); color: var(--dsp-dec-ink);
-    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-dec) * var(--k-sat)); }
-  .dsp .per { font-size: var(--dsp-per); padding-left: 1px;
-    font-weight: var(--dsp-perwt); color: var(--dsp-per-ink);
-    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-per) * var(--k-sat)); }
-  .dsp .was { display: inline-flex; align-items: flex-start; padding-right: 6px;
-    text-decoration: line-through;
-    margin-top: calc(var(--dsp-num) * var(--k-num) - var(--dsp-was) * var(--k-sat)); }
-  .dsp .was > * { font-family: 'Proxima Nova', sans-serif; font-weight: 600;
-    color: var(--dsp-was-ink); font-size: var(--dsp-was); margin-top: 0; padding: 0; }
-  .dsp.xxxl { --dsp-num:30px; --dsp-cur:15px; --dsp-dec:15px; --dsp-was:15px; }
-  /* the plan card's paint: gradient KD + numeral (per plan, inline), #999
-     struck price under the red diagonal, #999 Medium /mo */
-  .plancard .dsp { --dsp-ink: #0b0e12; --dsp-was-ink: #999; --dsp-perwt: 500; --dsp-per-ink: #999; }
-  .plancard .dsp .num, .plancard .dsp .cur { color: transparent;
-    -webkit-background-clip: text; background-clip: text; }
-  .plancard .dsp .was { position: relative; }
-  /* the red diagonal strike (Figma Line 79, ~170deg) rides the struck price */
-  .plancard .dsp .was::after { content: ''; position: absolute; left: -2px; right: 4px;
-    top: 50%; height: 1.6px; border-radius: 2px; background: #ED1C24;
-    transform: rotate(-9.9deg); }
-  .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 3px;
-    height: 24px; padding: 2px 10px; border-radius: 300px; background: transparent;
-    box-sizing: border-box; border: 1px solid rgba(0,0,0,.06);
-    font: 600 12px/16px 'Avenir Next World', 'Proxima Nova', sans-serif;
-    white-space: nowrap; }
-  /* gradient lives on the TEXT spans only — the fire emoji keeps its color */
-  .pc-deal .gt {
-    -webkit-background-clip: text; background-clip: text; color: transparent; }
-  /* the plan pill — variant-A card wears the style-B gradient pill: r28,
-     hairline #e3e3e3, theme gradient, Light+Demi two-tone */
-  .pc-pill { position: relative; height: 40px; border-radius: 28px;
-    cursor: pointer; padding: 4px 20px; overflow: hidden;
-    background-color: transparent; border: 1px solid #e3e3e3;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; line-height: 22.4px; color: #fff; white-space: nowrap;
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .pc-pill:active { transform: scale(.94); }
-  .pc-pill .a { font-weight: 300; opacity: .6; position: relative; }
-  .pc-pill .b { font-weight: 600; position: relative;
-    text-shadow: 0 1px 4px rgba(0,0,0,.1); }
   .home.logged-out .sheetc { min-height: 0;
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
@@ -1611,20 +1491,13 @@ document.getElementById('gDisc').addEventListener('click', () =>
 document.getElementById('gDisc').style.cursor = 'pointer';
 
 /* ============ logged-out: the subscription plans (Figma 16360-78205) ======
-   full-opacity siblings of the plan-widget THEMES gradients — the same
-   Design System families, solid enough to live on the white sheet */
-/* gradients: TheDiet + LifeStyle verbatim from the DS component (get_design_
-   context); Body + Kids traced from their instances — swap when their tokens
-   are readable */
+   the plan card is a Design System component (system/plancard.html, vendored
+   plancard.css + price.css): data-plan picks the theme gradient */
 const PLANS = [
-  { key: 'diet', a: 'The', b: 'Diet', price: 99,
-    grad: 'linear-gradient(115.8deg, #82459C 5.44%, #5525B5 102.11%)' },
-  { key: 'lifestyle', a: 'Life', b: 'Style', price: 109,
-    grad: 'linear-gradient(111.3deg, #FF963E 53.4%, #FF0505 141.76%)' },
-  { key: 'body', a: 'BODY', b: 'Building', price: 149,
-    grad: 'linear-gradient(115.8deg, #2A2A52 5.44%, #15152E 102.11%)' },
-  { key: 'kids', a: 'Kids', b: '', price: 99,
-    grad: 'linear-gradient(115.8deg, #FF6A54 5.44%, #FF3287 102.11%)' },
+  { key: 'thediet', a: 'The', b: 'Diet', price: 99 },
+  { key: 'lifestyle', a: 'Life', b: 'Style', price: 109 },
+  { key: 'bodybuilding', a: 'BODY', b: 'Building', price: 149 },
+  { key: 'kids', a: '', b: 'Kids', price: 99 },
 ];
 const PLAN_ITEMS = [['1', 'Breakfast'], ['2', 'Lunch & Dinner'],
   ['5', 'Salad & Soup'], ['1', 'Snack']];
@@ -1632,21 +1505,17 @@ const PLAN_ITEMS = [['1', 'Breakfast'], ['2', 'Lunch & Dinner'],
   const html = PLANS.map(p => {
     const rows = PLAN_ITEMS.map(r =>
       '<div class="pc-row"><i>' + r[0] + '</i><span>' + r[1] + '</span></div>').join('');
-    const name = p.key === 'body'
-      ? '<span class="a" style="font-weight:600;opacity:1">BODY</span><span class="b" style="color:#F2543D">Building</span>'
-      : p.b ? '<span class="a">' + p.a + '</span><span class="b">' + p.b + '</span>'
-            : '<span class="b">' + p.a + '</span>';
-    const g = 'style="background-image:' + p.grad + '"';
+    const name = (p.a ? '<span class="a">' + p.a + '</span>' : '') +
+      '<span class="b">' + p.b + '</span>';
     return '<div class="plancard" data-plan="' + p.key + '">' +
       '<div class="pc-cols"><div class="pc-list">' + rows +
         '<div class="pc-chip"><b>~1200 kcal</b><span>|</span><span><b>100g</b> macros</span></div>' +
       '</div><div class="pc-right">' +
-        '<span class="dsp primary xxxl"><span class="was"><span>KD139</span></span>' +
-          '<span class="cur" ' + g + '>KD</span>' +
-          '<span class="num" ' + g + '>' + p.price + '</span>' +
+        '<span class="dsp primary xxxl grad"><span class="was"><span>KD139</span></span>' +
+          '<span class="cur">KD</span><span class="num">' + p.price + '</span>' +
           '<span class="per">/mo</span></span>' +
-        '<span class="pc-deal"><span class="gt" ' + g + '>خصم KD 40</span>🔥<span class="gt" ' + g + '>اشترك الحين</span></span>' +
-        '<button class="pc-pill" style="background-image:' + p.grad + '">' + name + '</button>' +
+        '<span class="pc-deal"><span class="gt">خصم KD 40</span>🔥<span class="gt">اشترك الحين</span></span>' +
+        '<button class="pc-pill">' + name + '</button>' +
       '</div></div></div>';
   }).join('');
   document.getElementById('loPlans').innerHTML = html;
