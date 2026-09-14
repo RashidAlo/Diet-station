@@ -83,10 +83,14 @@
   body.desktop .device::after { content: ''; position: absolute; right: -7px; top: 240px;
     width: 5px; height: 90px; border-radius: 0 3px 3px 0; background: #111114; }
   .phone { position: relative; width: 402px; height: 874px; overflow: hidden; background: #fff;
-    --top-pad: 44px; }
+    --top-pad: 44px; --real-pad: 44px; }
   body:not(.desktop) .phone { width: 402px;
     height: calc(100vh / var(--s, 1)); height: calc(100dvh / var(--s, 1));
-    --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px)); }
+    --top-pad: max(34px, calc(env(safe-area-inset-top, 0px) + 6px));
+    /* DS-CHROME-TOP (system/platform.html): the canonical chrome line is
+       REAL_PAD + 9 — quoted, never re-derived. The host's DSNativeCaps.safeTop
+       overrides env() when present (a hosted page loads off-screen). */
+    --real-pad: max(28px, calc(env(safe-area-inset-top, 0px) - 1px)); }
   body.desktop .phone { border-radius: 46px; }
   .island { position: absolute; left: 50%; transform: translateX(-50%); top: 11px;
     width: 125px; height: 36px; border-radius: 20px; background: #000; z-index: 90;
@@ -160,7 +164,7 @@
   .scr[data-scr="plans"] { transform: translateX(0); }
   .scr[data-scr="plans"].under { transform: translateX(-26%); }
   /* the full-screen steps clear the status bar themselves */
-  .scr:not([data-scr="plans"]) { padding-top: var(--top-pad); }
+  .scr:not([data-scr="plans"]) { padding-top: var(--real-pad); }
 
   /* ================= MOTION (Rashid, 2026-09-14: "don't make things static")
      Pages move in; nothing snaps. Four pieces, each keyed so a re-price
@@ -180,12 +184,12 @@
   .scr.under::after { opacity: 1; }
 
   @keyframes move-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-  .scr.entering .hdr h1,
+  .scr.entering .nav .title,
   .scr.entering .plan-tabs, .scr.entering .plan-detail,
   .scr.entering .dur, .scr.entering .promo-wrap,
   .scr.entering .pay-sec > h3, .scr.entering .pay-opt,
   .scr.entering .paybar { animation: move-in .5s var(--ease) both; }
-  .scr.entering .hdr h1 { animation-delay: .05s; }
+  .scr.entering .nav .title { animation-delay: .05s; }
   .scr.entering .plan-tabs, .scr.entering .plan-detail { animation-delay: .09s; }
   .scr.entering .dur, .scr.entering .pay-opt { animation-delay: calc(.12s + var(--i, 0) * .055s); }
   .scr.entering .pay-sec > h3 { animation-delay: .1s; }
@@ -210,22 +214,25 @@
     .scr.entering *, .just-sel, .just-sel *, .dsp.ticked * { animation: none !important; }
   }
 
-  /* ---- shared header (113px, content bottom-aligned) ---- */
-  /* a 72-tall bar with its controls centred (the auth sheet's topnav
-     geometry); the full-screen steps add the status-bar pad on .scr */
-  .hdr { flex: none; height: 72px; background: var(--surface); display: flex;
-    align-items: center; padding: 16px; z-index: 20; }
-  .hdr-row { flex: 1; display: flex; gap: 12px; align-items: center; min-width: 0; }
-  .icon-btn { width: 40px; height: 40px; flex: none; border-radius: 100px; cursor: pointer;
-    background: var(--surface); border: 1px solid var(--hair);
-    display: flex; align-items: center; justify-content: center; padding: 6px 8px; }
-  .icon-btn img { width: 20px; height: 20px; display: block; }
-  .hdr h1 { flex: 1; min-width: 0; font: 600 18px/28px 'Urbane Rounded', sans-serif; color: #000; }
-  .pill-btn { height: 40px; flex: none; border-radius: var(--r-round); cursor: pointer;
-    background: var(--surface); border: 1px solid var(--hair); display: flex; gap: 6px;
-    align-items: center; justify-content: center; padding: 4px 10px;
-    font: 500 12px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .pill-btn img { width: 16px; height: 16px; display: block; }
+  /* ---- THE TOP BAR — one component for every full-screen step ----------
+     system/overlays.html#seats + DS-CHROME-TOP: under the status bar (the .scr
+     carries REAL_PAD) the bar is 58 tall, its controls sit at +9 — the
+     canonical chrome line native twins normalise to — and the title is 16
+     Urbane 600 centred at +20. Back owns the leading seat, actions the
+     trailing one; every control is a 40pt glass circle (or a 40-tall glass
+     pill), natively rendered in the shell. The title insets symmetrically past
+     the wider seat so it stays optically centred. */
+  .nav { flex: none; position: relative; height: 58px; background: var(--surface); z-index: 20; }
+  .nav .seat { position: absolute; top: 9px; display: flex; gap: 8px; align-items: center; }
+  .nav .seat.lead { left: 16px; }
+  .nav .seat.trail { right: 16px; }
+  .nav .title { position: absolute; top: 20px; left: var(--title-inset, 64px); right: var(--title-inset, 64px);
+    margin: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font: 600 16px/18px 'Urbane Rounded', sans-serif; color: var(--ink); pointer-events: none; }
+  .glass-btn.glass-pill { width: auto; padding: 0 14px 0 10px; gap: 6px;
+    font: 500 13px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .glass-btn.glass-pill img { width: 16px; height: 16px; }
+  .glass-pill span:not(.gfill):not(.gedge) { position: relative; }
 
   /* ---- scroll body ---- */
   .scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
@@ -481,9 +488,7 @@
   .sheet-hdr { flex: none; display: flex; align-items: center; justify-content: space-between;
     padding: 24px 20px 12px; }
   .sheet-hdr h2 { font: 600 18px/28px 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .sheet-x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--hair);
-    background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .sheet-x img { width: 20px; height: 20px; display: block; }
+  /* the sheet's X is the same glass control as the bar's (40pt, trailing) */
 
   /* ---- meal stepper (modify sheet) ---- */
   .meal-row { display: flex; align-items: center; gap: 12px; padding: 0 20px; min-height: 46px; }
@@ -798,7 +803,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·17</div>
+  <div class="s-foot" id="buildInfo">checkout ·18</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -822,7 +827,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·17';
+const BUILD = 'checkout ·18';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1058,6 +1063,16 @@ function glassBtn(cls, inner, act, extra) {
     <span class="gfill"></span><span class="gedge"></span>${inner}${extra || ''}</button>`;
 }
 
+/* THE TOP BAR for a full-screen step: back · title · [trailing action].
+   One builder so every step's bar is the same component (see .nav). */
+function navBar(title, trail, inset) {
+  return `<div class="nav" style="--title-inset:${inset || 64}px">
+    <div class="seat lead">${glassBtn('glass-btn nav-back', `<img src="${A}arrow-back.svg" alt="Back">`, 'back')}</div>
+    <h1 class="title">${esc(title)}</h1>
+    ${trail ? `<div class="seat trail">${trail}</div>` : ''}
+  </div>`;
+}
+
 /* ---- the promo bar, shared by every screen that shows one ---- */
 let promoJustApplied = false;   /* one render of the landing moment, then rest */
 function promoBar() {
@@ -1190,9 +1205,9 @@ function screenPlans() {
     <div class="edge t"></div>
     <div class="edge b"></div>
     <div class="sub-nav">
-      ${glassBtn('glass-btn', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
+      ${glassBtn('glass-btn nav-x', `<img src="${A}close-nav.svg" alt="Close">`, 'back')}
       <span class="spacer">Subscribe</span>
-      ${glassBtn('glass-btn', `<img src="${A}phone.svg" alt="Call">`, 'call')}
+      ${glassBtn('glass-btn nav-call', `<img src="${A}phone.svg" alt="Call">`, 'call')}
     </div>
   </div>`;
 }
@@ -1203,11 +1218,9 @@ function screenDuration() {
   const renew = S.entry === 'renew';
   const plan = PLANS.find(p => p.id === S.plan);
   return `<div class="scr" data-scr="duration">
-    <div class="hdr"><div class="hdr-row">
-      <button class="icon-btn" data-act="back"><img src="${A}arrow-back.svg" alt="Back"></button>
-      <h1>${renew ? 'Renew Plan' : 'Select Duration'}</h1>
-      ${renew ? '' : `<button class="pill-btn"><img src="${A}expand-more.svg" alt="">Monthly</button>`}
-    </div></div>
+    ${navBar(renew ? 'Renew Plan' : 'Select Duration',
+      renew ? '' : `<button class="glass-btn glass-pill nav-period"><span class="gfill"></span><span class="gedge"></span><img src="${A}expand-more.svg" alt=""><span>Monthly</span></button>`,
+      renew ? 64 : 128)}
     <div class="scroll">
       ${renew ? `<div class="plan-tabs">
         ${PLANS.filter(p => p.id !== 'kids').map(p => `<button class="ppill plan-tab${p.id === S.plan ? ' on' : ''}"
@@ -1262,10 +1275,7 @@ function screenPayment() {
     </button>`;
   };
   return `<div class="scr" data-scr="payment">
-    <div class="hdr"><div class="hdr-row">
-      <button class="icon-btn" data-act="back"><img src="${A}arrow-back.svg" alt="Back"></button>
-      <h1>Payment Method</h1>
-    </div></div>
+    ${navBar('Payment Method')}
     <div class="scroll">
       <div class="pay-sec"><h3>Within this offer</h3>${within.map(row).join('')}</div>
       <div class="pay-sec"><h3>Alternative offers</h3>${alt.map(row).join('')}</div>
@@ -1286,7 +1296,7 @@ function sheetModify() {
   return `<div class="sheet" data-sheet="modify">
     <div class="sheet-hdr">
       <span class="ppill" data-plan="${plan.id}"><span><span class="a">${esc(plan.pill[0])}</span><span class="b">${esc(plan.pill[1])}</span></span></span>
-      <button class="sheet-x" data-act="closeSheet"><img src="${A}close.svg" alt="Close"></button>
+      ${glassBtn('glass-btn sheet-x', `<img src="${A}close.svg" alt="Close">`, 'closeSheet')}
     </div>
     <div class="scroll" style="padding:12px 0 4px">
       ${rows.map(([name, macros]) => `<div class="meal-row">
@@ -1406,8 +1416,15 @@ function showScreen(name, instant) {
     }
   }
   fitPrices();
+  /* a real move re-anchors the twins once the push and the sheet resize land;
+     a re-price keeps them where they are (same rects) */
+  if (!instant && from !== name) { chromeClear(); chromeSync(480); } else chromeSync(0);
 }
 function order(n) { return ['plans', 'duration', 'payment'].indexOf(n); }
+/* native glass chrome hooks: the shell handshake (last script) fills these in;
+   outside the DietStationLab shell they do nothing */
+function chromeSync(ms) { window.DSChrome && window.DSChrome.sync(ms); }
+function chromeClear() { window.DSChrome && window.DSChrome.clear(); }
 
 /* ============================ interactions ================================ */
 function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} }
@@ -1444,10 +1461,12 @@ function openSheet(name) {
   const s = phone.querySelector(`.sheet[data-sheet="${name}"]`);
   if (s) s.classList.add('on');
   vibrate(8);
+  chromeClear(); chromeSync(560);
 }
 function closeSheets() {
   phone.querySelector('.veil').classList.remove('on');
   phone.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
+  chromeClear(); chromeSync(560);
 }
 
 phone.addEventListener('click', e => {
@@ -1557,6 +1576,7 @@ const cpHost = document.getElementById('cpHost'), cpVeil = document.getElementBy
 function openCouponsHere(ctx) {
   if (cpFrame) return;
   vibrate(8);
+  chromeClear();          /* rewards reports its own X while it is up */
   cpHost.classList.add('on');
   requestAnimationFrame(() => cpVeil.classList.add('show'));
   cpFrame = document.createElement('iframe');
@@ -1570,7 +1590,7 @@ function closeCouponsHere() {
   if (!cpFrame) return;
   cpVeil.classList.remove('show');
   const fr = cpFrame; cpFrame = null;
-  setTimeout(() => { fr.remove(); cpHost.classList.remove('on'); }, 420);
+  setTimeout(() => { fr.remove(); cpHost.classList.remove('on'); chromeSync(0); }, 420);
 }
 
 /* the single place a coupon is applied or cleared, whatever the source */
@@ -1610,6 +1630,9 @@ window.DSCheckoutApplyCoupon = applyCoupon;   /* native host / solo-summon hook 
 function dsNav(to, present, context, fallback) {
   if (DS_ROUTER && window.parent !== window) {
     vibrate(8);
+    /* the routed flow sits above this frame — our twins must not float over it;
+       they come back on its result or on the next touch here */
+    if (present !== 'push') chromeClear();
     try { parent.postMessage({ t: 'ds-nav', to: to, context: context || {}, present: present }, '*'); return; }
     catch (_) {}
   }
@@ -1635,6 +1658,7 @@ function dsClose() {
   };
   /* exit reverses the entrance: the sheet slides away and the scrim dissolves
      in place, then the host is told (auth's exit, the reviewed reference) */
+  chromeClear();
   document.documentElement.classList.remove('bd-on');
   coSheet.classList.remove('drag');
   coSheet.style.transform = 'translateY(103%)';
@@ -1857,7 +1881,7 @@ setTimeout(() => {
   coSheet.addEventListener('pointermove', e => {
     if (!tracking || e.pointerId !== pid) return;
     dy = Math.max(0, (e.clientY - startY) / scale());
-    if (dy > 6) coSheet.classList.add('drag');
+    if (dy > 6 && !coSheet.classList.contains('drag')) { coSheet.classList.add('drag'); chromeClear(); }
     coSheet.style.transform = `translateY(${dy * DAMP}px)`;
   });
   function release(e) {
@@ -1865,7 +1889,7 @@ setTimeout(() => {
     tracking = false;
     coSheet.classList.remove('drag');
     if (dy > COMMIT) { vibrate(10); dsClose(); }
-    else coSheet.style.transform = '';
+    else { coSheet.style.transform = ''; if (dy > 6) chromeSync(600); }
     dy = 0;
   }
   coSheet.addEventListener('pointerup', release);
@@ -1876,6 +1900,119 @@ if (pendingArrival) {
   if (c) setTimeout(() => toast(`${TIERS[c.tier].label} coupon carried over — ${c.label} off`), 520);
   pendingArrival = null;
 }
+</script>
+<script>
+/* Native glass chrome — glasschrome v3 (rewards · meal-select pattern),
+   state-aware for a flow whose controls change with the step:
+     plans (overlay)     close  = the bar X          mode sheet
+     modify sheet open   close  = the sheet X        mode sheet
+     duration / payment  back   = the bar back       mode page
+     coupons hosted      nothing (rewards reports its own X)
+   Only ids the shell can DRAW are handed over: 'close' today. 'back' and
+   'call' wait for caps.navGlyphs >= 1 in DSNativeChrome(ids, caps) — an id
+   the shell doesn't know renders as an empty glass circle.
+   Web glass must never paint under a twin: root-class rules hide every
+   handed-over control, including ones render() rebuilds. Geometry is only
+   reported once it has stopped moving (push 420, sheet 550, drag release).
+   iOS < 26 shells never confirm — the timer restores the web chrome. */
+(function () {
+  if (!/DietStationLab/.test(navigator.userAgent)) return;
+  var FLOW = 'checkout', SURFACE = 'light';
+  var EMBED = /[?&]embed=1/.test(location.search);
+  var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
+  var root = document.documentElement;
+  var navGlyphs = false, confirmed = false, settled = false, syncT = null;
+
+  /* a hosted page loads off-screen: take the rest inset from the host */
+  var caps = window.DSNativeCaps;
+  if (caps && typeof caps.safeTop === 'number')
+    document.getElementById('phone').style.setProperty('--real-pad', Math.max(28, caps.safeTop - 1) + 'px');
+
+  var st = document.createElement('style');
+  st.textContent =
+    'html.ds-chrome-native .nav-x, html.ds-chrome-native .sheet-x' +
+    '{opacity:0!important;pointer-events:none!important}' +
+    'html.ds-chrome-nav .nav-back, html.ds-chrome-nav .nav-call' +
+    '{opacity:0!important;pointer-events:none!important}';
+  document.head.appendChild(st);
+  root.classList.add('ds-chrome-native');
+
+  function current() {
+    if (typeof cpFrame !== 'undefined' && cpFrame) return { mode: 'sheet', els: {} };
+    if (phone.querySelector('.sheet.on'))
+      return { mode: 'sheet', els: { close: '.sheet.on .sheet-x' } };
+    if (S.screen === 'plans') {
+      var p = { close: '.sub-nav .nav-x' };
+      if (navGlyphs) p.call = '.sub-nav .nav-call';
+      return { mode: 'sheet', els: p };
+    }
+    return { mode: 'page', els: navGlyphs ? { back: '.scr[data-scr="' + S.screen + '"] .nav-back' } : {} };
+  }
+  function post(mode, els, instant) {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: SURFACE,
+        mode: mode, instant: !!instant, els: els });
+    } catch (_) {}
+  }
+  function report() {
+    if (!settled) return;
+    var c = current(), off = { x: 0, y: 0 };
+    try {
+      var fe = window.frameElement;
+      while (fe) {
+        var fr = fe.getBoundingClientRect();
+        off.x += fr.left; off.y += fr.top;
+        fe = fe.ownerDocument.defaultView.frameElement;
+      }
+    } catch (_) {}
+    var els = [];
+    Object.keys(c.els).forEach(function (id) {
+      var el = document.querySelector(c.els[id]);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+        r: Math.min(r.width, r.height) / 2 });
+    });
+    post(c.mode, els, false);
+  }
+  window.DSChrome = {
+    sync: function (ms) { clearTimeout(syncT); syncT = setTimeout(report, ms || 0); },
+    clear: function () { clearTimeout(syncT); post(current().mode, [], true); }
+  };
+  window.DSNativeChrome = function (ids, caps2) {
+    confirmed = true;
+    if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) {
+      navGlyphs = true;
+      root.classList.add('ds-chrome-nav');
+      report();
+    }
+  };
+  window.DSChromeTap = function (id) {
+    var sel = current().els[id];
+    var el = sel && document.querySelector(sel);
+    if (el) el.click();
+  };
+  /* back from a routed flow (the hub's rewards sheet): the next touch here
+     re-arms the twins */
+  addEventListener('pointerdown', function () { if (settled) window.DSChrome.sync(0); }, true);
+  addEventListener('message', function (e) {
+    if (e.data && e.data.t === 'ds-result') window.DSChrome.sync(600);
+  });
+  addEventListener('pagehide', function () { post('sheet', [], true); });
+  addEventListener('resize', function () { window.DSChrome.sync(350); });
+  /* the overlay entrance owns the first motion — wait for it */
+  coSheet.addEventListener('transitionend', function (e) {
+    if (e.target === coSheet && e.propertyName === 'transform' && !settled) { settled = true; report(); }
+  });
+  setTimeout(function () { if (!settled) { settled = true; report(); } }, (EMBED || FRAMED) ? 1200 : 760);
+  setTimeout(function () {
+    if (confirmed) return;
+    root.classList.remove('ds-chrome-native', 'ds-chrome-nav');
+    window.DSNativeChrome = function () {};
+    window.DSChrome = { sync: function () {}, clear: function () {} };
+  }, (EMBED || FRAMED) ? 1900 : 1600);
+})();
 </script>
 <script src="../lab-shell.js?v=20260911a" data-flow="checkout" defer></script>
 </body>
