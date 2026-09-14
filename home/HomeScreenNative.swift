@@ -874,7 +874,7 @@ struct HomeScreenNative: View {
 
     private var expandedCouponsWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack { Spacer(); DSBagIcon().frame(width: 46, height: 43) }
+            HStack { Spacer(); DSCouponIcon().frame(width: 46, height: 40.6) }
             Spacer(minLength: 8)
             (Text("KD 32 ").font(DS.urbane(17, .semibold)).foregroundStyle(DS.onColor)
              + Text("OFF").font(DS.urbane(10, .semibold)).foregroundStyle(DS.onColor.opacity(0.8)))
@@ -1009,7 +1009,7 @@ struct HomeScreenNative: View {
                 .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 8)
-            DSBagIcon().frame(width: 34, height: 31.8)
+            DSCouponIcon().frame(width: 34, height: 30)
         }
         .padding(.horizontal, 19)
         .frame(maxWidth: .infinity)
@@ -3843,18 +3843,20 @@ struct DSTabPersonIcon: Shape {
     }
 }
 
-/// Figma export: home/ic-bag.svg — layered price tags (faint back, solid front
-/// with a punched string hole)
-struct DSBagIcon: View {
+/// Figma export: home/ic-coupon.svg — the coupon tag (Rashid, 2026-09-14:
+/// "use this icon for coupons in the glass containers"); shape-for-shape
+/// the same two layers checkout draws, in home's white on the red glass
+/// (a red tag disappears on the red widget)
+struct DSCouponIcon: View {
     var body: some View {
         ZStack {
-            DSBagBackShape().fill(.white.opacity(0.19))
-            DSBagFrontShape().fill(.white.opacity(0.65))
+            DSCouponBackShape().fill(.white.opacity(0.19))
+            DSCouponFrontShape().fill(.white.opacity(0.65))
         }
     }
 }
 
-struct DSBagBackShape: Shape {
+struct DSCouponBackShape: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
         p.move(to: CGPoint(x: 23.503, y: 4.296))
@@ -3869,38 +3871,38 @@ struct DSBagBackShape: Shape {
         p.addCurve(to: CGPoint(x: 33.275, y: 14.067), control1: CGPoint(x: 34.313, y: 16.789), control2: CGPoint(x: 34.313, y: 15.105))
         p.addLine(to: CGPoint(x: 23.503, y: 4.296))
         p.closeSubpath()
-        let s = min(rect.width / 37.9973, rect.height / 35.4995)
+        let s = min(rect.width / 37.9973, rect.height / 33.5123)
         let t = CGAffineTransform(translationX: rect.midX - 37.9973 * s / 2,
-                                  y: rect.midY - 35.4995 * s / 2)
+                                  y: rect.midY - 33.5123 * s / 2)
             .scaledBy(x: s, y: s)
         return p.applying(t)
     }
 }
 
-struct DSBagFrontShape: Shape {
+struct DSCouponFrontShape: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
-        p.move(to: CGPoint(x: 10.955, y: 5.536))
-        p.addCurve(to: CGPoint(x: 14.572, y: 5.536), control1: CGPoint(x: 11.975, y: 4.590), control2: CGPoint(x: 13.552, y: 4.590))
-        p.addCurve(to: CGPoint(x: 20.731, y: 11.251), control1: CGPoint(x: 16.970, y: 7.761), control2: CGPoint(x: 20.709, y: 11.230))
-        p.addCurve(to: CGPoint(x: 21.581, y: 13.200), control1: CGPoint(x: 21.273, y: 11.754), control2: CGPoint(x: 21.581, y: 12.460))
-        p.addLine(to: CGPoint(x: 21.581, y: 27.018))
-        p.addCurve(to: CGPoint(x: 18.922, y: 29.678), control1: CGPoint(x: 21.581, y: 28.487), control2: CGPoint(x: 20.391, y: 29.678))
-        p.addLine(to: CGPoint(x: 6.603, y: 29.678))
-        p.addCurve(to: CGPoint(x: 3.944, y: 27.018), control1: CGPoint(x: 5.134, y: 29.678), control2: CGPoint(x: 3.944, y: 28.487))
-        p.addLine(to: CGPoint(x: 3.944, y: 13.200))
-        p.addCurve(to: CGPoint(x: 4.794, y: 11.251), control1: CGPoint(x: 3.944, y: 12.460), control2: CGPoint(x: 4.252, y: 11.754))
-        p.addCurve(to: CGPoint(x: 10.955, y: 5.536), control1: CGPoint(x: 4.794, y: 11.251), control2: CGPoint(x: 8.549, y: 7.768))
+        p.move(to: CGPoint(x: 10.955, y: 3.549))
+        p.addCurve(to: CGPoint(x: 14.572, y: 3.549), control1: CGPoint(x: 11.975, y: 2.603), control2: CGPoint(x: 13.552, y: 2.603))
+        p.addCurve(to: CGPoint(x: 20.731, y: 9.264), control1: CGPoint(x: 16.970, y: 5.774), control2: CGPoint(x: 20.709, y: 9.243))
+        p.addCurve(to: CGPoint(x: 21.581, y: 11.213), control1: CGPoint(x: 21.273, y: 9.767), control2: CGPoint(x: 21.581, y: 10.473))
+        p.addLine(to: CGPoint(x: 21.581, y: 25.031))
+        p.addCurve(to: CGPoint(x: 18.922, y: 27.691), control1: CGPoint(x: 21.581, y: 26.500), control2: CGPoint(x: 20.391, y: 27.691))
+        p.addLine(to: CGPoint(x: 6.603, y: 27.691))
+        p.addCurve(to: CGPoint(x: 3.944, y: 25.031), control1: CGPoint(x: 5.134, y: 27.691), control2: CGPoint(x: 3.944, y: 26.500))
+        p.addLine(to: CGPoint(x: 3.944, y: 11.213))
+        p.addCurve(to: CGPoint(x: 4.794, y: 9.264), control1: CGPoint(x: 3.944, y: 10.473), control2: CGPoint(x: 4.252, y: 9.767))
+        p.addCurve(to: CGPoint(x: 10.955, y: 3.549), control1: CGPoint(x: 4.794, y: 9.264), control2: CGPoint(x: 8.549, y: 5.781))
         p.closeSubpath()
-        p.move(to: CGPoint(x: 12.767, y: 6.911))
-        p.addCurve(to: CGPoint(x: 10.889, y: 8.789), control1: CGPoint(x: 11.730, y: 6.911), control2: CGPoint(x: 10.889, y: 7.752))
-        p.addCurve(to: CGPoint(x: 12.767, y: 10.667), control1: CGPoint(x: 10.889, y: 9.826), control2: CGPoint(x: 11.730, y: 10.667))
-        p.addCurve(to: CGPoint(x: 14.645, y: 8.789), control1: CGPoint(x: 13.804, y: 10.667), control2: CGPoint(x: 14.645, y: 9.826))
-        p.addCurve(to: CGPoint(x: 12.767, y: 6.911), control1: CGPoint(x: 14.645, y: 7.752), control2: CGPoint(x: 13.804, y: 6.911))
+        p.move(to: CGPoint(x: 12.767, y: 4.924))
+        p.addCurve(to: CGPoint(x: 10.889, y: 6.802), control1: CGPoint(x: 11.730, y: 4.924), control2: CGPoint(x: 10.889, y: 5.765))
+        p.addCurve(to: CGPoint(x: 12.767, y: 8.680), control1: CGPoint(x: 10.889, y: 7.839), control2: CGPoint(x: 11.730, y: 8.680))
+        p.addCurve(to: CGPoint(x: 14.645, y: 6.802), control1: CGPoint(x: 13.804, y: 8.680), control2: CGPoint(x: 14.645, y: 7.839))
+        p.addCurve(to: CGPoint(x: 12.767, y: 4.924), control1: CGPoint(x: 14.645, y: 5.765), control2: CGPoint(x: 13.804, y: 4.924))
         p.closeSubpath()
-        let s = min(rect.width / 37.9973, rect.height / 35.4995)
+        let s = min(rect.width / 37.9973, rect.height / 33.5123)
         let t = CGAffineTransform(translationX: rect.midX - 37.9973 * s / 2,
-                                  y: rect.midY - 35.4995 * s / 2)
+                                  y: rect.midY - 33.5123 * s / 2)
             .scaledBy(x: s, y: s)
         return p.applying(t)
     }
