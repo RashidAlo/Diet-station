@@ -510,6 +510,36 @@
       outside the shell.</p>
   </section>
 
+  <section class="card" id="ruling-content-controls" data-ds-section="ruling4-v1" style="scroll-margin-top:80px">
+    <h2>Ruling 4 &mdash; a control that scrolls with content stays web</h2>
+    <p class="desc">Checkout, 2026-09-14: Rashid wants <i>Book Consultation</i> and <i>Guide me</i> on
+      the plans overlay in the X and call&rsquo;s liquid glass, natively. Those two live INSIDE the
+      plans scroller, not in a bar.</p>
+    <p class="an-law" style="font:600 13.5px/1.45 'Urbane Rounded',sans-serif;background:var(--red-soft);color:#7F1D1D;border-radius:12px;padding:14px 16px;margin-top:14px">
+      A TWIN&rsquo;S GEOMETRY MUST NEVER MOVE ON THE PAGE&rsquo;S CLOCK. A CONTROL THAT SCROLLS WITH
+      CONTENT IS DRAWN BY THE WEB, FOR ITS WHOLE LIFE.</p>
+    <p class="desc" style="font-size:13.5px">A twin is placed where the page last said the element
+      was, across a process boundary, so it is always a few frames old. &middot;216 measured ~78pt of
+      trailing at about 4pt/ms. A scroll fling is faster than that and unbounded. A scrolled twin would
+      also have to clip wherever content passes under the bar, or its glass sits over the bar&rsquo;s own
+      glass. Per-frame tracking plus a clip rect makes the trailing and the clipping visible
+      instead of fixing them. It is the ·216 result in a new place.</p>
+    <p class="desc" style="font-size:13.5px"><b>Canon:</b></p>
+    <ul class="desc" style="font-size:13.5px;margin-top:6px;padding-left:20px">
+      <li><b>Default: web glass</b>, the recipe identical to the web X/call (checkout &middot;20, e3b05aa). A web
+        control in content beside native bar chrome is allowed. One renderer per bar governs a bar,
+        not a scroller.</li>
+      <li><b>If it must be native, it must stop scrolling:</b> move it out of the scroller into a fixed
+        band (under the bar, or floating like the coupons FAB), and it becomes chrome with its own
+        cap. That is a LAYOUT change, so it is Rashid&rsquo;s decision, not an implementation detail.</li>
+      <li><b>Never:</b> twins driven by chrometrack from a content scroll, with or without a clip rect.</li>
+    </ul>
+    <p class="meta"><b>Scoped exception, stated so nobody cites it:</b> meal selection&rsquo;s nav controls
+      ride the scroll-linked dock through <code>--top-pad</code>. That travel is bounded to the sheet gap
+      (~77pt) and ends at the chrome line, where they stop for good. It is not unbounded content
+      scroll, and it carries its own known risks (overlays.html). It does not license this.</p>
+  </section>
+
   <section class="card" id="spec-sheethost" data-ds-section="spec-sheethost-v1" style="scroll-margin-top:80px">
     <h2>Spec &middot; native sheet host (meal selection)</h2>
     <p class="desc">Ruling 3&rsquo;s chosen motion, <b>riding</b>, as the one-pass spec. The selector
