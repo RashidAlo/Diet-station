@@ -425,6 +425,12 @@
       <div class="an-cfgrow"><div class="cap">C · X · tile · dual <small>Meal selection. The full bar.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mtile">15</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
       <div class="an-cfgrow"><div class="cap">D · X · title · dual <small>Legal, not shipped yet: the full bar with a plain title.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Mar 15th</span><span class="md R"><svg viewBox="0 0 18 18" fill="none"><g stroke="#0b0e12" stroke-width="1.7" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" stroke="#ed1c24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div>
     </div>
+    <h3>Pushed screens (full-screen, slid in from the right)</h3>
+    <div class="an-cfg">
+      <div class="an-cfgrow"><div class="cap">E · back · title · [action] <small>Checkout Duration, with its period pill as the action.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M10 3.2 5.4 8l4.6 4.8" stroke="#0b0e12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mt">Select Duration</span><span class="md R" style="width:64px;font:600 11px/32px 'Urbane Rounded',sans-serif;justify-content:center">Monthly</span></div></div>
+      <div class="an-cfgrow"><div class="cap">E · back · title <small>Checkout Payment Method. An empty trailing seat beside a back is legal: back is the iOS norm there.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M10 3.2 5.4 8l4.6 4.8" stroke="#0b0e12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mt">Payment Method</span></div></div>
+      <div class="an-cfgrow"><div class="cap">A+ · X · [title] · action <small>Checkout Plans (the root overlay): X leading because the call button is an action.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mx R"><svg viewBox="0 0 16 16" fill="none"><path d="M5 2.5h2l1 3-1.5 1a7 7 0 0 0 3 3l1-1.5 3 1v2A1.5 1.5 0 0 1 11.5 13 9.5 9.5 0 0 1 3 4.5 1.5 1.5 0 0 1 4.5 3" stroke="#0b0e12" stroke-width="1.5" stroke-linejoin="round"/></svg></span></div></div>
+    </div>
     <h3>Not legal</h3>
     <div class="an-cfg">
       <div class="an-cfgrow bad"><div class="cap">&times; X leading, trailing empty <small>Reads as back and leaves the action side empty. Checkout&rsquo;s Payment Method header, breathe and the plan-quiz intro shipped this; all three fixed in 77944d4.</small></div><div class="an-mini"><span class="mx L"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#0b0e12" stroke-width="2" stroke-linecap="round"/></svg></span><span class="mt">Payment Method</span></div></div>
@@ -434,6 +440,21 @@
       &middot; X leading <code>24</code>, trailing <code>16</code> (rewards keeps its own 24, see
       Adoption) &middot; dual trailing <code>16</code> &middot; text title centered at
       <code>top-pad + 20</code>.</p>
+    <p class="an-law">BACK IS LEADING, AND ONLY ON A PUSH. A PUSHED SCREEN&rsquo;S BAR IS
+      BACK &middot; TITLE &middot; ONE TRAILING THING.
+      <span>Rashid via Checkout, 2026-09-14: one top bar across every step, with native-glass
+      back and X. <b>Back</b> is a 40 circle in the X&rsquo;s material, glyph at the X&rsquo;s ink
+      and optical size, press .92 over .18s, native twin id <code>back</code>. It returns one
+      screen, so it appears only on a screen that slid in from the right, never on an
+      overlay&rsquo;s root. On a push, back owns the leading seat and the trailing seat holds
+      at most one thing: an action, or nothing. An empty trailing seat beside a back is legal.
+      The &ldquo;X leading, trailing empty&rdquo; rule is about the X, which reads as back there.
+      <b>Bar:</b> controls on DS-CHROME-TOP (<code>REAL_PAD + 9</code>), bar
+      <code>REAL_PAD + 58</code>, title 16 Urbane 600 centred at <code>top-pad + 20</code>.
+      <b>One renderer per bar:</b> a trailing pill or call button is a control in the
+      buttons&rsquo; material, and it is twinned whenever its neighbours are. A web pill beside
+      native glass shows two materials in one bar. Until Shell can draw it, that screen&rsquo;s
+      whole bar stays web for its life (Ruling 3, clause 5).</span></p>
     <p class="an-law">EVERY X IS 40. MEAL SELECTION IS THE ONE EXCEPTION, AT 44.
       <span>Rashid, 2026-09-13. The glyph scales with the circle, &times;1.1 over the 40pt
       standard (16 &rarr; 17.6), so it doesn&rsquo;t look undersized in the bigger button. On
@@ -722,13 +743,21 @@
       <div class="mrow"><span class="mn">Overlay scrims</span><span class="badge ok">Fixed</span>
         <span class="mt">Home and the calendar dimmed embedded overlays with
         <code>rgba(0,0,0,.42)</code>. Both now use the contract&rsquo;s <code>rgba(11,14,18,.45)</code>.</span></div>
-      <div class="mrow"><span class="mn">X material</span><span class="badge open">Open</span>
-        <span class="mt">Glass on meal selection, meal details and rewards &middot; white with a 1px
-        hairline on auth and checkout. Native-first makes glass the standard, but auth&rsquo;s
-        Figma frame draws the hairline. Rashid&rsquo;s call; nobody restyles in the meantime.</span></div>
-      <div class="mrow"><span class="mn">Title size</span><span class="badge open">Open</span>
-        <span class="mt">16 on meal selection &middot; 22 on auth (centered) &middot; 18 on checkout
-        (leading, beside the leading X above).</span></div>
+      <div class="mrow"><span class="mn">X material</span><span class="badge ok">Ruled</span>
+        <span class="mt">Native glass. Rashid, via Checkout (2026-09-14): back and X &ldquo;should
+        be native glass &hellip; unified with the rest&rdquo;. Checkout is moving to it now.
+        <b>Auth&rsquo;s white-with-hairline X is now drift</b>, and whether it follows is being
+        confirmed with Rashid, because its Figma frame draws the hairline.</span></div>
+      <div class="mrow"><span class="mn">Title size</span><span class="badge ok">Ruled</span>
+        <span class="mt">Bar titles are 16 Urbane 600, centred (&ldquo;titles &hellip; unified&rdquo;,
+        via Checkout). Checkout moves from 18/28 leading-aligned. <b>Auth&rsquo;s 22 centred title
+        is now drift</b>, to be confirmed alongside its X.</span></div>
+      <div class="mrow"><span class="mn">Checkout &middot; top bar</span><span class="badge todo">In progress</span>
+        <span class="mt">One bar across steps. Plans (root overlay): X leading 24 &middot; call
+        trailing 16, twin <code>call</code>. Duration: back &middot; &ldquo;Select Duration&rdquo;
+        &middot; Monthly pill. Payment: back &middot; &ldquo;Payment Method&rdquo;. Twin ids
+        <code>back</code>, <code>call</code>, and the pill, all via Shell. One renderer per bar: until the pill
+        can be twinned, Duration&rsquo;s bar stays web.</span></div>
       <div class="mrow"><span class="mn">This page</span><span class="badge ok">Corrected</span>
         <span class="mt">The earlier action-bar card said the dual was <i>confirm | clear</i> and the
         X always sat right. What shipped is <b>clear | confirm</b>, with the X leading whenever
