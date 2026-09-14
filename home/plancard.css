@@ -1,4 +1,4 @@
-/* ds-component plancard v2 · source system/components/plancard.css · do not edit here: change the source, then re-vendor */
+/* ds-component plancard v3 · source system/components/plancard.css · do not edit here: change the source, then re-vendor */
 /* THE PLAN CARD — documented at system/plancard.html (Figma Design System 4539-10208,
    variant A). One design for every plan list (Rashid, 2026-09-14): extracted from
    home/index.html at 324e812.
@@ -10,7 +10,9 @@
    specular inside the top edge, a ~2% interior vignette (249 at the edges, 253-254 in the
    centre), ambient ground 232 at the sides and 220 below. SCOPE: valid on a WHITE sheet
    ground only, which is where every plan list sits. Re-sample before using it on colour.
-   Geometry is unchanged from v1. REQUIRES price.css (the price slot is a .dsp), vendored
+   Geometry is unchanged from v1.
+   v3 (2026-09-14): the strike moved into price.css v2 (one strike, everywhere); this file
+   no longer draws it. REQUIRES price v2. REQUIRES price.css (the price slot is a .dsp), vendored
    beside it. Fonts (Urbane Rounded, Proxima Nova, Avenir Next World) come from the
    flow's own @font-face.
    Markup contract:
@@ -95,12 +97,6 @@
 /* ---- price slot: the DS price component, painted for the card ---- */
 .plancard .dsp { --dsp-ink: #0b0e12; --dsp-was-ink: #999; --dsp-perwt: 500; --dsp-per-ink: #999;
   --dsp-grad: var(--plan-grad); }
-.plancard .dsp .was { position: relative; }
-/* the red strike, Figma Line 79: 1px round-cap #ED1C24 at 170.13deg - 180 = -9.87deg,
-   rotated about its centre and spanning the struck price, so it tracks any width */
-.plancard .dsp .was::after { content: ''; position: absolute; left: -1px; right: 3px;
-  top: 50%; height: 1px; margin-top: -.5px; border-radius: .5px; background: #ED1C24;
-  transform: rotate(-9.87deg); pointer-events: none; }
 
 /* ---- deal chip: gradient on the TEXT spans only; the emoji keeps its colour ---- */
 .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 3px;
