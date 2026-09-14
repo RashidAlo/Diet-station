@@ -162,24 +162,29 @@
     height: auto; top: 76px; }
   html.embed.sheet-enter .sheet { transform: translateY(103%); }
 
-  /* nav X: liquid-glass-js container (the configured glass) */
+  /* WEB GLASS, SIMPLIFIED (Rashid): the web and iOS<26 stand-in for a native
+     Liquid Glass button reads the way the real one does at 40pt — a
+     translucent disc, a hairline rim, one soft top light, one quiet shadow.
+     No refraction canvas, no stacked inset shading. Two grounds, like the
+     native twins: on-color (clear glass, white tint) and on-light (regular). */
+  .ds-glass { position: relative; width: 40px; height: 40px; border-radius: 50%;
+    border: none; padding: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    backdrop-filter: blur(10px) saturate(160%);
+    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+  .ds-glass:active { transform: scale(.92); }
+  .ds-glass img { width: 20px; height: 20px; display: block; pointer-events: none; }
+  .ds-glass.on-color { background: rgba(255,255,255,.12);
+    box-shadow: inset 0 0 0 .5px rgba(255,255,255,.30),
+      inset 0 1px 0 rgba(255,255,255,.28), 0 2px 8px rgba(0,0,0,.06); }
+  .ds-glass.on-light { background: rgba(240,240,242,.86);
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.9), 0 3px 12px rgba(0,0,0,.10); }
+  .ds-glass.on-light img { filter: brightness(0) opacity(.88); }
   /* action-bar law (/system/overlays.html): a lone X takes the RIGHT seat;
      rewards keeps its own 24 corner inset, mirrored */
-  .glass-container.closebtn { position: absolute; right: 24px; top: 24px;
-    width: 40px; height: 40px; border-radius: 50%; overflow: hidden; z-index: 10;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: transform .18s cubic-bezier(.3,.8,.3,1);
-    /* glass seat: always-visible rim + lift; refraction canvas shows through */
-    box-shadow:
-      inset 0 1px 1px rgba(255,255,255,.30),
-      inset 0 0 0 .6px rgba(255,255,255,.38),
-      inset 0 -1px 1.5px rgba(0,0,0,.10),
-      0 10px 26px -12px rgba(0,0,0,.35),
-      0 1px 2px rgba(0,0,0,.10); }
-  .glass-container.closebtn:active { transform: scale(.92); }
-  .glass-container.closebtn img { width: 20px; height: 20px; display: block;
-    position: relative; pointer-events: none; }
-  .glass-container.closebtn canvas { box-shadow: none !important; }
+  .closebtn { position: absolute; right: 24px; top: 24px; z-index: 10; }
 
   /* adaptive contrast: sampled backdrop luminance flips glass content dark */
   .glass-dark-content { color: #0b0e12 !important; }
@@ -330,15 +335,7 @@
   .ly-head { width: 100%; display: flex; align-items: flex-start; justify-content: space-between;
     padding: 24px 20px 8px 24px; }
   .ly-title { width: 253px; font: 600 18px/28px 'Urbane Rounded', sans-serif; color: #0b0e12; }
-  .ly-x { position: relative; flex: none; width: 40px; height: 40px; border: none; padding: 0;
-    border-radius: 50%; cursor: pointer; background: #f8f8f8;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0, 0 0 0 .5px #e8e8e8,
-      0 8px 15px rgba(0,0,0,.02), inset 0 40px 10px -40px #282828,
-      inset 0 -40px 10px -40px #282828, inset 0 40px 30px -40px #e6e6e6;
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .ly-x:active { transform: scale(.92); }
-  .ly-x img { width: 20px; height: 20px; display: block; }
+  .ly-x { flex: none; }
   .ly-tiers { width: 100%; display: flex; flex-direction: column; gap: 24px; padding-right: 20px; }
   .ly-row { display: flex; align-items: center; }
   .ly-step { position: relative; flex: none; width: 49px; height: 18px; }
@@ -478,7 +475,7 @@
       <section class="ly-sheet" id="lySheet" role="dialog" aria-label="Loyalty tiers" aria-hidden="true">
         <div class="ly-head">
           <p class="ly-title">Special Discounts for our loyal subscribers</p>
-          <button class="ly-x" id="lyClose" aria-label="Close"><img src="loyalty-close.svg" alt=""></button>
+          <button class="ly-x ds-glass on-light" id="lyClose" aria-label="Close"><img src="loyalty-close.svg" alt=""></button>
         </div>
         <div class="ly-tiers" id="lyTiers"></div>
         <p class="ly-foot">Benefits Reset to Level 2 once no renewals have been done for more than 2 Months*</p>
@@ -687,9 +684,16 @@ function buildCoupons() {
   const theme = LEVELS[phone.dataset.level];
   document.querySelector('.qbtn img').src = theme.q;
 
-  // nav X: liquid-glass-js (rebuilt per theme so the snapshot matches the sheet)
+  // nav X: the simplified web glass (rebuilt per theme; the ground decides
+  // clear-on-color or regular-on-light, and the glyph follows it)
   document.querySelectorAll('.closebtn').forEach(el => el.remove());
-  const cb = makeGlass('closebtn', 20);
+  const onLight = (() => {
+    const m = getComputedStyle(phone).getPropertyValue('--t-head').trim().match(/[0-9a-f]{2}/gi);
+    return !!m && (parseInt(m[0], 16) + parseInt(m[1], 16) + parseInt(m[2], 16)) / 3 < 128;
+  })();
+  const cb = { element: document.createElement('div') };
+  cb.element.className = 'closebtn ds-glass ' + (onLight ? 'on-light' : 'on-color');
+  cb.element.setAttribute('role', 'button');
   cb.element.insertAdjacentHTML('beforeend', `<img src="rewards-close.svg" alt="">`);
   cb.element.title = 'close';
   cb.element.addEventListener('click', () => {
@@ -701,14 +705,6 @@ function buildCoupons() {
     }
   });
   document.querySelector('.sheet').appendChild(cb.element);
-  // adapt as soon as the fresh snapshot lands (retry — capture time varies)
-  let adaptTries = 0;
-  clearInterval(buildCoupons._adaptT);
-  buildCoupons._adaptT = setInterval(() => {
-    if (GLASS_OK && Container.pageSnapshot) {
-      adaptGlassContrast(); clearInterval(buildCoupons._adaptT);
-    } else if (++adaptTries > 24) clearInterval(buildCoupons._adaptT);
-  }, 250);
 
   list.innerHTML = '';
   couponDefs(phone.dataset.level).forEach(def => {
@@ -1117,6 +1113,7 @@ function closeLoyalty() {
   if (!phone.classList.contains('ly-open')) return;
   lyTimers.forEach(clearTimeout);
   lyTimers = [];
+  window.DSLoyaltyLeaving && DSLoyaltyLeaving();
   phone.classList.remove('ly-open');
   lySheet.setAttribute('aria-hidden', 'true');
   const done = e => {
@@ -1468,7 +1465,7 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
      fallback wholesale. */
   var hideSel = Object.keys(ELS).map(function (id) {
     return 'html.ds-chrome-native ' + ELS[id];
-  }).join(',');
+  }).concat('html.ds-chrome-native #lyClose').join(',');
   st.textContent = '.ds-native-hidden{opacity:0!important;pointer-events:none!important}'
     + hideSel + '{opacity:0!important;pointer-events:none!important}';
   document.head.appendChild(st);
@@ -1526,19 +1523,45 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
   /* belt: a missed transitionend must never strand the twin unreported */
   setTimeout(markSettled, (EMBED || FRAMED) ? 1200 : 260);
 
-  /* chrome layers: while the loyalty explainer covers the sheet, the X twin
-     must not float above it — clear it, and hold every report until it
-     closes (the per-theme rebuild observer would otherwise re-arm it) */
-  var layerUp = false;
+  /* chrome layers: the loyalty explainer is a HIGHER surface. While it
+     moves, no twin (a control must never ride a sliding sheet); once it has
+     landed, ITS X is the native twin — regular glass, ink glyph, on its white
+     ground (Rashid: the explainer's X is native glass too); as it leaves, the
+     twin goes at once and the coupons X returns after it has gone. */
+  var layer = null;                      /* null | 'moving' | 'loyalty' | 'gone' */
+  var lySheetNode = document.getElementById('lySheet');
+  var phoneNode = document.getElementById('phone');
+  function loyaltyLanded() {
+    if (layer === 'moving' && phoneNode && phoneNode.classList.contains('ly-open')) {
+      layer = 'loyalty';
+      report();
+    }
+  }
+  if (lySheetNode) lySheetNode.addEventListener('transitionend', function (e) {
+    if (e.target === lySheetNode && e.propertyName === 'transform') loyaltyLanded();
+  });
   window.DSLoyaltyLayer = function (up) {
-    layerUp = !!up;
-    if (layerUp) clearChrome(); else report();
+    if (layer === 'gone') return;
+    if (up) {
+      layer = 'moving';
+      clearChrome();
+      setTimeout(loyaltyLanded, 700);    /* belt: reduced motion has no transitionend */
+    } else {
+      layer = null;
+      report();
+    }
   };
-  /* leaving for another flow: same yield, never released */
-  window.DSChromeYield = function () { window.DSLoyaltyLayer(true); };
+  window.DSLoyaltyLeaving = function () {
+    if (layer === 'gone') return;
+    layer = 'moving';
+    clearChrome();
+  };
+  /* leaving for another flow: yield, never released */
+  window.DSChromeYield = function () { layer = 'gone'; clearChrome(); };
+  function closeSel() { return layer === 'loyalty' ? '#lyClose' : ELS.close; }
 
   function report() {
-    if (!settled || layerUp) return;      /* never sample a moving rect */
+    if (!settled || layer === 'moving' || layer === 'gone') return;   /* never sample a moving rect */
     prehide();   /* idempotent — catches async-built elements too */
     /* overlay pages live in (possibly offset / sliding) iframes — convert
        to SCREEN coords by walking same-origin frame ancestors */
@@ -1552,17 +1575,15 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
       }
     } catch (_) {}
     var els = [];
-    Object.keys(ELS).forEach(function (id) {
-      var el = document.querySelector(ELS[id]);
-      if (!el) return;
-      var r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return;
-      els.push({ id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+    var el = document.querySelector(closeSel());
+    var r = el && el.getBoundingClientRect();
+    if (r && r.width && r.height) {
+      els.push({ id: 'close', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
-    });
+    }
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: MODE, els: els });
+        surface: layer === 'loyalty' ? 'light' : SURFACE, mode: MODE, els: els });
     } catch (_) {}
   }
   /* relays confirm EVERY post, empty ones included (platform.html ruling):
@@ -1578,7 +1599,7 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
     });
   };
   window.DSChromeTap = function (id) {
-    var sel = TAPS[id] || ELS[id];
+    var sel = id === 'close' ? closeSel() : (TAPS[id] || ELS[id]);
     var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
