@@ -176,11 +176,11 @@
           "kind": "surface",
           "summary": "One plan-card design for every plan list: meal rows, the nutrition chip, a Price slot in the plan's gradient, the optional deal chip and the plan pill. Shared source, copied into the flow.",
           "values": [
-            "platter r32 · white .7 · blur 14 saturate 140% · .5px #dbdbdb ring",
+            "v2 platter: r32 · opaque white · .75px rim · top specular · ~2% vignette · ambient shadow (native-glass paint, white ground)",
             "uniform padding 20",
             "price: .dsp primary xxxl grad (cap-top law)",
             "strike: 1px #ED1C24 at -9.87°",
-            "pill 40 · r28 · plan gradient"
+            "pill 40 · r28 · plan gradient · glass edge"
           ],
           "doc": "system/plancard.html",
           "states": [
@@ -242,11 +242,11 @@
           "kind": "surface",
           "summary": "One plan-card design for every plan list: meal rows, the nutrition chip, a Price slot in the plan's gradient, the optional deal chip and the plan pill. Shared source, copied into the flow.",
           "values": [
-            "platter r32 · white .7 · blur 14 saturate 140% · .5px #dbdbdb ring",
+            "v2 platter: r32 · opaque white · .75px rim · top specular · ~2% vignette · ambient shadow (native-glass paint, white ground)",
             "uniform padding 20",
             "price: .dsp primary xxxl grad (cap-top law)",
             "strike: 1px #ED1C24 at -9.87°",
-            "pill 40 · r28 · plan gradient"
+            "pill 40 · r28 · plan gradient · glass edge"
           ],
           "doc": "system/plancard.html",
           "states": [
