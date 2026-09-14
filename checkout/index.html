@@ -141,18 +141,19 @@
   .dur-list { display: flex; flex-direction: column; gap: 32px; padding: 16px 0; margin: 0 16px; }
   .dur { position: relative; cursor: pointer; }
   .dur-card { background: var(--surface); border: 1px solid var(--hair-lt);
-    border-radius: var(--r-card); padding: 20px 20px 24px; display: flex; gap: 12px;
+    border-radius: var(--r-card); padding: 20px 16px 24px 20px; display: flex; gap: 12px;
     align-items: center; transition: border-color .22s ease, box-shadow .22s ease; }
   .dur:nth-child(2) .dur-card { border-color: var(--hair-md); }
-  .dur.sel .dur-card { border: 2px solid var(--green); padding: 19px 19px 23px; }
+  .dur.sel .dur-card { border: 2px solid var(--green); padding: 19px 15px 23px 19px; }
   .dur-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
   .dur-title { display: flex; gap: 4px; font: 600 14px/20px 'Urbane Rounded', sans-serif;
     color: var(--ink); white-space: nowrap; }
   .dur-sub { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--body); }
   .dur-price { display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
     justify-content: center; flex: none; }
-  .dur .dur-price { padding-right: 30px; }
-  .dur.sel .dur-price { padding-right: 0; }
+  /* Every row keeps the check's slot, visible or not, so prices share ONE
+     right edge — unselected rows used to reserve 30px on top of that slot,
+     parking their prices ~30px left of the selected row's. */
   /* ============ DS PRICE COMPONENT — vendored from /system/price.html ==========
      The law is CAP-TOP alignment: every part's first painted pixel on one line.
      The component owns the row, the sizes and the alignment; PAINT IS
@@ -210,7 +211,7 @@
   .dsp .was .pstrike img { width: 100%; height: 1px; display: block; transform: rotate(-9.87deg); }
   /* the explainer sits right under the price: no 16px line box padding it out */
   .per-mo { display: flex; line-height: 1; color: var(--muted); }
-  .dur-check { width: 20px; height: 20px; flex: none; opacity: 0; transform: scale(.6);
+  .dur-check { width: 20px; height: 20px; flex: none; margin-left: -4px; opacity: 0; transform: scale(.6);
     transition: opacity .2s ease, transform .3s var(--ease); }
   .dur.sel .dur-check { opacity: 1; transform: scale(1); }
   .save-badge { position: absolute; top: -13px; right: 41px; background: var(--green);
@@ -722,7 +723,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·14</div>
+  <div class="s-foot" id="buildInfo">checkout ·15</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -742,7 +743,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·14';
+const BUILD = 'checkout ·15';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
