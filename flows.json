@@ -1229,7 +1229,7 @@
       "id": "checkout",
       "title": "Checkout & Payment",
       "status": "in-progress",
-      "updated": "2026-09-11",
+      "updated": "2026-09-14",
       "hidden": true,
       "sheet": true,
       "sprint": 1,
@@ -1239,6 +1239,16 @@
       "area": "Checkout",
       "preview": "checkout/preview.png",
       "entries": [
+        {
+          "id": "rewards",
+          "params": {
+            "src": "rewards",
+            "entry": "rewards",
+            "coupon": "DS-<TIER>25 | GYM-<TIER> | KIDS-<TIER>  (required)",
+            "tier": "bronze|silver|gold|vip  (optional)"
+          },
+          "note": "CHECKOUT'S FIRST ENTRY (Rashid, 2026-09-14): Home → Discounts → rip a coupon → rewards' Checkout button. rewards emits {t:'ds-nav', to:'checkout', present:'sheet', context:{src:'rewards', entry:'rewards', coupon:<code>, tier:<tier>}}. coupon is the ripped coupon's code exactly as couponDefs() generates it; the code carries the rung, so tier is optional. Checkout lands on the plan picker with the coupon applied through applyCoupon() — cards, duration rows and total all re-priced — keeps the higher of ds-tier-v1 and the code's rung and persists it, and confirms 'coupon carried over'. An unreadable code arrives with nothing applied. GUARD FOR REWARDS: emit this ONLY when rewards was opened from home; when checkout summoned rewards (context {src:'checkout', mode:'redeem'}) a rip must answer with {t:'ds-result', from:'rewards', payload:{code}} instead, or the Checkout button stacks a second checkout on the one that asked."
+        },
         {
           "id": "default",
           "params": {
@@ -1275,55 +1285,60 @@
       "flow": {
         "nodes": [
           {
+            "id": "discounts",
+            "t": "From Discounts",
+            "kind": "screen",
+            "note": "Checkout's first entry: the member rips a coupon in the rewards flow and taps Checkout."
+          },
+          {
             "id": "plans",
             "t": "Plan cards",
             "kind": "screen",
-            "note": "Subscribe Modal — signed-out entry. Prices re-price live under an applied coupon."
+            "note": "Arrives as an overlay, already discounted at the member's tier."
           },
           {
             "id": "renew",
             "t": "Renew Plan",
             "kind": "screen",
-            "note": "Tiered entry from the loyalty page: plan comparison tabs + the member's current plan detail."
+            "note": "Loyalty-page route: plan tabs + the member's current plan."
           },
           {
             "id": "duration",
             "t": "Select duration",
             "kind": "screen",
-            "note": "Duration cards with Save badges and the Highest Saving flag."
+            "note": "Duration cards, then the promo code: applied code + tier, change or remove."
           },
           {
             "id": "modify",
             "t": "Modify plan",
             "kind": "module",
-            "note": "Sheet: meal steppers + delivery-day segment."
+            "note": "Sheet: meal steppers + delivery days."
           },
           {
-            "id": "wallet",
-            "t": "Coupon wallet",
+            "id": "rewards",
+            "t": "Discounts",
             "kind": "module",
-            "note": "Sheet summoned by the floating coupon button or the promo bar."
-          },
-          {
-            "id": "unlocked",
-            "t": "Tier unlocks it?",
-            "kind": "decision",
-            "note": "Coupons above the member's rung stay locked."
+            "note": "Cross-flow: the rewards coupon experience. Checkout keeps no coupon list of its own."
           },
           {
             "id": "payment",
             "t": "Payment method",
             "kind": "screen",
-            "note": "Within-this-offer methods vs alternatives; savings total."
+            "note": "Within-offer methods vs alternatives; savings total."
           },
           {
             "id": "done",
             "t": "Order placed",
             "kind": "end",
-            "note": "NOT YET IN FIGMA — the prototype currently ends at Pay Now with a mock-only confirmation toast."
+            "note": "NOT YET IN FIGMA — Pay Now ends in a mock-only toast."
           }
         ],
         "edges": [
+          [
+            "discounts",
+            "plans",
+            "coupon carried over"
+          ],
           [
             "plans",
             "duration",
@@ -1346,33 +1361,18 @@
           ],
           [
             "plans",
-            "wallet",
+            "rewards",
             "coupon button"
           ],
           [
             "duration",
-            "wallet",
-            "promo bar"
-          ],
-          [
-            "wallet",
-            "unlocked",
-            ""
-          ],
-          [
-            "unlocked",
-            "duration",
-            "applied — re-price"
-          ],
-          [
-            "unlocked",
-            "wallet",
-            "locked"
-          ],
-          [
-            "wallet",
             "rewards",
-            "see all"
+            "change code"
+          ],
+          [
+            "rewards",
+            "duration",
+            "ripped code — re-price"
           ],
           [
             "duration",
@@ -1390,16 +1390,22 @@
         "Figma source": "Diet Station 4.0 → section Checkout (17304:469649)",
         "Frames built": "Subscribe Modal · Duration Select (default plans) · Level 8 / Renew Plan · Modify Default Plan Modal · Payment options (Visa) · Promo Code (applied + empty)",
         "Price engine": "list = duration.was · subtotal = duration.now · − coupon (flat KD, or percentage capped at coupon.cap) · − method delta · = total. Savings shown = list − total.",
-        "Coupon tiers": "bronze → silver → gold → VIP. A coupon is selectable only when its tier rank ≤ the member's rank; downgrading the member drops an now-locked applied coupon automatically.",
-        "Tier badge": "Applied coupons wear the Figma green chip with the tier name. Inside the wallet each coupon wears its tier's own Figma badge gradient, matched to the rewards flow (section 17137:76380).",
-        "Screen motion": "push = translateX(100%) → 0 over 420ms cubic-bezier(.32,.72,0,1), outgoing screen parks at −26%. Sheets = translateY(100%) → 0 over 460ms on the same curve.",
+        "Coupon tiers": "bronze → silver → gold → VIP; shared as ds-tier-v1, declared default gold. A coupon's code carries its rung (DS-GOLD25 → gold). A coupon arriving above the member's rung raises and persists it; a rung change that leaves a coupon above it drops that coupon. Checkout keeps no coupon catalogue — it decodes the codes rewards generates.",
+        "Tier badge": "The applied code's chip wears its OWN rung — the Figma tier gradients (17137:76380) the rewards flow themes coupons with — never a flat green.",
+        "Screen motion": "Push = translateX(100%)→0 over 420ms cubic-bezier(.32,.72,0,1), outgoing screen parks at −26%. Overlays follow system/overlays.html: scrim rgba(11,14,18,.42) opacity-only .32s (never travels), sheets translateY(103%)→0 on .55s cubic-bezier(.32,.72,0,1), partial 24 24 0 0, the plan overlay 44 44 0 0.",
         "Glass": "Nav buttons and the coupon FAB use CSS backdrop-filter (blur 14 / saturate 180) rather than liquid-glass-js: they float over live scrolling content, which the shader's frozen page snapshot cannot track. Native equivalent is .glassEffect().",
         "Payment": "PROTOTYPE UI ONLY — mock data, no processing, no card entry, nothing charged. Pay Now raises a confirmation toast.",
         "Driving it from a script": "See the Semantic control map (controls[]) for every act and its payload — one delegated listener on [data-act] at the phone root, authored from the dispatcher. Labels are split across weight spans for typography and must never be matched on. For most runs you can skip the tapping entirely: ?ctx={\"entry\":…,\"screen\":…,\"tier\":…,\"plan\":…,\"coupon\":…} boots straight into any state, which is how this flow was verified on device when the Simulator MCP refused tap injection.",
         "Open question — dock arithmetic": "Figma's dock reads Before KD139 → KD96 on every checkout frame while its own duration rows read KD149 → KD98 (and 149 − 98 = the Save KD51 badge). The two cannot both be right; the engine follows the self-consistent rows. Needs Rashid's call.",
         "Open question — confirmation": "No confirmation/receipt frame exists in the Figma section. Pay Now currently ends in a toast.",
         "Open question — duration list": "The default-plans frame draws '1 Month' twice at KD99.500 and KD99; built verbatim, but it reads like unfinished placeholder copy.",
-        "Coupons": "ONE coupon experience in the product: the rewards flow. Checkout keeps no catalogue — it summons rewards and decodes the code that comes back, so the tier travels inside the code (DS-VIP25 → vip, 25% capped KD 80). The lab menu's Redeemed-coupon picker is review chrome standing in for the rip, not product surface."
+        "Coupons": "ONE coupon experience in the product: the rewards flow. Checkout keeps no catalogue — it summons rewards and decodes the code that comes back, so the tier travels inside the code (DS-VIP25 → vip, 25% capped KD 80). The lab menu's Redeemed-coupon picker is review chrome standing in for the rip, not product surface.",
+        "Overlay": "Only the plan picker (and the coupons it summons) is an overlay, per system/overlays.html: backdrop dissolves in place (opacity .32s), the sheet rises translateY(103%)→0 on .55s cubic-bezier(.32,.72,0,1), top = status bar + 24, radius 44 44 0 0, lift 0 -14px 44px rgba(0,0,0,.24), drag-to-close (damp .42, commit 195pt). Choosing a plan moves into a FULL-SCREEN experience: the sheet grows to the screen edges (top→0, radius→0) on the push's clock (420ms, same curve) while Duration pushes in; Back to plans shrinks it again. Duration and Payment clear the status bar themselves. Native: plans = .sheet(.large); plan tap = fullScreenCover/NavigationStack push.",
+        "Tier is global": "The member's tier is NOT checkout's to own. It lives in localStorage under `ds-tier-v1` (values: bronze|silver|gold|vip), seeded on first boot, written by the lab picker, by a redemption proving a higher rung, and by an incoming ctx.tier. A `storage` listener applies a change made in another flow without a reload. Any flow that shows tier should read the same key — Rashid, 2026-09-12: set a tier once and it applies throughout the prototype. The badge wears its own rung using the Figma tier gradients (17137:76380), matching how rewards themes its coupons.",
+        "Glass CTAs": "Book Consultation and Guide me are home's rounded-rectangle glass pair (.lo-book / .lo-guide) in light form: 64 tall, radius 26, gap 16, Book 193 wide + Guide flexible; fill rgba(11,14,18,.045), blur 12 / saturate 150, inner top highlight white .9 + .5px hairline rgba(11,14,18,.10), lift 0 6px 20px rgba(11,14,18,.06), press scale .97. Ink #0B0E12 text and icons (home's calendar and wand, colours reversed; wand keeps its red tip, sparks keep gold).",
+        "Promo code": "Two states you can act on. APPLIED: the redeemed code + the tier chip it came from; the promotion line is black with the green check as the only green; tapping the card changes the coupon (rewards redeem sheet), the trailing remove (40pt target) offers Undo. EMPTY: 'Add a promo code — Rip a coupon in Discounts to apply it', with a 28pt add button: 1.5pt #E6E6E8 outline, brand-red plus. The card is a container of two real buttons with descriptive labels, never an action nested inside a button.",
+        "Coupons from checkout": "The promo card (and the plans FAB) summons the member's own coupons: ds-nav {to:'rewards', present:'sheet', context:{src:'checkout', mode:'redeem', tier}} through the hub router; with no router, checkout hosts rewards itself in an iframe over a .45 veil. Rip → rewards posts ds-result {code} → the coupon applies, the sheet closes. X → ds-close → closes, coupon unchanged. Results are only accepted from the hosted frame or the parent.",
+        "Toast placement": "Toasts never cover content: they rise to 14pt above the highest thing docked at the bottom of the active step (the promo card, else the pay bar). Undo toasts are 3.6s, info toasts 1.8s."
       },
       "controls": [
         {
@@ -1450,7 +1456,7 @@
         },
         {
           "act": "coupons",
-          "does": "Summons the rewards flow to redeem a coupon — checkout shows no list of its own",
+          "does": "Summons the rewards flow to add or change the coupon — the whole promo card is this button",
           "intent": {
             "to": "rewards",
             "present": "sheet"
@@ -1458,7 +1464,7 @@
         },
         {
           "act": "uncoupon",
-          "does": "Removes the applied coupon from the promo bar and re-prices"
+          "does": "Removes the applied promo code, re-prices, and offers Undo in the toast"
         },
         {
           "act": "method",
@@ -1495,6 +1501,10 @@
           "act": "call",
           "status": "stub",
           "does": "Calls the diet consultant"
+        },
+        {
+          "act": "toastAction",
+          "does": "A toast's action button (Undo after removing a promo code); runs its own handler"
         }
       ],
       "swift": [
