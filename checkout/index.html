@@ -812,7 +812,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·21</div>
+  <div class="s-foot" id="buildInfo">checkout ·22</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -836,7 +836,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·21';
+const BUILD = 'checkout ·22';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1654,7 +1654,11 @@ const EMBED = /[?&]embed=1/.test(location.search);
 if (EMBED) document.body.classList.add('embed');
 function dsClose() {
   const leave = () => {
-    if (window.parent !== window) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
+    /* framed (hub sheet) OR presented top-level with embed=1 (the app's native
+       cover): tell the host. Top-level, parent === window, so this self-posts —
+       the app's overlay relay listens for exactly that. Only a plain standalone
+       page navigates back to the hub. */
+    if (window.parent !== window || EMBED) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
     location.href = '../?v=' + Date.now();
   };
   /* exit reverses the entrance: the sheet slides away and the scrim dissolves
