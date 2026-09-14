@@ -238,6 +238,13 @@ webkit.messageHandlers.ds.postMessage({
 });
 // native → web: confirm twins (web keeps .ds-native-hidden on those ids)
 window.DSNativeChrome(['close']);
+// EVERY post is confirmed, an empty els included: DSNativeChrome([], caps)
+// (ruling 2026-09-14, after checkout ·19 deadlocked by offering nav els only
+// once caps arrived). A confirm is a RECEIPT: ids = what native now draws,
+// caps = what it can draw. An empty confirm still means "this shell speaks
+// the protocol", which is what the iOS<26 restore timer tests. But it hides
+// NOTHING: a page may hide an element only when its id is in ids, and any
+// page-wide pre-hide (a root class) must be undone for ids a confirm omits.
 // native → web: route taps back
 window.DSChromeTap('close');
 // guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome
