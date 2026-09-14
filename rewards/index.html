@@ -312,6 +312,68 @@
   /* summoned by checkout as its picker: the rip itself answers, so the
      forward-to-checkout button would only stack a second checkout */
   html.redeem .coupon .checkout { display: none; }
+
+  /* ---- loyalty explainer (Figma 16828:83647), opened by the "?" ----------
+     sheet contract (system/overlays.html): scrim dissolves in place, only
+     the sheet travels on the house spring; X 40 in the trailing seat */
+  .ly-scrim { position: absolute; inset: 0; z-index: 30; background: rgba(11,14,18,.45);
+    opacity: 0; pointer-events: none; transition: opacity .32s ease; }
+  .ly-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 31;
+    max-height: calc(100% - 44px); overflow-y: auto; scrollbar-width: none;
+    background: #fff; border-radius: 44px 44px 0 0;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(103%); transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .ly-sheet::-webkit-scrollbar { display: none; }
+  .phone.ly-open .ly-scrim { opacity: 1; pointer-events: auto; }
+  .phone.ly-open .ly-sheet { transform: translateY(0); }
+  .ly-head { width: 100%; display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 24px 20px 8px 24px; }
+  .ly-title { width: 253px; font: 600 18px/28px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .ly-x { position: relative; flex: none; width: 40px; height: 40px; border: none; padding: 0;
+    border-radius: 50%; cursor: pointer; background: #f8f8f8;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 1.25px 0 0 -.75px #d0d0d0, -1.25px 0 0 -.75px #d0d0d0, 0 0 0 .5px #e8e8e8,
+      0 8px 15px rgba(0,0,0,.02), inset 0 40px 10px -40px #282828,
+      inset 0 -40px 10px -40px #282828, inset 0 40px 30px -40px #e6e6e6;
+    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .ly-x:active { transform: scale(.92); }
+  .ly-x img { width: 20px; height: 20px; display: block; }
+  .ly-tiers { width: 100%; display: flex; flex-direction: column; gap: 24px; padding-right: 20px; }
+  .ly-row { display: flex; align-items: center; }
+  .ly-step { position: relative; flex: none; width: 49px; height: 18px; }
+  .ly-step img { position: absolute; left: 15px; top: 0; width: 18px; height: 18px; display: block; }
+  .ly-step .on { opacity: 0; transform: scale(.4); }
+  .ly-step.filled .on { opacity: 1; transform: none; }
+  .ly-card { flex: 1; min-width: 0; padding: 24px; border-radius: 24px; background: #fff;
+    display: flex; flex-direction: column; gap: 8px;
+    filter: drop-shadow(0 0 12px rgba(56,64,74,.12)); }
+  .ly-card.current { background: #ed1c24; }
+  .ly-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .ly-badge { flex: none; padding: 4px 10px; border-radius: 99px; border: 2px solid;
+    font: 600 12px/16px 'Urbane Rounded', sans-serif; text-align: center; white-space: nowrap;
+    box-shadow: 0 7px 3px rgba(0,0,0,.02), 0 4px 2px rgba(0,0,0,.06),
+      0 2px 2px rgba(0,0,0,.06), 0 0 1px rgba(0,0,0,.06); }
+  .ly-badge.bronze { background: linear-gradient(to bottom, #d5bb9f 45%, #c9a682 55%);
+    border-color: #fff; color: rgba(76,64,51,.42); }
+  .ly-badge.silver { background: linear-gradient(to bottom, #e5e7eb 45%, #d1d5db 55%);
+    border-color: #e4e4e7; color: rgba(82,82,91,.46); }
+  .ly-badge.gold { background: linear-gradient(to top, #f2b90d 45%, #ffca2a 55%);
+    border-color: #fefae7; color: #c59300; }
+  .ly-badge.vip { width: 52px; background: linear-gradient(to bottom, #44403d 45%, #24221f 55%);
+    border-color: #f9f9f9; color: #fff;
+    box-shadow: 0 7px 3px rgba(0,0,0,.02), 0 4px 2px rgba(0,0,0,.06),
+      0 2px 2px rgba(0,0,0,.11), 0 0 1px rgba(0,0,0,.12); }
+  .ly-pill { flex: none; padding: 4px 8px; border-radius: 1024px; background: #f5f5f5;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: #0b0e12; white-space: nowrap; }
+  .ly-pill em { font-style: normal; color: #ed1c24; }
+  .ly-offers { list-style: disc; padding-left: 18px; display: flex; flex-direction: column; gap: 8px;
+    font: 400 12px/16px 'Proxima Nova', sans-serif; color: #0b0e12; }
+  .ly-offers b { font-weight: 400; color: #ed1c24; }
+  .ly-card.current .ly-offers { color: #f9f9f9; }
+  .ly-card.current .ly-offers b { color: #fff; }
+  .ly-foot { width: 291px; font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e;
+    text-align: center; }
   .devbar button { border: none; cursor: pointer; padding: 8px 14px; border-radius: 999px;
     background: transparent; color: rgba(255,255,255,.65);
     font: 600 12px/16px 'Urbane Rounded', sans-serif;
@@ -407,6 +469,15 @@
         </div>
         <div class="coupons" id="coupons"></div>
       </div>
+      <div class="ly-scrim" id="lyScrim"></div>
+      <section class="ly-sheet" id="lySheet" role="dialog" aria-label="Loyalty tiers" aria-hidden="true">
+        <div class="ly-head">
+          <p class="ly-title">Special Discounts for our loyal subscribers</p>
+          <button class="ly-x" id="lyClose" aria-label="Close"><img src="loyalty-close.svg" alt=""></button>
+        </div>
+        <div class="ly-tiers" id="lyTiers"></div>
+        <p class="ly-foot">Benefits Reset to Level 2 once no renewals have been done for more than 2 Months*</p>
+      </section>
       <div class="island"></div>
     </div>
   </div>
@@ -939,6 +1010,97 @@ function answerRedeem(coupon) {
   setTimeout(send, 1200);   /* belt: a throttled tab must not strand checkout */
 }
 
+/* ---------------- loyalty explainer (Figma 16828:83647) ----------------
+   Opened by the "?" next to the tier badge. Everything in it derives from
+   the member's tier (phone.dataset.level = ds-tier-v1): which cards are
+   unlocked, which one is red, what each status pill says. On open the
+   circles fill one after another up to that tier, then the current card
+   settles once. A tier change while it's open re-renders and replays. */
+const LY_ORDER = ['bronze', 'silver', 'gold', 'vip'];
+const LY_PERKS = ['1 FREE consultation', 'Referral Discount (up to 3)'];
+const LY_OFFERS = {
+  bronze: { kd: 'KD 20', perks: [] },
+  silver: { kd: 'KD 30', perks: LY_PERKS },
+  gold:   { kd: 'KD 40', perks: LY_PERKS },
+  vip:    { kd: 'KD 40', perks: LY_PERKS },
+};
+const lyTiers = document.getElementById('lyTiers');
+const lySheet = document.getElementById('lySheet');
+let lyTimers = [];
+
+function renderLoyalty() {
+  const cur = LY_ORDER.indexOf(phone.dataset.level);
+  lyTiers.innerHTML = LY_ORDER.map((id, i) => {
+    const gap = i - cur;
+    const pill = gap < 0 ? 'Unlocked'
+      : gap === 0 ? 'You are here'
+      : gap === 1 ? 'Renew 1 Month to upgrade'
+      : `Buy <em>${gap} months</em> more to Unlock`;
+    const o = LY_OFFERS[id];
+    const perks = o.perks.map(p => `<li>${p}</li>`).join('');
+    return `<div class="ly-row">
+        <span class="ly-step"><img class="off" src="loyalty-step-off.svg" alt=""><img class="on" src="loyalty-step-on.svg" alt=""></span>
+        <div class="ly-card${gap === 0 ? ' current' : ''}">
+          <div class="ly-top"><span class="ly-badge ${id}">${LEVELS[id].label}</span><span class="ly-pill">${pill}</span></div>
+          <ul class="ly-offers"><li><b>${o.kd}</b> off on all subscriptions</li>${perks}</ul>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function playLoyalty() {
+  lyTimers.forEach(clearTimeout);
+  lyTimers = [];
+  const cur = LY_ORDER.indexOf(phone.dataset.level);
+  const steps = [...lyTiers.querySelectorAll('.ly-step')];
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  steps.forEach((s, i) => s.classList.toggle('filled', calm && i <= cur));
+  if (calm) return;
+  const START = 380, STEP = 190;   // the first fill lands as the sheet arrives
+  steps.slice(0, cur + 1).forEach((s, i) => lyTimers.push(setTimeout(() => {
+    s.classList.add('filled');
+    s.querySelector('.on').animate([
+      { opacity: 0, transform: 'scale(.4)' },
+      { opacity: 1, transform: 'scale(1.2)', offset: .6 },
+      { opacity: 1, transform: 'scale(1)' },
+    ], { duration: 280, easing: 'cubic-bezier(.3,.7,.4,1)' });
+    try { navigator.vibrate && navigator.vibrate(6); } catch (_) {}
+    if (i === cur) {
+      lyTimers.push(setTimeout(() => s.closest('.ly-row').querySelector('.ly-card').animate([
+        { transform: 'scale(1)' }, { transform: 'scale(1.02)' }, { transform: 'scale(1)' },
+      ], { duration: 320, easing: 'ease-out' }), 200));
+    }
+  }, START + i * STEP)));
+}
+
+function openLoyalty() {
+  if (phone.classList.contains('ly-open')) return;
+  try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+  renderLoyalty();
+  lySheet.scrollTop = 0;
+  lySheet.setAttribute('aria-hidden', 'false');
+  window.DSLoyaltyLayer && DSLoyaltyLayer(true);   /* the native X twin yields */
+  phone.classList.add('ly-open');
+  playLoyalty();
+}
+function closeLoyalty() {
+  if (!phone.classList.contains('ly-open')) return;
+  lyTimers.forEach(clearTimeout);
+  lyTimers = [];
+  phone.classList.remove('ly-open');
+  lySheet.setAttribute('aria-hidden', 'true');
+  const done = e => {
+    if (e.target !== lySheet || e.propertyName !== 'transform') return;
+    lySheet.removeEventListener('transitionend', done);
+    if (!phone.classList.contains('ly-open')) window.DSLoyaltyLayer && DSLoyaltyLayer(false);
+  };
+  lySheet.addEventListener('transitionend', done);
+}
+document.querySelector('.qbtn').addEventListener('click', openLoyalty);
+document.getElementById('lyClose').addEventListener('click', closeLoyalty);
+document.getElementById('lyScrim').addEventListener('click', closeLoyalty);
+addEventListener('keydown', e => { if (e.key === 'Escape') closeLoyalty(); });
+
 /* ---------------- shared tier ---------------- */
 const readTier = () => {
   try { const t = localStorage.getItem(TIER_KEY); return LEVELS[t] ? t : null; }
@@ -955,6 +1117,8 @@ function setLevel(lvl) {
   phone.dataset.level = lvl;
   lvlBadge.textContent = LEVELS[lvl].label;
   writeTier(lvl);
+  /* the explainer derives from the tier: re-render and replay if it's open */
+  if (phone.classList.contains('ly-open')) { renderLoyalty(); playLoyalty(); }
   // rebuild next frame so the fresh page snapshot sees the new theme
   requestAnimationFrame(buildCoupons);
 }
@@ -1282,8 +1446,17 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
   /* belt: a missed transitionend must never strand the twin unreported */
   setTimeout(markSettled, (EMBED || FRAMED) ? 1200 : 260);
 
+  /* chrome layers: while the loyalty explainer covers the sheet, the X twin
+     must not float above it — clear it, and hold every report until it
+     closes (the per-theme rebuild observer would otherwise re-arm it) */
+  var layerUp = false;
+  window.DSLoyaltyLayer = function (up) {
+    layerUp = !!up;
+    if (layerUp) clearChrome(); else report();
+  };
+
   function report() {
-    if (!settled) return;      /* never sample a moving rect */
+    if (!settled || layerUp) return;      /* never sample a moving rect */
     prehide();   /* idempotent — catches async-built elements too */
     /* overlay pages live in (possibly offset / sliding) iframes — convert
        to SCREEN coords by walking same-origin frame ancestors */
