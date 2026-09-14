@@ -1,0 +1,43 @@
+/* ds-component glass-control v1 · source system/components/glass-control.css · do not edit here: change the source, then re-vendor */
+/* THE GLASS CONTROL — the ONE web fallback for glass buttons (Rashid, 2026-09-14): "It
+   should match the same style of the buttons available on the meal selection page ... the
+   x button and the dual buttons ... The native glass effect on apple is perfect ... the
+   fallback is messy. We have different styles." Recipe verbatim from meal-select/select.html
+   (.navbtn / .dual). It paints the WEB rendering only; in the app shell a native Liquid Glass
+   twin covers it (the flow's chrome hide), and nothing here changes native.
+   Documented at system/components.html#glass-control.
+   Markup:
+     circle   <button class="gctl" aria-label="Close"><svg …/></button>
+     capsule  <button class="gctl capsule">Monthly</button>
+     dual     <div class="gctl dual"><button aria-label="Clear">…</button><span class="sep"></span>
+                <button aria-label="Confirm">…</button></div>
+     over imagery / dark ground: add .on-dark (chosen by the page, e.g. luminance < .52)
+   Size is the flow's: --gctl-size 40 standard, 44 meal selection (52 in its tile row), 50 FAB.
+   GROUND: valid as-is on white too. Meal selection's controls sit on its white nav surface once
+   the list scrolls, which is the look Rashid chose. No light-ground variant. */
+.gctl { position: relative; flex: none; box-sizing: border-box;
+  width: var(--gctl-size, 40px); height: var(--gctl-size, 40px); border-radius: 999px;
+  border: 0; padding: 0; margin: 0; cursor: pointer; font: inherit; color: #0b0e12;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.34);
+  -webkit-backdrop-filter: blur(12px) saturate(160%); backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
+    0 4px 14px -8px rgba(0,0,0,.22);
+  transition: background .35s ease, color .35s ease, transform .18s cubic-bezier(.3,.8,.3,1);
+  -webkit-tap-highlight-color: transparent; }
+.gctl:active { transform: scale(.92); }
+.gctl svg, .gctl img { display: block; pointer-events: none; }
+/* capsule: a pill carrying a label (e.g. a period switch) */
+.gctl.capsule { width: auto; min-width: var(--gctl-size, 40px); padding: 0 var(--gctl-pad, 16px); white-space: nowrap; }
+/* dual: two actions in one capsule, divider between (confirm is outermost) */
+.gctl.dual { width: auto; padding: 0; overflow: hidden; cursor: default; }
+.gctl.dual:active { transform: none; }
+.gctl.dual > button { width: var(--gctl-seg, 50px); height: 100%; border: 0; padding: 0; margin: 0;
+  background: transparent; color: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .3s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
+.gctl.dual > button:active { transform: scale(.9); }
+.gctl.dual > .sep { width: 1px; height: 22px; flex: none; background: rgba(11,14,18,.16); }
+/* over imagery or a dark ground */
+.gctl.on-dark { background: rgba(72,72,78,.30); color: #fff; }
+.gctl.on-dark.dual > .sep { background: rgba(255,255,255,.3); }
