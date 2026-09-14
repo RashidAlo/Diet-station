@@ -307,6 +307,8 @@
     -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
     box-shadow: 0 10px 30px -10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
   .devbar { display: none !important; }   /* controls live in the triple-tap menu */
+  /* ?labframe=1 — the live instance inside the Components tab: no lab chrome */
+  html.labframe #side { display: none !important; }
   .devbar button { border: none; cursor: pointer; padding: 8px 14px; border-radius: 999px;
     background: transparent; color: rgba(255,255,255,.65);
     font: 600 12px/16px 'Urbane Rounded', sans-serif;
@@ -419,6 +421,12 @@
 </div>
 
 <script>
+/* ?labframe=1: this page is the live instance in the Components tab
+   (system/components.html#components-tab) — mobile layout at scale 1,
+   no sidebar, no triple-tap lab menu */
+const LABFRAME = /[?&]labframe=1(&|$)/.test(location.search);
+if (LABFRAME) document.documentElement.classList.add('labframe');
+
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -662,7 +670,10 @@ function buildCoupons() {
     list.appendChild(el);
     attachPull(el, base, piece, lighter, face);
   });
+  /* settle flag for the Components tab: a build has landed in the DOM */
+  (buildCoupons.waiters || []).splice(0).forEach(f => f());
 }
+const nextBuild = () => new Promise(r => (buildCoupons.waiters = buildCoupons.waiters || []).push(r));
 
 /* ---------------- pop-the-perforation gesture ----------------
    At rest: one seamless card with punched holes. On grab, the card splits
@@ -816,6 +827,17 @@ function attachPull(coupon, base, piece, lighter, face) {
     }, 380);
   };
 
+  /* the rip's completion as a callable path: the same split, the same hole
+     pops and the same tear() the gesture ends in — only the finger is
+     missing. The Components tab shows "redeemed" through this. */
+  coupon.redeem = () => {
+    if (torn) return;
+    interacted = true; clearTimeout(hintTimer);
+    doSplit();
+    setPull(threshold(N - 1));
+    tear();
+  };
+
   hit.addEventListener('pointerdown', onDown);
   hit.addEventListener('pointermove', onMove);
   hit.addEventListener('pointerup', onUp);
@@ -933,7 +955,7 @@ document.getElementById('sCopy').addEventListener('click', () => {
 /* ---------------- stage scaling: desktop playground vs mobile fullscreen -- */
 let stageScale = 1;
 function fit() {
-  const mobile = matchMedia('(max-width: 500px)').matches ||
+  const mobile = LABFRAME || matchMedia('(max-width: 500px)').matches ||
     (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   const sheetEl = document.querySelector('.sheet');
   if (mobile) {
@@ -941,10 +963,10 @@ function fit() {
     // dynamic viewport: fill the width, size the phone to the VISUAL viewport
     // (Safari's collapsing toolbar) and shrink the sheet on shorter screens so
     // nothing crops — the backdrop strip absorbs the safe area + slack
-    stageScale = innerWidth / 402;
+    stageScale = LABFRAME ? 1 : innerWidth / 402;
     const probe = document.getElementById('safeProbe');
     const st = probe ? (parseFloat(getComputedStyle(probe).paddingTop) || 0) : 0;
-    const vh = (window.visualViewport ? window.visualViewport.height : innerHeight);
+    const vh = LABFRAME ? 874 : (window.visualViewport ? window.visualViewport.height : innerHeight);
     const Hd = vh / stageScale;
     phone.style.height = Hd + 'px';
     const strip = Math.max(24, st / stageScale + 10);
@@ -967,14 +989,90 @@ fit();
 /* global recipe: published glass.json (all devices) under this device's draft */
 const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
   .then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
+const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
   let draft = {}; try { draft = JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) {}
   const g = { ...pub, ...draft };
   if (g.tintOpacity !== undefined) MODS.tint = g.tintOpacity;
   if (g.blurRadius !== undefined) MODS.blur = g.blurRadius;
   window.glassControls = { ...g, blurRadius: MODS.blur };
-  setTimeout(buildCoupons, 50);
+  return new Promise(r => setTimeout(() => { buildCoupons(); r(); }, 50));
 });
+
+/* ---------------- Components tab: window.DSComponents v1 ----------------
+   Every state is a real code path: tiers go through setLevel(), "redeemed"
+   through the coupon's own redeem() (the rip's completion). show() resolves
+   on SETTLE FLAGS — a build landing, the redeemed face finishing its fade —
+   never a timer. Calls are serialized so the tab can fire them in any order. */
+(function () {
+  const BOOT_LEVEL = phone.dataset.level;
+  const TIERS = ['bronze', 'silver', 'gold', 'vip'];
+  const frames = n => new Promise(r => {
+    const step = () => (n-- <= 0 ? r() : requestAnimationFrame(step));
+    requestAnimationFrame(step);
+  });
+  /* rebuild at a tier through the user's own path, resolve once it's laid out */
+  const atLevel = async lvl => {
+    const built = nextBuild();
+    setLevel(lvl);
+    await built;
+    await frames(2);
+  };
+  const faded = el => new Promise(r => {
+    const done = e => { if (e.propertyName !== 'opacity') return;
+      el.removeEventListener('transitionend', done); r(); };
+    el.addEventListener('transitionend', done);
+  });
+  const STATES = {
+    'sheet-x': { rest: () => atLevel(phone.dataset.level) },
+    'coupon': Object.assign(
+      Object.fromEntries(TIERS.map(t => [t, () => atLevel(t)])),
+      { redeemed: async () => {
+          await atLevel(phone.dataset.level);          // a fresh, unripped card
+          const c = list.querySelector('.coupon');
+          if (!c || !c.redeem) return { ok: false, why: 'no coupon to redeem' };
+          const settled = faded(c.querySelector('.done-face'));
+          c.redeem();
+          await settled;
+        } }),
+    'level-badge': Object.fromEntries(TIERS.map(t => [t, () => atLevel(t)])),
+  };
+  const box = (el, r) => {
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return { x: b.left, y: b.top, w: b.width, h: b.height, r };
+  };
+  let chain = Promise.resolve();
+  const serial = fn => (chain = chain.then(fn, fn));
+  window.DSComponents = {
+    v: 1,
+    show(componentId, stateId) {
+      return serial(async () => {
+        await booted;
+        const run = STATES[componentId] && STATES[componentId][stateId];
+        if (!run) return { ok: false, why: `rewards cannot drive ${componentId} · ${stateId}` };
+        const res = await run();
+        return res || { ok: true };
+      });
+    },
+    rect(componentId) {
+      if (componentId === 'sheet-x') return box(document.querySelector('.closebtn'), 20);
+      if (componentId === 'coupon') return box(list.querySelector('.coupon'), 24);
+      if (componentId === 'level-badge') {
+        const b = box(lvlBadge, 0);
+        if (b) b.r = b.h / 2;
+        return b;
+      }
+      return null;
+    },
+    reset() {
+      return serial(async () => { await booted; await atLevel(BOOT_LEVEL); });
+    },
+  };
+  if (LABFRAME && window.parent !== window) {
+    booted.then(() => parent.postMessage(
+      { t: 'ds-components', v: 1, ids: Object.keys(STATES) }, '*'));
+  }
+})();
 </script>
 <script>
 /* Lab-menu access workaround (2026-09-08): lab-shell's shared window-level
@@ -984,6 +1082,7 @@ Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
    the shared sheet directly by its body class — the sheet content itself
    (topbar/links/done/veil) is still built and closed by lab-shell. */
 (function () {
+  if (/[?&]labframe=1(&|$)/.test(location.search)) return;   /* no lab menu in the Components instance */
   function attach() {
     var host = document.getElementById('phone') || document.body;
     function openSharedMenu() {
