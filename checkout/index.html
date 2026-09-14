@@ -115,6 +115,54 @@
   .scr[data-scr="plans"] { transform: translateX(0); }
   .scr[data-scr="plans"].under { transform: translateX(-26%); }
 
+  /* ================= MOTION (Rashid, 2026-09-14: "don't make things static")
+     Pages move in; nothing snaps. Four pieces, each keyed so a re-price
+     re-render can never replay a navigation moment:
+       push   — the page slides in on the house curve; the page it covers slides
+                a quarter left and dims, so depth reads.
+       move-in — the incoming page's content rises in a short top-down stagger
+                behind the push (.entering, set only by navigation).
+       select — a chosen row settles and its check pops with a little overshoot
+                (.just-sel, set only by the tap that chose it).
+       tick   — a price that changed rises into place (.ticked, set only when the
+                number actually differs from before the render).
+     Keyframes, not transitions, for anything that appears after render(): a
+     transition has no "before" on an element that was just created. */
+  .scr::after { content: ''; position: absolute; inset: 0; z-index: 80; pointer-events: none;
+    background: rgba(11,14,18,.14); opacity: 0; transition: opacity .42s var(--ease); }
+  .scr.under::after { opacity: 1; }
+
+  @keyframes move-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .scr.entering .hdr h1,
+  .scr.entering .plan-tabs, .scr.entering .plan-detail,
+  .scr.entering .dur, .scr.entering .promo-wrap,
+  .scr.entering .pay-sec > h3, .scr.entering .pay-opt,
+  .scr.entering .paybar { animation: move-in .5s var(--ease) both; }
+  .scr.entering .hdr h1 { animation-delay: .05s; }
+  .scr.entering .plan-tabs, .scr.entering .plan-detail { animation-delay: .09s; }
+  .scr.entering .dur, .scr.entering .pay-opt { animation-delay: calc(.12s + var(--i, 0) * .055s); }
+  .scr.entering .pay-sec > h3 { animation-delay: .1s; }
+  .scr.entering .promo-wrap { animation-delay: .3s; }
+  .scr.entering .paybar { animation-delay: .34s; animation-duration: .44s; }
+
+  @keyframes sel-pop { 0% { opacity: 0; transform: scale(.35); }
+                       62% { opacity: 1; transform: scale(1.16); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes row-settle { 0% { transform: scale(.982); } 100% { transform: scale(1); } }
+  .dur.sel.just-sel .dur-check { animation: sel-pop .46s cubic-bezier(.34,1.56,.64,1) both; }
+  .dur.sel.just-sel .dur-card { animation: row-settle .4s var(--ease) both; }
+  .pay-opt.sel.just-sel { animation: row-settle .4s var(--ease) both; }
+  .pay-opt.sel.just-sel .pay-check { animation: sel-pop .46s cubic-bezier(.34,1.56,.64,1) both; }
+
+  @keyframes price-tick { from { opacity: 0; transform: translateY(45%); } to { opacity: 1; transform: none; } }
+  .dsp.ticked .num, .dsp.ticked .dec { animation: price-tick .36s var(--ease) both; }
+  .dsp.ticked .dec { animation-delay: .04s; }
+
+  /* people who ask for less motion get the destination without the travel */
+  @media (prefers-reduced-motion: reduce) {
+    .scr, .scr::after { transition-duration: .01s !important; }
+    .scr.entering *, .just-sel, .just-sel *, .dsp.ticked * { animation: none !important; }
+  }
+
   /* ---- shared header (113px, content bottom-aligned) ---- */
   .hdr { flex: none; height: 113px; background: var(--surface); display: flex;
     align-items: flex-end; padding: 16px; z-index: 20; }
@@ -191,7 +239,7 @@
   /* plan cards: Urbane numeral, per-plan gradient on numeral + currency,
      and a Medium #999 /mo (checkout frame, Decimal node 3831:2092) */
   .pcard .dsp { --dsp-ink: var(--ink); --dsp-perwt: 500; --dsp-per-ink: var(--muted); }
-  .pcard .dsp .num, .pcard .dsp .cur { color: transparent;
+  .pcard .dsp .num, .pcard .dsp .cur, .pcard .dsp .dec { color: transparent;
     background-image: var(--g); -webkit-background-clip: text; background-clip: text; }
   .pcard .dsp .was { position: relative; }
   /* dock: ink numeral, red struck price */
@@ -296,8 +344,10 @@
   .paybar { flex: none; background: var(--surface); border-top: 1px solid var(--hair-lt);
     padding: 16px 24px 40px; display: flex; flex-direction: column; z-index: 20; }
   .paybar-row { display: flex; align-items: flex-start; width: 100%; }
-  .pb-price { flex: 1; min-width: 0; display: flex; align-items: center;
-    justify-content: space-between; padding: 8px 0 12px; }
+  /* the price takes the room, the button hugs its label — the two used to
+     split the bar 50/50, which is what ran a long total under Proceed */
+  .pb-price { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 8px 12px 12px 0; }
   .pb-stack { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
   .pb-before { position: absolute; left: 0; top: -13px; pointer-events: none;
     font: 700 10px/16px 'Proxima Nova', sans-serif; color: var(--red); font-style: normal; }
@@ -307,12 +357,10 @@
     font: 500 16px/1 'Urbane Rounded', sans-serif; overflow: hidden; position: relative;
     transition: transform .18s var(--ease), filter .18s ease; }
   .cta:active { transform: scale(.97); filter: brightness(.95); }
+  .paybar-row .cta { flex: 0 0 auto; min-width: 148px; padding: 14px 24px; }
+  /* the one red action, full width where the total sits on its own row */
+  .paybar > .cta { width: 100%; flex: none; }
   .cta img { width: 24px; height: 24px; display: block; }
-  .cta.grad { background: linear-gradient(98.0984deg, rgb(255,150,62) 53.4%, rgb(255,5,5) 141.76%); }
-  .cta.grad::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
-    pointer-events: none;
-    box-shadow: inset 0 40px 10px -40px #282828, inset 0 -40px 10px -40px #282828,
-                inset 0 40px 30px -40px #e6e6e6; }
 
   /* ================= payment method screen ================= */
   .pay-sec { padding: 12px 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 12px; }
@@ -723,7 +771,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·15</div>
+  <div class="s-foot" id="buildInfo">checkout ·16</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -743,7 +791,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·15';
+const BUILD = 'checkout ·16';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -937,10 +985,14 @@ const LOGO_KNET = `<div style="transform:translateY(-50%);position:absolute;heig
 const LOGO_GPAY = `<div style="height:27px;overflow:hidden;position:relative;width:40px"><div style="position:absolute;inset:11.54% 0"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-Base1.svg" /></div><div style="position:absolute;inset:11.4% 0.03% 11.67% -0.03%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-Outline.svg" /></div><div style="position:absolute;display:contents;inset:32.78% 15.26% 26.95% 15.1%"><div style="position:absolute;inset:34.92% 15.26% 26.95% 45.05%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-PayTypeface3.svg" /></div><div style="position:absolute;inset:32.78% 62.57% 33.6% 15.1%"><img style="position:absolute;display:block;inset:0;max-width:none;width:100%;height:100%" src="assets/gpay-GMark1.svg" /></div></div></div>`;
 
 /* ---------------- money formatting ---------------- */
+/* KWD has three decimal places (1 KD = 1000 fils). A fractional amount always
+   shows all three — .500, never .5 — and a whole amount shows none, matching
+   the frame, which draws KD98 beside KD99.500. The fraction is returned apart
+   from the whole so it can ride the price component's small .dec slot. */
 function money(n) {
-  const s = (+n).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
-  const [w, d] = s.split('.');
-  return { whole: w, dec: d ? '.' + d : '' };
+  const fixed = (Math.round(+n * 1000) / 1000).toFixed(3);
+  const [w, f] = fixed.split('.');
+  return { whole: w, dec: f === '000' ? '' : '.' + f };
 }
 
 /* ============================ countdown =================================== */
@@ -1025,17 +1077,17 @@ function payDock(label, action, opts) {
       <span class="savings-lbl">Your Savings Today</span>
       <img class="savings-spark" src="${A}sparkle.png" alt="">
       <img class="savings-chev" src="${A}chevron.svg" alt="">
-      <span class="savings-amt"><span class="dsp md"><span class="minus">-</span><span class="cur">KD</span><span class="num">${money(q.saved).whole}${money(q.saved).dec}</span></span></span>
+      <span class="savings-amt"><span class="dsp md"><span class="minus">-</span><span class="cur">KD</span><span class="num">${money(q.saved).whole}</span>${money(q.saved).dec ? `<span class="dec">${money(q.saved).dec}</span>` : ''}</span></span>
     </div>` : ''}
     ${opts.savings ? `<div class="total-row"><span class="total-lbl">Total</span>
       <div class="pb-stack">
-        <div class="pb-line"><span class="dsp primary xxxl"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span></span></div>
+        <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
         <div class="pb-before">Before</div>
       </div></div>
-      <button class="cta grad" data-act="${action}">${label}</button>`
+      <button class="cta" data-act="${action}">${label}</button>`
     : `<div class="paybar-row">
         <div class="pb-price"><div class="pb-stack">
-          <div class="pb-line"><span class="dsp primary xxxl"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span></span></div>
+          <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
           <div class="pb-before">Before</div>
         </div></div>
         <button class="cta" data-act="${action}">${label}
@@ -1061,7 +1113,7 @@ function screenPlans() {
         </div>
         <div class="pcard-right">
           <div class="pprice"><div class="pprice-row">
-            <span class="dsp primary xxxl"><span class="was"><span>KD${p.was}</span><span class="pstrike"><img src="${A}strike-plan.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}${m.dec}</span><span class="per">/mo</span></span>
+            <span class="dsp primary xxxl" data-pk="plan-${p.id}"><span class="was"><span>KD${p.was}</span><span class="pstrike"><img src="${A}strike-plan.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}<span class="per">/mo</span></span>
           </div></div>
           ${pr.cut ? `<div class="pchip">${AR_CHIP(pr.cut)}</div>` : ''}
           <span class="ppill"><span><span class="a">${esc(p.pill[0])}</span><span class="b">${esc(p.pill[1])}</span></span></span>
@@ -1130,7 +1182,7 @@ function screenDuration() {
         </div>
       </div>` : ''}
       <div class="dur-list">
-        ${list.map(d => `<div class="dur${d.id === cur.id ? ' sel' : ''}" data-dur="${d.id}" data-act="dur">
+        ${list.map((d, i) => `<div class="dur${d.id === cur.id ? ' sel' : ''}${JUST.dur === d.id ? ' just-sel' : ''}" style="--i:${i}" data-dur="${d.id}" data-act="dur">
           <div class="dur-card">
             <div class="dur-main">
               <div class="dur-title"><span>${d.title[0]}</span><span>${esc(d.title[1])}</span></div>
@@ -1158,10 +1210,10 @@ function screenPayment() {
   const row = m => {
     const q = quote(m.id);
     const mm = money(m.installment != null ? m.installment : q.total);
-    return `<button class="pay-opt${m.id === S.method ? ' sel' : ''}" data-method="${m.id}" data-act="method">
+    return `<button class="pay-opt${m.id === S.method ? ' sel' : ''}${JUST.method === m.id ? ' just-sel' : ''}" style="--i:${METHODS.indexOf(m)}" data-method="${m.id}" data-act="method">
       ${payLogo(m.logo)}
       <span class="pay-name">${m.save ? `<span class="sv">Save KD${m.save}</span> with ` : ''}${m.logo === 'deema' ? '' : esc(m.name)}${m.logo === 'deema' ? 'deema' : ''}</span>
-      <span class="pay-price"><span class="dsp md"><span class="cur">KD</span><span class="num">${mm.whole}${mm.dec}</span></span></span>
+      <span class="pay-price"><span class="dsp md"><span class="cur">KD</span><span class="num">${mm.whole}</span>${mm.dec ? `<span class="dec">${mm.dec}</span>` : ''}</span></span>
       <img class="pay-check" src="${A}check-circle.svg" alt="">
       ${m.badge ? `<span class="pay-badge">${esc(m.badge)}</span>` : ''}
     </button>`;
@@ -1219,7 +1271,18 @@ function sheetModify() {
 const phone = document.getElementById('phone');
 const device = document.getElementById('device');
 
+/* one-shot moments consumed by the next render: which row was just chosen */
+const JUST = { dur: null, method: null };
+function priceSnapshot() {
+  const seen = {}, out = {};
+  phone.querySelectorAll('.dsp[data-pk]').forEach(d => {
+    const k = d.dataset.pk + '#' + (seen[d.dataset.pk] = (seen[d.dataset.pk] || 0) + 1);
+    out[k] = d.textContent;
+  });
+  return out;
+}
 function render() {
+  const before = priceSnapshot();
   phone.dataset.tier = S.tier;
   const cur = currentDuration();
   S.duration = cur.id;
@@ -1236,11 +1299,46 @@ function render() {
     `<div class="island"></div>`;
   showScreen(S.screen, true);
   document.documentElement.style.setProperty('--push', MODS.push + 'ms');
+  /* a price that changed ticks into place instead of snapping, so a coupon or a
+     duration visibly lands on the number it changed */
+  const seen = {};
+  phone.querySelectorAll('.dsp[data-pk]').forEach(d => {
+    const k = d.dataset.pk + '#' + (seen[d.dataset.pk] = (seen[d.dataset.pk] || 0) + 1);
+    if (before[k] !== undefined && before[k] !== d.textContent) d.classList.add('ticked');
+  });
+  JUST.dur = null; JUST.method = null;
+}
+
+/* Totals move with every coupon and duration. If one outgrows its column it
+   steps down the DS price ramp — never runs under the button, never wraps. */
+const PRICE_RAMP = ['xxxl', 'xxl', 'xl', 'lg'];
+function fitPrices() {
+  phone.querySelectorAll('.pb-price .dsp, .total-row .dsp').forEach(dsp => {
+    const col = dsp.closest('.pb-price, .total-row');
+    if (!col || !col.clientWidth) return;              /* not laid out (hidden pane) */
+    const room = () => col.clientWidth - (col.classList.contains('total-row')
+      ? col.querySelector('.total-lbl').offsetWidth + 16 : 12);
+    let i = PRICE_RAMP.findIndex(z => dsp.classList.contains(z));
+    if (i < 0) return;
+    while (dsp.scrollWidth > room() && i < PRICE_RAMP.length - 1) {
+      dsp.classList.replace(PRICE_RAMP[i], PRICE_RAMP[i + 1]); i++;
+    }
+  });
 }
 
 function showScreen(name, instant) {
+  const from = S.screen;
   S.screen = name;
-  phone.querySelectorAll('.scr').forEach(s => {
+  const screens = phone.querySelectorAll('.scr');
+  if (!instant) {
+    /* render() places screens instantly (transition:none, restored next frame).
+       A navigation in the SAME tick — plan card -> duration — would toggle
+       classes while that is still in force and jump instead of pushing. Restore
+       the transition and flush the start position before moving. */
+    screens.forEach(s => { s.style.transition = ''; });
+    void phone.offsetWidth;
+  }
+  screens.forEach(s => {
     const me = s.dataset.scr === name;
     if (instant) s.style.transition = 'none';
     s.classList.toggle('on', me);
@@ -1252,6 +1350,16 @@ function showScreen(name, instant) {
      same sheet — and a FAB there would sit on top of the Proceed button. */
   const bar = phone.querySelector('.fab-bar');
   if (bar) bar.style.display = name === 'plans' ? '' : 'none';
+  /* the incoming page's content rises in behind the push; only a real
+     navigation sets this, so a re-price never replays it */
+  if (!instant && from !== name) {
+    const inc = phone.querySelector(`.scr[data-scr="${name}"]`);
+    if (inc) {
+      inc.classList.remove('entering'); void inc.offsetWidth; inc.classList.add('entering');
+      clearTimeout(inc._enterT); inc._enterT = setTimeout(() => inc.classList.remove('entering'), 1000);
+    }
+  }
+  fitPrices();
 }
 function order(n) { return ['plans', 'duration', 'payment'].indexOf(n); }
 
@@ -1317,7 +1425,7 @@ phone.addEventListener('click', e => {
   if (act === 'summer') { toast('Summer Offer — campaign landing, later sprint'); return; }
   if (act === 'call') { toast('Calls the diet consultant'); return; }
 
-  if (act === 'dur') { S.duration = el.dataset.dur; vibrate(8); const k = S.screen; render(); showScreen(k, true); return; }
+  if (act === 'dur') { if (S.duration === el.dataset.dur) return; S.duration = el.dataset.dur; JUST.dur = S.duration; vibrate(8); const k = S.screen; render(); showScreen(k, true); return; }
   if (act === 'plan') { S.plan = el.dataset.plan; vibrate(8); const k = S.screen; render(); showScreen(k, true); return; }
   if (act === 'modify') { openSheet('modify'); return; }
   if (act === 'days') { S.days = el.dataset.days; vibrate(8); const k = S.screen; render(); showScreen(k, true); openSheet('modify'); return; }
@@ -1331,7 +1439,7 @@ phone.addEventListener('click', e => {
   }
 
   if (act === 'toPayment') { closeSheets(); vibrate(8); showScreen('payment'); return; }
-  if (act === 'method') { S.method = el.dataset.method; vibrate(8); render(); showScreen('payment', true); return; }
+  if (act === 'method') { if (S.method === el.dataset.method) return; S.method = el.dataset.method; JUST.method = S.method; vibrate(8); render(); showScreen('payment', true); return; }
   if (act === 'pay') {
     const q = quote(S.method);
     vibrate(14);
