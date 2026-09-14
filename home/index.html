@@ -264,7 +264,13 @@
   .ub-sub .kd { font-size: 7px; }
   .ub-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 5px; }
   .ub-before { font: 400 8px/10px 'Proxima Nova', sans-serif; color: rgba(249,249,249,.7); }
-  .ub-before s { font: 500 11px/13px 'Urbane Rounded', sans-serif; }
+  /* one strike, the diagonal (Rashid, DS ruling on price v2): no line-through;
+     painted per ground — white at the text's own alpha on the red banner */
+  .ub-before s { position: relative; display: inline-block; text-decoration: none;
+    font: 500 11px/13px 'Urbane Rounded', sans-serif; }
+  .ub-before s::after { content: ''; position: absolute; left: -1px; right: -1px;
+    top: 50%; height: 1px; margin-top: -.5px; border-radius: .5px;
+    background: rgba(249,249,249,.7); transform: rotate(-9.87deg); pointer-events: none; }
   .ub-price { font: 600 18px/20px 'Urbane Rounded', sans-serif; color: #fff; }
   .ub-price .kd2 { font-size: 10px; }
   .ub-row .pillbtn { margin-left: auto; }

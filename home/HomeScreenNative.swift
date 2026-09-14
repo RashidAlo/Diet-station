@@ -856,8 +856,15 @@ struct HomeScreenNative: View {
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Before").font(DS.proxima(8)).foregroundStyle(DS.onColor.opacity(0.7))
-                        Text("KD139").font(DS.urbane(11)).strikethrough()
+                        Text("KD139").font(DS.urbane(11))
                             .foregroundStyle(DS.onColor.opacity(0.7))
+                            // one strike, the diagonal (DS ruling): 1pt at
+                            // −9.87°, painted for the red ground
+                            .overlay {
+                                Capsule().fill(DS.onColor.opacity(0.7)).frame(height: 1)
+                                    .rotationEffect(.degrees(-9.87))
+                                    .padding(.horizontal, -1)
+                            }
                     }
                     (Text("KD").font(DS.urbane(10, .semibold))
                      + Text("99").font(DS.urbane(18, .semibold)))
