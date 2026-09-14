@@ -752,12 +752,15 @@
         <span class="mt">Bar titles are 16 Urbane 600, centred (&ldquo;titles &hellip; unified&rdquo;,
         via Checkout). Checkout moves from 18/28 leading-aligned. <b>Auth follows</b> (Rashid,
         2026-09-14): its title goes from 22 to 16, centred.</span></div>
-      <div class="mrow"><span class="mn">Checkout &middot; top bar</span><span class="badge todo">In progress</span>
+      <div class="mrow"><span class="mn">Checkout &middot; top bar</span><span class="badge ok">Built, cap-gated</span>
         <span class="mt">One bar across steps. Plans (root overlay): X leading 24 &middot; call
         trailing 16, twin <code>call</code>. Duration: back &middot; &ldquo;Select Duration&rdquo;
         &middot; Monthly pill. Payment: back &middot; &ldquo;Payment Method&rdquo;. Twin ids
-        <code>back</code> and <code>call</code> behind the agreed cap <code>navGlyphs: 1</code>; the pill would be a
-        later version. One renderer per bar: until the pill
+        <code>back</code> and <code>call</code> behind the agreed cap <code>navGlyphs: 1</code>; the pill behind its own cap
+        <code>navPill: 1</code>. Built at checkout &middot;19 (a7ff502): each bar declares what it needs.
+        Plans (close &middot; call) and Payment (back) go native at navGlyphs; Duration (back &middot; pill)
+        only when navPill is also present. The modify sheet (X only) is native now. Until call ships,
+        the Plans X is web glass, deliberately: &middot;18 had it native beside a web call. One renderer per bar: until the pill
         can be twinned, Duration&rsquo;s bar stays web.</span></div>
       <div class="mrow"><span class="mn">This page</span><span class="badge ok">Corrected</span>
         <span class="mt">The earlier action-bar card said the dual was <i>confirm | clear</i> and the
