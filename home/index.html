@@ -1550,21 +1550,27 @@ function openFlow(path, context) {
     (context ? '&ctx=' + encodeURIComponent(JSON.stringify(context)) : '') + '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
 }
+let ovLeaving = null;
 function closeFlow() {
   if (!ovFrame) return;
   ovVeil.classList.remove('show');
   const fr = ovFrame; ovFrame = null;
-  setTimeout(() => fr.remove(), 420);
+  ovLeaving = fr;
+  setTimeout(() => { fr.remove(); if (ovLeaving === fr) ovLeaving = null; }, 420);
 }
 addEventListener('message', e => {
   const d = e.data;
   if (!d) return;
   if (d.t === 'ds-close') closeFlow();
   /* without the hub, home is the host of what it summoned: a flow it opened
-     that hands forward (rewards' Checkout button) swaps into the next sheet */
-  if (d.t === 'ds-nav' && ovFrame && e.source === ovFrame.contentWindow && d.to) {
+     that hands forward (rewards' Checkout button) SWAPS into the next sheet.
+     The sender has already slid its sheet away and closed itself, so the
+     next one opens at once and the veil never drops. */
+  const fromOurs = (ovFrame && e.source === ovFrame.contentWindow) ||
+    (ovLeaving && e.source === ovLeaving.contentWindow);
+  if (d.t === 'ds-nav' && fromOurs && d.to) {
     closeFlow();
-    setTimeout(() => openFlow(d.to, d.context), 440);
+    openFlow(d.to, d.context);
   }
 });
 document.getElementById('gDisc').addEventListener('click', () =>

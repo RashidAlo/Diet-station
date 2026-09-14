@@ -987,11 +987,30 @@ function burst(coupon) {
 function toCheckout(code) {
   try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
   const context = { src: 'rewards', entry: 'rewards', coupon: code, tier: phone.dataset.level };
-  if (window.parent !== window) {
-    parent.postMessage({ t: 'ds-nav', to: 'checkout', present: 'sheet', context }, '*');
-  } else {
-    location.href = '../checkout/?ctx=' + encodeURIComponent(JSON.stringify(context)) + '&v=' + Date.now();
+  const ctx = encodeURIComponent(JSON.stringify(context));
+  const framed = window.parent !== window;
+  const shell = /DietStationLab/.test(navigator.userAgent);
+  if (!framed && !shell) {
+    location.href = '../checkout/?ctx=' + ctx + '&v=' + Date.now();
+    return;
   }
+  /* THE HAND-OFF IS A SWAP, NEVER A STACK (Rashid): checkout must arrive over
+     the same ground the coupons sheet had, not over this sheet and not as a
+     page of its own. This sheet leaves exactly as its X closes it, then:
+     - framed (hub / web home): close first, so the router has popped us and
+       presents checkout over whatever was beneath this sheet;
+     - the app's native home (top-level webview in a dimmed cover): the same
+       webview becomes checkout's embed, so the cover's dim never moves. */
+  window.DSChromeYield && DSChromeYield();
+  document.documentElement.classList.add('sheet-enter');
+  setTimeout(() => {
+    if (framed) {
+      parent.postMessage({ t: 'ds-close' }, '*');
+      parent.postMessage({ t: 'ds-nav', to: 'checkout', present: 'sheet', context }, '*');
+    } else {
+      location.replace('../checkout/?embed=1&from=rewards&ctx=' + ctx + '&v=' + Date.now());
+    }
+  }, 420);
 }
 /* the rip answers checkout once the card has finished healing — the hub
    delivers the code to checkout and closes this sheet itself */
@@ -1510,6 +1529,8 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
     layerUp = !!up;
     if (layerUp) clearChrome(); else report();
   };
+  /* leaving for another flow: same yield, never released */
+  window.DSChromeYield = function () { window.DSLoyaltyLayer(true); };
 
   function report() {
     if (!settled || layerUp) return;      /* never sample a moving rect */
