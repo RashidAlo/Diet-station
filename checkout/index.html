@@ -48,6 +48,7 @@
   .mod input[type=range] { width: 100%; margin: 6px 0 3px; accent-color: #ED1C24; height: 18px; }
   .mod .mod-desc { font: 400 11px/15px 'Proxima Nova', sans-serif; color: #8e8e93; }
   .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg3 { grid-template-columns: 1fr 1fr 1fr; }
   .seg4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .seg2 button { border: 1px solid rgba(0,0,0,.1); border-radius: 10px; cursor: pointer;
     padding: 10px 8px; background: #fff;
@@ -221,19 +222,51 @@
   .hot-badge.ar { font-family: 'Avenir Next World', 'Proxima Nova', sans-serif; direction: rtl; }
 
   /* ================= promo code bar ================= */
-  .promo-wrap { padding: 16px 20px; }
-  .promo { width: 100%; min-height: 75px; border: 1px solid var(--hair-lt);
-    border-radius: var(--r-card); background: var(--surface); cursor: pointer;
-    padding: 20px 20px 24px; display: flex; gap: 12px; align-items: center; text-align: left;
-    transition: border-color .22s ease; }
-  .promo:active { border-color: var(--hair-md); }
+  /* ---- promo code: one card, two states you can act on (Rashid, 2026-09-14)
+     APPLIED shows the redeemed CODE and the rung it came from. The promotion
+     line is BLACK — the green check is the only green. Tapping the card
+     changes the coupon (summons the rewards flow); the trailing X removes it,
+     with Undo. EMPTY invites one. The card is a CONTAINER of two real buttons:
+     an action nested inside a <button> is invalid and unreachable to
+     VoiceOver, which is how the old Remove was built. */
+  .promo-wrap { padding: 12px 20px 16px; }
+  .promo { position: relative; display: flex; align-items: center; gap: 4px;
+    border: 1px solid var(--hair-lt); border-radius: var(--r-card); background: var(--surface);
+    transition: box-shadow .35s ease; }
+  .promo-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
+    padding: 16px 4px 16px 16px; border: none; background: none; cursor: pointer;
+    text-align: left; border-radius: var(--r-card); font: inherit; color: inherit;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .18s var(--ease), background-color .18s ease; }
+  .promo-main:active { transform: scale(.985); background: rgba(11,14,18,.035); }
   .promo-ico { width: 33.24px; height: 32.38px; flex: none; display: block; }
-  .promo-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .promo-top { display: flex; align-items: center; gap: 8px; height: 22px; }
-  .promo-ttl { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: var(--ink); }
-  .promo-ends { font: 500 12px/16px 'Avenir Next World', sans-serif; color: var(--muted);
-    white-space: nowrap; }
-  .promo-applied { display: flex; gap: 6px; align-items: center; }
+  .promo-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .promo-code-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .promo-code { font: 600 15px/18px 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .promo-line { display: flex; align-items: center; gap: 5px; min-width: 0; white-space: nowrap;
+    font: 500 12px/16px 'Proxima Nova', sans-serif; color: var(--ink); }
+  .promo-line b { font-weight: 700; }
+  .promo-ends { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+  .promo-check { width: 16px; height: 15px; flex: none; display: block; }
+  .promo-change { flex: none; font: 600 13px/1 'Urbane Rounded', sans-serif; color: var(--ink); }
+  /* remove: the 40pt target of the X rule, with a quieter 28pt visual */
+  .promo-x { flex: none; width: 40px; height: 40px; margin-right: 8px; padding: 0; border: none;
+    background: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+  .promo-x span { width: 28px; height: 28px; border-radius: 50%; background: #f2f2f4;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s var(--ease), background-color .18s ease; }
+  .promo-x:active span { transform: scale(.88); background: #e7e7ea; }
+  .promo-x img { width: 14px; height: 14px; display: block; opacity: .7; }
+  .promo.is-empty .promo-main { padding-right: 16px; }
+  .promo-ttl { font: 600 15px/18px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .promo-hint { font: 400 12px/16px 'Proxima Nova', sans-serif; color: var(--muted); }
+  /* the moment a coupon lands: the check draws on and the card lifts once.
+     Neutral lift, not a green wash — the check stays the only green. */
+  .promo.just-applied { box-shadow: 0 8px 26px rgba(11,14,18,.09); }
+  .promo.just-applied .promo-check { animation: promo-draw .5s var(--ease) .08s both; }
+  @keyframes promo-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
   /* ---- the tier badge wears its OWN rung, not one flat colour ----
      Gradients are the Figma tier badges (section 17137:76380), the same ones
      the rewards flow themes its coupons with, so a VIP coupon reads VIP in
@@ -251,12 +284,6 @@
     border-color: #fefae7; color: #7a5a00; }
   .tier-chip[data-tier="vip"]    { background: linear-gradient(180deg, #270f0f 38.462%, #0f0e0d 65.385%);
     border-color: #f9f9f9; color: #ffffff; }
-  .promo-off { font: 500 12px/20px 'Urbane Rounded', sans-serif; color: var(--green); white-space: nowrap; }
-  .promo-off b { font-weight: 600; font-size: 16px; }
-  .promo-off span { font-size: 12px; }
-  .promo-check { width: 20px; height: 19px; display: block; }
-  .promo-remove { flex: none; font: 600 12px/16px 'Avenir Next World', sans-serif;
-    color: var(--red); text-align: right; cursor: pointer; }
   .promo-add { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--ink);
     display: flex; align-items: center; justify-content: center; position: relative; }
   .promo-add::before, .promo-add::after { content: ''; position: absolute; background: #fff;
@@ -613,6 +640,13 @@
     pointer-events: none; transition: opacity .26s ease, transform .34s var(--ease);
     white-space: nowrap; }
   .toast.on { opacity: 1; transform: translate(-50%, 0); }
+  /* a toast that carries an action is reachable, and splits message / action */
+  .toast.has-act { display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; }
+  .toast.has-act.on { pointer-events: auto; }
+  .toast-act { border: none; cursor: pointer; border-radius: 100px; padding: 7px 14px;
+    background: rgba(255,255,255,.16); color: #fff;
+    font: 600 13px/16px 'Urbane Rounded', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .toast-act:active { background: rgba(255,255,255,.28); }
 
   /* ================= mobile lab menu (triple-tap & hold) ============ */
   body:not(.desktop) #side { display: none; }
@@ -656,11 +690,13 @@
 
   <div class="s-sec">
     <div class="s-label">Entry point</div>
-    <p class="s-note">Signed-out shoppers land on the plan cards; a renewing member arrives from the
-      loyalty page straight into their plan's durations.</p>
-    <div class="seg2" id="segEntry">
+    <p class="s-note">From coupons is how checkout opens today: the member rips a coupon in
+      Discounts and lands on the plan cards already discounted at their tier. Signed out starts
+      clean; Renew opens straight into a member's durations.</p>
+    <div class="seg2 seg3" id="segEntry">
+      <button data-entry="rewards">From coupons</button>
       <button data-entry="plans" class="on">Signed out</button>
-      <button data-entry="renew">Renew (loyalty)</button>
+      <button data-entry="renew">Renew</button>
     </div>
   </div>
 
@@ -686,7 +722,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·13</div>
+  <div class="s-foot" id="buildInfo">checkout ·14</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -706,7 +742,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·13';
+const BUILD = 'checkout ·14';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -939,32 +975,43 @@ function glassBtn(cls, inner, act, extra) {
 }
 
 /* ---- the promo bar, shared by every screen that shows one ---- */
+let promoJustApplied = false;   /* one render of the landing moment, then rest */
 function promoBar() {
   const c = decodeCoupon(S.coupon);
   if (!c) {
-    return `<div class="promo-wrap"><button class="promo" data-act="coupons">
-      <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
-      <span class="promo-mid"><span class="promo-top">
-        <span class="promo-ttl">Promo Code</span></span></span>
-      <span class="promo-add"></span>
-    </button></div>`;
+    return `<div class="promo-wrap"><div class="promo is-empty">
+      <button class="promo-main" data-act="coupons" aria-label="Add a promo code from your coupons">
+        <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
+        <span class="promo-mid">
+          <span class="promo-ttl">Add a promo code</span>
+          <span class="promo-hint">Rip a coupon in Discounts to apply it</span>
+        </span>
+        <span class="promo-add"></span>
+      </button>
+    </div></div>`;
   }
   const off = c.kind === 'pct' ? `${c.value}%` : `KD ${c.value}`;
-  return `<div class="promo-wrap"><button class="promo" data-act="coupons">
-    <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
-    <span class="promo-mid">
-      <span class="promo-top">
-        <span class="promo-ttl">Promo Code</span>
-        <span class="promo-ends">Ends in ${countdownText()}</span>
+  const tier = TIERS[c.tier].label;
+  return `<div class="promo-wrap"><div class="promo is-applied${promoJustApplied ? ' just-applied' : ''}">
+    <button class="promo-main" data-act="coupons"
+      aria-label="Promo code ${c.code}, ${tier} tier, ${off} off. Tap to change">
+      <img class="promo-ico" src="${A}coupon-icon.svg" alt="">
+      <span class="promo-mid">
+        <span class="promo-code-row">
+          <span class="promo-code">${c.code}</span>
+          <span class="tier-chip" data-tier="${c.tier}">${tier}</span>
+        </span>
+        <span class="promo-line">
+          <img class="promo-check" src="${A}check-thin.svg" alt="">
+          <b>${off} off</b>
+          <span class="promo-ends">· Ends in ${countdownText()}</span>
+        </span>
       </span>
-      <span class="promo-applied">
-        <span class="tier-chip" data-tier="${c.tier}">${TIERS[c.tier].label}</span>
-        <span class="promo-off"><b>${off}</b> <span>OFF</span></span>
-        <img class="promo-check" src="${A}check-thin.svg" alt="">
-      </span>
-    </span>
-    <span class="promo-remove" data-act="uncoupon">Remove</span>
-  </button></div>`;
+      <span class="promo-change">Change</span>
+    </button>
+    <button class="promo-x" data-act="uncoupon" aria-label="Remove promo code ${c.code}">
+      <span><img src="${A}close.svg" alt=""></span></button>
+  </div></div>`;
 }
 
 /* ---- the bottom dock: price + CTA ---- */
@@ -1210,10 +1257,19 @@ function order(n) { return ['plans', 'duration', 'payment'].indexOf(n); }
 /* ============================ interactions ================================ */
 function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} }
 let toastT;
-function toast(msg) {
+function toast(msg, action) {
   const t = phone.querySelector('#toast'); if (!t) return;
-  t.textContent = msg; t.classList.add('on');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800);
+  t.textContent = '';
+  const m = document.createElement('span'); m.textContent = msg; t.appendChild(m);
+  if (action) {
+    const b = document.createElement('button');
+    b.className = 'toast-act'; b.textContent = action.label; b.setAttribute('data-act', 'toastAction');
+    b.onclick = e => { e.stopPropagation(); clearTimeout(toastT); t.classList.remove('on'); action.run(); };
+    t.appendChild(b);
+  }
+  t.classList.toggle('has-act', !!action);
+  t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), action ? 3600 : 1800);
 }
 function openSheet(name) {
   phone.querySelector('.veil').classList.add('on');
@@ -1241,7 +1297,14 @@ phone.addEventListener('click', e => {
     return;
   }
   if (act === 'closeSheet') { closeSheets(); return; }
-  if (act === 'uncoupon') { e.stopPropagation(); applyCoupon(null); return; }
+  if (act === 'uncoupon') {
+    e.stopPropagation();
+    const was = S.coupon;
+    applyCoupon(null, { silent: true });
+    toast('Promo code removed', { label: 'Undo', run: () => applyCoupon(was) });
+    return;
+  }
+  if (act === 'toastAction') return;   /* its own handler ran */
 
   if (act === 'pickPlan') {
     S.plan = el.dataset.plan; S.duration = null; vibrate(10);
@@ -1278,7 +1341,7 @@ phone.addEventListener('click', e => {
 
   if (act === 'back') {
     if (S.screen === 'payment') { showScreen('duration'); return; }
-    if (S.screen === 'duration' && S.entry === 'plans') { showScreen('plans'); return; }
+    if (S.screen === 'duration' && S.entry !== 'renew') { showScreen('plans'); return; }
     dsClose();
     return;
   }
@@ -1308,21 +1371,37 @@ addEventListener('message', e => {
 });
 
 /* the single place a coupon is applied or cleared, whatever the source */
-function applyCoupon(code) {
+/* opts: quiet = no haptic (boot), silent = no toast (the caller has its own),
+   arrival = the coupon came with the member from the rewards flow */
+function applyCoupon(code, opts) {
+  opts = opts || {};
   if (code === null || code === undefined) {
     if (!S.coupon) return;
-    S.coupon = null; vibrate(8);
+    S.coupon = null;
+    if (!opts.quiet) vibrate(8);
     const keep = S.screen; render(); showScreen(keep, true);
-    toast('Coupon removed');
+    if (!opts.silent) toast('Promo code removed');
     return;
   }
   const c = decodeCoupon(code);
   if (!c) return;                       /* not a coupon this flow understands */
   S.coupon = c.code;
   if (tierRank(c.tier) > tierRank(S.tier)) { S.tier = c.tier; writeGlobalTier(S.tier); }  /* redeeming proves the rung */
-  vibrate(10);
+  syncTierPicker();
+  if (!opts.quiet) vibrate(10);
+  promoJustApplied = true;
   const keep = S.screen; render(); showScreen(keep, true);
-  toast(`${TIERS[c.tier].label} coupon applied — ${c.label} off`);
+  setTimeout(() => {
+    promoJustApplied = false;
+    const el = phone.querySelector('.promo.just-applied'); if (el) el.classList.remove('just-applied');
+  }, 1400);
+  if (!opts.silent) toast(opts.arrival
+    ? `${TIERS[c.tier].label} coupon carried over — ${c.label} off`
+    : `${TIERS[c.tier].label} coupon applied — ${c.label} off`);
+}
+function syncTierPicker() {
+  document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === S.tier));
+  if (typeof paintCouponSeg === 'function') paintCouponSeg();
 }
 window.DSCheckoutApplyCoupon = applyCoupon;   /* native host / solo-summon hook */
 function dsNav(to, present, context, fallback) {
@@ -1353,26 +1432,34 @@ function dsClose() {
 
 /* ---- incoming context (query or postMessage): overrides only, never a
    dependency — the flow boots standalone on mock data either way ---- */
+let BOOTED = false, pendingArrival = null;
 function applyContext(ctx) {
   if (!ctx) return;
   if (ctx.plan && PLANS.some(p => p.id === ctx.plan)) S.plan = ctx.plan;
   if (ctx.tier && TIERS[ctx.tier]) { S.tier = ctx.tier; writeGlobalTier(S.tier); }
-  if (ctx.entry === 'renew' || ctx.entry === 'plans') S.entry = ctx.entry;
+  if (ctx.entry === 'renew' || ctx.entry === 'plans' || ctx.entry === 'rewards') S.entry = ctx.entry;
   /* A coupon arriving as context is the rewards→checkout entry: the member
      redeemed over there and lands here with it already on. Validated the same
      way a redemption is, so an unrecognised code can't poison the state, and
      it raises the rung if the coupon proves a higher one. */
-  if (ctx.coupon === null) S.coupon = null;
-  else if (ctx.coupon) {
-    const c = decodeCoupon(ctx.coupon);
-    if (c) {
-      S.coupon = c.code;
-      if (tierRank(c.tier) > tierRank(S.tier)) { S.tier = c.tier; writeGlobalTier(S.tier); }
-    }
-  }
   if (ctx.screen) S.screen = ctx.screen;
   S.duration = null;
-  render();
+  const arrival = ctx.entry === 'rewards' || ctx.src === 'rewards';
+  if (ctx.coupon === null) { S.coupon = null; render(); }
+  else if (ctx.coupon && decodeCoupon(ctx.coupon)) {
+    /* Every coupon goes through the one entry point, so an arrival re-prices
+       cards, rows and the total exactly as a redemption does. Before boot
+       finishes, the final render would wipe a toast, so it is held and shown
+       once the screen is up. */
+    if (BOOTED) applyCoupon(ctx.coupon, { arrival });
+    else { applyCoupon(ctx.coupon, { quiet: true, silent: true }); pendingArrival = arrival ? S.coupon : null; }
+  }
+  else if (ctx.coupon) {
+    /* a coupon was sent but this flow can't read it: arrive with NOTHING
+       applied rather than quietly substituting an offer they never chose */
+    S.coupon = null; render();
+  }
+  else render();
 }
 (function bootContext() {
   const q = new URLSearchParams(location.search);
@@ -1455,7 +1542,12 @@ document.getElementById('segCoupon').addEventListener('click', e => {
   paintCouponSeg();
 });
 paintCouponSeg();
-bindSeg('segEntry', 'entry', () => { S.screen = 'duration'; });
+bindSeg('segEntry', 'entry', () => {
+  S.screen = S.entry === 'renew' ? 'duration' : 'plans';
+  /* "From coupons" stands in for the member arriving from the rewards flow
+     with a freshly ripped coupon: their own rung's top offer, carried over */
+  if (S.entry === 'rewards') setTimeout(() => applyCoupon(walletCodes(S.tier)[0], { arrival: true }), 0);
+});
 
 function bindRange(id, out, key, fmt) {
   const r = document.getElementById(id), o = document.getElementById(out);
@@ -1514,14 +1606,22 @@ document.getElementById('labVeil').onclick = () => document.body.classList.remov
 if (!readGlobalTier()) writeGlobalTier(S.tier);
 /* the boot coupon follows the rung, so a first render can never show a
    coupon the member cannot hold — the default tier is not ours to assume */
-{ const seeded = S.coupon === 'seed' ? null : decodeCoupon(S.coupon);
-  if (!seeded || !couponUnlocked(seeded)) S.coupon = walletCodes(S.tier)[0]; }
+/* only an UNTOUCHED seed is filled; an arrival that deliberately cleared the
+   coupon stays clear, and a coupon above the rung is dropped, not swapped */
+if (S.coupon === 'seed') S.coupon = walletCodes(S.tier)[0];
+else if (S.coupon) { const c = decodeCoupon(S.coupon); if (!c || !couponUnlocked(c)) S.coupon = null; }
 /* the tier may have arrived from another flow, so the picker follows S, not markup */
 document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === S.tier));
 paintCouponSeg();
 if (!S.screen || S.screen === 'plans') S.screen = S.entry === 'renew' ? 'duration' : 'plans';
 render();
 fit();
+BOOTED = true;
+if (pendingArrival) {
+  const c = decodeCoupon(pendingArrival);
+  if (c) setTimeout(() => toast(`${TIERS[c.tier].label} coupon carried over — ${c.label} off`), 520);
+  pendingArrival = null;
+}
 </script>
 <script src="../lab-shell.js?v=20260911a" data-flow="checkout" defer></script>
 </body>
