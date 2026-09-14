@@ -1037,7 +1037,7 @@
 
 <script>
 window.dsOwnLabMenu = true;
-const BUILD = 'home 2026-09-11 · 21';
+const BUILD = 'home 2026-09-14 · 22';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1541,13 +1541,14 @@ document.getElementById('kcalPill').addEventListener('click', function () {
 /* ================= discounts -> coupons (replica of the native summon) ==== */
 const ovVeil = document.getElementById('ovVeil');
 let ovFrame = null;
-function openFlow(path) {
+function openFlow(path, context) {
   if (ovFrame) return;
   vibrate(8);
   ovVeil.classList.add('show');
   ovFrame = document.createElement('iframe');
   ovFrame.className = 'ov-frame';
-  ovFrame.src = '../' + path + '/?embed=1&v=' + Date.now();
+  ovFrame.src = '../' + path + '/?embed=1&from=home' +
+    (context ? '&ctx=' + encodeURIComponent(JSON.stringify(context)) : '') + '&v=' + Date.now();
   document.getElementById('phone').appendChild(ovFrame);
 }
 function closeFlow() {
@@ -1556,7 +1557,17 @@ function closeFlow() {
   const fr = ovFrame; ovFrame = null;
   setTimeout(() => fr.remove(), 420);
 }
-addEventListener('message', e => { if (e.data && e.data.t === 'ds-close') closeFlow(); });
+addEventListener('message', e => {
+  const d = e.data;
+  if (!d) return;
+  if (d.t === 'ds-close') closeFlow();
+  /* without the hub, home is the host of what it summoned: a flow it opened
+     that hands forward (rewards' Checkout button) swaps into the next sheet */
+  if (d.t === 'ds-nav' && ovFrame && e.source === ovFrame.contentWindow && d.to) {
+    closeFlow();
+    setTimeout(() => openFlow(d.to, d.context), 440);
+  }
+});
 document.getElementById('gDisc').addEventListener('click', () =>
   dsNav('rewards', 'sheet', { src: 'discounts-widget' }, () => openFlow('rewards')));
 document.getElementById('gDisc').style.cursor = 'pointer';

@@ -309,6 +309,9 @@
   .devbar { display: none !important; }   /* controls live in the triple-tap menu */
   /* ?labframe=1 — the live instance inside the Components tab: no lab chrome */
   html.labframe #side { display: none !important; }
+  /* summoned by checkout as its picker: the rip itself answers, so the
+     forward-to-checkout button would only stack a second checkout */
+  html.redeem .coupon .checkout { display: none; }
   .devbar button { border: none; cursor: pointer; padding: 8px 14px; border-radius: 999px;
     background: transparent; color: rgba(255,255,255,.65);
     font: 600 12px/16px 'Urbane Rounded', sans-serif;
@@ -426,6 +429,27 @@
    no sidebar, no triple-tap lab menu */
 const LABFRAME = /[?&]labframe=1(&|$)/.test(location.search);
 if (LABFRAME) document.documentElement.classList.add('labframe');
+
+/* who opened this sheet (the router appends &from and &ctx) — decides what a
+   ripped coupon does. Checkout summoning rewards as its coupon picker
+   ({src:'checkout', mode:'redeem'}) gets the code back as a ds-result; every
+   other opener gets a Checkout button that hands the code forward. Never both:
+   a result from a home-opened sheet would be delivered to home and pop the
+   sheet, and a forward from a checkout-opened one stacks a second checkout. */
+const OPENED = (() => {
+  const q = new URLSearchParams(location.search);
+  let ctx = {};
+  try { ctx = JSON.parse(q.get('ctx') || '{}') || {}; } catch (_) {}
+  return { from: q.get('from'), ctx };
+})();
+const REDEEM = OPENED.ctx.mode === 'redeem' || OPENED.from === 'checkout';
+if (REDEEM) document.documentElement.classList.add('redeem');
+
+/* shared member tier (system/platform.html, "Shared prototype state"):
+   one key for the whole prototype, validated on read, seeded with the
+   DECLARED default, written on change, re-derived on change elsewhere */
+const TIER_KEY = 'ds-tier-v1';
+const TIER_DEFAULT = 'gold';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 /* the hub's Glass Lab saves a global glass recipe; flows load it on open */
@@ -667,6 +691,7 @@ function buildCoupons() {
         <button class="checkout">Checkout</button>
       </div>
       <div class="hit"></div>`);
+    el.querySelector('.checkout').addEventListener('click', () => toCheckout(def.code));
     list.appendChild(el);
     attachPull(el, base, piece, lighter, face);
   });
@@ -824,6 +849,7 @@ function attachPull(coupon, base, piece, lighter, face) {
       });
       vshadow.style.transition = 'width .55s cubic-bezier(.3,1,.4,1)';
       vshadow.style.width = '368px';
+      if (REDEEM) answerRedeem(coupon);
     }, 380);
   };
 
@@ -885,14 +911,58 @@ function burst(coupon) {
   }
 }
 
+/* ---------------- the coupon's two hand-offs with checkout ----------------
+   Contracts: checkout/flows-entry.json (entry "rewards", exit "redeem-coupon"). */
+function toCheckout(code) {
+  try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+  const context = { src: 'rewards', entry: 'rewards', coupon: code, tier: phone.dataset.level };
+  if (window.parent !== window) {
+    parent.postMessage({ t: 'ds-nav', to: 'checkout', present: 'sheet', context }, '*');
+  } else {
+    location.href = '../checkout/?ctx=' + encodeURIComponent(JSON.stringify(context)) + '&v=' + Date.now();
+  }
+}
+/* the rip answers checkout once the card has finished healing — the hub
+   delivers the code to checkout and closes this sheet itself */
+function answerRedeem(coupon) {
+  const code = coupon.querySelector('.code').textContent;
+  const face = coupon.querySelector('.done-face');
+  let sent = false;
+  const send = () => {
+    if (sent) return;
+    sent = true;
+    face.removeEventListener('transitionend', onEnd);
+    parent.postMessage({ t: 'ds-result', from: 'rewards', payload: { code } }, '*');
+  };
+  const onEnd = e => { if (e.propertyName === 'opacity') send(); };
+  face.addEventListener('transitionend', onEnd);
+  setTimeout(send, 1200);   /* belt: a throttled tab must not strand checkout */
+}
+
+/* ---------------- shared tier ---------------- */
+const readTier = () => {
+  try { const t = localStorage.getItem(TIER_KEY); return LEVELS[t] ? t : null; }
+  catch (_) { return null; }
+};
+const writeTier = t => {
+  if (LABFRAME || !LEVELS[t]) return;   /* a docs playground never changes the member's tier */
+  try { localStorage.setItem(TIER_KEY, t); } catch (_) {}
+};
+
 /* ---------------- level switching (sidebar + mobile dev bar) ---------------- */
 function setLevel(lvl) {
   document.querySelectorAll('[data-lvl]').forEach(x => x.classList.toggle('on', x.dataset.lvl === lvl));
   phone.dataset.level = lvl;
   lvlBadge.textContent = LEVELS[lvl].label;
+  writeTier(lvl);
   // rebuild next frame so the fresh page snapshot sees the new theme
   requestAnimationFrame(buildCoupons);
 }
+/* another flow changed the member's tier: re-derive through the same path */
+addEventListener('storage', e => {
+  if (e.key !== TIER_KEY || !LEVELS[e.newValue] || e.newValue === phone.dataset.level) return;
+  setLevel(e.newValue);
+});
 document.querySelectorAll('#lvlGrid [data-lvl], .devbar [data-lvl]').forEach(b =>
   b.addEventListener('click', () => setLevel(b.dataset.lvl)));
 
@@ -919,6 +989,8 @@ if (window.DS_EMBED) {
   window.DS_SNAPSHOT_BG = '#ED1C24';
 }
 setTheme('red');
+/* boot at the member's tier; an unset key is seeded with the declared default */
+setLevel(readTier() || TIER_DEFAULT);
 document.getElementById('sReset').addEventListener('click', () => requestAnimationFrame(buildCoupons));
 
 /* ---------------- modifier wiring ---------------- */
