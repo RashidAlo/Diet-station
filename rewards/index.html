@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Rewards / Pull to Redeem</title>
 <script>class Button {}</script>
-<script src="html2canvas.min.js"></script>
-<script src="liquid-glass-container.js"></script>
+<!-- Design System component, vendored (system/components/glass-control.css) -->
+<link rel="stylesheet" href="glass-control.css">
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -162,34 +162,11 @@
     height: auto; top: 76px; }
   html.embed.sheet-enter .sheet { transform: translateY(103%); }
 
-  /* WEB GLASS, SIMPLIFIED (Rashid): the web and iOS<26 stand-in for a native
-     Liquid Glass button reads the way the real one does at 40pt — a
-     translucent disc, a hairline rim, one soft top light, one quiet shadow.
-     No refraction canvas, no stacked inset shading. Two grounds, like the
-     native twins: on-color (clear glass, white tint) and on-light (regular). */
-  .ds-glass { position: relative; width: 40px; height: 40px; border-radius: 50%;
-    border: none; padding: 0; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
-    backdrop-filter: blur(10px) saturate(160%);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-  .ds-glass:active { transform: scale(.92); }
-  .ds-glass img { width: 20px; height: 20px; display: block; pointer-events: none; }
-  .ds-glass.on-color { background: rgba(255,255,255,.12);
-    box-shadow: inset 0 0 0 .5px rgba(255,255,255,.30),
-      inset 0 1px 0 rgba(255,255,255,.28), 0 2px 8px rgba(0,0,0,.06); }
-  .ds-glass.on-light { background: rgba(240,240,242,.86);
-    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06),
-      inset 0 1px 0 rgba(255,255,255,.9), 0 3px 12px rgba(0,0,0,.10); }
-  .ds-glass.on-light img { filter: brightness(0) opacity(.88); }
-  /* action-bar law (/system/overlays.html): a lone X takes the RIGHT seat;
+  /* THE GLASS CONTROL (system/components.html#glass-control, vendored): the one
+     web fallback for glass buttons — in the app a native twin covers it.
+     action-bar law (/system/overlays.html): a lone X takes the RIGHT seat;
      rewards keeps its own 24 corner inset, mirrored */
-  .closebtn { position: absolute; right: 24px; top: 24px; z-index: 10; }
-
-  /* adaptive contrast: sampled backdrop luminance flips glass content dark */
-  .glass-dark-content { color: #0b0e12 !important; }
-  .glass-dark-content img, .glass-dark-content svg {
-    filter: brightness(0) opacity(.88); }
+  .gctl.closebtn { position: absolute; right: 24px; top: 24px; z-index: 10; }
 
   .title { position: absolute; left: 24px; top: 79px; width: 330px;
     font: 500 30px/32px 'Urbane Rounded', sans-serif; color: var(--t-head); letter-spacing: 0; }
@@ -475,7 +452,7 @@
       <section class="ly-sheet" id="lySheet" role="dialog" aria-label="Loyalty tiers" aria-hidden="true">
         <div class="ly-head">
           <p class="ly-title">Special Discounts for our loyal subscribers</p>
-          <button class="ly-x ds-glass on-light" id="lyClose" aria-label="Close"><img src="loyalty-close.svg" alt=""></button>
+          <button class="ly-x gctl" id="lyClose" aria-label="Close"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M15.25 4.75833C14.925 4.43333 14.4 4.43333 14.075 4.75833L10 8.825L5.925 4.75C5.6 4.425 5.075 4.425 4.75 4.75C4.425 5.075 4.425 5.6 4.75 5.925L8.825 10L4.75 14.075C4.425 14.4 4.425 14.925 4.75 15.25C5.075 15.575 5.6 15.575 5.925 15.25L10 11.175L14.075 15.25C14.4 15.575 14.925 15.575 15.25 15.25C15.575 14.925 15.575 14.4 15.25 14.075L11.175 10L15.25 5.925C15.5667 5.60833 15.5667 5.075 15.25 4.75833Z" fill="currentColor"/></svg></button>
         </div>
         <div class="ly-tiers" id="lyTiers"></div>
         <p class="ly-foot">Benefits Reset to Level 2 once no renewals have been done for more than 2 Months*</p>
@@ -525,13 +502,8 @@ const TIER_KEY = 'ds-tier-v1';
 const TIER_DEFAULT = 'gold';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
-/* the hub's Glass Lab saves a global glass recipe; flows load it on open */
-const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
-const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 0,
-  tint: GG.tintOpacity !== undefined ? GG.tintOpacity : 0.14,
-  blur: GG.blurRadius !== undefined ? GG.blurRadius : 5 };
+const MODS = { tearAt: 62, stretch: 96, confetti: 14, frost: 0 };
 try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-rewards') || '{}')); } catch (_) {}
-window.glassControls = { ...GG, blurRadius: MODS.blur };
 
 /* ---------------- level data ---------------- */
 const LEVELS = {
@@ -553,95 +525,9 @@ function couponDefs(lvl) {
   ];
 }
 
-/* ---------------- liquid glass plumbing (liquid-glass-js) ---------------- */
-const GLASS_OK = !!window.WebGLRenderingContext && typeof html2canvas === 'function' && typeof Container === 'function';
-let liveGlass = [];
-
-function makeGlass(cls, radius) {
-  if (!GLASS_OK) { const el = document.createElement('div'); el.className = 'glass-container ' + cls; return { element: el }; }
-  const c = new Container({ borderRadius: radius, tintOpacity: MODS.tint });
-  c.element.classList.add(cls);
-  c.baseRadius = radius;
-  c.contextScale = stageScale;   // shader normalizes the effect by display scale
-  // The lib sizes canvases from getBoundingClientRect(), which is wrong inside
-  // our scaled stage: backing store must be the on-screen (scaled) size for
-  // correct snapshot sampling, while the canvas CSS size must stay 100% of the
-  // layout box. Border radius scales with the stage too.
-  c.resizeGlass = () => {
-    const w = Math.max(1, Math.ceil(c.element.offsetWidth * stageScale));
-    const h = Math.max(1, Math.ceil(c.element.offsetHeight * stageScale));
-    c.width = w; c.height = h; c.borderRadius = c.baseRadius * stageScale;
-    c.contextScale = stageScale;
-    c.canvas.width = w; c.canvas.height = h;
-    c.canvas.style.width = '100%'; c.canvas.style.height = '100%';
-    if (c.gl_refs.gl) {
-      const gl = c.gl_refs.gl;
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(c.gl_refs.resolutionLoc, w, h);
-      gl.uniform1f(c.gl_refs.borderRadiusLoc, c.borderRadius);
-      if (c.gl_refs.contextScaleLoc) gl.uniform1f(c.gl_refs.contextScaleLoc, stageScale);
-      c.render && c.render();
-    }
-  };
-  // run after the lib's own rAF sizing pass so ours wins
-  requestAnimationFrame(() => requestAnimationFrame(c.resizeGlass));
-  liveGlass.push(c);
-  return c;
-}
-
-function destroyGlass() {
-  liveGlass.forEach(c => {
-    try { const ext = c.gl && c.gl.getExtension('WEBGL_lose_context'); ext && ext.loseContext(); } catch (_) {}
-    c.gl_refs = {}; c.render = null;
-  });
-  liveGlass = [];
-  if (GLASS_OK) {
-    Container.instances = [];
-    Container.pageSnapshot = null;
-    Container.isCapturing = false;
-    Container.waitingForSnapshot = [];
-  }
-}
-
-function applyGlassParams() {
-  window.glassControls.blurRadius = MODS.blur;
-  liveGlass.forEach(c => {
-    if (c.gl_refs.gl) {
-      c.gl_refs.gl.uniform1f(c.gl_refs.tintOpacityLoc, MODS.tint);
-      c.gl_refs.gl.uniform1f(c.gl_refs.blurRadiusLoc, MODS.blur);
-      c.render && c.render();
-    }
-    c.tintOpacity = MODS.tint;
-  });
-}
-
 function applyFrost() {
   if (MODS.frost > 0) phone.style.setProperty('--frost-filter', `blur(${MODS.frost}px)`);
   else phone.style.removeProperty('--frost-filter');
-}
-
-/* readability: sample the page snapshot behind each glass element and flip
-   its icon/text to dark when the backdrop is light */
-function adaptGlassContrast() {
-  if (!GLASS_OK || !Container.pageSnapshot) return;
-  let sctx;
-  try { sctx = Container.pageSnapshot.getContext('2d'); } catch (_) { return; }
-  const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
-  liveGlass.forEach(c => {
-    if (!c.canvas) return;
-    const r = c.canvas.getBoundingClientRect();
-    const x = Math.max(8, Math.round(r.left + r.width / 2));
-    const y = Math.max(8, Math.round(r.top + r.height / 2));
-    try {
-      const d = sctx.getImageData(x - 8, y - 8, 16, 16).data;
-      let l = 0, n = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        if (d[i + 3] < 10) continue;
-        l += .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]); n++;
-      }
-      c.element.classList.toggle('glass-dark-content', n > 0 && l / n > 0.5);
-    } catch (_) {}
-  });
 }
 
 /* repaint a set of glass containers for `ms` milliseconds (during motion) */
@@ -679,22 +565,26 @@ const holeMask = () => {
 };
 
 function buildCoupons() {
-  destroyGlass();
   applyFrost();
   const theme = LEVELS[phone.dataset.level];
   document.querySelector('.qbtn img').src = theme.q;
 
-  // nav X: the simplified web glass (rebuilt per theme; the ground decides
-  // clear-on-color or regular-on-light, and the glyph follows it)
+  // nav X: the glass control (rebuilt per theme). The ground decides on-dark,
+  // as meal selection does: relative luminance of the sheet's top colour < .52
   document.querySelectorAll('.closebtn').forEach(el => el.remove());
-  const onLight = (() => {
-    const m = getComputedStyle(phone).getPropertyValue('--t-head').trim().match(/[0-9a-f]{2}/gi);
-    return !!m && (parseInt(m[0], 16) + parseInt(m[1], 16) + parseInt(m[2], 16)) / 3 < 128;
+  const onDark = (() => {
+    const g = getComputedStyle(phone).getPropertyValue('--sheet-grad');
+    const hexes = g.match(/#[0-9a-f]{6}/gi) || [];
+    if (!hexes.length) return true;
+    const top = /to top/.test(g) ? hexes[hexes.length - 1] : hexes[0];
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    const [r, gg, b] = [1, 3, 5].map(i => lin(parseInt(top.slice(i, i + 2), 16)));
+    return .2126 * r + .7152 * gg + .0722 * b < .52;
   })();
-  const cb = { element: document.createElement('div') };
-  cb.element.className = 'closebtn ds-glass ' + (onLight ? 'on-light' : 'on-color');
-  cb.element.setAttribute('role', 'button');
-  cb.element.insertAdjacentHTML('beforeend', `<img src="rewards-close.svg" alt="">`);
+  const cb = { element: document.createElement('button') };
+  cb.element.className = 'closebtn gctl' + (onDark ? ' on-dark' : '');
+  cb.element.setAttribute('aria-label', 'Close');
+  cb.element.innerHTML = document.getElementById('lyClose').innerHTML;
   cb.element.title = 'close';
   cb.element.addEventListener('click', () => {
     if (window.DS_EMBED) {
@@ -1243,21 +1133,12 @@ function fit() {
     stageScale = Math.min(1, (availW - 56) / frameW, (innerHeight - 56) / frameH);
   }
   device.style.transform = `scale(${stageScale})`;
-  liveGlass.forEach(c => c.resizeGlass && c.resizeGlass());
 }
 addEventListener('resize', fit);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 addEventListener('orientationchange', () => setTimeout(fit, 250));
 fit();
-/* global recipe: published glass.json (all devices) under this device's draft */
-const loadGlobalGlass = fetch('../glass.json?v=' + Date.now())
-  .then(r => r.ok ? r.json() : {}).catch(() => ({}));
-const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub]) => {
-  let draft = {}; try { draft = JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) {}
-  const g = { ...pub, ...draft };
-  if (g.tintOpacity !== undefined) MODS.tint = g.tintOpacity;
-  if (g.blurRadius !== undefined) MODS.blur = g.blurRadius;
-  window.glassControls = { ...g, blurRadius: MODS.blur };
+const booted = document.fonts.ready.then(() => {
   return new Promise(r => setTimeout(() => { buildCoupons(); r(); }, 50));
 });
 
