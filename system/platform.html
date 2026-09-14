@@ -252,6 +252,26 @@ window.DSNativeChrome(['close']);
 // let an empty confirm stop the timer.)
 // native → web: route taps back
 window.DSChromeTap('close');
+
+// ── COVERING LAYERS: hide persistent native chrome (ruling 2026-09-14) ──
+// A web surface that COVERS the screen tells native, which hides persistent
+// chrome it draws (the pilot's DS bar) while ANY layer is up:
+webkit.messageHandlers.ds.postMessage({ t: 'layer', id: 'labmenu', up: true });
+// native keeps a SET of up ids per web view; the bar shows only when it is empty.
+// Why a set and not booleans: with one boolean per surface, a lab menu closing
+// over an open selector would bring the bar back over the selector (Hub).
+// Rules:
+// - main frame only; gated on caps.layers >= 1 (DSNativeCaps when injected,
+//   else the confirm's flat caps)
+// - post up AND down on every open/close edge, and down on teardown (pagehide);
+//   native also clears a view's ids when that view navigates or unloads, so a
+//   missed down can never leave the bar hidden for good
+// - ids are short and stable: 'labmenu' (lab-shell's sheet or a page's own lab
+//   menu), 'selector' (the calendar's meal selection overlay)
+// - LEGACY: { t: 'selector', up } is read as { t: 'layer', id: 'selector', up }
+//   until the calendar migrates; no second single-purpose name is added
+// Distinct from DSLayer(name, up) inside a page, which retires that page's OWN
+// twins under its own higher surface and tells native nothing.
 // guard: only in the shell (UA "DietStationLab"); 1.6s timer restores web chrome
 
 // ── DS-CHROME-TOP — the canonical chrome line (named constant) ───────
