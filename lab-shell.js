@@ -568,12 +568,20 @@ body.lab-comp-on .side-resizer { display: none; }\
       '<path d="M0.5,0.8 L7,4 L0.5,7.2" fill="none" stroke="rgba(0,0,0,.38)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>');
 
     // edges under nodes
+    /* a two-way pair (open ⇄ close between the same two nodes) would draw the
+       same curve twice — so a pair's paths split sideways. Labels are placed
+       after every path, each stepping up or down off any label already placed,
+       so pairs AND unrelated edges that cross never stack their labels */
+    var edgeKeys = {}, labels = [];
+    flow.edges.forEach(function (e) { edgeKeys[e[0] + '>' + e[1]] = true; });
     flow.edges.forEach(function (e) {
       var a = nodes[e[0]], b = nodes[e[1]];
       if (!a || !b) return;
       var back = b.y <= a.y;
-      var x1 = a.x + a.w / 2, y1 = back ? a.y : a.y + a.h;
-      var x2 = b.x + b.w / 2, y2 = back ? b.y + b.h + 3 : b.y - 3;
+      var pair = !!edgeKeys[e[1] + '>' + e[0]] && e[0] !== e[1];
+      var shift = pair ? (back ? 14 : -14) : 0;
+      var x1 = a.x + a.w / 2 + shift, y1 = back ? a.y : a.y + a.h;
+      var x2 = b.x + b.w / 2 + shift, y2 = back ? b.y + b.h + 3 : b.y - 3;
       var same = Math.abs(x1 - x2) < 2;
       var midY = (y1 + y2) / 2;
       // edges that skip layers bow sideways so they don't run through nodes
@@ -591,14 +599,28 @@ body.lab-comp-on .side-resizer { display: none; }\
       }
       svg.push('<path d="' + d + '" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.4"' +
         (back ? ' stroke-dasharray="3 4"' : '') + ' marker-end="url(#labArr)"/>');
-      if (e[2]) {
-        var lx = Math.max(40, (x1 + x2) / 2 + bow * 0.75), ly = midY;
-        var tw = e[2].length * 5.6 + 12;
-        svg.push('<rect x="' + (lx - tw / 2) + '" y="' + (ly - 9) + '" width="' + tw +
-          '" height="17" rx="8.5" fill="#ffffff" stroke="rgba(0,0,0,.12)"/>');
-        svg.push('<text x="' + lx + '" y="' + (ly + 3.5) + '" text-anchor="middle" font-size="9.5" ' +
-          'font-family="\'Proxima Nova\',sans-serif" fill="#6e6e73">' + esc(e[2]) + '</text>');
+      if (e[2]) labels.push({ x: Math.max(40, (x1 + x2) / 2 + bow * 0.75), y: midY,
+        w: e[2].length * 5.6 + 12, text: e[2] });
+    });
+    var placed = [];
+    var boxes = order.map(function (id) { return nodes[id]; });
+    labels.forEach(function (L) {
+      var y0 = L.y, steps = [0, 19, -19, 38, -38, 57, -57], free = false;
+      for (var i = 0; i < steps.length && !free; i++) {
+        L.y = y0 + steps[i];
+        free = !placed.some(function (P) {
+          return Math.abs(P.x - L.x) < (P.w + L.w) / 2 + 2 && Math.abs(P.y - L.y) < 19;
+        }) && (i === 0 || !boxes.some(function (n) {    /* a nudge never lands on a node */
+          return L.x + L.w / 2 > n.x && L.x - L.w / 2 < n.x + n.w &&
+            L.y + 9 > n.y && L.y - 9 < n.y + n.h;
+        }));
       }
+      if (!free) L.y = y0;                 /* crowded beyond reach: keep its own spot */
+      placed.push(L);
+      svg.push('<rect x="' + (L.x - L.w / 2) + '" y="' + (L.y - 9) + '" width="' + L.w +
+        '" height="17" rx="8.5" fill="#ffffff" stroke="rgba(0,0,0,.12)"/>');
+      svg.push('<text x="' + L.x + '" y="' + (L.y + 3.5) + '" text-anchor="middle" font-size="9.5" ' +
+        'font-family="\'Proxima Nova\',sans-serif" fill="#6e6e73">' + esc(L.text) + '</text>');
     });
 
     // nodes
