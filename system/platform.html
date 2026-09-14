@@ -261,8 +261,10 @@ webkit.messageHandlers.ds.postMessage({ t: 'layer', id: 'labmenu', up: true });
 // Why a set and not booleans: with one boolean per surface, a lab menu closing
 // over an open selector would bring the bar back over the selector (Hub).
 // Rules:
-// - main frame only; gated on caps.layers >= 1 (DSNativeCaps when injected,
-//   else the confirm's flat caps)
+// - main frame only; gated on DSNativeCaps.layers >= 1, the INJECTED object.
+//   lab-shell is not part of any glasschrome confirm, so the confirm's flat caps
+//   never reach it: every view that can show a lab menu (calendar, sheet host)
+//   must have layers injected at document start. The pilot relay is Home's.
 // - post up AND down on every open/close edge, and down on teardown (pagehide);
 //   native also clears a view's ids when that view navigates or unloads, so a
 //   missed down can never leave the bar hidden for good
