@@ -1578,8 +1578,13 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
     var el = document.querySelector(closeSel());
     var r = el && el.getBoundingClientRect();
     if (r && r.width && r.height) {
+      /* a percentage radius ("50%") is not a length — resolve it, and never
+         report more than a capsule */
+      var half = Math.min(r.width, r.height) / 2;
+      var br = getComputedStyle(el).borderRadius;
+      var rad = /%/.test(br) ? Math.min(r.width, r.height) * parseFloat(br) / 100 : parseFloat(br);
       els.push({ id: 'close', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-        r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
+        r: Math.min(rad || half, half) });
     }
     try {
       webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
