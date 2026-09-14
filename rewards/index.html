@@ -1539,9 +1539,14 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
         surface: SURFACE, mode: MODE, els: els });
     } catch (_) {}
   }
+  /* relays confirm EVERY post, empty ones included (platform.html ruling):
+     only a confirmed id proves a twin exists, so an empty confirm must not
+     stop the iOS<26 fallback. Deliberate clears (loyalty layer, exit) keep
+     the root-class hide — revealing the web X under them would blink. */
   window.DSNativeChrome = function (ids) {
-    nativeConfirmed = true;
     (ids || []).forEach(function (id) {
+      if (!ELS[id]) return;
+      nativeConfirmed = true;
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
