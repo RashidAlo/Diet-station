@@ -306,6 +306,9 @@ struct HomeScreenNative: View {
     /// chrome layers: true while the calendar's meal selector owns the whole
     /// screen — the persistent bar slides away for it (topmost surface only)
     @State private var selectorUp = false
+    /// the calendar's layer set is non-empty (platform.html `layer`): some
+    /// web surface — a lab menu, the selector — owns the screen
+    @State private var layersUp = false
     /// dynamic-bar experiment: past this scroll depth the inline kcal module
     /// disconnects into its own glass macros row (Music's accessory beat)
     @State private var homeScrolled = false
@@ -399,9 +402,11 @@ struct HomeScreenNative: View {
                             // direction — a page delaying its entry for an
                             // animation that never runs.
                             presentSettle: 0,
-                            onSelector: { selectorUp = $0 }) {
+                            onSelector: { selectorUp = $0 },
+                            onLayers: { layersUp = $0 }) {
                     state.calendarOpen = false
                     selectorUp = false
+                    layersUp = false
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { tabSel = .home }
                     replayHomeIntro()
                 }
@@ -426,12 +431,13 @@ struct HomeScreenNative: View {
                 } action: { r in
                     barFrame = r
                 }
-                // chrome layers: while the meal selector owns the screen the
-                // ONE bar yields — slides out under the rising sheet and
-                // returns as it departs; it never unmounts, so no reflow
-                .opacity(state.calendarOpen && selectorUp ? 0 : 1)
-                .offset(y: state.calendarOpen && selectorUp ? 90 : 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: selectorUp)
+                // chrome layers: while any web layer (the meal selector, a lab
+                // menu) owns the screen the ONE bar yields — slides out under
+                // the rising sheet and returns as it departs; it never
+                // unmounts, so no reflow
+                .opacity(barYields ? 0 : 1)
+                .offset(y: barYields ? 90 : 0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: barYields)
                 .zIndex(3)
         }
         /* THE lab house gesture (Rashid 2026-09-09, clarified): THREE-FINGER
@@ -661,6 +667,7 @@ struct HomeScreenNative: View {
         // structure shows statically, only content staggers in
         if tab == .calendar, !state.calendarOpen, !state.loggedOut {
             selectorUp = false   // stale layer state never hides the bar
+            layersUp = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 state.calendarOpen = true
             }
@@ -671,6 +678,8 @@ struct HomeScreenNative: View {
             }
         }
     }
+
+    private var barYields: Bool { state.calendarOpen && (selectorUp || layersUp) }
 
     private var tabBar: some View {
         DSTabBar(selected: tabSel, onSelect: tabHandler, forkMiddle: state.loggedOut)
@@ -1309,13 +1318,13 @@ struct HomeScreenNative: View {
                 let moTop = DSInkTop.top("ProximaNova-Regular", 15, "H")
                 HStack(alignment: .lastTextBaseline, spacing: 0) {
                     Text("KD139").font(.custom("ProximaNova-Bold", size: 15))
-                        .strikethrough(true, color: Color(white: 0.6))
                         .foregroundStyle(Color(red: 153/255, green: 153/255, blue: 153/255))
-                        // the red diagonal strike (Figma Line 79, ~170°)
+                        // ONE strike, the red diagonal (Rashid, via DS price v2):
+                        // Figma Line 79, 1pt at 170.13° − 180 = −9.87°
                         .overlay {
-                            Capsule().fill(DS.red).frame(height: 1.6)
-                                .rotationEffect(.degrees(-9.9))
-                                .padding(.horizontal, -2)
+                            Capsule().fill(DS.red).frame(height: 1)
+                                .rotationEffect(.degrees(-9.87))
+                                .padding(.horizontal, -1)
                         }
                         .offset(y: kdTop - numTop)
                         .padding(.trailing, 4)
@@ -2198,7 +2207,17 @@ final class FlowPreloader {
         var onTerminate: (() -> Void)?
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
             NSLog("DSRECOVER(pilot) warm flow WebContent terminated, reloading")
+            clearOwnLayers()
             onTerminate?()
+        }
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            clearOwnLayers()
+        }
+        /// a view that navigates or dies takes its layer ids with it
+        func clearOwnLayers() {
+            let host = role == .host
+            let target: OverlayChrome? = host ? sheet?.owner : chrome
+            DispatchQueue.main.async { target?.clearLayers(host: host) }
         }
         let chrome = OverlayChrome()
 
@@ -2520,6 +2539,22 @@ final class FlowPreloader {
                 DispatchQueue.main.async {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                         self.chrome.selectorUp = up
+                        self.chrome.setLayer("selector", up)   // legacy alias
+                    }
+                }
+                return
+            }
+            if t == "layer" {
+                guard message.frameInfo.isMainFrame,
+                      let id = body["id"] as? String, !id.isEmpty else { return }
+                let up = (body["up"] as? Bool) ?? false
+                // the bar watches the calendar's chrome, so the hosted
+                // sheet's view reports into its owner
+                let target: OverlayChrome? = role == .host ? sheet?.owner : chrome
+                let key = role == .host ? "host:" + id : id
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                        target?.setLayer(key, up)
                     }
                 }
                 return
@@ -2613,7 +2648,7 @@ final class FlowPreloader {
     /// three-finger gesture announce it, so lab-shell binds no second web
     /// menu there. MERGED, never assigned — the calendar's caps are already
     /// on the object. Main frame only, like every cap.
-    static let labMenuCapsJS = "window.DSNativeCaps = Object.assign(window.DSNativeCaps || {}, { labMenu: 1 });"
+    static let labMenuCapsJS = "window.DSNativeCaps = Object.assign(window.DSNativeCaps || {}, { labMenu: 1, layers: 1 });"
 
     /// document-END runs at DOMContentLoaded (didFinish is the later load
     /// event). Down-messages buffer until this edge.
@@ -3199,6 +3234,7 @@ extension FlowPreloader.Relay {
             let host = SheetHost(url: url, calendar: cal)
             host.owner = chrome
             chrome.sheetHost = host
+            chrome.clearLayers(host: true)   // a fresh sheet starts with no layers
             return true
         case "ds-down":
             guard role == .calendar else { drop("ds-down must come from the calendar view"); return true }
@@ -3217,6 +3253,7 @@ extension FlowPreloader.Relay {
             guard role == .host else { drop("sheet-close from a non-host view"); return true }
             // teardown ONLY here — never inferred from a relayed ds-close
             let owner = sheet?.owner
+            owner?.clearLayers(host: true)
             sheet?.close(then: body["then"]) { owner?.sheetHost = nil }
             return true
         case "glasschrome":
@@ -3548,6 +3585,19 @@ final class OverlayChrome: ObservableObject {
     /// selector) owns the whole screen — hosts with a persistent DS bar
     /// drop it for the duration
     @Published var selectorUp = false
+    /// LAYERS (platform.html `layer`): ids of web surfaces that currently own
+    /// the screen. A SET, so covers stack and one closing never un-hides the
+    /// bar over another. Ids from the hosted sheet's view are kept as
+    /// "host:<id>" so the two views can't cancel each other's.
+    @Published var layers: Set<String> = []
+    func setLayer(_ id: String, _ up: Bool) {
+        if up { layers.insert(id) } else { layers.remove(id) }
+    }
+    /// drop one view's ids — on its navigation, unload or teardown, so a
+    /// missed `up:false` can't hide the bar for good
+    func clearLayers(host: Bool) {
+        layers = layers.filter { $0.hasPrefix("host:") != host }
+    }
     weak var webView: WKWebView?
     var frame: WKFrameInfo?
 
@@ -3612,6 +3662,7 @@ final class OverlayChrome: ObservableObject {
         gauge = nil
         frame = nil
         selectorUp = false
+        layers = []
     }
 }
 
@@ -3629,16 +3680,20 @@ struct FlowOverlay: View {
     /// calendar's meal selector) takes or releases the whole screen, so a
     /// persistent-bar host can drop its bar for the duration
     var onSelector: ((Bool) -> Void)? = nil
+    /// fires when this flow's layer set turns non-empty / empty
+    var onLayers: ((Bool) -> Void)? = nil
     let onClose: () -> Void
     @ObservedObject private var chrome: OverlayChrome
 
     @MainActor
     init(path: String, ownsTabBar: Bool = true, presentSettle: TimeInterval = 0.62,
-         onSelector: ((Bool) -> Void)? = nil, onClose: @escaping () -> Void) {
+         onSelector: ((Bool) -> Void)? = nil, onLayers: ((Bool) -> Void)? = nil,
+         onClose: @escaping () -> Void) {
         self.path = path
         self.ownsTabBar = ownsTabBar
         self.presentSettle = presentSettle
         self.onSelector = onSelector
+        self.onLayers = onLayers
         self.onClose = onClose
         _chrome = ObservedObject(wrappedValue: FlowPreloader.shared.entry(path).relay.chrome)
     }
@@ -3747,6 +3802,7 @@ struct FlowOverlay: View {
             }
         }
         .onChange(of: chrome.selectorUp) { _, up in onSelector?(up) }
+        .onChange(of: chrome.layers.isEmpty) { _, empty in onLayers?(!empty) }
     }
 }
 
