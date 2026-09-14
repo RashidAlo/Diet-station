@@ -1048,14 +1048,20 @@ function renderLoyalty() {
   }).join('');
 }
 
+/* resolves when the progression has finished (the current card's settle
+   ended) — the Components tab's settle flag for the open sheet */
+let lyPlayed = Promise.resolve(), lyFinish = () => {};
 function playLoyalty() {
   lyTimers.forEach(clearTimeout);
   lyTimers = [];
+  lyFinish();   /* a replay supersedes the previous run — never leave it pending */
   const cur = LY_ORDER.indexOf(phone.dataset.level);
   const steps = [...lyTiers.querySelectorAll('.ly-step')];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   steps.forEach((s, i) => s.classList.toggle('filled', calm && i <= cur));
-  if (calm) return;
+  let finish;
+  lyPlayed = new Promise(r => { finish = lyFinish = r; });
+  if (calm) { finish(); return; }
   const START = 380, STEP = 190;   // the first fill lands as the sheet arrives
   steps.slice(0, cur + 1).forEach((s, i) => lyTimers.push(setTimeout(() => {
     s.classList.add('filled');
@@ -1068,7 +1074,7 @@ function playLoyalty() {
     if (i === cur) {
       lyTimers.push(setTimeout(() => s.closest('.ly-row').querySelector('.ly-card').animate([
         { transform: 'scale(1)' }, { transform: 'scale(1.02)' }, { transform: 'scale(1)' },
-      ], { duration: 320, easing: 'ease-out' }), 200));
+      ], { duration: 320, easing: 'ease-out' }).finished.then(finish, finish), 200));
     }
   }, START + i * STEP)));
 }
@@ -1258,11 +1264,40 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
       el.removeEventListener('transitionend', done); r(); };
     el.addEventListener('transitionend', done);
   });
+  /* the loyalty sheet's own spring ending (only when it actually moves) */
+  const lyMoved = () => new Promise(r => {
+    const done = e => { if (e.target !== lySheet || e.propertyName !== 'transform') return;
+      lySheet.removeEventListener('transitionend', done); r(); };
+    lySheet.addEventListener('transitionend', done);
+  });
+  const lyIsOpen = () => phone.classList.contains('ly-open');
+  /* back on the coupons screen: close the explainer through its own path */
+  const toCoupons = async () => {
+    if (!lyIsOpen()) return;
+    const moved = lyMoved();
+    closeLoyalty();
+    await moved;
+  };
+  /* the explainer open at a tier, progression finished */
+  const toLoyalty = async lvl => {
+    if (lyIsOpen()) await toCoupons();   /* every open replays from a fresh sheet */
+    if (lvl && lvl !== phone.dataset.level) await atLevel(lvl);
+    const moved = lyMoved();
+    openLoyalty();
+    await moved;
+    await lyPlayed;
+  };
+  let stepFocus = 0;   /* the circle the tab is showing: rect('tier-step') boxes it */
+  const onCoupons = fn => async () => { await toCoupons(); return fn(); };
   const STATES = {
-    'sheet-x': { rest: () => atLevel(phone.dataset.level) },
+    'sheet-x': {
+      rest: onCoupons(() => atLevel(phone.dataset.level)),
+      'on-white': () => toLoyalty(),
+    },
     'coupon': Object.assign(
-      Object.fromEntries(TIERS.map(t => [t, () => atLevel(t)])),
+      Object.fromEntries(TIERS.map(t => [t, onCoupons(() => atLevel(t))])),
       { redeemed: async () => {
+          await toCoupons();
           await atLevel(phone.dataset.level);          // a fresh, unripped card
           const c = list.querySelector('.coupon');
           if (!c || !c.redeem) return { ok: false, why: 'no coupon to redeem' };
@@ -1270,7 +1305,20 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
           c.redeem();
           await settled;
         } }),
-    'level-badge': Object.fromEntries(TIERS.map(t => [t, () => atLevel(t)])),
+    'level-badge': Object.fromEntries(TIERS.map(t => [t, onCoupons(() => atLevel(t))])),
+    'loyalty-sheet': Object.fromEntries(TIERS.map(t => [t, () => toLoyalty(t)])),
+    'tier-step': {
+      /* the member's own circle, filled by the progression */
+      filled: async () => {
+        await toLoyalty();
+        stepFocus = TIERS.indexOf(phone.dataset.level);
+      },
+      /* the next circle up; a VIP member has none, so show it from Gold */
+      empty: async () => {
+        await toLoyalty(phone.dataset.level === 'vip' ? 'gold' : null);
+        stepFocus = TIERS.indexOf(phone.dataset.level) + 1;
+      },
+    },
   };
   const box = (el, r) => {
     if (!el) return null;
@@ -1291,7 +1339,15 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
       });
     },
     rect(componentId) {
-      if (componentId === 'sheet-x') return box(document.querySelector('.closebtn'), 20);
+      if (componentId === 'sheet-x') return phone.classList.contains('ly-open')
+        ? box(document.getElementById('lyClose'), 20) : box(document.querySelector('.closebtn'), 20);
+      if (componentId === 'loyalty-sheet') return phone.classList.contains('ly-open')
+        ? box(lySheet, 44) : null;
+      if (componentId === 'tier-step') {
+        const img = phone.classList.contains('ly-open') &&
+          lyTiers.querySelectorAll('.ly-step img.off')[stepFocus];
+        return img ? box(img, 9) : null;
+      }
       if (componentId === 'coupon') return box(list.querySelector('.coupon'), 24);
       if (componentId === 'level-badge') {
         const b = box(lvlBadge, 0);
@@ -1301,7 +1357,7 @@ const booted = Promise.all([document.fonts.ready, loadGlobalGlass]).then(([, pub
       return null;
     },
     reset() {
-      return serial(async () => { await booted; await atLevel(BOOT_LEVEL); });
+      return serial(async () => { await booted; await toCoupons(); await atLevel(BOOT_LEVEL); });
     },
   };
   if (LABFRAME && window.parent !== window) {
