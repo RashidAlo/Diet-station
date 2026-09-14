@@ -433,6 +433,8 @@
     animation: cpeek 3s cubic-bezier(.32,.72,0,1) infinite alternate; }
   @keyframes cpeek { from { transform: translateX(-26px); } to { transform: translateX(26px); } }
   /* price card peek (Design System session) */
+  .pcpeek { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pcpeek .g { width: 56px; height: 28px; border-radius: 14px; box-shadow: inset 0 0 0 1px #e3e3e3; }
   .pricepeek { position: relative; margin-top: 16px; height: 56px; border-radius: 14px;
     background: var(--ground); overflow: hidden; display: flex;
     align-items: center; justify-content: center; }
@@ -1269,6 +1271,28 @@
       </div>
       <p class="meta">Read from the Figma Price set &middot; cap-top alignment, measured
         &middot; checkout aligned.</p>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <h2>Plan card</h2>
+        <span class="tag">Component &middot; 4 themes</span>
+        <span class="pill ready">Live</span>
+      </div>
+      <p class="desc">One plan-card design for every plan list, home and checkout alike: meal rows,
+        the nutrition chip, a Price slot in the plan&rsquo;s gradient, the deal chip and the plan pill.
+        One source file that each flow copies, so the lists can&rsquo;t drift apart.</p>
+      <div class="pcpeek" aria-hidden="true">
+        <span class="g" style="background-image:linear-gradient(115.8deg,#82459C 5.44%,#5525B5 102.11%)"></span>
+        <span class="g" style="background-image:linear-gradient(111.3deg,#FF963E 53.4%,#FF0505 141.76%)"></span>
+        <span class="g" style="background-image:linear-gradient(115.8deg,#2A2A52 5.44%,#15152E 102.11%)"></span>
+        <span class="g" style="background-image:linear-gradient(115.8deg,#FF6A54 5.44%,#FF3287 102.11%)"></span>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="system/plancard.html">Open Plan card</a>
+      </div>
+      <p class="meta">Figma 4539-10208 variant A &middot; system/components/plancard.css v1 &middot;
+        copied into each flow.</p>
     </section>
 
     <section class="card">

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan card — DietStation Design Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<!-- the documented component, straight from its source files -->
+<link rel="stylesheet" href="components/price.css">
+<link rel="stylesheet" href="components/plancard.css">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../breathe/UrbaneRounded-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 400; }
+  @font-face { font-family: 'Proxima Nova'; src: url('../breathe/proxima-regular.otf'); font-weight: 600 700; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('../home/UrbaneRounded-Light.ttf'); font-weight: 300; }
+  @font-face { font-family: 'Avenir Next World'; src: url('../font/AvenirNextWorld-Medium.otf'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Avenir Next World'; src: url('../font/AvenirNextWorld-Demi.otf'); font-weight: 600; font-display: swap; }
+  :root {
+    --ground: #f5f5f7; --card: #ffffff; --ink: #1d1d1f; --ink-soft: #6e6e73;
+    --line: rgba(0,0,0,.08); --red: #ED1C24; --red-soft: #FFF2F2;
+    --ok: #1F8A4C; --ok-soft: #EAF6EF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--ground); color: var(--ink);
+    font: 400 15px/1.6 'Proxima Nova', -apple-system, 'Helvetica Neue', sans-serif;
+    padding-bottom: 96px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+  header.bar { position: sticky; top: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(245,245,247,.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--line); }
+  .bar-inner { max-width: 720px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; }
+  .bar-inner img.mark { height: 30px; width: auto; display: block; }
+  .backc { flex: none; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #e9e9ec; color: var(--ink); text-decoration: none;
+    transition: background .15s ease, transform .15s cubic-bezier(.3,.8,.3,1); }
+  .backc:hover { background: #e0e0e4; }
+  .backc:active { transform: scale(.92); }
+  .bar-inner .word { font: 600 17px/1 'Urbane Rounded', sans-serif; color: var(--ink);
+    letter-spacing: -.01em; text-decoration: none; }
+  .bar-inner .word span { color: var(--ink-soft); font-weight: 500; }
+  html.app .bar-inner img.mark { height: 20px; }
+  html.app .bar-inner .word { font-size: 14px; white-space: nowrap; }
+  html.app .hero { padding: 24px 12px 18px; }
+  html.app .hero h1 { font-size: 24px; }
+  html.app .hero p { font-size: 14px; }
+  .hero { text-align: center; padding: 36px 10px 24px; }
+  .hero h1 { font: 600 30px/1.15 'Urbane Rounded', sans-serif; letter-spacing: -.015em; }
+  .hero p { color: var(--ink-soft); margin: 12px auto 0; max-width: 56ch; font-size: 15.5px; }
+  .card { background: var(--card); border-radius: 18px; padding: 26px 26px 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 14px 34px -22px rgba(0,0,0,.14); }
+  .card h2 { font: 600 19px/1.3 'Urbane Rounded', sans-serif; letter-spacing: -.01em; }
+  .card .desc { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+  .card .meta { color: var(--ink-soft); font-size: 12.5px; margin-top: 14px; }
+  .card h3 { font: 500 12px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 22px 0 12px; }
+  .codewrap { position: relative; margin-top: 14px; }
+  .codewrap pre { background: #1d1d1f; color: #e8e8ed; border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    font: 12px/1.6 ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; tab-size: 2; }
+  .codewrap .copycode { position: absolute; top: 8px; right: 8px; cursor: pointer;
+    font: 500 11px/1 'Urbane Rounded', sans-serif; border: none; border-radius: 999px;
+    padding: 7px 12px; background: rgba(255,255,255,.12); color: #f5f5f7;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .codewrap .copycode:hover { background: rgba(255,255,255,.2); }
+  .slab { margin-top: 16px; border-radius: 14px; padding: 16px 18px;
+    background: #1d1d1f; color: #f5f5f7; }
+  .slab .sl { font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .12em; color: #8e8e93; }
+  .slab .sq { font: 600 15.5px/1.45 'Urbane Rounded', sans-serif; margin-top: 9px;
+    letter-spacing: -.005em; }
+  .slab .sb { font-size: 12.5px; line-height: 1.6; color: #b9b9c0; margin-top: 9px; }
+
+
+  .spec { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; line-height: 1.55; }
+  .spec code, .desc code, li code { font: 11.5px/1.5 ui-monospace, Menlo, monospace; }
+  .law { font: 600 13.5px/1.45 'Urbane Rounded', sans-serif; background: var(--red-soft);
+    color: #7F1D1D; border-radius: 12px; padding: 14px 16px; margin-top: 16px; }
+  .law span { display: block; font: 400 13px/1.55 'Proxima Nova', sans-serif; margin-top: 6px; }
+  /* specimen: a phone-width white sheet, like the logged-out home and the plans overlay */
+  .sheetwrap { margin: 18px auto 0; max-width: 402px; background: #fff; border-radius: 30px;
+    padding: 20px 20px 1px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+  .ctl { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+  .ctl button { font: 500 12.5px/1 'Urbane Rounded', sans-serif; border: 0; cursor: pointer;
+    border-radius: 999px; padding: 8px 12px; background: var(--ground); color: var(--ink); }
+  .ctl button.on { background: var(--ink); color: #fff; }
+  .legend { counter-reset: n; list-style: none; padding: 0; margin: 16px 0 0; }
+  .legend li { position: relative; padding: 8px 0 8px 30px; border-bottom: .5px solid var(--line);
+    font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+  .legend li:last-child { border-bottom: 0; }
+  .legend li::before { counter-increment: n; content: counter(n); position: absolute; left: 0; top: 8px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff;
+    font: 600 11px/20px 'Urbane Rounded', sans-serif; text-align: center; }
+  .legend b { color: var(--ink); font: 600 13.5px/1.5 'Urbane Rounded', sans-serif; }
+  .themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+  .theme { border-radius: 14px; background: var(--ground); padding: 12px; }
+  .theme .sw { height: 44px; border-radius: 10px; }
+  .theme b { display: block; font: 600 13px/1.3 'Urbane Rounded', sans-serif; margin-top: 8px; }
+  .theme code { display: block; font: 10.5px/1.45 ui-monospace, Menlo, monospace; color: var(--ink-soft); margin-top: 4px; overflow-wrap: anywhere; }
+  .mrow { display: flex; gap: 12px; padding: 12px 0; border-bottom: .5px solid var(--line); align-items: baseline; flex-wrap: wrap; }
+  .mrow:last-child { border-bottom: 0; }
+  .mrow .mn { flex: none; width: 130px; font: 600 13.5px/1.4 'Urbane Rounded', sans-serif; }
+  .mrow .mt { flex: 1; min-width: 220px; font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+  .badge { flex: none; font: 600 10.5px/1 'Urbane Rounded', sans-serif; text-transform: uppercase;
+    letter-spacing: .07em; padding: 6px 10px 5px; border-radius: 999px; }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.todo { background: var(--red-soft); color: var(--red); }
+</style>
+<script>
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('app');
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-inner">
+    <a class="backc" href="../#design-system" aria-label="Back to Design System">
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M10 3.2 5.4 8l4.6 4.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <img class="mark" src="../logo.png" alt="DietStation">
+    <a class="word" href="../#design-system">DietStation <span>Design Lab</span></a>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>Plan card</h1>
+  <p>One design for every plan list, the logged-out home and the checkout plans overlay alike.
+    One source file, copied into each flow, so the two can never drift into two designs again.</p>
+</div>
+
+<div class="wrap">
+
+  <section class="card" id="specimen" data-ds-section="plancard-v1" style="scroll-margin-top:80px">
+    <h2>The component</h2>
+    <p class="desc">Figma Design System <b>4539-10208</b>, variant A. Rashid, 2026-09-14: &ldquo;No need to
+      have two different references.&rdquo; Home&rsquo;s logged-out plan list is the reference. This
+      specimen renders from <code>system/components/plancard.css</code> and <code>price.css</code>, the
+      same bytes the flows copy.</p>
+    <div class="sheetwrap" id="pcSpec"></div>
+    <div class="ctl" id="pcCtl">
+      <button data-k="deal" class="on">Deal chip</button>
+      <button data-k="was" class="on">Struck price</button>
+      <button data-k="dec">Decimal price</button>
+    </div>
+  </section>
+
+  <section class="card" id="anatomy" style="scroll-margin-top:80px">
+    <h2>Anatomy</h2>
+    <ol class="legend">
+      <li><b>Platter.</b> &ldquo;Liquid Glass &middot; Regular &middot; Medium&rdquo;: radius 32, white .7 over
+        <code>blur(14px) saturate(140%)</code>, a .5px <code>#dbdbdb</code> ring, shadow
+        <code>0 8 37 rgba(0,0,0,.08)</code>. Press scales to .98.</li>
+      <li><b>Meal rows.</b> 18pt count badge (<code>rgba(244,244,244,.6)</code>, Proxima 600 12) + Urbane
+        500 12 label, spread over a fixed 122pt column.</li>
+      <li><b>Nutrition chip.</b> Hairline pill: <b>kcal</b> | <b>macros</b>, Proxima 12.</li>
+      <li><b>Price slot.</b> The <a href="price.html" style="color:var(--red)">Price component</a>,
+        <code>.dsp primary xxxl grad</code>: Urbane 30 numeral and Proxima 15 satellites, cap tops on one line,
+        numeral, KD and decimals painted in the plan gradient, and <code>/mo</code> Medium in #999.</li>
+      <li><b>Struck price + strike.</b> The old price in #999 Semibold 15, crossed by Figma Line 79: 1px round-cap
+        <code>#ED1C24</code> at &minus;9.87&deg;, spanning the price whatever its width.</li>
+      <li><b>Deal chip.</b> Hairline pill, Arabic, Avenir Next World 600 12, gradient on the TEXT only (the
+        &#128293; keeps its colour). Optional.</li>
+      <li><b>Plan pill.</b> 40 tall, radius 28, hairline <code>#e3e3e3</code>, the plan gradient, Urbane 16:
+        Light at 60% + Demi. Press scales to .94.</li>
+    </ol>
+    <p class="spec">Before the list, optionally: the <b>offer banner</b> (<code>.lo-offer</code>, white platter,
+      radius 30, monogram 46 at a 28 inset, arrow button 44) and the <b>&ldquo;or&rdquo; divider</b>
+      (<code>.lo-or</code>, 95pt hairlines, Proxima 12 #8e8e93).</p>
+  </section>
+
+  <section class="card" id="themes" style="scroll-margin-top:80px">
+    <h2>Themes</h2>
+    <p class="desc">One gradient per plan drives three things at once: the price, the deal text and the
+      pill. It is set by <code>data-plan</code> on the card, so a flow never paints a part by hand.</p>
+    <div class="themes" id="pcThemes"></div>
+    <p class="spec">The Diet and LifeStyle are read from the DS component; BODYBuilding and Kids are traced from
+      their instances. BODYBuilding&rsquo;s pill breaks the two-tone: BODY in white Demi, Building in
+      <code>#F2543D</code>.</p>
+  </section>
+
+  <section class="card" id="rules" style="scroll-margin-top:80px">
+    <h2>Rules</h2>
+    <p class="law">ONE PADDING ON ALL FOUR SIDES.
+      <span>Rashid&rsquo;s uniform-padding law: nothing sits closer to one edge than another. 20 all round.</span></p>
+    <p class="law">THE PRICE IS THE PRICE COMPONENT, NEVER A RE-DRAWN ONE.
+      <span>Home&rsquo;s first card set the numeral at Figma&rsquo;s 30/19 line-height. A 19px line box cannot
+      hold 30px Urbane ink, so the gradient numeral was clipped. Figma line-heights do not transfer to CSS,
+      and the cap-top law is what does. Plugging the <code>.dsp</code> slot in fixed it by construction.</span></p>
+    <ul class="desc" style="font-size:13.5px;padding-left:20px;margin-top:14px">
+      <li><b>No deal:</b> leave an empty <code>&lt;span&gt;&lt;/span&gt;</code> where the chip goes, so the right
+        column keeps its spacing.</li>
+      <li><b>One-word plan names</b> (Kids) use only the Demi half: <code>&lt;span class="b"&gt;Kids&lt;/span&gt;</code>.</li>
+      <li><b>Coupons re-price the card</b> in checkout: only the numbers change, never the layout.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="using" style="scroll-margin-top:80px">
+    <h2>Using it &mdash; copy, don&rsquo;t link</h2>
+    <p class="desc">Flow folders are self-contained dev chunks, so a flow never links to <code>/system/</code>. Copy
+      <b>both</b> files into the flow&rsquo;s folder and link the copies. Line 1 is a version stamp, and
+      everything after it must stay byte-identical to the source.</p>
+    <div class="codewrap"><pre id="pcUse">&lt;!-- in the flow's &lt;head&gt;, after its @font-face rules --&gt;
+&lt;link rel="stylesheet" href="price.css"&gt;
+&lt;link rel="stylesheet" href="plancard.css"&gt;
+
+# copy (from the repo root)
+cp system/components/price.css    &lt;flow&gt;/price.css
+cp system/components/plancard.css &lt;flow&gt;/plancard.css
+
+# drift check, run on every Design System change notice: no output = in sync
+for f in price plancard; do
+  head -1 system/components/$f.css; head -1 &lt;flow&gt;/$f.css
+  diff &lt;(tail -n +2 system/components/$f.css) &lt;(tail -n +2 &lt;flow&gt;/$f.css)
+done</pre><button class="copycode" data-copy="pcUse">Copy</button></div>
+    <h3>Markup</h3>
+    <div class="codewrap"><pre id="pcMarkup">&lt;div class="plancard" data-plan="thediet"&gt;   &lt;!-- thediet · lifestyle · bodybuilding · kids --&gt;
+  &lt;div class="pc-cols"&gt;
+    &lt;div class="pc-list"&gt;
+      &lt;div class="pc-row"&gt;&lt;i&gt;1&lt;/i&gt;&lt;span&gt;Breakfast&lt;/span&gt;&lt;/div&gt;
+      &lt;div class="pc-row"&gt;&lt;i&gt;2&lt;/i&gt;&lt;span&gt;Lunch &amp;amp; Dinner&lt;/span&gt;&lt;/div&gt;
+      &lt;div class="pc-chip"&gt;&lt;b&gt;~1200 kcal&lt;/b&gt;&lt;span&gt;|&lt;/span&gt;&lt;span&gt;&lt;b&gt;100g&lt;/b&gt; macros&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="pc-right"&gt;
+      &lt;span class="dsp primary xxxl grad"&gt;&lt;span class="was"&gt;&lt;span&gt;KD139&lt;/span&gt;&lt;/span&gt;&lt;span class="cur"&gt;KD&lt;/span&gt;&lt;span class="num"&gt;99&lt;/span&gt;&lt;span class="per"&gt;/mo&lt;/span&gt;&lt;/span&gt;
+      &lt;span class="pc-deal"&gt;&lt;span class="gt"&gt;خصم KD 40&lt;/span&gt;&#128293;&lt;span class="gt"&gt;اشترك الحين&lt;/span&gt;&lt;/span&gt;
+      &lt;button class="pc-pill"&gt;&lt;span class="a"&gt;The&lt;/span&gt;&lt;span class="b"&gt;Diet&lt;/span&gt;&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre><button class="copycode" data-copy="pcMarkup">Copy</button></div>
+  </section>
+
+  <section class="card" id="adoption" style="scroll-margin-top:80px">
+    <h2>Adoption</h2>
+    <div class="mrow"><span class="mn">Home &middot; logged-out</span><span class="badge todo">To copy</span>
+      <span class="mt">The reference (324e812). To adopt: copy both files, delete the inline copies, rename plan keys
+        <code>diet</code>&rarr;<code>thediet</code> and <code>body</code>&rarr;<code>bodybuilding</code>, drop the inline
+        gradient styles, add <code>grad</code> to the price slot. Its strike moves from 1.6px/&minus;9.9&deg; to Figma&rsquo;s
+        1px/&minus;9.87&deg;.</span></div>
+    <div class="mrow"><span class="mn">Checkout &middot; plans</span><span class="badge todo">To copy</span>
+      <span class="mt">&middot;21 copied Home by hand. To adopt: copy both files; <code>price.css</code> is its existing
+        <code>.dsp</code> block plus <code>grad</code>. In the card, <code>.ppill</code> becomes
+        <code>.pc-pill</code> (its other pills keep <code>.ppill</code>), the <code>strike-plan.svg</code> image leaves
+        the card (the strike is CSS now), and the plan gradient comes from <code>--plan-grad</code>.</span></div>
+    <div class="mrow"><span class="mn">Native (pilot)</span><span class="badge todo">Routed</span>
+      <span class="mt">The pilot aligns the price on <code>.lastTextBaseline</code>. It adopts the cap-top law from
+        measured glyph ink, NOT the font&rsquo;s cap-height metric: Urbane&rsquo;s OS/2 table reports 724/2048
+        (0.354em), while its measured cap ink is &asymp;0.736em. Sent to Shell through the Coordinator.</span></div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  document.querySelectorAll('.copycode').forEach(b => {
+    b.addEventListener('click', () => {
+      const text = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => {
+        b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy', 1400);
+      }).catch(() => {});
+    });
+  });
+  const PLANS = [
+    { id: 'thediet', a: 'The', b: 'Diet', now: 99, dec: '.500',
+      grad: 'linear-gradient(115.8deg, #82459C 5.44%, #5525B5 102.11%)' },
+    { id: 'lifestyle', a: 'Life', b: 'Style', now: 109, dec: '.250',
+      grad: 'linear-gradient(111.3deg, #FF963E 53.4%, #FF0505 141.76%)' },
+    { id: 'bodybuilding', a: 'BODY', b: 'Building', now: 149, dec: '.750',
+      grad: 'linear-gradient(115.8deg, #2A2A52 5.44%, #15152E 102.11%)' },
+    { id: 'kids', a: '', b: 'Kids', now: 99, dec: '.500',
+      grad: 'linear-gradient(115.8deg, #FF6A54 5.44%, #FF3287 102.11%)' },
+  ];
+  const ROWS = [['1', 'Breakfast'], ['2', 'Lunch &amp; Dinner'], ['5', 'Salad &amp; Soup'], ['1', 'Snack']];
+  const S = { deal: true, was: true, dec: false };
+  const card = p => '<div class="plancard" data-plan="' + p.id + '"><div class="pc-cols"><div class="pc-list">' +
+    ROWS.map(r => '<div class="pc-row"><i>' + r[0] + '</i><span>' + r[1] + '</span></div>').join('') +
+    '<div class="pc-chip"><b>~1200 kcal</b><span>|</span><span><b>100g</b> macros</span></div></div>' +
+    '<div class="pc-right"><span class="dsp primary xxxl grad">' +
+      (S.was ? '<span class="was"><span>KD139</span></span>' : '') +
+      '<span class="cur">KD</span><span class="num">' + p.now + '</span>' +
+      (S.dec ? '<span class="dec">' + p.dec + '</span>' : '') + '<span class="per">/mo</span></span>' +
+    (S.deal ? '<span class="pc-deal"><span class="gt">خصم KD 40</span>&#128293;<span class="gt">اشترك الحين</span></span>' : '<span></span>') +
+    '<button class="pc-pill">' + (p.a ? '<span class="a">' + p.a + '</span>' : '') + '<span class="b">' + p.b + '</span></button>' +
+    '</div></div></div>';
+  const offer = '<button class="lo-offer"><svg class="mono" viewBox="0 0 56 56" fill="none"><circle cx="15.5" cy="15" r="10" stroke="#17171b" stroke-width="7.5"/><path d="M45.5 5.5C38 15.5 22.5 37 11.5 50.5" stroke="#17171b" stroke-width="7.5" stroke-linecap="round"/><circle cx="40.5" cy="41" r="10" stroke="#17171b" stroke-width="7.5"/></svg>' +
+    '<span class="lo-off-t"><b>Summer Offer</b><span dir="rtl">عروض الصيــــف</span></span>' +
+    '<span class="lo-arrow"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4.5L16.5 10 11 15.5" stroke="#17171b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>' +
+    '<div class="lo-or"><i></i><span>Or try a different plan</span><i></i></div>';
+  const spec = document.getElementById('pcSpec');
+  const paint = () => { spec.innerHTML = offer + PLANS.map(card).join(''); };
+  document.getElementById('pcCtl').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    S[b.dataset.k] = !S[b.dataset.k]; b.classList.toggle('on', S[b.dataset.k]); paint();
+  });
+  paint();
+  document.getElementById('pcThemes').innerHTML = PLANS.map(p =>
+    '<div class="theme"><div class="sw" style="background-image:' + p.grad + '"></div><b>' +
+    (p.a + ' ' + p.b).trim() + '</b><code>data-plan="' + p.id + '"</code><code>' + p.grad + '</code></div>').join('');
+})();
+</script>
+</body>
+</html>

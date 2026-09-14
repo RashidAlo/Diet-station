@@ -161,6 +161,138 @@
           ]
         }
       ]
+    },
+    "home": {
+      "screens": [
+        {
+          "id": "logged-out",
+          "name": "Logged-out plans"
+        }
+      ],
+      "components": [
+        {
+          "id": "plan-card",
+          "name": "Plan card",
+          "kind": "surface",
+          "summary": "One plan-card design for every plan list: meal rows, the nutrition chip, a Price slot in the plan's gradient, the optional deal chip and the plan pill. Shared source, copied into the flow.",
+          "values": [
+            "platter r32 · white .7 · blur 14 saturate 140% · .5px #dbdbdb ring",
+            "uniform padding 20",
+            "price: .dsp primary xxxl grad (cap-top law)",
+            "strike: 1px #ED1C24 at -9.87°",
+            "pill 40 · r28 · plan gradient"
+          ],
+          "doc": "system/plancard.html",
+          "states": [
+            {
+              "id": "thediet",
+              "label": "The Diet"
+            },
+            {
+              "id": "lifestyle",
+              "label": "LifeStyle"
+            },
+            {
+              "id": "bodybuilding",
+              "label": "BODYBuilding"
+            },
+            {
+              "id": "kids",
+              "label": "Kids"
+            },
+            {
+              "id": "no-deal",
+              "label": "No deal chip"
+            }
+          ],
+          "screen": "logged-out"
+        },
+        {
+          "id": "offer-banner",
+          "name": "Offer banner",
+          "kind": "content",
+          "summary": "The white offer platter above the plan list, with the \"or try a different plan\" divider under it.",
+          "values": [
+            "h100 · r30 · monogram 46 at a 28 inset",
+            "arrow button 44",
+            "divider hairlines 95pt, Proxima 12 #8e8e93"
+          ],
+          "doc": "system/plancard.html#anatomy",
+          "states": [
+            {
+              "id": "rest",
+              "label": "Rest"
+            }
+          ],
+          "screen": "logged-out"
+        }
+      ]
+    },
+    "checkout": {
+      "screens": [
+        {
+          "id": "plans",
+          "name": "Plans overlay"
+        }
+      ],
+      "components": [
+        {
+          "id": "plan-card",
+          "name": "Plan card",
+          "kind": "surface",
+          "summary": "One plan-card design for every plan list: meal rows, the nutrition chip, a Price slot in the plan's gradient, the optional deal chip and the plan pill. Shared source, copied into the flow.",
+          "values": [
+            "platter r32 · white .7 · blur 14 saturate 140% · .5px #dbdbdb ring",
+            "uniform padding 20",
+            "price: .dsp primary xxxl grad (cap-top law)",
+            "strike: 1px #ED1C24 at -9.87°",
+            "pill 40 · r28 · plan gradient"
+          ],
+          "doc": "system/plancard.html",
+          "states": [
+            {
+              "id": "thediet",
+              "label": "The Diet"
+            },
+            {
+              "id": "lifestyle",
+              "label": "LifeStyle"
+            },
+            {
+              "id": "bodybuilding",
+              "label": "BODYBuilding"
+            },
+            {
+              "id": "kids",
+              "label": "Kids"
+            },
+            {
+              "id": "no-deal",
+              "label": "No deal chip"
+            }
+          ],
+          "screen": "plans"
+        },
+        {
+          "id": "offer-banner",
+          "name": "Offer banner",
+          "kind": "content",
+          "summary": "The white offer platter above the plan list, with the \"or try a different plan\" divider under it.",
+          "values": [
+            "h100 · r30 · monogram 46 at a 28 inset",
+            "arrow button 44",
+            "divider hairlines 95pt, Proxima 12 #8e8e93"
+          ],
+          "doc": "system/plancard.html#anatomy",
+          "states": [
+            {
+              "id": "rest",
+              "label": "Rest"
+            }
+          ],
+          "screen": "plans"
+        }
+      ]
     }
   }
 }
