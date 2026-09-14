@@ -217,6 +217,17 @@ body.labshell-menu:not(.desktop) .labshell-done { display: block; }\
      single quotes for font names, and must never contain a double quote ---- */
   css += "\
 .lab-tabs.in-side .seg button { padding: 8px 6px; }\
+.lab-trail { display: none; align-items: center; gap: 4px; max-width: 100%; border: 0;\
+  cursor: pointer; background: transparent; color: #ED1C24; border-radius: 999px;\
+  padding: 6px 12px 6px 4px; font: 600 13.5px/18px 'Urbane Rounded', -apple-system, sans-serif; }\
+.lab-trail:hover { background: rgba(237,28,36,.07); }\
+.lab-trail svg { width: 15px; height: 15px; flex: none; }\
+.lab-trail span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\
+body.desktop .lab-trail.in-side { display: inline-flex; margin: 0 0 10px -4px; }\
+.lab-trail.in-comp { display: inline-flex; flex: none; margin-right: 2px; }\
+body.labshell-menu:not(.desktop) .lab-trail.lx-back { display: flex; width: 100%;\
+  margin: 0 0 10px; padding: 13px 14px 13px 10px; border: 1px solid rgba(0,0,0,.12);\
+  border-radius: 14px; background: #fff; color: #ED1C24; font: 600 13px/1 -apple-system, sans-serif; }\
 html.ds-native [data-lab-tab=components],\
 body.lab-mobile .lab-tabs [data-lab-tab=components] { display: none; }\
 .lab-view.lab-comp { overflow: hidden; }\
@@ -896,6 +907,11 @@ body.lab-comp-on .side-resizer { display: none; }\
       '<section class="lc-detail"></section>' +
       '<div class="lc-stage"><div class="lc-device"><div class="lc-boot">Starting the prototype…</div>' +
       '<div class="lc-outline" hidden></div></div></div></div>';
+    if (TRAIL_ON) {
+      var lch = compQ('.lc-head');
+      lch.insertBefore(trailButton('in-comp'), lch.firstChild);
+      trailPaint();
+    }
     compQ('.lc-tabs').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-lab-tab]');
       if (b) setTab(b.dataset.labTab);
@@ -1149,22 +1165,95 @@ body.lab-comp-on .side-resizer { display: none; }\
     document.body.classList.remove('lab-comp-on');
   }
 
+  /* ---------------- the lab trail (Rashid, 2026-09-14) ----------------
+     "A back button to trace back my track": every place visited on the web
+     lab — the hub and each prototype — joins ONE trail for this browser tab,
+     and Back walks it a step at a time, across prototypes. Same key and
+     rules as the hub (index.html). Web only: in the app the hub stack and
+     native navigation own "back", and embedded or summoned views must never
+     navigate themselves. */
+  var TRAIL_KEY = 'ds-trail-v1', TRAIL_BACK = 'ds-trail-back';
+  var TRAIL_ON = !LABFRAME && window.parent === window &&
+    !/DietStationLab/.test(navigator.userAgent) &&
+    !/[?&](embed|solo)=1(&|$)/.test(location.search);
+  var TRAIL_TITLES = {}, trailBtns = [];
+  function trailRead() {
+    try { var a = JSON.parse(sessionStorage.getItem(TRAIL_KEY)); return Array.isArray(a) ? a : []; }
+    catch (_) { return []; }
+  }
+  function trailWrite(a) {
+    try { sessionStorage.setItem(TRAIL_KEY, JSON.stringify(a.slice(-30))); } catch (_) {}
+  }
+  function trailHere() {
+    var q = location.search.replace(/^\?/, '').split('&').filter(function (p) {
+      return p && p.indexOf('v=') !== 0 && p.indexOf('from=') !== 0;
+    });
+    return location.pathname + (q.length ? '?' + q.join('&') : '');
+  }
+  function trailArrive() {
+    var a = trailRead(), url = trailHere(), back = false, last = a[a.length - 1];
+    try { back = sessionStorage.getItem(TRAIL_BACK) === '1'; sessionStorage.removeItem(TRAIL_BACK); } catch (_) {}
+    if (last && last.id === FLOW_ID) last.url = url;                 /* reload, restart, or arrived by Back */
+    else if (!back && a.length > 1 && a[a.length - 2].id === FLOW_ID) {
+      a.pop(); a[a.length - 1].url = url;                            /* the browser's own back */
+    } else a.push({ id: FLOW_ID, url: url });
+    trailWrite(a);
+  }
+  function trailPrev() { var a = trailRead(); return a.length > 1 ? a[a.length - 2] : null; }
+  function trailLabel(e) { return !e || e.id === 'hub' ? 'Lab' : (TRAIL_TITLES[e.id] || e.id); }
+  function trailGoBack() {
+    var a = trailRead(), prev = a.length > 1 ? a[a.length - 2] : null;
+    if (!prev) {                               /* arrived here directly: the lab is back */
+      location.href = '../?v=' + Date.now() + '&from=' + encodeURIComponent(FLOW_ID);
+      return;
+    }
+    /* remember the stop being left: the hub's pill offers it on arrival */
+    try { sessionStorage.setItem('ds-trail-left', JSON.stringify(a[a.length - 1])); } catch (_) {}
+    a.pop();
+    trailWrite(a);
+    try { sessionStorage.setItem(TRAIL_BACK, '1'); } catch (_) {}
+    location.href = prev.url + (prev.url.indexOf('?') < 0 ? '?' : '&') + 'v=' + Date.now();
+  }
+  function trailButton(cls) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lab-trail ' + cls;
+    b.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M10 3.5L5.5 8l4.5 4.5" ' +
+      'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><span></span>';
+    b.addEventListener('click', trailGoBack);
+    trailBtns.push(b);
+    return b;
+  }
+  function trailPaint() {
+    var prev = trailPrev(), label = trailLabel(prev);
+    trailBtns.forEach(function (b) {
+      b.querySelector('span').textContent = b.classList.contains('lx-back') ? 'Back to ' + label : label;
+      b.setAttribute('aria-label', 'Back to ' + label);
+      b.title = 'Back to ' + label;
+    });
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
     /* the live instance inside the Components tab: no lab chrome at all */
     if (LABFRAME) return;
+    if (TRAIL_ON) trailArrive();
     document.body.append(tabsEl, barEl, chipEl, flowView, handView, compView, backEl);
     var side = document.getElementById('side');
     if (side) {
       tabsEl.classList.add('in-side');
       side.insertBefore(tabsEl, side.firstChild);
+      if (TRAIL_ON) side.insertBefore(trailButton('in-side'), tabsEl);
     }
     syncMobileClass();
     setupLabMenu();
     setupSideResize();
+    trailPaint();
     fetch('../flows.json?v=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        (data.flows || []).forEach(function (x) { TRAIL_TITLES[x.id] = x.title; });
+        trailPaint();
         var f = (data.flows || []).find(function (x) { return x.id === FLOW_ID; });
         if (!f) return;
         renderUserflow(f);
@@ -1452,6 +1541,13 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
       '<path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
       '</svg>Exit prototype</button>';
     side.insertBefore(bar, links);
+    /* the trail's Back, only when there is somewhere to go back to that
+       Exit doesn't already cover (a previous prototype) */
+    if (TRAIL_ON) {
+      var prevStop = trailPrev();
+      /* its own row above Restart / Exit, naming where it goes */
+      if (prevStop && prevStop.id !== 'hub') side.insertBefore(trailButton('lx-back'), bar);
+    }
     bar.querySelector('.lx-restart').addEventListener('click', function () {
       /* fresh reload with a cache-bust, keeping flags like embed=1 */
       var q = location.search.replace(/^\?/, '').split('&')

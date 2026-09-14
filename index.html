@@ -2368,35 +2368,49 @@ if (NATIVE) {
   });
 })();
 
-/* ============ back to the prototype you were in (web) ============
-   Rashid, 2026-09-14: on the web hub, a way straight back into the
-   prototype you just left. Knows it from ?from=<flow> (lab Exit adds it) or
-   from the card you opened this session. Reopens that prototype; × forgets it.
-   The app has its own navigation, so this is web only. */
+/* ============ the lab trail + back to the prototype you were in (web) ============
+   Rashid, 2026-09-14: "a back button to trace back my track". Every place
+   visited on the web lab — this hub and each prototype — joins ONE trail
+   for the browser tab (sessionStorage ds-trail-v1; lab-shell.js keeps the
+   same key and rules). The hub's pill offers the most recent prototype on
+   that trail; inside a prototype, lab-shell's Back walks it step by step.
+   ?from=<flow> is kept as a fallback for pages without the trail. The app
+   has its own navigation, so this is web only. */
 (function () {
   if (NATIVE) return;
-  const KEY = 'ds-last-flow';
-  const store = {
-    get() { try { return sessionStorage.getItem(KEY); } catch (_) { return null; } },
-    set(v) { try { sessionStorage.setItem(KEY, v); } catch (_) {} },
-    clear() { try { sessionStorage.removeItem(KEY); } catch (_) {} }
+  const KEY = 'ds-trail-v1', BACK = 'ds-trail-back', HIDE = 'ds-backpill-hidden';
+  const ss = {
+    get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { sessionStorage.removeItem(k); } catch (_) {} }
   };
-  /* remember the prototype a card opens (never the admin controls on it) */
-  document.addEventListener('click', e => {
-    const card = e.target.closest && e.target.closest('#flows > .card[data-flow]');
-    if (!card || card.classList.contains('editing')) return;
-    if (e.target.closest('.cardedit, .livebtn, .hobtn, .editor, .handoff')) return;
-    store.set(card.dataset.flow);
-  }, true);
+  const read = () => { try { const a = JSON.parse(ss.get(KEY)); return Array.isArray(a) ? a : []; } catch (_) { return []; } };
+  const write = a => ss.set(KEY, JSON.stringify(a.slice(-30)));
 
   const params = new URLSearchParams(location.search);
   const from = params.get('from');
   if (from) {
-    store.set(from);
     params.delete('from');
     const q = params.toString();
     try { history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch (_) {}
   }
+
+  /* arrive: the same three rules as lab-shell's trailArrive() */
+  let left = null;               /* the prototype a Back step just walked out of */
+  (function arrive() {
+    const a = read(), url = location.pathname, back = ss.get(BACK) === '1', last = a[a.length - 1];
+    ss.del(BACK);
+    if (back) { try { left = JSON.parse(ss.get('ds-trail-left')); } catch (_) {} }
+    ss.del('ds-trail-left');
+    if (last && last.id === 'hub') last.url = url;
+    else if (!back && a.length > 1 && a[a.length - 2].id === 'hub') { a.pop(); a[a.length - 1].url = url; }
+    else {
+      /* a prototype page without the trail sent us here: remember it first */
+      if (from && !(last && last.id === from)) a.push({ id: from, url: location.pathname + from + '/' });
+      a.push({ id: 'hub', url });
+    }
+    write(a);
+  })();
 
   const pill = document.createElement('div');
   pill.className = 'backpill';
@@ -2408,30 +2422,35 @@ if (NATIVE) {
     '<path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>';
   document.body.appendChild(pill);
 
-  let target = null;
+  let target = null, sig = '';
   const show = () => {
-    const id = store.get();
-    const f = id && (NAV_FLOWS || []).find(x => x.id === id);
-    if (!f || (flowHiddenNow(f) && !ADMIN)) { pill.classList.remove('show'); return; }
-    target = f;
+    const a = read();
+    let i = a.length - 1;
+    while (i >= 0 && a[i].id === 'hub') i--;          /* the most recent prototype on the trail */
+    /* arrived by Back: the prototype just left wins, even though Back took it off the trail */
+    const e = (left && left.id && left.id !== 'hub') ? left : (i >= 0 ? a[i] : null);
+    const f = e && (NAV_FLOWS || []).find(x => x.id === e.id);
+    sig = e ? e.id + ':' + (e === left ? 'left' : i) : '';
+    if (!f || (flowHiddenNow(f) && !ADMIN) || ss.get(HIDE) === sig) { pill.classList.remove('show'); return; }
+    target = { f, url: e.url };
     pill.querySelector('.bp-go span').textContent = 'Back to ' + f.title;
     pill.querySelector('.bp-go').setAttribute('aria-label', 'Back to ' + f.title);
     setTimeout(() => pill.classList.add('show'), 350);   /* after the page settles */
   };
   pill.querySelector('.bp-go').addEventListener('click', () => {
-    if (target) location.href = target.path + '?v=' + Date.now();
+    if (!target) return;
+    const u = target.url || target.f.path;
+    location.href = u + (u.indexOf('?') < 0 ? '?' : '&') + 'v=' + Date.now();
   });
   pill.querySelector('.bp-x').addEventListener('click', () => {
-    store.clear();
+    ss.set(HIDE, sig);                  /* hidden until the trail gains a new prototype */
     pill.classList.remove('show');
   });
-  /* the hub's flow list arrives async; show once it has */
   let tries = 0;
   (function wait() {
     if (typeof NAV_FLOWS !== 'undefined' && NAV_FLOWS && NAV_FLOWS.length) show();
     else if (tries++ < 80) setTimeout(wait, 100);
   })();
-  /* a return via the browser's back button restores this page from cache */
   addEventListener('pageshow', e => { if (e.persisted) show(); });
 })();
 
