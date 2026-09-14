@@ -2295,7 +2295,7 @@ final class FlowPreloader {
                         withAnimation(.spring(response: 0.42, dampingFraction: 0.8),
                                       apply)
                     }
-                    if !els.isEmpty, let wv = self.chrome.webView {
+                    if let wv = self.chrome.webView {  // empty posts confirm too (caps-gated pages)
                         let ids = els.map { "'\($0.id)'" }.joined(separator: ",")
                         // CAPABILITY ANNOUNCEMENT, not an assumption. The
                         // web deploys continuously; this renderer ships
@@ -2329,7 +2329,7 @@ final class FlowPreloader {
                             // capability announced by one relay and not the
                             // other would hand the tile over on one surface
                             // and orphan the number on the other.
-                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true, tileRows: 2, dateWidget: 1 })",
+                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true, tileRows: 2, dateWidget: 1, navGlyphs: 1, navPill: 1 })",
                             in: frame, in: .page, completionHandler: nil)
                     }
                 }
