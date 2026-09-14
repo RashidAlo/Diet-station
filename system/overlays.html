@@ -439,7 +439,9 @@
     <p class="spec">bar <code>top-pad + 58</code> &middot; controls at <code>top-pad + 9</code>
       &middot; X leading <code>24</code>, trailing <code>16</code> (rewards keeps its own 24, see
       Adoption) &middot; dual trailing <code>16</code> &middot; text title centered at
-      <code>top-pad + 20</code>.</p>
+      <code>top-pad + 9 + (row &minus; 22) / 2</code>: the title&rsquo;s 22 line is centred on the control row, so
+      <code>+ 20</code> in a 44 row and <code>+ 18</code> in a 40 row. (First written as a flat <code>+ 20</code>, which only
+      holds at 44; beside a 40pt X it sat 2pt low. Caught on Sign in.)</p>
     <p class="an-law">BACK IS LEADING, AND ONLY ON A PUSH. A PUSHED SCREEN&rsquo;S BAR IS
       BACK &middot; TITLE &middot; ONE TRAILING THING.
       <span>Rashid via Checkout, 2026-09-14: one top bar across every step, with native-glass
@@ -450,7 +452,7 @@
       at most one thing: an action, or nothing. An empty trailing seat beside a back is legal.
       The &ldquo;X leading, trailing empty&rdquo; rule is about the X, which reads as back there.
       <b>Bar:</b> controls on DS-CHROME-TOP (<code>REAL_PAD + 9</code>), bar
-      <code>REAL_PAD + 58</code>, title 16 Urbane 600 centred at <code>top-pad + 20</code>.
+      <code>REAL_PAD + 58</code>, title 16 Urbane 600 centred on the control row (<code>top-pad + 18</code> beside 40pt controls).
       <b>One renderer per bar:</b> a trailing pill or call button is a control in the
       buttons&rsquo; material, and it is twinned whenever its neighbours are. A web pill beside
       native glass shows two materials in one bar. Until Shell can draw it, that screen&rsquo;s
@@ -486,7 +488,8 @@
           becomes the scrubber. The tile&rsquo;s own container is the capsule it grows into.</p></div>
       <div class="an-ctl"><div class="vis"><span class="an-title" style="position:static;transform:none">Mar 15th</span></div>
         <h4>Title</h4>
-        <p>16 Urbane 600, centered at <code>top-pad + 20</code>. Over imagery it goes white with a
+        <p>16 Urbane 600 on a 22 line, centred on the control row: <code>top-pad + 20</code> beside 44pt controls,
+          <code>top-pad + 18</code> beside 40pt ones. Over imagery it goes white with a
           soft shadow. <b>A label, not a control</b>: it never arms, never morphs, and never takes
           the tile&rsquo;s place in motion.</p></div>
       <div class="an-ctl wide"><div class="vis" style="align-items:flex-start;padding-top:22px"><div class="an-dock" style="position:static;opacity:1;width:100%;border-radius:8px"><b>Lunch</b><em>1 of 2</em></div></div>
@@ -752,6 +755,12 @@
         <span class="mt">Bar titles are 16 Urbane 600, centred (&ldquo;titles &hellip; unified&rdquo;,
         via Checkout). Checkout moves from 18/28 leading-aligned. <b>Auth follows</b> (Rashid,
         2026-09-14): its title goes from 22 to 16, centred.</span></div>
+      <div class="mrow"><span class="mn">Sign in &middot; unified bar</span><span class="badge ok">Adopted</span>
+        <span class="mt">Config B at 22109d2 (auth): X 40 trailing at right 16, glass (web on-light, native twin
+        <code>close</code>), title 16/600 centred, bar 72. Two follow-ups: the title moves from <code>+ 20</code> to
+        <code>+ 18</code> (the corrected rule above), and in the shell the X follows the &middot;217 interim (web rides the
+        entry, twin at rest), so it is not yet Ruling 3 compliant, the same as meal selection. The native twin is
+        unverified on device (routed to Shell).</span></div>
       <div class="mrow"><span class="mn">Checkout &middot; top bar</span><span class="badge ok">Built, cap-gated</span>
         <span class="mt">One bar across steps. Plans (root overlay): X leading 24 &middot; call
         trailing 16, twin <code>call</code>. Duration: back &middot; &ldquo;Select Duration&rdquo;
