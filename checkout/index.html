@@ -267,19 +267,12 @@
   /* plan cards: configured with the plan list (.plancard .dsp) */
   /* dock: ink numeral, red struck price */
   .paybar .dsp { --dsp-ink: var(--ink); --dsp-was-ink: var(--red); }
-  .paybar .dsp .was { position: relative; }
   /* duration rows + payment rows: Proxima numerals, so base .dsp */
   .dur .dsp, .pay-opt .dsp { --dsp-ink: var(--ink); }
   .per-mo .dsp { --dsp-ink: var(--muted); --dsp-cur-ink: var(--muted); }
   /* savings total reads green */
   .savings-row .dsp { --dsp-ink: var(--green); --dsp-cur-ink: var(--green); }
-  /* the crossing rule rides the struck number and spans it — a price changes
-     with every coupon, so fixed geometry drifts off it. Figma exports these at
-     near-180deg; a line is symmetric under a half-turn, so the angle is
-     Figma's minus 180 (170.13 -> -9.87). */
-  .dsp .was .pstrike { position: absolute; left: -1px; right: 3px; top: 50%;
-    height: 8px; margin-top: -4px; pointer-events: none; display: flex; align-items: center; }
-  .dsp .was .pstrike img { width: 100%; height: 1px; display: block; transform: rotate(-9.87deg); }
+  /* the strike (one diagonal, Figma Line 79) is price.css v2's — no flow-drawn strike */
   /* the explainer sits right under the price: no 16px line box padding it out */
   .per-mo { display: flex; line-height: 1; color: var(--muted); }
   .dur-check { width: 20px; height: 20px; flex: none; margin-left: -4px; opacity: 0; transform: scale(.6);
@@ -730,7 +723,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·25</div>
+  <div class="s-foot" id="buildInfo">checkout ·27</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -754,7 +747,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·25';
+const BUILD = 'checkout ·27';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1052,13 +1045,13 @@ function payDock(label, action, opts) {
     </div>` : ''}
     ${opts.savings ? `<div class="total-row"><span class="total-lbl">Total</span>
       <div class="pb-stack">
-        <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
+        <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
         <div class="pb-before">Before</div>
       </div></div>
       <button class="cta" data-act="${action}">${label}</button>`
     : `<div class="paybar-row">
         <div class="pb-price"><div class="pb-stack">
-          <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span><span class="pstrike"><img src="${A}strike-line.svg" alt=""></span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
+          <div class="pb-line"><span class="dsp primary xxxl" data-pk="dock"><span class="was"><span>KD${q.list}</span></span><span class="cur">KD</span><span class="num">${m.whole}</span>${m.dec ? `<span class="dec">${m.dec}</span>` : ''}</span></div>
           <div class="pb-before">Before</div>
         </div></div>
         <button class="cta" data-act="${action}">${label}
