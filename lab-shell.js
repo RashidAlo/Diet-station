@@ -1247,6 +1247,7 @@ body.lab-comp-on .side-resizer { display: none; }\
     }
     syncMobileClass();
     setupLabMenu();
+    setupMenuYield();
     setupSideResize();
     trailPaint();
     fetch('../flows.json?v=' + Date.now())
@@ -1503,6 +1504,39 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
      No cap (web, the hub's own sheets): unchanged. */
   var NATIVE_MENU = window.parent === window &&
     !!(window.DSNativeCaps && window.DSNativeCaps.labMenu >= 1);
+
+  /* LAYERS (Design System, platform.html handshake block): the native host's
+     persistent bar yields while any cover is up in its view — here, a lab menu
+     (it floated over the sheet's bottom rows). {t:'layer', id:'labmenu', up}
+     on every open/close edge; native keeps a SET of up ids per view and hides
+     the bar while it is non-empty, so covers stack and one closing never
+     un-hides the bar over another. Generic: lab-shell's own sheet
+     (body.labshell-menu) or a page's own menu (body.labmenu-open — meal-select,
+     home). Cap `layers`, main frame only. */
+  function setupMenuYield() {
+    if (window.parent !== window ||
+        !(window.DSNativeCaps && window.DSNativeCaps.layers >= 1)) return;
+    var was = false;
+    var post = function (up) {
+      try { window.webkit.messageHandlers.ds.postMessage({ t: 'layer', id: 'labmenu', up: up }); } catch (_) {}
+    };
+    var check = function () {
+      var c = document.body.classList;
+      var up = c.contains('labshell-menu') || c.contains('labmenu-open');
+      if (up === was) return;
+      was = up;
+      post(up);
+    };
+    new MutationObserver(check).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    check();
+    /* teardown with a menu up must never strand the bar hidden (native also
+       clears a view's ids when it navigates or unloads) */
+    addEventListener('pagehide', function () {
+      if (!was) return;
+      was = false;
+      post(false);
+    });
+  }
 
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
