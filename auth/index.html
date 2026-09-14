@@ -118,16 +118,33 @@
   html.embed .phone { background: transparent !important; }
 
   /* --- sheet header (Top Page Navigation) --- */
-  .topnav { position: absolute; left: 0; right: 0; top: 0; height: 72px; z-index: 20;
-    display: flex; align-items: center; padding: 16px; }
-  .topnav .title { position: absolute; left: 0; right: 0; top: 22px; text-align: center;
-    font: 600 22px/32px 'Urbane Rounded', sans-serif; color: #0b0e12; pointer-events: none; }
-  .authx { margin-left: auto; width: 40px; height: 40px; border-radius: 100px;
-    border: 1px solid #e5e5e5; background: #fff; cursor: pointer; z-index: 2;
+  /* UNIFIED SHEET BAR (system/overlays.html#seats, canon ced7710 — Rashid:
+     Sign in follows the unified bar over its Figma frame). Config B, title +
+     X: bar top-pad + 58, controls at top-pad + 9, a lone X in the trailing
+     seat at 16, text title 16 Urbane 600 centred at top-pad + 20. top-pad is
+     the sheet-embedded value meal selection uses (14), so the bar stays 72
+     and every screen below keeps its Figma rhythm. */
+  .topnav { --top-pad: 14px; position: absolute; left: 0; right: 0; top: 0;
+    height: calc(var(--top-pad) + 58px); z-index: 20; pointer-events: none; }
+  .topnav .title { position: absolute; left: 50%; transform: translateX(-50%);
+    top: calc(var(--top-pad) + 20px); white-space: nowrap;
+    font: 600 16px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .authx { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px);
+    pointer-events: auto; }
+  /* the X's web material: rewards' simplified glass, on-light ground (the
+     sheet is white). In the app shell the X is a native Liquid Glass twin. */
+  .ds-glass { width: 40px; height: 40px; border-radius: 50%;
+    border: none; padding: 0; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: transform .18s cubic-bezier(.3,.8,.3,1), background .15s ease; }
-  .authx:active { transform: scale(.92); background: #f5f5f5; }
-  .authx img { width: 20px; height: 20px; }
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    backdrop-filter: blur(10px) saturate(160%);
+    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+  .ds-glass:active { transform: scale(.92); }
+  .ds-glass img { width: 20px; height: 20px; display: block; pointer-events: none; }
+  .ds-glass.on-light { background: rgba(240,240,242,.86);
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.9), 0 3px 12px rgba(0,0,0,.10); }
+  .ds-glass.on-light img { filter: brightness(0) opacity(.88); }
 
   /* --- sliding screens (iOS push inside the sheet) --- */
   .scr { position: absolute; left: 0; right: 0; top: 72px; bottom: 0;
@@ -369,7 +386,7 @@
 
         <div class="topnav">
           <div class="title">Sign in</div>
-          <button class="authx" id="closeBtn" title="close"><img src="auth-close.svg" alt=""></button>
+          <button class="authx ds-glass on-light" id="closeBtn" aria-label="Close"><img src="auth-close.svg" alt=""></button>
         </div>
 
         <!-- ============ screen 1: sign in ============ -->
@@ -667,6 +684,7 @@ function runFaceId() {
   fidOv.classList.remove('ok');
   fidLabel.textContent = 'Face ID';
   fidOv.classList.add('on', 'scanning');
+  window.DSChrome && DSChrome.clear();          /* the HUD's blur covers the bar */
   buzz();
   fidT.push(setTimeout(() => {
     fidOv.classList.remove('scanning');
@@ -678,12 +696,14 @@ function runFaceId() {
     fidOv.classList.remove('on');
     if (!phoneDigits) phoneDigits = '97377282';   /* mock identity for the quick path */
     go('success');
+    window.DSChrome && DSChrome.sync(320);
   }, MODS.faceMs + 900));
 }
 document.getElementById('btnFace').addEventListener('click', runFaceId);
 fidOv.addEventListener('click', e => {           /* tap outside card = cancel scan */
   if (e.target === fidOv && !fidOv.classList.contains('ok')) {
     fidT.forEach(clearTimeout); fidOv.classList.remove('on', 'scanning');
+    window.DSChrome && DSChrome.sync(320);
   }
 });
 
@@ -700,6 +720,7 @@ document.getElementById('btnPwd').addEventListener('click', () => {
 window.DS_EMBED = /[?&]embed=1/.test(location.search);
 window.DS_SOLO = /[?&]solo=1/.test(location.search);
 function exitFlow() {
+  window.DSChrome && DSChrome.clear();
   /* the rule, reversed: sheet slides down, scrim dissolves out in place */
   document.documentElement.classList.add('sheet-enter');
   document.documentElement.classList.remove('bd-on');
@@ -753,7 +774,10 @@ document.getElementById('btnHome').addEventListener('click', () =>
   sh.addEventListener('pointermove', e => {
     if (!tracking || e.pointerId !== pid) return;
     dy = Math.max(0, (e.clientY - startY) / scale());
-    if (dy > 6) sh.classList.add('drag');
+    if (dy > 6 && !sh.classList.contains('drag')) {
+      sh.classList.add('drag');
+      window.DSChrome && DSChrome.clear();
+    }
     sh.style.transform = `translateY(${dy * DAMP}px)`;
   });
   function release(e) {
@@ -772,6 +796,7 @@ document.getElementById('btnHome').addEventListener('click', () =>
       }, 430);
     } else {
       sh.style.transform = '';                  /* springs back to seat */
+      if (dy > 6 && window.DSChrome) DSChrome.sync(600);
     }
     dy = 0;
   }
@@ -818,6 +843,7 @@ function resetFlow() {
   phoneField.classList.remove('err'); phoneHint.classList.remove('on');
   resetOtp(); stopResend();
   fidT.forEach(clearTimeout); fidOv.classList.remove('on', 'scanning', 'ok');
+  window.DSChrome && DSChrome.sync(320);
   document.getElementById('btnHome').style.display = 'none';
   scr.success.classList.remove('onstage'); scr.otp.classList.remove('onstage');
   scr.success.classList.add('off-r'); scr.otp.classList.add('off-r');
@@ -934,6 +960,83 @@ setTimeout(() => {
   if (document.readyState === 'loading')
     addEventListener('DOMContentLoaded', attach);
   else attach();
+})();
+</script>
+<script>
+/* Native glass chrome — glasschrome v3 (rewards · checkout pattern).
+   Sign in's bar is config B: a text title (a label, stays web) and a lone X,
+   which every shell draws — so the whole control set goes native together.
+   One control, one id: close = .authx, mode sheet (posted y verbatim),
+   surface light (white sheet).
+   Interim per overlays.html "rule vs shipped" (·217): the web X rides the
+   sheet's entry and the twin takes over at rest; the web X hides only once
+   the shell confirms the id. Any motion that moves or covers the bar
+   (exit, drag, the Face ID HUD) clears the twin first so the web X travels
+   with the sheet, then re-reports when things are still again.
+   iOS < 26 shells never confirm — nothing was hidden, nothing to restore. */
+(function () {
+  if (!/DietStationLab/.test(navigator.userAgent)) return;
+  var FLOW = 'auth', SURFACE = 'light', SEL = '.authx';
+  var settled = false, confirmed = false, live = true, syncT = null;
+  var sheet = document.getElementById('sheet');
+  var st = document.createElement('style');
+  st.textContent = '.ds-native-hidden{opacity:0!important;pointer-events:none!important}';
+  document.head.appendChild(st);
+
+  function post(els, instant) {
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: SURFACE,
+        mode: 'sheet', instant: !!instant, els: els });
+    } catch (_) {}
+  }
+  function report() {
+    if (!settled || !live) return;
+    var el = document.querySelector(SEL);
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var off = { x: 0, y: 0 };
+    try {
+      var fe = window.frameElement;
+      while (fe) {
+        var fr = fe.getBoundingClientRect();
+        off.x += fr.left; off.y += fr.top;
+        fe = fe.ownerDocument.defaultView.frameElement;
+      }
+    } catch (_) {}
+    post([{ id: 'close', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+      r: Math.min(r.width, r.height) / 2 }], false);
+  }
+  window.DSChrome = {
+    sync: function (ms) { live = true; clearTimeout(syncT); syncT = setTimeout(report, ms || 0); },
+    clear: function () {
+      live = false; clearTimeout(syncT);
+      var el = document.querySelector(SEL);
+      if (el) el.classList.remove('ds-native-hidden');
+      post([], true);
+    }
+  };
+  window.DSNativeChrome = function (ids) {
+    confirmed = true;
+    if (!live) return;
+    if ((ids || []).indexOf('close') >= 0) {
+      var el = document.querySelector(SEL);
+      if (el) el.classList.add('ds-native-hidden');
+    }
+  };
+  window.DSChromeTap = function (id) {
+    if (id !== 'close') return;
+    var el = document.querySelector(SEL);
+    if (el) el.click();
+  };
+  addEventListener('pagehide', function () { post([], true); });
+  addEventListener('resize', function () { if (live) window.DSChrome.sync(350); });
+  /* the overlay entrance owns the first motion — wait for it to land */
+  sheet.addEventListener('transitionend', function (e) {
+    if (e.target === sheet && e.propertyName === 'transform' && !settled) { settled = true; report(); }
+  });
+  setTimeout(function () { if (!settled) { settled = true; report(); } },
+    (window.DS_EMBED || window.DS_SOLO) ? 1200 : 760);
 })();
 </script>
 <script src="../lab-shell.js?v=20260910b" data-flow="auth" defer></script>
