@@ -397,6 +397,20 @@
           "code": null
         }
       ],
+      "exits": [
+        {
+          "intent": "checkout-with-coupon",
+          "to": "checkout",
+          "present": "sheet",
+          "note": "Checkout button on a ripped coupon when NOT summoned by checkout — context {src:'rewards', entry:'rewards', coupon:<code>, tier}"
+        },
+        {
+          "intent": "answer-coupon",
+          "to": "(host)",
+          "present": "close",
+          "note": "When checkout summons rewards ({src:'checkout', mode:'redeem'}), a rip posts {t:'ds-result', from:'rewards', payload:{code}}; the hub delivers it and pops. Never sent otherwise."
+        }
+      ],
       "flow": {
         "nodes": [
           {
@@ -445,7 +459,13 @@
             "id": "checkout",
             "t": "Checkout",
             "kind": "end",
-            "note": "White pill CTA"
+            "note": "Checkout button · hands the code to checkout (hidden when checkout summoned rewards)"
+          },
+          {
+            "id": "loyalty",
+            "t": "Loyalty tiers",
+            "kind": "module",
+            "note": "The ? beside the tier badge: four tiers, the member's in red ('You are here'), how to reach each, what each offers. Circles fill up to the member's tier on open. Derives from ds-tier-v1."
           }
         ],
         "edges": [
@@ -485,6 +505,16 @@
           [
             "redeemed",
             "checkout"
+          ],
+          [
+            "sheet",
+            "loyalty",
+            "tap ?"
+          ],
+          [
+            "loyalty",
+            "sheet",
+            "X or scrim"
           ]
         ]
       },
