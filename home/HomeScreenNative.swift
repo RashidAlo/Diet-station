@@ -372,6 +372,16 @@ struct HomeScreenNative: View {
                 // second bar, no position shift; the web sheet spring is the
                 // only transition (Rashid: same bar, same place, seamless)
                 FlowOverlay(path: "meal-select", ownsTabBar: false,
+                            // NOTHING NATIVE ANIMATES HERE. Measured by the
+                            // Calendar lane: the ~620ms travel they saw is
+                            // their own page's first paint and layout settle
+                            // (its body IS brand red, so the pilot is never
+                            // uncovered and there is nothing for a cover to
+                            // reveal). Publishing a presentation duration on
+                            // this path would be a wrong number in the worst
+                            // direction — a page delaying its entry for an
+                            // animation that never runs.
+                            presentSettle: 0,
                             onSelector: { selectorUp = $0 }) {
                     state.calendarOpen = false
                     selectorUp = false
@@ -1853,64 +1863,202 @@ struct DSTabBar: View {
     /// adaptive bar: the host flips this subtree's colorScheme from the
     /// content behind the bar (Apple's way) — glyphs and pill follow
     @Environment(\.colorScheme) private var scheme
-    @Namespace private var pillNS
 
     private var resting: Color {
         scheme == .dark ? .white.opacity(0.92) : Color(white: 0.12).opacity(0.85)
     }
 
+    // MARK: - Hold-and-drag lens (App Store / Music, iOS 26)
+    //
+    // Kept identical to GlassTabBar in DietStationLabApp.swift — Rashid asked
+    // for this "in the prototypes at least", and two bars behaving differently
+    // is worse than either behaviour. Read that one for the full reasoning;
+    // the three things Apple does and the first attempt did not were: the
+    // lens is GLASS (not a white capsule), it EXPANDS and MAGNIFIES what sits
+    // under it, and it FOLLOWS THE FINGER with a rubber-band rather than
+    // snapping tab to tab.
+    //
+    // ONE GESTURE OWNS THE BAR. The first version kept per-tab taps AND a
+    // bar-level gesture; they fought and the taps lost — "when I tap on
+    // calendar it doesn't take me there unless I do the new gesture."
+    // Released without engaging = a tap on the tab under the finger; held or
+    // travelled = the lens.
+    //
+    // NOTE FOR THE FOLD: this is canon, mirrored from the Home lane's
+    // gh-pages copy. If that copy doesn't carry this, a fold reverts it.
+    @State private var frames: [DSTabId: CGRect] = [:]
+    @State private var dragging = false
+    @State private var hover: DSTabId?
+    @State private var fingerX: CGFloat = 0
+    @State private var startTab: DSTabId?
+    @State private var travelled = false
+    @State private var holdTask: DispatchWorkItem?
+
+    private var lensTab: DSTabId { dragging ? (hover ?? selected) : selected }
+
+    private func nearest(_ x: CGFloat) -> DSTabId? {
+        frames.min { abs($0.value.midX - x) < abs($1.value.midX - x) }?.key
+    }
+
+    private func engage() {
+        guard !dragging else { return }
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.7)
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) { dragging = true }
+    }
+
+    private func move(to x: CGFloat) {
+        fingerX = x
+        guard let target = nearest(x), target != hover else { return }
+        travelled = true
+        UISelectionFeedbackGenerator().selectionChanged()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) { hover = target }
+    }
+
+    private func commit() {
+        holdTask?.cancel(); holdTask = nil
+        let landed = hover ?? selected
+        let wasDragging = dragging
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.78)) { dragging = false }
+        // a hold that never travelled is the long-press entry (the wordmark
+        // pilot), which has no other affordance inside a flow
+        if wasDragging, !travelled, landed == startTab, let lp = onLongPress {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            lp(landed)
+            hover = nil
+            return
+        }
+        if landed != selected || !wasDragging {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            onSelect(landed)
+        }
+        hover = nil
+    }
+
     var body: some View {
+        // NO GlassEffectContainer — see GlassTabBar: it composites the
+        // glass inside it into one pass and lifted the lens above the icons,
+        // refracting them. It is for merging sibling glass, not for stacking.
         HStack(spacing: 0) {
-            item(.home) { sel in
-                DSLogoMark()
-                    .fill(sel ? DS.red : resting)
-                    .frame(width: 26, height: 20)
-            }
-            item(.calendar) { sel in
-                if forkMiddle {
-                    DSForkKnifeIcon()
+                item(.home) { sel in
+                    DSLogoMark()
                         .fill(sel ? DS.red : resting)
-                        .frame(width: 23, height: 23)
-                } else {
-                    DSTabCalendarIcon()
+                        .frame(width: 26, height: 20)
+                }
+                item(.calendar) { sel in
+                    if forkMiddle {
+                        DSForkKnifeIcon()
+                            .fill(sel ? DS.red : resting)
+                            .frame(width: 23, height: 23)
+                    } else {
+                        DSTabCalendarIcon()
+                            .fill(sel ? DS.red : resting)
+                            .frame(width: 24, height: 24)
+                    }
+                }
+                item(.person) { sel in
+                    DSTabPersonIcon()
                         .fill(sel ? DS.red : resting)
                         .frame(width: 24, height: 24)
                 }
-            }
-            item(.person) { sel in
-                DSTabPersonIcon()
-                    .fill(sel ? DS.red : resting)
-                    .frame(width: 24, height: 24)
-            }
         }
         .padding(4)
+        .background { lens }
         .frame(width: width, height: 58)
         .glassEffect(.regular, in: .capsule)
+        .contentShape(Capsule())
+        .coordinateSpace(.named("dsbar"))
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .named("dsbar"))
+                .onChanged { v in
+                    if startTab == nil {
+                        startTab = nearest(v.startLocation.x) ?? selected
+                        hover = startTab
+                        fingerX = v.startLocation.x
+                        travelled = false
+                        let work = DispatchWorkItem { engage() }
+                        holdTask = work
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22, execute: work)
+                    }
+                    if !dragging, abs(v.translation.width) > 8 {
+                        holdTask?.cancel(); engage()
+                    }
+                    if dragging { move(to: v.location.x) }
+                }
+                .onEnded { _ in commit(); startTab = nil }
+        )
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: selected)
+    }
+
+    /// The lens — glass while held, the bar's own pill at rest, rubber-banded
+    /// toward the finger and magnifying what it sits over.
+    @ViewBuilder private var lens: some View {
+        if let r = frames[lensTab] {
+            let lag = dragging ? (fingerX - r.midX) : 0
+            let pull = max(-26, min(26, lag))
+            let stretch = min(abs(pull) / 26 * 0.16, 0.16)
+            // ONE LAYER, ALWAYS — see GlassTabBar for the full note. A white
+            // fill UNDER a .glassEffect is two shapes with two edges, and the
+            // shadow was a third; this is Rashid's "another layer of glass
+            // under it." One element: plain fill at rest, Apple's material
+            // while held, and no shadow while held because glass casts its own.
+            Group {
+                if dragging {
+                    // .clear, NOT .regular: this lens sits ON the bar's own
+                    // regular glass, and regular-on-regular stacks the frost —
+                    // two ground-glass surfaces with two edges, which is the
+                    // second layer Rashid saw even after the white fill went.
+                    // A glass element over glass is clear and takes its
+                    // brightness from a TINT, not from a shape beneath it
+                    // (A GLASS PILL TINTS AGAINST ITS GROUND).
+                    Color.clear.glassEffect(
+                        .clear.tint(.white.opacity(0.22)).interactive(),
+                        in: Capsule())
+                } else {
+                    Capsule().fill(.white.opacity(scheme == .dark ? 0.24 : 0.85))
+                }
+            }
+            .frame(width: r.width + (dragging ? 10 : 0),
+                   height: r.height + (dragging ? 8 : 0))
+            .scaleEffect(x: 1 + stretch, y: dragging ? 1 - stretch * 0.4 : 1,
+                         anchor: pull > 0 ? .leading : .trailing)
+            .shadow(color: .black.opacity(dragging ? 0 : 0.1), radius: 6, y: 2)
+            .position(x: r.midX + pull * 0.55, y: r.midY)
+            .animation(.spring(response: 0.3, dampingFraction: 0.72), value: lensTab)
+            .animation(.interactiveSpring(response: 0.18, dampingFraction: 0.7),
+                       value: fingerX)
+        }
     }
 
     private func item<C: View>(_ tab: DSTabId,
                                @ViewBuilder _ content: @escaping (Bool) -> C) -> some View {
-        content(selected == tab)
+        let lit = lensTab == tab
+        let magnified = dragging && lit
+        return content(lit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // THE MAGNIFIER: what the lens covers is enlarged and the rest
+            // recedes. A lens that only moves has no magnifier read at all.
+            .scaleEffect(magnified ? 1.12 : 1)
+            .opacity(dragging && !lit ? 0.5 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.72), value: magnified)
+            .animation(.easeOut(duration: 0.16), value: dragging)
+            // the pill is drawn ONCE, by `lens`, from these rects — a
+            // per-item background cannot slide between items
             .background {
-                if selected == tab {
-                    Capsule().fill(.white.opacity(scheme == .dark ? 0.24 : 0.85))
-                        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
-                        .matchedGeometryEffect(id: "pill", in: pillNS)
+                GeometryReader { g in
+                    Color.clear.preference(key: DSTabFrames.self,
+                                           value: [tab: g.frame(in: .named("dsbar"))])
                 }
             }
-            .contentShape(Capsule())
-            .onTapGesture {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                onSelect(tab)
-            }
-            .onLongPressGesture(minimumDuration: 0.5) {
-                if let lp = onLongPress {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    lp(tab)
-                }
-            }
+            .onPreferenceChange(DSTabFrames.self) { frames.merge($0) { _, new in new } }
+    }
+}
+
+/// Each tab's rect in the bar's own space — the lens is positioned from
+/// these so one pill can slide between items.
+private struct DSTabFrames: PreferenceKey {
+    static let defaultValue: [DSTabId: CGRect] = [:]
+    static func reduce(value: inout [DSTabId: CGRect], nextValue: () -> [DSTabId: CGRect]) {
+        value.merge(nextValue()) { _, new in new }
     }
 }
 
@@ -1948,6 +2096,21 @@ final class FlowPreloader {
         var onClose: (() -> Void)?
         let chrome = OverlayChrome()
 
+        /// Which side of a SHEET HOST this relay sits on
+        /// (system/composition.html#spec-sheethost). `.calendar` may open a
+        /// host and sends `ds-down`; `.host` is the selector's own web view and
+        /// sends `ds-up`, `ds-ready`, `sheet-close`, and the `complete` post
+        /// that releases the entry. Everything else is `.normal` and ignores
+        /// the sheet vocabulary entirely.
+        enum Role { case normal, calendar, host }
+        var role: Role = .normal
+        /// set on the HOST relay, pointing back at the host it lives in
+        weak var sheet: SheetHost?
+        #if DEBUG
+        var capsProbed = false
+        var subCapsProbed = false
+        #endif
+
         /// generators are built FRESH per event: long-lived unprepared ones
         /// go silent on device when iOS parks the haptic engine (suspected
         /// cause of the build-27/28 "haptics are gone" report) — a fresh
@@ -1967,15 +2130,52 @@ final class FlowPreloader {
             guard message.name == "ds",
                   let body = message.body as? [String: Any],
                   let t = body["t"] as? String else { return }
+            if handleSheet(t, body, message) { return }
+            #if DEBUG
+            // ONE-SHOT GUARD PROOF for the sheet host's caps (Hub's finding):
+            // DSNativeCaps must exist in this view's MAIN frame and NOT in any
+            // subframe, or an embed=1 flow iframe would read itself as hosted.
+            // Evaluated in the frame that actually sent this message.
+            if role == .calendar, !capsProbed {
+                capsProbed = true
+                let js = "JSON.stringify({ top: window.parent === window, caps: window.DSNativeCaps || null })"
+                chrome.webView?.evaluateJavaScript(js, in: nil, in: .page) { r in
+                    NSLog("DSCAPS(pilot) main-frame %@", String(describing: (try? r.get()) ?? "err"))
+                }
+                if !message.frameInfo.isMainFrame {
+                    chrome.webView?.evaluateJavaScript(js, in: message.frameInfo, in: .page) { r in
+                        NSLog("DSCAPS(pilot) sub-frame %@", String(describing: (try? r.get()) ?? "err"))
+                    }
+                }
+            }
+            if role == .calendar, !message.frameInfo.isMainFrame, !subCapsProbed {
+                subCapsProbed = true
+                let js = "JSON.stringify({ top: window.parent === window, caps: window.DSNativeCaps || null })"
+                chrome.webView?.evaluateJavaScript(js, in: message.frameInfo, in: .page) { r in
+                    NSLog("DSCAPS(pilot) sub-frame %@", String(describing: (try? r.get()) ?? "err"))
+                }
+            }
+            #endif
             #if DEBUG
             // Pages post {t:'dsdebug'} to put their own instrumentation into
             // the same log stream as ours, so one `log stream` run shows both
             // sides of a handshake in order instead of two clocks to reconcile.
             if t == "dsdebug" {
-                NSLog("DSDEBUG tag=%@ trusted=%@ ts=%@",
-                      body["tag"] as? String ?? "?",
-                      String(describing: body["trusted"] ?? "?"),
-                      String(describing: body["ts"] ?? "?"))
+                // SHAPE-AGNOSTIC, and tagged (pilot) — mirrors the hub's
+                // handler. This one used to demand tag/trusted/ts, so a
+                // beacon posting any other keys logged "tag=? trusted=? ts=?"
+                // and its payload went in the bin: the line existed, the
+                // information didn't. Every page-side instrument the Calendar
+                // lane built today — the window `error` beacon, the close
+                // BAIL reason, the caps receipt — was therefore blind on the
+                // PILOT, which is the surface Rashid actually uses. Same
+                // two-relay trap as the tile's rows, third time today:
+                // WHATEVER ONE RELAY LEARNS, TEACH THE OTHER IN THE SAME EDIT.
+                let fields = body.filter { $0.key != "t" }
+                    .sorted { $0.key < $1.key }
+                    .map { "\($0.key)=\(String(describing: $0.value))" }
+                    .joined(separator: " ")
+                NSLog("DSDEBUG(pilot) %@", fields)
                 return
             }
             #endif
@@ -2006,6 +2206,28 @@ final class FlowPreloader {
                                              dayName: e["dayName"] as? String,
                                              dayNames: e["dayNames"] as? [String],
                                              statuses: e["statuses"] as? [String],
+                                             // THE TILE'S ROWS. Missing here
+                                             // while present in LabWebView's
+                                             // parse is why build 48 drew the
+                                             // weekday and nothing else: on
+                                             // THIS surface `date` and
+                                             // `status` arrived and were
+                                             // dropped, so the numeral and
+                                             // chip rendered empty strings.
+                                             // And this relay ANNOUNCES
+                                             // tileRows, so it claimed a
+                                             // capability its own parse could
+                                             // not deliver — the exact rule
+                                             // quoted a screen above about
+                                             // never confirming from a path
+                                             // whose renderer doesn't share
+                                             // the confirm. Two parses of one
+                                             // protocol: whatever one learns,
+                                             // teach the other in the same
+                                             // edit.
+                                             slots: (e["slots"] as? NSNumber)?.intValue,
+                                             date: e["date"] as? String,
+                                             status: e["status"] as? String,
                                              from: fromRect))
                 }
                 let bar = body["bar"] as? String
@@ -2051,7 +2273,12 @@ final class FlowPreloader {
                                 .map { abs($0.x - new.x) <= SNAP_EPS &&
                                        abs($0.y - new.y) <= SNAP_EPS &&
                                        abs($0.w - new.w) <= SNAP_EPS &&
-                                       abs($0.h - new.h) <= SNAP_EPS } ?? false
+                                       abs($0.h - new.h) <= SNAP_EPS &&
+                                       // see LabWebView: a slot-count change
+                                       // is not geometry, and treating it as
+                                       // "unchanged" suppressed the collapse
+                                       // animation
+                                       $0.slots == new.slots } ?? false
                         }
                     let apply = {
                         self.chrome.els = els
@@ -2078,8 +2305,31 @@ final class FlowPreloader {
                         // is what lets the page stop morphing its pill and
                         // send a DESTINATION instead of a path. A build
                         // without it keeps the web morph and still works.
+                        #if DEBUG
+                        // THE PILOT RELAY HAD NO ARMED LOG AT ALL — which is why
+                        // three rounds of "verified" covered only the hub: the
+                        // surface Rashid actually uses was the one with no
+                        // instrument on it. Same names as the hub's, tagged
+                        // (pilot) so a log line says WHICH surface it is from.
+                        NSLog("DSSLOTS(pilot) %@", els.map {
+                    "\($0.id):slots=\($0.slots.map(String.init) ?? "-")" +
+                    ":dates=\($0.dates?.count ?? -1)" +
+                    ":center=\($0.center.map { String(format: "%.2f", $0) } ?? "-")" +
+                    ":r=\(String(format: "%.1f", $0.r))"
+                }.joined(separator: " "))
+                NSLog("DSCHROME(pilot) role=%@ mainFrame=%d armed=[%@]",
+                      self.role == .host ? "host" : (self.role == .calendar ? "calendar" : "normal"),
+                      message.frameInfo.isMainFrame ? 1 : 0,
+                              els.map { $0.id }.joined(separator: ","))
+                        #endif
                         wv.evaluateJavaScript(
-                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true })",
+                            // caps.tileRows: the pilot's overlays render
+                            // through the SAME GlassChromeLayer, so this relay
+                            // can draw the rows too and must say so — a
+                            // capability announced by one relay and not the
+                            // other would hand the tile over on one surface
+                            // and orphan the number on the other.
+                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true, tileRows: 2, dateWidget: 1 })",
                             in: frame, in: .page, completionHandler: nil)
                     }
                 }
@@ -2094,6 +2344,8 @@ final class FlowPreloader {
                 var pos: [String: CGPoint] = [:]
                 var dims: [String: (w: CGFloat?, h: CGFloat?)] = [:]
                 var ctr: [String: Double] = [:]
+                var rad: [String: CGFloat] = [:]
+                var slotc: [String: Int] = [:]
                 for e in body["els"] as? [[String: Any]] ?? [] {
                     guard let id = e["id"] as? String else { continue }
                     func n(_ k: String) -> CGFloat {
@@ -2105,6 +2357,10 @@ final class FlowPreloader {
                     dims[id] = ((e["w"] as? NSNumber).map { CGFloat($0.doubleValue) },
                                 (e["h"] as? NSNumber).map { CGFloat($0.doubleValue) })
                     if let c = e["center"] as? NSNumber { ctr[id] = c.doubleValue }
+                    // ·195 sends `r` on track frames — the radius morphs with
+                    // the pill (tile 16 -> scrub 26), so follow it live
+                    if let rv = e["r"] as? NSNumber { rad[id] = CGFloat(rv.doubleValue) }
+                    if let sv = e["slots"] as? NSNumber { slotc[id] = sv.intValue }
                 }
                 #if DEBUG
                 NSLog("DSTRACK %@", pos.map { "\($0.key)=\(Int($0.value.y))" }
@@ -2121,21 +2377,22 @@ final class FlowPreloader {
                         self.chrome.els = self.chrome.els.map { el in
                             guard let p = pos[el.id] else { return el }
                             let d = dims[el.id]
-                            return GlassChromeEl(id: el.id, x: p.x, y: p.y,
-                                                 w: d?.w ?? el.w, h: d?.h ?? el.h,
-                                                 r: el.r, on: el.on, mode: el.mode,
-                                                 dates: el.dates,
-                                                 center: ctr[el.id] ?? el.center,
-                                                 monthLabel: el.monthLabel,
-                                                 dayName: el.dayName,
-                                                 // THE REBUILD LAW: every new
-                                                 // field must be carried here
-                                                 // or it drops on the first
-                                                 // tracked frame (bit us on
-                                                 // mode, then month/dayName)
-                                                 dayNames: el.dayNames,
-                                                 statuses: el.statuses,
-                                                 from: el.from)
+                            // A COPY, not a second memberwise init. The
+                            // rebuild law's other half: this was the site
+                            // where a newly added field silently dropped on
+                            // the first tracked frame. Copy-and-mutate means
+                            // a field the struct has is a field a track frame
+                            // keeps, with nothing to remember. (Mirror of
+                            // LabWebView's handler — change both.)
+                            var moved = el
+                            moved.x = p.x
+                            moved.y = p.y
+                            if let w = d?.w { moved.w = w }
+                            if let h = d?.h { moved.h = h }
+                            if let r = rad[el.id] { moved.r = r }
+                            if let c = ctr[el.id] { moved.center = c }
+                            if let s = slotc[el.id] { moved.slots = s }
+                            return moved
                         }
                     }
                 }
@@ -2146,6 +2403,13 @@ final class FlowPreloader {
                 // open/close choke points — the pilot's persistent bar
                 // yields the screen while the selector sheet owns it
                 let up = (body["up"] as? Bool) ?? false
+                #if DEBUG
+                // the edge the sheet-host watchdog will be measured FROM: the
+                // calendar opening the selector. Paired with the selector's
+                // first DSSLOTS/DSCHROME line, the gap between them is the
+                // page-load latency the watchdog has to sit above.
+                NSLog("DSSELECTOR(pilot) up=%d", up ? 1 : 0)
+                #endif
                 DispatchQueue.main.async {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                         self.chrome.selectorUp = up
@@ -2226,6 +2490,22 @@ final class FlowPreloader {
         }
     }
 
+    // MARK: - Sheet host (composition.html#spec-sheethost, canon 426a54b)
+
+    /// The one injected capability object. MAIN-FRAME-ONLY, document start,
+    /// and only into views that take part in hosting (the calendar and its
+    /// host) — per surface, per the spec's clause A. Every hub flow is an
+    /// embed=1 IFRAME and the bridge script reaches subframes, so a cap
+    /// visible there would read `hosted` and send that flow's lab Exit
+    /// native; the page also requires parent === window. Both guards, kept.
+    /// Adding a capability means adding it HERE, in the same diff as the code
+    /// that honours it.
+    static let capsJS = "window.DSNativeCaps = { sheetHost: 1, tileRows: 2, dateWidget: 1 };"
+
+    /// document-END runs at DOMContentLoaded (didFinish is the later load
+    /// event). Down-messages buffer until this edge.
+    static let readyJS = "try { webkit.messageHandlers.ds.postMessage({ t: 'ds-ready' }); } catch (_) {}"
+
     private var entries: [String: (web: WKWebView, relay: Relay)] = [:]
 
     func warm(_ paths: [String]) { for p in paths { _ = entry(p) } }
@@ -2256,6 +2536,14 @@ final class FlowPreloader {
             WKUserScript(source: LabWebView.Coordinator.bridgeJS,
                          injectionTime: .atDocumentStart, forMainFrameOnly: false))
         cfg.userContentController.add(relay, name: "ds")
+        // The calendar is the only pilot surface that HOSTS a sheet, so it is
+        // the only entry that announces sheetHost (per-surface caps).
+        if path == "meal-select" {
+            relay.role = .calendar
+            cfg.userContentController.addUserScript(
+                WKUserScript(source: Self.capsJS, injectionTime: .atDocumentStart,
+                             forMainFrameOnly: true))
+        }
         let wv = WKWebView(frame: .zero, configuration: cfg)
         wv.isOpaque = false
         wv.backgroundColor = .clear
@@ -2278,7 +2566,21 @@ final class FlowPreloader {
         // a path may carry its own query (the solo details page) — append
         // rather than re-open one
         let sep = path.contains("?") ? "&" : "/?"
-        if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)\(sep)embed=1&v=\(stamp)") {
+        // DEBUG-ONLY LANE PRIMER. The Calendar lane gates the date tile's
+        // handover on a page-side flag that only flips once the rows are
+        // measured on a shipped build — so there is no way to measure them
+        // until someone forces the handover. `?tilenative=1` is their switch
+        // for exactly that, and this passes it through (plus anything else a
+        // lane run needs) from the launch environment, so a verification
+        // drives the REAL pilot path rather than a page loaded by hand.
+        var extra = ""
+        #if DEBUG
+        if let p = ProcessInfo.processInfo.environment["DSLAB_FLOW_QUERY"],
+           !p.isEmpty {
+            extra = "&" + p
+        }
+        #endif
+        if let url = URL(string: "https://rashidalo.github.io/Diet-station/\(path)\(sep)embed=1&v=\(stamp)\(extra)") {
             e.web.load(URLRequest(url: url))
         }
     }
@@ -2574,24 +2876,29 @@ struct DSGaugeGlassView: View {
                 // every state: the dock only appears once the day is
                 // COMPLETE, so its backdrop is always the fill's bright end.
                 .foregroundStyle(Self.dockInk)
+                // Two shadows, deliberately: the tight one gives the glyph an
+                // edge against yellow, the wide soft one lifts it off a busy
+                // backdrop without reading as a drop shadow. Applied to the
+                // whole dock content, so it reaches the arrow, the check and
+                // the spinner's ring as well as the word — on clear glass the
+                // ring is the one thing that would otherwise vanish. (CSS
+                // blur ≈ 2× SwiftUI radius: 2.5px → 1.25, 8px → 4.)
+                // softened after Rashid found them too aggressive: the job
+                // is to lift white off a bright ground, not to draw a shadow
+                .shadow(color: .black.opacity(0.24), radius: 1.25, y: 1)
+                .shadow(color: .black.opacity(0.10), radius: 4)
                 .frame(width: model.dock == "next" ? 92 : 53, height: 53)
-                // DELIBERATELY HEAVY GLASS. This capsule is the only control
-                // sitting on the brightest part of the bar (the fill runs to
-                // ~0.88 luminance) and it carries WHITE ink, so the material
-                // has to do the whole job: white needs the capsule at or
-                // below ~0.30 to clear 3:1.
-                //
-                // The alpha is DERIVED, not copied from the web's CSS —
-                // SwiftUI glass has no backdrop-brightness, so the tint is the
-                // only lever. Solving against C&M's own measurement of the
-                // previous value (0.74 at alpha 0.16) gives an effective
-                // backdrop of 0.875 through clear glass, and 0.875(1-a) +
-                // 0.03a = 0.30 → a ≈ 0.68. Wants their luminance probe to
-                // confirm; if 0.30 reads too dark it goes back to Rashid
-                // rather than either side splitting the difference quietly.
-                .glassEffect(.clear
-                    .tint(Color(red: 10/255, green: 8/255, blue: 4/255).opacity(0.68))
-                    .interactive(), in: .capsule)
+                // THE MATERIAL'S JOB IS TO DISAPPEAR. Rashid, after we spent
+                // three rounds moving the tint: "I just want it in a glass
+                // container that's fully transparent, and it blends with the
+                // layer below it. No need to darken that much or lighten it
+                // that much. It should be very close to what's under it."
+                // So the tint is a whisper — no brightness shift in either
+                // direction — and LEGIBILITY IS CARRIED BY THE TYPE, not by
+                // the glass. Every value we tried failed for the same reason:
+                // light was unreadable and dark stopped being glass.
+                .glassEffect(.clear.tint(.white.opacity(0.05)).interactive(),
+                             in: .capsule)
             }
             .buttonStyle(.plain)
             .padding(.trailing, 8)
@@ -2748,7 +3055,368 @@ extension Color {
 /// mirrored, so flows summoned from the native pilot get chrome identical to
 /// the hub path (twins, bar, and the calendar's clear/restore dance).
 @available(iOS 26.0, *)
+@available(iOS 26.0, *)
+extension FlowPreloader.Relay {
+    /// The sheet-host vocabulary. Returns true when the message was consumed.
+    /// Direction is enforced BY SENDING VIEW: a `ds-up` from the calendar or a
+    /// `ds-down` from the host is dropped and logged, never guessed at.
+    @MainActor
+    func handleSheet(_ t: String, _ body: [String: Any], _ message: WKScriptMessage) -> Bool {
+        func drop(_ why: String) {
+            #if DEBUG
+            NSLog("DSSHEET(pilot) DROPPED %@ — %@", t, why)
+            #endif
+        }
+        switch t {
+        case "sheet-open":
+            guard role == .calendar else { drop("sheet-open from a non-calendar view"); return true }
+            guard message.frameInfo.isMainFrame else { drop("sheet-open from a subframe"); return true }
+            guard let s = body["url"] as? String, let url = URL(string: s) else {
+                drop("sheet-open without a valid url"); return true
+            }
+            guard chrome.sheetHost == nil, let cal = chrome.webView else { return true }
+            let host = SheetHost(url: url, calendar: cal)
+            host.owner = chrome
+            chrome.sheetHost = host
+            return true
+        case "ds-down":
+            guard role == .calendar else { drop("ds-down must come from the calendar view"); return true }
+            guard let host = chrome.sheetHost else { drop("ds-down with no host up"); return true }
+            host.down(body["msg"] ?? NSNull())
+            return true
+        case "ds-up":
+            guard role == .host else { drop("ds-up must come from the host view"); return true }
+            sheet?.up(body["msg"] ?? NSNull())
+            return true
+        case "ds-ready":
+            guard role == .host else { drop("ds-ready from a non-host view"); return true }
+            sheet?.markReady()
+            return true
+        case "sheet-close":
+            guard role == .host else { drop("sheet-close from a non-host view"); return true }
+            // teardown ONLY here — never inferred from a relayed ds-close
+            let owner = sheet?.owner
+            sheet?.close(then: body["then"]) { owner?.sheetHost = nil }
+            return true
+        case "glasschrome":
+            // the page owns what "complete" means; native keeps no id list.
+            // Not consumed — the post still arms its twins as normal.
+            if role == .host, (body["complete"] as? Bool) == true {
+                sheet?.present(fallback: false)
+            }
+            return false
+        default:
+            return false
+        }
+    }
+}
+
+/// A native web view presented OVER the calendar's, carrying the meal
+/// selector that used to be an iframe inside it. Riding (Ruling 3, b1): the
+/// host view and its glass twins sit in one container and move on one native
+/// clock, so the controls cannot trail the sheet or hand over mid-motion.
+/// Contract: system/composition.html#spec-sheethost.
+@available(iOS 26.0, *)
+@MainActor
+final class SheetHost: ObservableObject {
+    let web: WKWebView
+    let relay: FlowPreloader.Relay
+    weak var calendar: WKWebView?
+    /// the calendar overlay's chrome, which holds this host; cleared on teardown
+    weak var owner: OverlayChrome?
+    /// 1.03 = 103% of the container's height below its rest position
+    @Published var offsetFraction: CGFloat = 1.03
+    /// THE CONTROLS, FROZEN FOR THE EXIT. The page tears its chrome down on
+    /// dismissal (a glasschrome with els:[] right after sheet-close), and the
+    /// twins' removal fade then played at their REST position while the sheet
+    /// slid away — measured: host els 3 -> 0 on the frame after `closing`,
+    /// and the X, date and dual visibly pinned over the calendar mid-exit.
+    /// Native owns the exit, so native keeps drawing what was on screen at
+    /// the moment it started, riding out with the sheet, until teardown.
+    @Published var exitEls: [GlassChromeEl]?
+    private(set) var ready = false
+    private var buffer: [Any] = []
+    private(set) var presented = false
+    private var closing = false
+    private var watchdog: DispatchWorkItem?
+    private let openedAt = Date()
+
+    /// the spec's curve, used FORWARD for both entry (103% -> 0) and exit
+    /// (0 -> 103%). Not time-reversed on exit — that would be a heavy ease-in
+    /// nobody has approved.
+    // curve: see `bezier` — cubic-bezier(.32,.72,0,1) over 0.55s, forward both ways
+    /// PROVISIONAL. The spec requires this to be measured (uncached p95 of
+    /// first complete post after sheet-open) and set just above it.
+    static let watchdogSeconds: TimeInterval = 1.4
+
+    init(url: URL, calendar: WKWebView) {
+        let relay = FlowPreloader.Relay()
+        relay.role = .host
+        let cfg = WKWebViewConfiguration()
+        // NO closeRelay here: the selector self-posts ds-close in one path
+        // (select.html's window.postMessage), and in its own view that must not
+        // be read as "close the overlay". Every hosted dismissal comes through
+        // sheet-close instead.
+        cfg.allowsInlineMediaPlayback = true
+        cfg.mediaTypesRequiringUserActionForPlayback = []
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: LabWebView.Coordinator.bridgeJS,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        // The calendar is full-screen at rest, so ITS inset is the inset this
+        // sheet will have at rest. Only the HOST gets `safeTop`: it is the one
+        // view that loads while held off-screen, where env() reads 0.
+        let restTop = calendar.window?.safeAreaInsets.top ?? calendar.safeAreaInsets.top
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: FlowPreloader.capsJS
+                            + " window.DSNativeCaps.safeTop = \(Int(restTop.rounded()));",
+                         injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: FlowPreloader.readyJS, injectionTime: .atDocumentEnd,
+                         forMainFrameOnly: true))
+        cfg.userContentController.add(relay, name: "ds")
+        let wv = WKWebView(frame: .zero, configuration: cfg)
+        wv.isOpaque = false
+        wv.backgroundColor = .clear
+        wv.scrollView.backgroundColor = .clear
+        wv.scrollView.contentInsetAdjustmentBehavior = .never
+        wv.customUserAgent = (WKWebView().value(forKey: "userAgent") as? String ?? "Mozilla/5.0")
+            + " DietStationLab/2"
+        relay.chrome.webView = wv
+        self.web = wv
+        self.relay = relay
+        self.calendar = calendar
+        relay.sheet = self
+        #if DEBUG
+        NSLog("DSSHEET(pilot) open url=%@", url.absoluteString)
+        #endif
+        wv.load(URLRequest(url: url))
+        let work = DispatchWorkItem { [weak self] in self?.present(fallback: true) }
+        watchdog = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.watchdogSeconds, execute: work)
+    }
+
+    private var sinceOpenMS: Int { Int(Date().timeIntervalSince(openedAt) * 1000) }
+    #if DEBUG
+    /// EVIDENCE 5 (storage round-trip) and 7 (visibility + timer cadence),
+    /// taken in the host once it is on screen.
+    func evidenceProbes() {
+        let key = "dsprobe-\(Int(Date().timeIntervalSince1970))"
+        // Read at 0s, 1s and 3s: localStorage between two WKWebViews in
+        // different web content processes propagates ASYNCHRONOUSLY, so an
+        // immediate nil is not evidence of "not shared" — the absence has to
+        // be earned by a later read too. Also reads the calendar's origin.
+        calendar?.evaluateJavaScript("localStorage.setItem('dsprobe', '\(key)'); location.origin") { [weak self] o, _ in
+            let calOrigin = (o as? String) ?? "?"
+            for delay in [0.0, 1.0, 3.0] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    self?.web.evaluateJavaScript("JSON.stringify({ v: localStorage.getItem('dsprobe'), origin: location.origin })") { v, _ in
+                        let s = (v as? String) ?? "nil"
+                        NSLog("DSEVIDENCE(pilot) 5 storage t+%.0fs set=%@ calOrigin=%@ host=%@ %@",
+                              delay, key, calOrigin, s, s.contains(key) ? "PASS" : "not-yet")
+                    }
+                }
+            }
+        }
+        let cadence = """
+        new Promise(function(res){ var n=0, t0=performance.now();
+          var id=setInterval(function(){ n++; }, 100);
+          setTimeout(function(){ clearInterval(id);
+            res(JSON.stringify({ vis: document.visibilityState, hidden: document.hidden,
+              ticksIn2s: n, expected: 20, ms: Math.round(performance.now()-t0) })); }, 2000); })
+        """
+        web.callAsyncJavaScript("return await " + cadence, arguments: [:], in: nil, in: .page) { r in
+            NSLog("DSEVIDENCE(pilot) 7 host %@", String(describing: (try? r.get()) ?? "err"))
+        }
+    }
+
+    /// What the page can see of the safe area, from inside the host view.
+    private func logInsets(_ label: String) {
+        let js = "(function(){var d=document.createElement('div');d.style.cssText='position:fixed;padding-top:env(safe-area-inset-top)';document.documentElement.appendChild(d);var v=getComputedStyle(d).paddingTop;d.remove();return v})()"
+        let native = web.safeAreaInsets.top
+        let frame = web.convert(web.bounds, to: nil)
+        web.evaluateJavaScript(js) { v, _ in
+            NSLog("DSSHEET(pilot) insets@%@ native=%.1f env=%@ frameY=%.0f",
+                  label, native, String(describing: v ?? "nil"), frame.minY)
+        }
+    }
+    #endif
+
+
+    // relay -----------------------------------------------------------------
+
+    func markReady() {
+        guard !ready else { return }
+        ready = true
+        #if DEBUG
+        NSLog("DSSHEET(pilot) ds-ready after %dms, flushing %d", sinceOpenMS, buffer.count)
+        #endif
+        let pending = buffer; buffer = []
+        for m in pending { Self.dispatch(m, into: web) }
+        #if DEBUG
+        logInsets("ds-ready")
+        #endif
+    }
+
+    /// calendar -> host. Buffered until the host has DOMContentLoaded.
+    func down(_ msg: Any) {
+        if ready { Self.dispatch(msg, into: web) } else { buffer.append(msg) }
+    }
+
+    /// host -> calendar.
+    func up(_ msg: Any) {
+        guard let cal = calendar else { return }
+        Self.dispatch(msg, into: cal)
+    }
+
+    /// A real `message` event, so the pages' existing handlers (which read
+    /// only e.data) cannot tell it from a cross-frame postMessage.
+    static func dispatch(_ msg: Any, into wv: WKWebView) {
+        guard JSONSerialization.isValidJSONObject(msg) || msg is String || msg is NSNumber,
+              let data = try? JSONSerialization.data(withJSONObject: msg, options: [.fragmentsAllowed]),
+              let json = String(data: data, encoding: .utf8) else {
+            #if DEBUG
+            NSLog("DSSHEET(pilot) relay DROPPED unserialisable payload")
+            #endif
+            return
+        }
+        wv.evaluateJavaScript(
+            "window.dispatchEvent(new MessageEvent('message', { data: \(json) }));",
+            completionHandler: nil)
+    }
+
+    private func sheetCall(_ phase: String) {
+        let js = "window.DSSheet && DSSheet('\(phase)');"
+        web.evaluateJavaScript(js, completionHandler: nil)
+        calendar?.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    // motion ----------------------------------------------------------------
+
+    // motion ----------------------------------------------------------------
+    //
+    // ONE CLOCK, EXPLICITLY. The first version animated `offsetFraction` with
+    // `withAnimation`. Filmed at 60fps, the web view rode but the glass twins
+    // did NOT: the X drew at its rest y (125.8pt) from the frame it appeared,
+    // while the sheet's top was still at 299pt and climbing — i.e. "pinned",
+    // the motion Ruling 3 rejected. The twins' els arrive in their own
+    // transaction and render at the model's FINAL value, so an interpolated
+    // ancestor animation never reached them. A display link now advances the
+    // offset every frame, applied with animations disabled, and BOTH the web
+    // view and every twin read that same per-frame value. Completion is the
+    // frame the curve reaches 1 — a real landing, not a timer.
+
+    private var link: CADisplayLink?
+    private var mFrom: CGFloat = 1.03, mTo: CGFloat = 0
+    private var mStart: CFTimeInterval = 0
+    private var mDone: (() -> Void)?
+
+    private final class Tick: NSObject {
+        weak var host: SheetHost?
+        init(_ h: SheetHost) { host = h }
+        @objc func step(_ l: CADisplayLink) { MainActor.assumeIsolated { host?.step() } }
+    }
+
+    private func run(from: CGFloat, to: CGFloat, done: @escaping () -> Void) {
+        link?.invalidate()
+        mFrom = from; mTo = to; mDone = done
+        mStart = CACurrentMediaTime()
+        let l = CADisplayLink(target: Tick(self), selector: #selector(Tick.step(_:)))
+        l.add(to: .main, forMode: .common)
+        link = l
+    }
+
+    #if DEBUG
+    private var stepCount = 0
+    #endif
+    fileprivate func step() {
+        let p = min(1, (CACurrentMediaTime() - mStart) / 0.55)
+        #if DEBUG
+        stepCount += 1
+        if stepCount % 6 == 0 {
+            NSLog("DSSHEET(pilot) step p=%.2f frac=%.3f els=%d", p, offsetFraction, relay.chrome.els.count)
+        }
+        #endif
+        let e = Self.bezier(CGFloat(p))
+        var tx = Transaction(); tx.disablesAnimations = true
+        withTransaction(tx) { offsetFraction = mFrom + (mTo - mFrom) * e }
+        if p >= 1 {
+            link?.invalidate(); link = nil
+            let d = mDone; mDone = nil
+            d?()
+        }
+    }
+
+    /// CSS cubic-bezier(.32, .72, 0, 1), evaluated at progress x.
+    static func bezier(_ x: CGFloat) -> CGFloat {
+        let x1: CGFloat = 0.32, y1: CGFloat = 0.72, x2: CGFloat = 0, y2: CGFloat = 1
+        func bx(_ t: CGFloat) -> CGFloat { 3*(1-t)*(1-t)*t*x1 + 3*(1-t)*t*t*x2 + t*t*t }
+        func by(_ t: CGFloat) -> CGFloat { 3*(1-t)*(1-t)*t*y1 + 3*(1-t)*t*t*y2 + t*t*t }
+        if x <= 0 { return 0 }; if x >= 1 { return 1 }
+        var lo: CGFloat = 0, hi: CGFloat = 1, t = x
+        for _ in 0..<24 { t = (lo + hi) / 2; if bx(t) < x { lo = t } else { hi = t } }
+        return by(t)
+    }
+
+    /// Entry. Released by the page's `complete: true` post — the page owns
+    /// what complete means — or by the watchdog, which presents anyway and
+    /// tells the page to keep its web chrome for this surface's life.
+    func present(fallback: Bool) {
+        guard !presented, !closing else { return }
+        presented = true
+        watchdog?.cancel(); watchdog = nil
+        #if DEBUG
+        NSLog("DSSHEET(pilot) present via %@ after %dms", fallback ? "WATCHDOG" : "complete", sinceOpenMS)
+        #endif
+        if fallback { sheetCall("fallback") }
+        run(from: 1.03, to: 0) { [weak self] in
+            self?.sheetCall("presented")
+            #if DEBUG
+            NSLog("DSSHEET(pilot) presented (landed)")
+            self?.logInsets("presented")
+            self?.evidenceProbes()
+            #endif
+        }
+    }
+
+    /// Exit: closing to the calendar, the same curve FORWARD to 103%, tear
+    /// the host down, and only THEN relay `then` up — so the calendar paints
+    /// its result with nothing departing over it.
+    func close(then: Any?, onTornDown: @escaping () -> Void) {
+        guard !closing else { return }
+        closing = true
+        watchdog?.cancel(); watchdog = nil
+        calendar?.evaluateJavaScript("window.DSSheet && DSSheet('closing');", completionHandler: nil)
+        #if DEBUG
+        NSLog("DSSHEET(pilot) closing from=%.3f els=%d mode=%@ firstY=%@ hostChromeWV=%@",
+              offsetFraction, relay.chrome.els.count, relay.chrome.mode ?? "nil",
+              relay.chrome.els.first.map { String(format: "%.1f", $0.y) } ?? "-",
+              relay.chrome.webView === web ? "host" : "OTHER")
+        #endif
+        exitEls = relay.chrome.els
+        run(from: offsetFraction, to: 1.03) { [weak self] in
+            guard let self else { return }
+            self.web.stopLoading()
+            self.web.configuration.userContentController.removeAllScriptMessageHandlers()
+            self.relay.chrome.clear()
+            onTornDown()
+            if let then { self.up(then) }
+            #if DEBUG
+            NSLog("DSSHEET(pilot) torn down, relayed then")
+            #endif
+        }
+    }
+}
+
 final class OverlayChrome: ObservableObject {
+    /// the sheet currently hosted over this (calendar) overlay, if any.
+    /// Typed as AnyObject because OverlayChrome predates the iOS 26 gate and
+    /// SheetHost does not; read it through `host` below.
+    @Published var sheetHostBox: AnyObject?
+    @available(iOS 26.0, *)
+    var sheetHost: SheetHost? {
+        get { sheetHostBox as? SheetHost }
+        set { sheetHostBox = newValue }
+    }
     @Published var els: [GlassChromeEl] = []
     @Published var bar: String?
     @Published var flow: String?
@@ -2765,6 +3433,54 @@ final class OverlayChrome: ObservableObject {
     func chromeTap(_ id: String) {
         webView?.evaluateJavaScript("window.DSChromeTap && DSChromeTap('\(id)')",
                                     in: frame, in: .page, completionHandler: nil)
+    }
+
+    /// NO PAGE CURRENTLY CALLS THIS (2026-09-13). It was built for the
+    /// calendar's badge, and the Calendar lane then proved the 620ms it was
+    /// meant to compensate for was their own page's paint — so their fix is a
+    /// plain CSS delay and they use nothing from here. It is kept because the
+    /// COVER-PRESENTED paths (coupons, rewards, auth, guide, meal details) do
+    /// animate and the question "am I on screen yet" is reasonable to be able
+    /// to ask. But treat it as UNEXERCISED: no production page has ever taken
+    /// the signal, so it is verified only by unit checks and my own logs. If
+    /// nothing adopts it, DELETE IT rather than leave a primitive that looks
+    /// load-bearing and has never carried anything.
+    ///
+    /// SURFACE PRESENTED. One-way, no confirm, two posts:
+    ///   { phase: 'presenting', duration } — immediately, so a page can size
+    ///      an `animation-delay` from the real number instead of a constant
+    ///      tuned to one device
+    ///   { phase: 'presented' }            — when the surface has arrived, so
+    ///      a page can start on a SIGNAL and stop guessing altogether
+    /// The shell owns the presentation, so the shell publishes the primitive
+    /// and the page never times against it. A page that doesn't define
+    /// `DSNativeSurface` is unaffected — the call no-ops, which is what makes
+    /// this safe to ship before any page uses it.
+    /// Fire-and-forget by design: a page's entry animation must not depend on
+    /// the shell hearing an answer.
+    private var announcedPresented = false
+
+    private func postSurface(_ js: String) {
+        guard let wv = webView else { return }
+        wv.evaluateJavaScript(js, in: frame, in: .page, completionHandler: nil)
+    }
+
+    func announceSurfaceDuration(_ settle: TimeInterval) {
+        announcedPresented = false
+        postSurface("window.DSNativeSurface && DSNativeSurface("
+                    + "{ phase: 'presenting', duration: \(settle) })")
+    }
+
+    /// AT MOST ONCE per presentation, whichever path gets here first — the
+    /// observed settle or the safety timer. A page must be able to treat
+    /// `presented` as an edge, not a stream.
+    func announceSurfacePresented(reason: String) {
+        guard !announcedPresented else { return }
+        announcedPresented = true
+        postSurface("window.DSNativeSurface && DSNativeSurface({ phase: 'presented' })")
+        #if DEBUG
+        NSLog("DSSURFACE(pilot) presented via %@", reason)
+        #endif
     }
     func clear() {
         els = []
@@ -2796,13 +3512,39 @@ struct FlowOverlay: View {
     @ObservedObject private var chrome: OverlayChrome
 
     @MainActor
-    init(path: String, ownsTabBar: Bool = true,
+    init(path: String, ownsTabBar: Bool = true, presentSettle: TimeInterval = 0.62,
          onSelector: ((Bool) -> Void)? = nil, onClose: @escaping () -> Void) {
         self.path = path
         self.ownsTabBar = ownsTabBar
+        self.presentSettle = presentSettle
         self.onSelector = onSelector
         self.onClose = onClose
         _chrome = ObservedObject(wrappedValue: FlowPreloader.shared.entry(path).relay.chrome)
+    }
+
+    /// How long THIS host takes to put the surface on screen. Not a constant,
+    /// because it is not the same on every path: a cover-presented flow rides
+    /// a spring, while the calendar is switched on with no cover and no
+    /// position shift at all (see `calendarOpen`), so its honest value is 0.
+    /// Publishing 0.62 everywhere would tell a page to delay for an animation
+    /// that isn't running — which is exactly the wrong number in the wrong
+    /// direction, and the reason to ask "which surface" before wiring
+    /// mechanism to a measurement.
+    let presentSettle: TimeInterval
+
+    /// last observed top edge, and whether it has ever moved — a surface that
+    /// is already in place when we start watching must not be reported as
+    /// "arrived" before it has actually animated
+    @State private var lastY: CGFloat?
+    @State private var everMoved = false
+
+    private func settleWatch(_ y: CGFloat) {
+        defer { lastY = y }
+        guard let prev = lastY else { return }
+        if abs(y - prev) > 0.5 { everMoved = true; return }
+        // two consecutive frames within half a point, after real movement:
+        // the presentation has landed
+        if everMoved { chrome.announceSurfacePresented(reason: "settled") }
     }
 
     var body: some View {
@@ -2816,6 +3558,44 @@ struct FlowOverlay: View {
                              surface: chrome.surface,
                              mode: chrome.mode) { chrome.chromeTap($0) }
                 .ignoresSafeArea()
+                // SURFACE PRESENTED — the shell owns this motion, so the
+                // shell exposes the primitive and the page never times
+                // against it (MATCH A FLAG, NOT A CURVE). A web page cannot
+                // observe a native presentation: it renders, and then spends
+                // the whole arrival off-screen. Measured on TestFlight 52,
+                // the first ~620ms of any entry animation started at load
+                // played where nobody could see it — which is why Rashid saw
+                // a badge that "left on time" with no playful head: he was
+                // shown it from 20% in. Two values, posted one-way, no
+                // confirm:
+                //   duration — sent AT ONCE so a page can delay its entry
+                //              animation by the right amount from load
+                //   presented — sent when the surface has actually arrived,
+                //              so a page can start on a signal instead of a
+                //              constant that rots
+                // ARRIVAL IS OBSERVED, NOT TIMED. The duration post still
+                // carries the settle for pages that need a number, but
+                // `presented` now fires when this view's own frame STOPS
+                // MOVING — the overlay presents with `.move(edge: .bottom)`,
+                // so its global minY travels and then settles, and that is
+                // the surface actually arriving rather than a constant that
+                // agrees with it today. C&M's ·26 takes only the event, so
+                // this was the last number in the chain that could rot.
+                // The timer stays as a SAFETY net (a page that hid its
+                // content waiting for a post that never came would be worse
+                // than the bug this fixes), and announceSurface fires
+                // `presented` at most once however it is reached.
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY }
+                    action: { newY in settleWatch(newY) }
+                .onAppear {
+                    chrome.announceSurfaceDuration(presentSettle)
+                    // safety: if the geometry never settles (or never moves,
+                    // e.g. reduce-motion presenting with no animation) the
+                    // page still gets its signal
+                    DispatchQueue.main.asyncAfter(deadline: .now() + presentSettle + 0.08) {
+                        chrome.announceSurfacePresented(reason: "timer")
+                    }
+                }
             if let g = chrome.gauge {
                 // its own full-screen space: .position() must resolve in raw
                 // screen coords, not this ZStack's safe-area-inset space
@@ -2838,9 +3618,58 @@ struct FlowOverlay: View {
                 .padding(.bottom, DS.barBottom)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+            // THE HOSTED SHEET, last so it sits above everything the calendar
+            // draws (as the iframe did). The calendar's scrim stays in the
+            // calendar's own document beneath it and never rides.
+            if let host = chrome.sheetHost {
+                SheetHostView(host: host, chrome: host.relay.chrome)
+            }
         }
         .onChange(of: chrome.selectorUp) { _, up in onSelector?(up) }
     }
+}
+
+/// The hosted sheet: its web view, its glass twins and its gauge in ONE
+/// container with ONE offset, so they share a clock by construction — no
+/// per-frame sync during entry or exit, and the page's rest rects stay valid
+/// throughout because they're relative to the moving view.
+@available(iOS 26.0, *)
+private struct SheetHostView: View {
+    @ObservedObject var host: SheetHost
+    @ObservedObject var chrome: OverlayChrome
+
+    var body: some View {
+        GeometryReader { geo in
+            // THE SAME NUMBER, APPLIED TO EVERYTHING, EVERY FRAME. No shared
+            // ancestor offset: the web view is offset directly, and each twin
+            // and the gauge are drawn at their posted rect shifted by the same
+            // dy. So the sheet and its controls cannot disagree on any frame.
+            let dy = host.offsetFraction * geo.size.height
+            ZStack {
+                HostedWebView(web: host.web)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .offset(y: dy)
+                GlassChromeLayer(els: (host.exitEls ?? chrome.els).map { var e = $0; e.y += dy; return e },
+                                 flow: chrome.flow,
+                                 surface: chrome.surface,
+                                 mode: chrome.mode) { chrome.chromeTap($0) }
+                if let g = chrome.gauge {
+                    DSGaugeGlassView(model: g) { chrome.chromeTap("gauge-next") }
+                        .frame(width: g.rect.width, height: g.rect.height)
+                        .position(x: g.rect.midX, y: g.rect.midY + dy)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// An existing WKWebView placed in SwiftUI as-is (the host owns its lifetime).
+private struct HostedWebView: UIViewRepresentable {
+    let web: WKWebView
+    func makeUIView(context: Context) -> WKWebView { web }
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
 
 @available(iOS 26.0, *)
