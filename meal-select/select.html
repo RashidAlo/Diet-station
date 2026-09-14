@@ -3598,7 +3598,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-13 · 236 (Next works on the first tap)';
+const BUILD = 'build 2026-09-14 · 237 (native lab menu owns the gesture when the app says so)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -3649,6 +3649,11 @@ setTimeout(() => {
   if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
 }, 150);
 (function () {
+  /* ONE LAB MENU IN THE APP (Hub, 2026-09-14): a native host that owns the
+     three-finger gesture says so with DSNativeCaps.labMenu (main frame only,
+     same test as lab-shell). Bind nothing then — the native menu reaches
+     openLabMenu() through lab-shell's DSLabMenu.open(). No cap: unchanged. */
+  if (window.parent === window && window.DSNativeCaps && window.DSNativeCaps.labMenu >= 1) return;
   let taps = 0, lastTap = 0, holdTimer = null, holdStart = 0, sx = 0, sy = 0;
   const holdFire = () => {
     holdTimer = null; holdStart = 0;
@@ -5099,6 +5104,6 @@ if (QS.get('solo') === '1') {
   else boot();
 })();
 </script>
-<script src="../lab-shell.js?v=20260910b" data-flow="meal-select" defer></script>
+<script src="../lab-shell.js?v=20260914a" data-flow="meal-select" defer></script>
 </body>
 </html>

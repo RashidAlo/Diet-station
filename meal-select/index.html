@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-13 · 34 (opens the native sheet host when it exists)';
+const BUILD = 'calendar 2026-09-14 · 35 (native lab menu owns the gesture when the app says so)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -981,6 +981,11 @@ setTimeout(() => {
   if (bar && !document.body.classList.contains('desktop')) bar.classList.add('hidden');
 }, 150);
 (function () {
+  /* ONE LAB MENU IN THE APP (Hub, 2026-09-14): a native host that owns the
+     three-finger gesture says so with DSNativeCaps.labMenu (main frame only,
+     same test as lab-shell). Bind nothing then — the native menu reaches
+     openLabMenu() through lab-shell's DSLabMenu.open(). No cap: unchanged. */
+  if (window.parent === window && window.DSNativeCaps && window.DSNativeCaps.labMenu >= 1) return;
   let taps = 0, lastTap = 0, holdTimer = null, holdStart = 0, sx = 0, sy = 0;
   const holdFire = () => {
     holdTimer = null; holdStart = 0;
@@ -1205,6 +1210,6 @@ if (/[?&]qaopen=1/.test(location.search)) {
   addEventListener('pagehide', clearChrome);
 })();
 </script>
-<script src="../lab-shell.js?v=20260910b" data-flow="meal-select" defer></script>
+<script src="../lab-shell.js?v=20260914a" data-flow="meal-select" defer></script>
 </body>
 </html>
