@@ -1216,11 +1216,7 @@ struct HomeScreenNative: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             HStack(spacing: 16) {
-                // DS monogram — traced approximation, swap for the brand SVG
-                DSPercentMark()
-                    .stroke(Color(red: 23/255, green: 23/255, blue: 27/255),
-                            style: StrokeStyle(lineWidth: 6.2, lineCap: .round))
-                    .frame(width: 46, height: 46)
+                DSSummerMark().frame(width: 46, height: 46)
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("Summer Offer").font(DS.urbane(17, .semibold)).foregroundStyle(DS.ink)
@@ -1715,20 +1711,82 @@ private struct DSSparkle: Shape {
     }
 }
 
-/// DS "%" monogram — traced approximation of the brand mark (two stroked
-/// rings + a swooshing slash); stroke it with round caps
+/// The Summer Offer mark — the exported asset (checkout/assets/summer-logo.svg,
+/// 48-grid): a dark body with the % counters and slash knocked out in white
 @available(iOS 26.0, *)
-private struct DSPercentMark: Shape {
-    func path(in rect: CGRect) -> Path {
-        let s = rect.width / 56
-        var p = Path()
-        p.addEllipse(in: CGRect(x: 5.5 * s, y: 5 * s, width: 20 * s, height: 20 * s))
-        p.move(to: CGPoint(x: 45.5 * s, y: 5.5 * s))
-        p.addCurve(to: CGPoint(x: 11.5 * s, y: 50.5 * s),
-                   control1: CGPoint(x: 38 * s, y: 15.5 * s),
-                   control2: CGPoint(x: 22.5 * s, y: 37 * s))
-        p.addEllipse(in: CGRect(x: 30.5 * s, y: 31 * s, width: 20 * s, height: 20 * s))
-        return p
+private struct DSSummerMark: View {
+    var body: some View {
+        ZStack {
+            Mark().fill(Color(red: 26/255, green: 25/255, blue: 25/255))
+            Knockouts().fill(.white)
+        }
+    }
+
+    private struct Mark: Shape {
+        func path(in rect: CGRect) -> Path {
+            let s = rect.width / 48
+            func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * s, y: y * s) }
+            var p = Path()
+            p.move(to: pt(40.1299, 4))
+            p.addCurve(to: pt(43.6094, 9.9746), control1: pt(43.196, 4), control2: pt(45.1228, 7.308))
+            p.addLine(to: pt(34.8916, 25.333))
+            p.addCurve(to: pt(37.0957, 25), control1: pt(35.6388, 25.134), control2: pt(36.4166, 25))
+            p.addCurve(to: pt(46, 33.9473), control1: pt(42.0134, 25.0003), control2: pt(45.9999, 29.006))
+            p.addCurve(to: pt(41, 42), control1: pt(46, 37.3641), control2: pt(44, 40.5))
+            p.addLine(to: pt(37, 44))
+            p.addCurve(to: pt(33, 45), control1: pt(35.8808, 44.5096), control2: pt(34.3087, 45))
+            p.addCurve(to: pt(25.5908, 41.1113), control1: pt(29.9507, 45), control2: pt(27.2236, 43.4595))
+            p.addCurve(to: pt(24.9111, 41.5449), control1: pt(25.3799, 41.2769), control2: pt(25.1533, 41.4238))
+            p.addLine(to: pt(18.8447, 44.5781))
+            p.addCurve(to: pt(17.0557, 45), control1: pt(18.2893, 44.8558), control2: pt(17.6766, 45))
+            p.addLine(to: pt(8.0322, 45))
+            p.addCurve(to: pt(4.5938, 38.9561), control1: pt(4.9303, 45), control2: pt(3.0087, 41.6223))
+            p.addLine(to: pt(13.8027, 23.4668))
+            p.addCurve(to: pt(11, 24), control1: pt(12.896, 23.7711), control2: pt(11.8879, 24))
+            p.addCurve(to: pt(2, 15.0527), control1: pt(6.0821, 24), control2: pt(2.0001, 19.9942))
+            p.addCurve(to: pt(6.7178, 7.1553), control1: pt(2, 11.6322), control2: pt(3.9106, 8.6606))
+            p.addLine(to: pt(11, 5))
+            p.addCurve(to: pt(11.6133, 4.7441), control1: pt(11.1919, 4.9128), control2: pt(11.3981, 4.828))
+            p.addCurve(to: pt(14.7246, 4.0068), control1: pt(12.6059, 4.304), control2: pt(13.6625, 4.0454))
+            p.addCurve(to: pt(15, 4), control1: pt(14.8175, 4.0023), control2: pt(14.9094, 4))
+            p.addCurve(to: pt(15.6846, 4.0283), control1: pt(15.2304, 4), control2: pt(15.4585, 4.0113))
+            p.addCurve(to: pt(15.916, 4.0459), control1: pt(15.7619, 4.0342), control2: pt(15.8392, 4.038))
+            p.addCurve(to: pt(22.1016, 7.4736), control1: pt(18.4267, 4.2997), control2: pt(20.6311, 5.5867))
+            p.addCurve(to: pt(22.7812, 8.4756), control1: pt(22.3503, 7.791), control2: pt(22.5764, 8.1264))
+            p.addCurve(to: pt(24.0498, 7.4756), control1: pt(23.1305, 8.0613), control2: pt(23.5611, 7.7199))
+            p.addLine(to: pt(30.1553, 4.4219))
+            p.addCurve(to: pt(31.9443, 4), control1: pt(30.7107, 4.1442), control2: pt(31.3234, 4))
+            p.addLine(to: pt(40.1299, 4))
+            p.closeSubpath()
+            return p
+        }
+    }
+
+    private struct Knockouts: Shape {
+        func path(in rect: CGRect) -> Path {
+            let s = rect.width / 48
+            func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * s, y: y * s) }
+            var p = Path()
+            p.move(to: pt(37, 39))
+            p.addCurve(to: pt(42, 34), control1: pt(39.7614, 39), control2: pt(42, 36.7614))
+            p.addCurve(to: pt(37, 29), control1: pt(42, 31.2386), control2: pt(39.7614, 29))
+            p.addCurve(to: pt(32, 34), control1: pt(34.2386, 29), control2: pt(32, 31.2386))
+            p.addCurve(to: pt(37, 39), control1: pt(32, 36.7614), control2: pt(34.2386, 39))
+            p.closeSubpath()
+            p.move(to: pt(15, 18))
+            p.addCurve(to: pt(20, 13), control1: pt(17.7614, 18), control2: pt(20, 15.7614))
+            p.addCurve(to: pt(15, 8), control1: pt(20, 10.2386), control2: pt(17.7614, 8))
+            p.addCurve(to: pt(10, 13), control1: pt(12.5742, 8), control2: pt(10, 10.3712))
+            p.addCurve(to: pt(15, 18), control1: pt(10, 15.7614), control2: pt(12.2386, 18))
+            p.closeSubpath()
+            p.move(to: pt(22.6934, 38))
+            p.addLine(to: pt(40.0625, 8))
+            p.addLine(to: pt(33.3066, 8))
+            p.addLine(to: pt(15.9375, 38))
+            p.addLine(to: pt(22.6934, 38))
+            p.closeSubpath()
+            return p
+        }
     }
 }
 
