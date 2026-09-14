@@ -1405,11 +1405,23 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     }, { passive: true });
     document.addEventListener('touchcancel', function () { tCancel(); }, { passive: true });
   }
+  /* ONE LAB MENU IN THE APP (Rashid, 2026-09-14): when a native host owns the
+     three-finger gesture for this web view it says so with
+     DSNativeCaps.labMenu, and the page binds NO gesture of its own — the
+     native menu is the only one, and reaches this page's controls through
+     window.DSLabMenu.open(). Main frame only: caps are injected there, and an
+     iframe inside a hub sheet must never read itself as natively hosted.
+     No cap (web, the hub's own sheets): unchanged. */
+  var NATIVE_MENU = window.parent === window &&
+    !!(window.DSNativeCaps && window.DSNativeCaps.labMenu >= 1);
+
   function setupLabMenu() {
     if (window.dsOwnLabMenu) {
       /* flows with their own sheet still get the reliable window-level
          gestures, routed to their opener when they expose one */
       if (typeof window.openLabMenu === 'function') {
+        if (!window.DSLabMenu) window.DSLabMenu = { open: function () { window.openLabMenu(); } };
+        if (NATIVE_MENU) return;
         var routed = function () {
           if (!document.body.classList.contains('desktop')) window.openLabMenu();
         };
@@ -1476,7 +1488,8 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
           return;
         } catch (_) {}
       }
-      location.href = '../?v=' + Date.now();
+      /* the hub offers "Back to <this prototype>" on arrival (web) */
+      location.href = '../?v=' + Date.now() + '&from=' + encodeURIComponent(FLOW_ID);
     });
     var done = document.createElement('button');
     done.className = 'labshell-done';
@@ -1520,8 +1533,11 @@ body.desktop .lab-view { left: var(--sidew, 50vw) !important; }\
     links.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () { close(); setTab(b.dataset.t); });
     });
-    threeFingerHold(open);   /* primary */
-    tripleTapHold(open);     /* pointer/desktop fallback */
+    window.DSLabMenu = { open: open, close: close };
+    if (!NATIVE_MENU) {
+      threeFingerHold(open);   /* primary */
+      tripleTapHold(open);     /* pointer/desktop fallback */
+    }
     /* hub Settings button lands here with #labmenu: open the sheet on arrival */
     if (location.hash === '#labmenu') {
       history.replaceState(null, '', location.pathname);

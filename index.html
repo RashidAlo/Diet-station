@@ -972,6 +972,31 @@
   .hs-empty b { display: block; margin-bottom: 4px; color: var(--ink);
     font: 600 17px/1.3 'Urbane Rounded', sans-serif; }
   body.native .hubsearch { max-width: none; margin-top: 10px; }
+
+  /* ============ back to the prototype you were in (web) ============ */
+  .backpill { position: fixed; left: 50%; z-index: 90;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 2px; padding: 4px;
+    border-radius: 999px; background: rgba(255,255,255,.74);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14), 0 12px 30px -20px rgba(0,0,0,.4);
+    transform: translate(-50%, 160%); opacity: 0; pointer-events: none;
+    transition: transform .55s cubic-bezier(.32,.72,0,1), opacity .3s ease; }
+  .backpill.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+  .backpill .bp-go { display: flex; align-items: center; gap: 8px; height: 40px;
+    min-width: 0; padding: 0 16px 0 12px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--ink); cursor: pointer;
+    font: 600 14px/1 'Urbane Rounded', sans-serif; white-space: nowrap; }
+  .backpill .bp-go span { overflow: hidden; text-overflow: ellipsis;
+    max-width: min(60vw, 320px); }
+  .backpill .bp-go svg { width: 15px; height: 15px; flex: none; color: var(--red); }
+  .backpill .bp-x { flex: none; width: 40px; height: 40px; border: 0;
+    border-radius: 999px; background: transparent; color: #8e8e93; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; }
+  .backpill button:hover { background: rgba(0,0,0,.05); }
+  .backpill .bp-x svg { width: 12px; height: 12px; }
+  body.native .backpill { display: none !important; }
 </style>
 </head>
 <body>
@@ -2343,6 +2368,73 @@ if (NATIVE) {
   });
 })();
 
+/* ============ back to the prototype you were in (web) ============
+   Rashid, 2026-09-14: on the web hub, a way straight back into the
+   prototype you just left. Knows it from ?from=<flow> (lab Exit adds it) or
+   from the card you opened this session. Reopens that prototype; × forgets it.
+   The app has its own navigation, so this is web only. */
+(function () {
+  if (NATIVE) return;
+  const KEY = 'ds-last-flow';
+  const store = {
+    get() { try { return sessionStorage.getItem(KEY); } catch (_) { return null; } },
+    set(v) { try { sessionStorage.setItem(KEY, v); } catch (_) {} },
+    clear() { try { sessionStorage.removeItem(KEY); } catch (_) {} }
+  };
+  /* remember the prototype a card opens (never the admin controls on it) */
+  document.addEventListener('click', e => {
+    const card = e.target.closest && e.target.closest('#flows > .card[data-flow]');
+    if (!card || card.classList.contains('editing')) return;
+    if (e.target.closest('.cardedit, .livebtn, .hobtn, .editor, .handoff')) return;
+    store.set(card.dataset.flow);
+  }, true);
+
+  const params = new URLSearchParams(location.search);
+  const from = params.get('from');
+  if (from) {
+    store.set(from);
+    params.delete('from');
+    const q = params.toString();
+    try { history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch (_) {}
+  }
+
+  const pill = document.createElement('div');
+  pill.className = 'backpill';
+  pill.innerHTML =
+    '<button class="bp-go" type="button"><svg viewBox="0 0 16 16" fill="none">' +
+    '<path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</svg><span></span></button>' +
+    '<button class="bp-x" type="button" aria-label="Dismiss"><svg viewBox="0 0 12 12" fill="none">' +
+    '<path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>';
+  document.body.appendChild(pill);
+
+  let target = null;
+  const show = () => {
+    const id = store.get();
+    const f = id && (NAV_FLOWS || []).find(x => x.id === id);
+    if (!f || (flowHiddenNow(f) && !ADMIN)) { pill.classList.remove('show'); return; }
+    target = f;
+    pill.querySelector('.bp-go span').textContent = 'Back to ' + f.title;
+    pill.querySelector('.bp-go').setAttribute('aria-label', 'Back to ' + f.title);
+    setTimeout(() => pill.classList.add('show'), 350);   /* after the page settles */
+  };
+  pill.querySelector('.bp-go').addEventListener('click', () => {
+    if (target) location.href = target.path + '?v=' + Date.now();
+  });
+  pill.querySelector('.bp-x').addEventListener('click', () => {
+    store.clear();
+    pill.classList.remove('show');
+  });
+  /* the hub's flow list arrives async; show once it has */
+  let tries = 0;
+  (function wait() {
+    if (typeof NAV_FLOWS !== 'undefined' && NAV_FLOWS && NAV_FLOWS.length) show();
+    else if (tries++ < 80) setTimeout(wait, 100);
+  })();
+  /* a return via the browser's back button restores this page from cache */
+  addEventListener('pageshow', e => { if (e.persisted) show(); });
+})();
+
 /* ============ card / list view toggle (persisted per device) ============ */
 (function () {
   const bars = [...document.querySelectorAll('.viewtog')];
@@ -2405,6 +2497,52 @@ function announceRouter(fr) {
     try { fr.contentWindow.postMessage({ t: 'ds-router', v: 1, caps: ['result'] }, '*'); } catch (_) {}
   });
 }
+
+/* ============ stack hygiene (Rashid, 2026-09-14) ============
+   "Sometimes I dismiss a prototype, it goes to the background, and the hub
+   can't open it again." The hub's list of open prototypes must always match
+   what is on screen: a flow frame is transparent and full-screen, so one
+   the hub still thinks is open silently swallows every tap on the hub. */
+function sameDoc(a, b) {
+  return a.replace(/index\.html$/, '').replace(/\/+$/, '') ===
+    b.replace(/index\.html$/, '').replace(/\/+$/, '');
+}
+function frameDead(en) {
+  if (!en.frame.isConnected) return true;
+  try {
+    const w = en.frame.contentWindow;
+    if (!w) return true;
+    if (en.loaded && w.location.href === 'about:blank') return true;
+    /* a flow that fell back to loading the HUB inside its own sheet */
+    return en.loaded && sameDoc(w.location.pathname, location.pathname);
+  } catch (_) { return false; }           /* unreadable: leave it be */
+}
+function pruneStack() {
+  for (let i = flowStack.length - 1; i >= 0; i--) {
+    if (i < flowStack.length && frameDead(flowStack[i])) popFlow(flowStack[i]);
+  }
+  /* frames on screen that no stack entry owns — nothing could ever close them */
+  document.querySelectorAll('.flow-frame:not(.bye):not(.bye-push)').forEach(fr => {
+    if (!flowStack.some(en => en.frame === fr)) fr.remove();
+  });
+  if (!flowStack.length && document.body.classList.contains('flowopen')) {
+    document.body.classList.remove('flowopen');
+    dsPost({ t: 'chrome', show: true });
+  }
+}
+function trackFrame(entry) {
+  entry.at = Date.now();
+  entry.frame.addEventListener('load', () => {
+    entry.loaded = true;
+    if (flowStack.includes(entry) && frameDead(entry)) popFlow(entry);
+  });
+}
+/* coming back to the app/tab is exactly when a stale frame bites */
+addEventListener('pageshow', () => pruneStack());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') pruneStack();
+});
+addEventListener('focus', () => pruneStack());
 function presentFlow(f, present, context, from, opener) {
   const url = flowUrl(f, context, from);
   if (present === 'tab' && flowStack.length) {
@@ -2427,19 +2565,28 @@ function presentFlow(f, present, context, from, opener) {
   announceRouter(fr);
   document.body.append(fr);
   setTimeout(() => fr.classList.add('in'), 20);     /* rAF starves in hidden tabs */
-  flowStack.push({ frame: fr, present: present === 'push' ? 'push' : 'sheet',
-                   id: f.id, opener: opener || null });
+  const entry = { frame: fr, present: present === 'push' ? 'push' : 'sheet',
+                  id: f.id, opener: opener || null };
+  flowStack.push(entry);
+  trackFrame(entry);
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
 }
 function openFlowSheet(url, id) {           /* card entry point (legacy shape) */
+  pruneStack();
+  /* a quick double tap on a card must not stack two copies — closing the top
+     one would leave the other on screen, looking impossible to dismiss */
+  const top = flowStack[flowStack.length - 1];
+  if (top && id && top.id === id && Date.now() - top.at < 900) return;
   const fr = document.createElement('iframe');
   fr.className = 'flow-frame';
   fr.src = url + '&embed=1';
   announceRouter(fr);
   document.body.append(fr);
   setTimeout(() => fr.classList.add('in'), 20);
-  flowStack.push({ frame: fr, present: 'sheet', id: id || null, opener: null });
+  const entry = { frame: fr, present: 'sheet', id: id || null, opener: null };
+  flowStack.push(entry);
+  trackFrame(entry);
   document.body.classList.add('flowopen');
   dsPost({ t: 'chrome', show: false });
 }
