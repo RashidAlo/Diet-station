@@ -2353,10 +2353,16 @@ function pursueIntent() {
   const head = scrollIntent.head;
   /* land with the first thumbnail row fully clear of the docked nav.
      NOTE: --top-pad is an env() expression on device — read the RESOLVED
-     scroll padding (top-pad + 66) instead of the raw custom property. */
+     scroll padding (top-pad + 66) instead of the raw custom property.
+     THE CLEARANCE IS MEASURED FROM THE BAND, NOT A NUMBER (Rashid, ·239:
+     "the following category has slightly cropped thumbnails on the top").
+     This used a literal 92 + 12, which put the photos 8px under a 40px band.
+     ·234 grew the band to 52px and never touched this line, so the band
+     ate the top of the photos' rounded corners. The band's bottom edge is
+     top-pad + 56 + DOCK_H; the photos land a grid gap (16px) below it. */
   const tp = navPadPx();
   const target = Math.max(0, Math.min(
-    head.offsetTop + head.offsetHeight - (tp + 92) - 12,
+    head.offsetTop + head.offsetHeight - (tp + 56 + DOCK_H) - 16,
     scrollArea.scrollHeight - scrollArea.clientHeight));
   if (Math.abs(scrollArea.scrollTop - target) < 8) {
     head.classList.remove('nudge'); void head.offsetWidth; head.classList.add('nudge');
@@ -3598,7 +3604,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-14 · 238 (taps under the calorie bar never reach a card)';
+const BUILD = 'build 2026-09-14 · 239 (auto-scroll lands the photos clear of the band)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
