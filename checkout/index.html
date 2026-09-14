@@ -10,6 +10,13 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Checkout</title>
+<script>
+  /* THE OVERLAY RULE entrance: the first paint is off-screen, then the sheet
+     springs up and the scrim dissolves in place (system/overlays.html). A host
+     that presents us (embed=1) supplies its own veil. */
+  document.documentElement.classList.add('sheet-enter');
+  if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
+</script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -106,6 +113,44 @@
     --ease: cubic-bezier(.32,.72,0,1);
   }
 
+  /* ================= THE CHECKOUT OVERLAY — system/overlays.html ===========
+     Checkout arrives as ONE near-fullscreen sheet. The plan cards and every
+     screen pushed after them live inside it, the way a sheet holds a
+     navigation stack, so the rounded top and the gap above stay put while
+     pages move. Entrance is the overlay rule: the sheet springs up, the scrim
+     DISSOLVES in place and never travels. Standalone shows a mock backdrop in
+     the gap; a presenting host (embed=1) supplies its own veil and shows
+     through. Geometry mirrors the auth sheet, the reviewed reference. */
+  .backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: #a6a6a6; opacity: 0; transition: opacity .32s ease; }
+  html.bd-on .backdrop { opacity: 1; }
+  html.embed .backdrop { display: none; }
+  html.embed, html.embed body, html.embed #stage, html.embed .device,
+  html.embed .phone { background: transparent !important; }
+  .co-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
+    top: calc(var(--top-pad) + 24px);
+    border-radius: 44px 44px 0 0; overflow: hidden; background: var(--surface);
+    box-shadow: 0 -14px 44px rgba(0,0,0,.24);
+    transition: transform .55s cubic-bezier(.32,.72,0,1),
+      top .42s var(--ease), border-radius .42s var(--ease); will-change: transform; }
+  html.sheet-enter .co-sheet { transform: translateY(103%); }
+  /* Only the plan picker is an overlay. Choosing a plan moves into a
+     full-screen experience: the sheet grows to the screen edges on the same
+     curve and clock as the push, and shrinks back when you return to plans. */
+  .co-sheet.full { top: 0; border-radius: 0; box-shadow: none; }
+  .co-sheet.snap { transition: none; }
+  .co-sheet.drag { transition: none; }
+  /* the coupons host — rewards summoned without a router. rewards draws its
+     own sheet and spring; the host only dissolves a veil in place (home's
+     .ov-veil / .ov-frame, the same numbers). */
+  .cp-host { position: absolute; inset: 0; z-index: 85; display: none; }
+  .cp-host.on { display: block; }
+  .cp-veil { position: absolute; inset: 0; background: rgba(11,14,18,.45); opacity: 0;
+    transition: opacity .32s ease; }
+  .cp-veil.show { opacity: 1; }
+  .cp-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+    background: transparent; }
+
   /* ---- screen stack: push = slide from right (Apple curve) ---- */
   .scr { position: absolute; inset: 0; background: var(--surface); overflow: hidden;
     display: flex; flex-direction: column; z-index: 10;
@@ -114,6 +159,8 @@
   .scr.under { transform: translateX(-26%); }
   .scr[data-scr="plans"] { transform: translateX(0); }
   .scr[data-scr="plans"].under { transform: translateX(-26%); }
+  /* the full-screen steps clear the status bar themselves */
+  .scr:not([data-scr="plans"]) { padding-top: var(--top-pad); }
 
   /* ================= MOTION (Rashid, 2026-09-14: "don't make things static")
      Pages move in; nothing snaps. Four pieces, each keyed so a re-price
@@ -164,11 +211,10 @@
   }
 
   /* ---- shared header (113px, content bottom-aligned) ---- */
-  .hdr { flex: none; height: 113px; background: var(--surface); display: flex;
-    align-items: flex-end; padding: 16px; z-index: 20; }
-  /* 44 + 69 = Figma's 113 on desktop; grows with the notch on device, but not
-     when the hub frames this flow as a sheet (it owns the status bar then) */
-  body:not(.desktop):not(.embed) .hdr { height: calc(var(--top-pad) + 69px); }
+  /* a 72-tall bar with its controls centred (the auth sheet's topnav
+     geometry); the full-screen steps add the status-bar pad on .scr */
+  .hdr { flex: none; height: 72px; background: var(--surface); display: flex;
+    align-items: center; padding: 16px; z-index: 20; }
   .hdr-row { flex: 1; display: flex; gap: 12px; align-items: center; min-width: 0; }
   .icon-btn { width: 40px; height: 40px; flex: none; border-radius: 100px; cursor: pointer;
     background: var(--surface); border: 1px solid var(--hair);
@@ -333,9 +379,14 @@
     border-color: #fefae7; color: #7a5a00; }
   .tier-chip[data-tier="vip"]    { background: linear-gradient(180deg, #270f0f 38.462%, #0f0e0d 65.385%);
     border-color: #f9f9f9; color: #ffffff; }
-  .promo-add { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--ink);
-    display: flex; align-items: center; justify-content: center; position: relative; }
-  .promo-add::before, .promo-add::after { content: ''; position: absolute; background: #fff;
+  /* the add affordance: a very light outline with the plus in brand red — it
+     invites without shouting, and matches the remove X's 28pt visual */
+  .promo-add { width: 28px; height: 28px; flex: none; border-radius: 50%; background: transparent;
+    border: 1.5px solid #e6e6e8; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; position: relative;
+    transition: transform .18s var(--ease), border-color .18s ease; }
+  .promo-main:active .promo-add { transform: scale(.9); border-color: #d6d6da; }
+  .promo-add::before, .promo-add::after { content: ''; position: absolute; background: var(--red);
     border-radius: 1px; }
   .promo-add::before { width: 11px; height: 1.8px; }
   .promo-add::after { width: 1.8px; height: 11px; }
@@ -500,85 +551,61 @@
     justify-content: center; padding: 0 5px; z-index: 2; }
 
   /* ================= subscribe modal (plan cards) ================= */
-  /* The plan picker is how checkout arrives: a near-fullscreen OVERLAY, so it
-     takes the overlay radius and lift from system/overlays.html rather than the
-     38 its Figma frame draws. Same tension the auth frame has — recorded there
-     as Rashid's call; he asked for the system values here. */
-  .scr[data-scr="plans"] { border-radius: 44px 44px 0 0;
-    box-shadow: 0 -14px 44px rgba(0,0,0,.24); }
-  .sub-nav { position: absolute; left: 0; top: 24px; width: 100%; z-index: 30;
-    display: flex; gap: 8px; align-items: center; padding: 0 24px 0 16px; }
+  /* sheet bar seats (system/overlays.html): the call action owns the trailing
+     seat at 16, so the X takes the leading seat at 24 */
+  .sub-nav { position: absolute; left: 0; top: 16px; width: 100%; z-index: 30;
+    display: flex; gap: 8px; align-items: center; padding: 0 16px 0 24px; }
   .sub-nav .spacer { flex: 1; min-width: 1px; opacity: 0;
     font: 600 22px/32px 'Urbane Rounded', sans-serif; }
-  .sub-scroll { position: absolute; left: 0; top: 80px; width: 100%; bottom: 0;
+  .sub-scroll { position: absolute; left: 0; top: 72px; width: 100%; bottom: 0;
     overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain; display: flex; flex-direction: column; gap: 21px;
     align-items: flex-start; padding: 0 16px 119px; }
   .edge { position: absolute; left: 0; width: 100%; z-index: 25; pointer-events: none;
     backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-  .edge.t { top: 0; height: 80px;
+  .edge.t { top: 0; height: 72px;
     -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent);
     mask-image: linear-gradient(to bottom, #000 42%, transparent); }
   .edge.b { bottom: 0; height: 97px;
     -webkit-mask-image: linear-gradient(to top, #000 38%, transparent);
     mask-image: linear-gradient(to top, #000 38%, transparent); }
-  /* Figma draws this frame as a presented sheet, so its 24/80 offsets are
-     measured from the sheet's own top edge. Full-screen on a real device the
-     frame starts at y=0 and the nav has to clear the status bar — but when the
-     hub presents this flow as a sheet the status bar is already the hub's
-     problem, so embedded keeps Figma's literal numbers. */
-  body:not(.desktop):not(.embed) .sub-nav { top: calc(var(--top-pad) + 10px); }
-  body:not(.desktop):not(.embed) .sub-scroll { top: calc(var(--top-pad) + 66px); }
-  body:not(.desktop):not(.embed) .edge.t { height: calc(var(--top-pad) + 66px); }
-  .sub-ctas { display: flex; gap: 16px; height: 54px; align-items: center;
-    justify-content: center; width: 100%; flex: none; }
-  /* ---- the two CTAs are house glass widgets, light-mode ----
-     Same material as the home flow's .plancard, which is the light-ground
-     variant of the widget glass: white .7 over blur 14 / saturate 140, a .5px
-     hairline and a soft lift. The brand CTA wears the same shell with its
-     gradient as a TINT beneath the glass, the way a tinted material reads on
-     native, rather than being a flat gradient pill. */
-  .gwidget { position: relative; overflow: hidden; border: none;
-    background: rgba(255,255,255,.7);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
-    box-shadow: 0 0 0 .5px #dbdbdb,
-      inset 0 1px 1px rgba(255,255,255,.9),
-      0 8px 37px rgba(0,0,0,.08);
-    transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
-  .gwidget:active { transform: scale(.98); }
-  .gwidget > * { position: relative; z-index: 2; }
-  .gwidget .tint { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-  .book-btn { flex: 1; height: 54px; cursor: pointer; border-radius: 54px;
-    display: flex; align-items: center; justify-content: center; padding: 17px 24px;
-    font: 500 13px/1 'Urbane Rounded', sans-serif; color: var(--ink); white-space: nowrap; }
-  .guide-btn { width: 175px; height: 54px; flex: none; cursor: pointer; border-radius: 67px;
-    /* the primary action keeps its weight: the same material, but a thinner
-       white fill so the brand tint carries rather than being washed by it */
-    background: rgba(255,255,255,.22); }
-  /* the brand gradient sits UNDER the glass as its tint, not instead of it */
-  .guide-btn .tint {
-    background: linear-gradient(114.756deg, rgb(255,150,62) 53.4%, rgb(255,5,5) 141.76%); }
-  .guide-txt { position: absolute; top: 16px; left: calc(50% - 20px); transform: translateX(-50%);
-    display: flex; gap: 3px; align-items: flex-start; font-size: 16px; color: #fff;
-    white-space: nowrap; }
-  .guide-txt .a { font-weight: 500; opacity: .6; line-height: 22.448px; }
-  .guide-txt .b { font-weight: 700; line-height: 22.448px; text-shadow: 0 1px 5.8px rgba(0,0,0,.1); }
-  .guide-wand { position: absolute; left: 125px; top: 10px; width: 54px; height: 54px;
-    display: flex; align-items: center; justify-content: center;
-    transform: rotate(180deg) scaleY(-1); }
-  .guide-wand img { width: 54px; height: 54px; display: block; }
-  .shimmer { position: absolute; inset: 0; border-radius: 1000px; overflow: hidden;
-    pointer-events: none; }
-  .shimmer i { position: absolute; top: -29px; width: 115px; height: 115px; display: flex;
-    align-items: center; justify-content: center; mix-blend-mode: color-dodge;
-    animation: sweep 3.4s var(--ease) infinite; }
-  .shimmer i img { width: 162.635px; transform: rotate(45deg); display: block; }
-  .shimmer i:nth-child(1) { left: -104px; }
-  .shimmer i:nth-child(1) img { height: 15px; }
-  .shimmer i:nth-child(2) { left: -101px; animation-delay: .18s; }
-  .shimmer i:nth-child(2) img { height: 3px; }
-  @keyframes sweep { 0% { transform: translateX(0); } 55%, 100% { transform: translateX(330px); } }
+
+
+  /* ---- Book Consultation + Guide me: THE HOUSE GLASS BUTTONS ----------------
+     Rashid, 2026-09-14: home's rounded-rectangle glass pair is the standard.
+     Same build as home's .lo-opts — a 64-tall row, 26 radius, Book fixed at 193
+     with its calendar glyph and a two-line label, Guide filling the rest with
+     its sparks and wand — with the colours REVERSED for a white page: home's
+     red-tinted glass and white type on a red ground becomes a neutral glass and
+     black type on white. The calendar path is home's own, recoloured, not redrawn. */
+  .sub-ctas { display: flex; gap: 16px; height: 64px; width: 100%; flex: none; }
+  .lglass { position: relative; overflow: hidden; border: none; cursor: pointer;
+    border-radius: 26px; background: rgba(11,14,18,.045);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    box-shadow: 0 6px 20px rgba(11,14,18,.06);
+    transition: transform .18s var(--ease), background-color .18s ease; }
+  .lglass::after { content: ''; position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none; z-index: 2;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.9), inset 0 0 0 .5px rgba(11,14,18,.10); }
+  .lglass:active { transform: scale(.97); background: rgba(11,14,18,.07); }
+  .lglass .z { position: relative; z-index: 3; }
+  .co-book { flex: none; width: 193px; display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; text-align: left; }
+  .co-book .bk-txt { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .co-cal { position: relative; flex: none; width: 28px; height: 28px; }
+  .co-cal .plate { position: absolute; left: 2px; right: 2px; top: 2.4px; bottom: 3.1px;
+    background: rgba(11,14,18,.06); border-radius: 4.7px; box-shadow: 0 1.9px 3.9px rgba(0,0,0,.05); }
+  .co-cal svg { position: absolute; left: 2px; right: 2px; bottom: 2.6px; width: 24px; height: auto; }
+  .co-cal .post { position: absolute; top: 0; width: 1.9px; height: 4.6px;
+    background: rgba(11,14,18,.35); border-radius: 4px; }
+  .co-cal .post.p1 { left: 9px; } .co-cal .post.p2 { right: 9px; }
+  .co-guide { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
+  .co-guide .gd-txt { font: 300 16px/22px 'Urbane Rounded', sans-serif; color: var(--ink); }
+  .co-guide .gd-txt b { font-weight: 600; }
+  .co-guide .spark { position: absolute; z-index: 3; pointer-events: none; }
+  .co-guide .wand { position: absolute; right: 10px; bottom: 6px; width: 30px; z-index: 3;
+    transform: rotate(8deg); pointer-events: none; }
 
   .sub-sec { display: flex; flex-direction: column; gap: 21px; align-items: flex-start;
     width: 100%; padding-bottom: 32px; flex: none; }
@@ -771,14 +798,18 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·16</div>
+  <div class="s-foot" id="buildInfo">checkout ·17</div>
 </aside>
 <div id="labVeil"></div>
 
 <div id="stage">
   <div class="device" id="device">
     <div class="phone" id="phone" data-tier="vip">
-      <!-- screens are injected by render() -->
+      <!-- persistent layers: render() rebuilds ONLY the sheet's contents, so the
+           backdrop, the coupon host and the island survive every re-price -->
+      <div class="backdrop" id="backdrop"></div>
+      <div class="co-sheet" id="coSheet"></div>
+      <div class="cp-host" id="cpHost"><div class="cp-veil" id="cpVeil"></div></div>
       <div class="island"></div>
     </div>
   </div>
@@ -791,7 +822,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·16';
+const BUILD = 'checkout ·17';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1124,12 +1155,24 @@ function screenPlans() {
   return `<div class="scr" data-scr="plans">
     <div class="sub-scroll">
       <div class="sub-ctas">
-        <button class="gwidget book-btn" data-act="consult"><span>Book Consultation</span></button>
-        <button class="gwidget guide-btn" data-act="guide">
-          <span class="tint"></span>
-          <span class="shimmer"><i><img src="${A}shimmer-a.svg" alt=""></i><i><img src="${A}shimmer-b.svg" alt=""></i></span>
-          <span class="guide-txt"><span class="a">Guide</span><span class="b">me</span></span>
-          <span class="guide-wand"><img src="${A}magic-wand.svg" alt=""></span>
+        <button class="lglass co-book" data-act="consult">
+          <span class="co-cal z">
+            <span class="plate"></span>
+            <svg viewBox="0 0 24.4592 22.5852" fill="none" aria-hidden="true"><path d="M19.2575 0.270925C21.8447 0.271119 23.942 2.36818 23.942 4.9555V17.1362C23.942 19.7235 21.8447 21.8215 19.2575 21.8217H5.20179C2.61453 21.8215 0.51722 19.7235 0.51722 17.1362V4.9555C0.51722 2.36819 2.61454 0.27114 5.20179 0.270925H19.2575ZM6.13929 12.1547C5.6218 12.1547 5.20179 12.5747 5.20179 13.0922V14.0287C5.20179 14.5462 5.6218 14.9662 6.13929 14.9662H7.07581C7.5933 14.9662 8.01331 14.5462 8.01331 14.0287V13.0922C8.01331 12.5747 7.5933 12.1547 7.07581 12.1547H6.13929ZM11.7614 12.1547C11.2439 12.1547 10.8239 12.5747 10.8239 13.0922V14.0287C10.8239 14.5462 11.2439 14.9662 11.7614 14.9662H12.6979C13.2154 14.9662 13.6354 14.5462 13.6354 14.0287V13.0922C13.6354 12.5747 13.2154 12.1547 12.6979 12.1547H11.7614ZM17.3834 12.1547C16.8659 12.1547 16.4459 12.5747 16.4459 13.0922V14.0287C16.4459 14.5462 16.8659 14.9662 17.3834 14.9662H18.32C18.8374 14.9662 19.2575 14.5462 19.2575 14.0287V13.0922C19.2575 12.5747 18.8374 12.1547 18.32 12.1547H17.3834ZM6.13929 6.53264C5.6218 6.53264 5.20179 6.95266 5.20179 7.47014V8.40667C5.20179 8.92415 5.6218 9.34417 6.13929 9.34417H7.07581C7.5933 9.34417 8.01331 8.92415 8.01331 8.40667V7.47014C8.01331 6.95266 7.5933 6.53264 7.07581 6.53264H6.13929ZM11.7614 6.53264C11.2439 6.53264 10.8239 6.95266 10.8239 7.47014V8.40667C10.8239 8.92415 11.2439 9.34417 11.7614 9.34417H12.6979C13.2154 9.34417 13.6354 8.92415 13.6354 8.40667V7.47014C13.6354 6.95266 13.2154 6.53264 12.6979 6.53264H11.7614ZM17.3834 6.53264C16.8659 6.53264 16.4459 6.95266 16.4459 7.47014V8.40667C16.4459 8.92415 16.8659 9.34417 17.3834 9.34417H18.32C18.8374 9.34417 19.2575 8.92415 19.2575 8.40667V7.47014C19.2575 6.95266 18.8374 6.53264 18.32 6.53264H17.3834Z" fill="#0B0E12" fill-opacity="0.6"/></svg>
+            <span class="post p1"></span><span class="post p2"></span>
+          </span>
+          <span class="bk-txt z">Book<br>Consultation</span>
+        </button>
+        <button class="lglass co-guide" data-act="guide">
+          <svg class="spark" style="left:26px;top:14px;width:9px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#0B0E12" fill-opacity=".45"/></svg>
+          <svg class="spark" style="left:38px;top:30px;width:6px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#0B0E12" fill-opacity=".3"/></svg>
+          <svg class="spark" style="right:34px;top:10px;width:13px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#FFC52E"/></svg>
+          <svg class="spark" style="right:22px;top:26px;width:8px" viewBox="0 0 16 16"><path d="M8 0L9.8 6.2 16 8 9.8 9.8 8 16 6.2 9.8 0 8 6.2 6.2Z" fill="#FFC52E" fill-opacity=".9"/></svg>
+          <span class="gd-txt z">Guide <b>me</b></span>
+          <svg class="wand" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+            <path d="M9.5 8.5L27 29" stroke="#0B0E12" stroke-width="5" stroke-linecap="round"/>
+            <path d="M6.8 5.2L9.9 8.9" stroke="#ED1C24" stroke-width="5" stroke-linecap="round"/>
+          </svg>
         </button>
       </div>
       <div class="sub-sec">
@@ -1269,6 +1312,7 @@ function sheetModify() {
 
 /* ============================ render ====================================== */
 const phone = document.getElementById('phone');
+const coSheet = document.getElementById('coSheet');
 const device = document.getElementById('device');
 
 /* one-shot moments consumed by the next render: which row was just chosen */
@@ -1286,7 +1330,7 @@ function render() {
   phone.dataset.tier = S.tier;
   const cur = currentDuration();
   S.duration = cur.id;
-  phone.innerHTML =
+  coSheet.innerHTML =
     screenPlans() +
     screenDuration() +
     screenPayment() +
@@ -1295,8 +1339,7 @@ function render() {
     `<div class="fab-bar">${glassBtn('fab',
         `<img class="fico" src="${A}coupon-fab.svg" alt="Coupons">`, 'coupons',
         S.coupon ? '' : `<span class="dot">${WALLET_SIZE}</span>`)}</div>` +
-    `<div class="toast" id="toast"></div>` +
-    `<div class="island"></div>`;
+    `<div class="toast" id="toast"></div>`;
   showScreen(S.screen, true);
   document.documentElement.style.setProperty('--push', MODS.push + 'ms');
   /* a price that changed ticks into place instead of snapping, so a coupon or a
@@ -1330,6 +1373,9 @@ function showScreen(name, instant) {
   const from = S.screen;
   S.screen = name;
   const screens = phone.querySelectorAll('.scr');
+  if (instant) coSheet.classList.add('snap');
+  coSheet.classList.toggle('full', name !== 'plans');
+  if (instant) { void coSheet.offsetWidth; coSheet.classList.remove('snap'); }
   if (!instant) {
     /* render() places screens instantly (transition:none, restored next frame).
        A navigation in the SAME tick — plan card -> duration — would toggle
@@ -1366,6 +1412,18 @@ function order(n) { return ['plans', 'duration', 'payment'].indexOf(n); }
 /* ============================ interactions ================================ */
 function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} }
 let toastT;
+/* A toast never sits ON content: it rises to just above the highest thing
+   docked at the bottom of the active screen — the promo card when there is
+   one, else the pay bar — and keeps its default seat otherwise. Measured in
+   sheet points. */
+function placeToast(t) {
+  const scr = coSheet.querySelector(`.scr[data-scr="${S.screen}"]`);
+  const pw = scr && (scr.querySelector(':scope > .promo-wrap') || scr.querySelector(':scope > .paybar'));
+  if (!pw || !pw.offsetHeight) { t.style.bottom = ''; return; }
+  const k = coSheet.getBoundingClientRect().height / coSheet.offsetHeight || 1;
+  const gap = (coSheet.getBoundingClientRect().bottom - pw.getBoundingClientRect().top) / k;
+  t.style.bottom = Math.round(gap + 14) + 'px';   // clears the card even on the rise-in frame
+}
 function toast(msg, action) {
   const t = phone.querySelector('#toast'); if (!t) return;
   t.textContent = '';
@@ -1377,6 +1435,7 @@ function toast(msg, action) {
     t.appendChild(b);
   }
   t.classList.toggle('has-act', !!action);
+  placeToast(t);
   t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), action ? 3600 : 1800);
 }
@@ -1401,8 +1460,8 @@ phone.addEventListener('click', e => {
      redeemed arrives back here as a ds-result. */
   if (act === 'coupons') {
     e.stopPropagation();
-    dsNav('rewards', 'sheet', { src: 'checkout', mode: 'redeem', tier: S.tier },
-      () => toast('Coupons open from the hub — use the lab menu to preview a redemption'));
+    const ctx = { src: 'checkout', mode: 'redeem', tier: S.tier };
+    dsNav('rewards', 'sheet', ctx, () => openCouponsHere(ctx));
     return;
   }
   if (act === 'closeSheet') { closeSheets(); return; }
@@ -1474,10 +1533,45 @@ addEventListener('message', e => {
      rewards posts the redeemed code when a tab is ripped; the router relays
      it to the opener as it pops the sheet. Unknown codes are ignored, so a
      rewards build that doesn't emit yet simply leaves the price untouched. */
-  if (e.data.t === 'ds-result' && e.data.from === 'rewards') {
+  const fromHosted = cpFrame && e.source === cpFrame.contentWindow;
+  /* an answer comes from the router (our parent) or the rewards we host —
+     never from an arbitrary window */
+  if (e.data.t === 'ds-result' && e.data.from === 'rewards' && (fromHosted || e.source === window.parent)) {
+    if (fromHosted) closeCouponsHere();
     applyCoupon(e.data.payload && e.data.payload.code);
   }
+  /* the hosted rewards' own X closes the host, not checkout */
+  if (e.data.t === 'ds-close' && fromHosted) closeCouponsHere();
 });
+
+/* ---- COUPONS, HOSTED HERE when no router is listening ----
+   The hub normally presents rewards and relays its answer. Without one — a
+   direct page, a native cover that doesn't announce — checkout hosts rewards
+   itself, exactly as home does behind its own dsNav gate. rewards sees
+   from=checkout, so it runs as the redeem picker and a rip answers with a
+   ds-result straight to this window. rewards draws its own sheet and spring;
+   the host's only job is the veil, which dissolves in place. The host layer
+   sits OUTSIDE the sheet render() rebuilds, so a re-price can't tear it down. */
+let cpFrame = null;
+const cpHost = document.getElementById('cpHost'), cpVeil = document.getElementById('cpVeil');
+function openCouponsHere(ctx) {
+  if (cpFrame) return;
+  vibrate(8);
+  cpHost.classList.add('on');
+  requestAnimationFrame(() => cpVeil.classList.add('show'));
+  cpFrame = document.createElement('iframe');
+  cpFrame.className = 'cp-frame';
+  cpFrame.title = 'Your coupons';
+  cpFrame.src = '../rewards/?embed=1&from=checkout&ctx=' +
+    encodeURIComponent(JSON.stringify(ctx)) + '&v=' + Date.now();
+  cpHost.appendChild(cpFrame);
+}
+function closeCouponsHere() {
+  if (!cpFrame) return;
+  cpVeil.classList.remove('show');
+  const fr = cpFrame; cpFrame = null;
+  setTimeout(() => { fr.remove(); cpHost.classList.remove('on'); }, 420);
+}
 
 /* the single place a coupon is applied or cleared, whatever the source */
 /* opts: quiet = no haptic (boot), silent = no toast (the caller has its own),
@@ -1535,8 +1629,16 @@ addEventListener('storage', e => {
 const EMBED = /[?&]embed=1/.test(location.search);
 if (EMBED) document.body.classList.add('embed');
 function dsClose() {
-  if (window.parent !== window) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
-  location.href = '../?v=' + Date.now();
+  const leave = () => {
+    if (window.parent !== window) { try { parent.postMessage({ t: 'ds-close' }, '*'); return; } catch (_) {} }
+    location.href = '../?v=' + Date.now();
+  };
+  /* exit reverses the entrance: the sheet slides away and the scrim dissolves
+     in place, then the host is told (auth's exit, the reviewed reference) */
+  document.documentElement.classList.remove('bd-on');
+  coSheet.classList.remove('drag');
+  coSheet.style.transform = 'translateY(103%)';
+  setTimeout(leave, 430);
 }
 
 /* ---- incoming context (query or postMessage): overrides only, never a
@@ -1726,6 +1828,49 @@ if (!S.screen || S.screen === 'plans') S.screen = S.entry === 'renew' ? 'duratio
 render();
 fit();
 BOOTED = true;
+/* the overlay entrance: sheet springs up, scrim dissolves in place */
+setTimeout(() => {
+  document.documentElement.classList.remove('sheet-enter');
+  document.documentElement.classList.add('bd-on');
+}, 90);
+
+/* DRAG-TO-CLOSE (system/overlays.html trait): grab the plan picker's bar and
+   pull down; rubber-band x0.42, commit past 195pt of finger travel, a short
+   release springs back on the house curve. Only the bar grabs — below it is a
+   scroller, and a drag there must scroll, not dismiss. Distances are sheet
+   points so the threshold holds on the scaled desktop stage. */
+(function () {
+  const DAMP = 0.42, COMMIT = 195, GRAB = 72;
+  let tracking = false, startY = 0, dy = 0, pid = null;
+  const scale = () => coSheet.getBoundingClientRect().height / coSheet.offsetHeight || 1;
+  function eligible(e) {
+    if (S.screen !== 'plans') return false;
+    if (e.target.closest('button, a, input, [data-act]')) return false;
+    if (phone.querySelector('.sheet.on') || cpFrame) return false;
+    return (e.clientY - coSheet.getBoundingClientRect().top) / scale() <= GRAB;
+  }
+  coSheet.addEventListener('pointerdown', e => {
+    if (!eligible(e)) return;
+    tracking = true; startY = e.clientY; dy = 0; pid = e.pointerId;
+    try { coSheet.setPointerCapture(pid); } catch (_) {}
+  });
+  coSheet.addEventListener('pointermove', e => {
+    if (!tracking || e.pointerId !== pid) return;
+    dy = Math.max(0, (e.clientY - startY) / scale());
+    if (dy > 6) coSheet.classList.add('drag');
+    coSheet.style.transform = `translateY(${dy * DAMP}px)`;
+  });
+  function release(e) {
+    if (!tracking || (e.pointerId !== undefined && e.pointerId !== pid)) return;
+    tracking = false;
+    coSheet.classList.remove('drag');
+    if (dy > COMMIT) { vibrate(10); dsClose(); }
+    else coSheet.style.transform = '';
+    dy = 0;
+  }
+  coSheet.addEventListener('pointerup', release);
+  coSheet.addEventListener('pointercancel', release);
+})();
 if (pendingArrival) {
   const c = decodeCoupon(pendingArrival);
   if (c) setTimeout(() => toast(`${TIERS[c.tier].label} coupon carried over — ${c.label} off`), 520);
