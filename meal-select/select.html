@@ -3598,7 +3598,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-14 · 237 (native lab menu owns the gesture when the app says so)';
+const BUILD = 'build 2026-09-14 · 238 (taps under the calorie bar never reach a card)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4613,6 +4613,32 @@ if (QS.get('solo') === '1') {
     var el = sel && document.querySelector(sel);
     if (el) el.click();
   };
+  /* NOTHING UNDER THE BAR TAKES A TAP (Rashid, ·238: "the whole bar is
+     registering taps below the calorie counter section").
+     Measured on the sim, canonical host: the native gauge passes every touch
+     through to the page on purpose (TOUCH LAW, so scrolling that starts on
+     the bar still scrolls), and its Next button only catches the middle of
+     its own capsule. A tap on the bar's body swapped a Lunch pick
+     (2015 → 2030 kcal); a tap on the visible edge of the Next pill added a
+     second one (→ 2050). Next never ran, and the day stopped being complete.
+     So the page, not the native layer, decides what a tap under the glass
+     means: it never reaches a card, and anywhere on the Next half it IS
+     Next. Only `click` is taken, never touchstart/move, so scrolling from
+     the bar still works, and the TOUCH LAW holds. A tap the native button
+     does catch never becomes a web click, so Next cannot fire twice. */
+  window.addEventListener('click', function (e) {
+    if (!document.documentElement.classList.contains('ds-gauge') || !e.isTrusted) return;
+    var nav = document.getElementById('navigator');
+    if (!nav || nav.classList.contains('bar-hidden')) return;
+    var g = gaugeState().rect, off = frameOffset();
+    var x = e.clientX, y = e.clientY, gx = g.x - off.x, gy = g.y - off.y;
+    if (x < gx || x > gx + g.w || y < gy || y > gy + g.h) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    /* the native dock: 92pt wide, 8pt in from the bar's trailing edge */
+    var nextZone = x >= gx + g.w - 8 - 92 - 16;
+    if (nextZone && dock.classList.contains('show') && dock.classList.contains('wide')
+        && !dock.querySelector('.loader') && typeof dock.onclick === 'function') dock.onclick();
+  }, true);
   /* the date scrubber's full-width takeover (Rashid v9): the growing pill
      PUSHES the action twins out of the screen — X exits left, the dual
      exits right — and they ride back in on release. The web buttons
