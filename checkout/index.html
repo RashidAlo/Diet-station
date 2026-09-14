@@ -600,43 +600,7 @@
      engine, so a coupon re-prices every card. */
   .sub-sec { display: flex; flex-direction: column; align-items: stretch;
     width: 100%; padding-bottom: 32px; flex: none; }
-  /* ---- NATIVE LIQUID GLASS LOOK — proposed for plancard v2 (sent to Design
-     System; remove this block once v2 is re-vendored) ----------------------
-     Rashid, 2026-09-14, comparing on device: Home's cards in the app are
-     SwiftUI .glassEffect, and the web platter reads flat beside them. Values
-     sampled from his screenshot (3x): a darker #cbcbcb rim, a pure-white
-     specular just inside the top edge, a ~2% inner vignette toward the edges,
-     and a much deeper ambient shadow (ground 232 at the sides, 220 below vs
-     the web's 247/242). The pill gets the same material: an inner edge glow
-     and a soft lift. Paint only — geometry is untouched, so the one-design
-     measurements still hold. */
-  .plancard {
-    background: #fff;
-    box-shadow:
-      0 0 0 .75px rgba(0,0,0,.17),
-      inset 0 1.5px 0 #fff,
-      inset 0 0 26px rgba(0,0,0,.024),
-      inset 0 -1px 1px rgba(0,0,0,.03),
-      0 14px 42px -4px rgba(0,0,0,.13),
-      0 2px 10px rgba(0,0,0,.04); }
-  .lo-offer {
-    box-shadow:
-      0 0 0 .75px rgba(0,0,0,.12),
-      inset 0 1.5px 0 #fff,
-      inset 0 0 24px rgba(0,0,0,.02),
-      0 12px 38px -6px rgba(0,0,0,.11); border-color: transparent; }
-  .pc-pill {
-    border-color: rgba(255,255,255,.5);
-    box-shadow:
-      inset 0 0 7px rgba(255,255,255,.26),
-      inset 0 1px 0 rgba(255,255,255,.38),
-      inset 0 -1.5px 3px rgba(0,0,0,.10),
-      0 0 0 .75px rgba(0,0,0,.10),
-      0 8px 16px -8px rgba(0,0,0,.35); }
-  .pc-deal, .pc-chip {
-    background: #fff; border-color: rgba(0,0,0,.08);
-    box-shadow: inset 0 1px 0 #fff, 0 1.5px 5px rgba(0,0,0,.05); }
-  .pc-row i { background: #f2f2f3; box-shadow: inset 0 1px 0 #fff, 0 .5px 1.5px rgba(0,0,0,.06); }
+  /* the native liquid-glass paint lives in plancard.css v2 (Design System a1f4930) */
 
   .ppill { height: 40px; flex: none; display: flex; flex-direction: column; align-items: center;
     justify-content: center; padding: 4px 20px; border-radius: 28px; border: 1px solid #e3e3e3;
@@ -766,7 +730,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·24</div>
+  <div class="s-foot" id="buildInfo">checkout ·25</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -790,7 +754,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·24';
+const BUILD = 'checkout ·25';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
