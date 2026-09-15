@@ -11,9 +11,20 @@
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Rewards / Pull to Redeem</title>
 <script>class Button {}</script>
+<script>
+  /* NATIVE FROM THE FIRST FRAME (platform.html, Rashid 2026-09-15: never the web
+     glass, then liquid glass on top). In the app the X buttons are native twins,
+     so they are hidden here, at parse, before anything paints; the hide rules
+     are in the main <style>. The handshake only ever UN-hides: a shell that never
+     confirms (iOS < 26) gets the web X back for the page's whole life. */
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('ds-chrome-native');
+</script>
 <!-- Design System component, vendored (system/components/glass-control.css) -->
 <link rel="stylesheet" href="glass-control.css">
 <style>
+  html.ds-chrome-native .closebtn, html.ds-chrome-native #lyClose,
+  .ds-native-hidden { opacity: 0 !important; pointer-events: none !important; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
@@ -1378,26 +1389,15 @@ const booted = document.fonts.ready.then(() => {
   /* true card sheet: chrome anchors to the floating sheet, so the
      shell must render verbatim rects (no top-line normalization) */
   var MODE = 'sheet';
-  var st = document.createElement('style');
-  /* chrome v3 (Rashid, 2026-09-11): web glass must NEVER paint in the
-     shell — not for a single frame. The per-element class lost the race
-     every time a control was REBUILT (the X is recreated on each level
-     theme), so a fresh WebGL button painted until the twin confirmed:
-     "it starts with the web glass, then quickly shifts into Apple
-     liquid glass". A ROOT-CLASS rule covers every matching element that
-     exists now or is created later, so there is no window to lose.
-     The iOS<26 fallback below drops the root class to restore the web
-     fallback wholesale. */
-  var hideSel = Object.keys(ELS).map(function (id) {
-    return 'html.ds-chrome-native ' + ELS[id];
-  }).concat('html.ds-chrome-native #lyClose').join(',');
-  st.textContent = '.ds-native-hidden{opacity:0!important;pointer-events:none!important}'
-    + hideSel + '{opacity:0!important;pointer-events:none!important}';
-  document.head.appendChild(st);
-  document.documentElement.classList.add('ds-chrome-native');
+  /* the root hide class and its rules are set at parse (head script + main
+     <style>): this handshake only un-hides, never hides */
   prehide();
 
+  /* set once the shell is known to draw no twins: from then on nothing may
+     hide a web control again (a later report used to re-add the hide) */
+  var restored = false;
   function prehide() {
+    if (restored) return;
     Object.keys(ELS).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
@@ -1538,6 +1538,7 @@ const booted = document.fonts.ready.then(() => {
     if (nativeConfirmed) return;
     /* no twins on this shell (iOS<26): restore the web fallback wholesale
        — the root class first, or the controls stay invisible forever */
+    restored = true;
     document.documentElement.classList.remove('ds-chrome-native');
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
       el.classList.remove('ds-native-hidden');
