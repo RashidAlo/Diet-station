@@ -559,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 46 (delivered days open their meals to rate)';
+const BUILD = 'calendar 2026-09-15 · 47 (pause toast copy from Figma)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1079,10 +1079,14 @@ let pzToastT = null;
 function showPauseToast(added, removed) {
   const net = added - removed;
   const days = n => n + (n === 1 ? ' day.' : ' days.');
+  /* COPY IS FIGMA'S (section "Calendar & Meal selection", the six "Confirm Dislike
+     update Modal" variants beside Calendar Main, 16520:63021 / 63032 / 63043):
+     Day Paused! · Day Resumed! · Days Updated!. The title only goes plural when
+     more than one day moved, which the single-day mocks don't show. */
   let title, body;
-  if (net > 0) { title = 'Pause Success!'; body = 'Your subscription has been extended by <em>' + days(net) + '</em>'; }
-  else if (net < 0) { title = 'Days Resumed!'; body = 'Your subscription has been shortened by <em>' + days(-net) + '</em>'; }
-  else { title = 'Pause Updated!'; body = 'Your subscription end date <em>stays the same.</em>'; }
+  if (net > 0) { title = net === 1 ? 'Day Paused!' : 'Days Paused!'; body = 'Your subscription has been extended by <em>' + days(net) + '</em>'; }
+  else if (net < 0) { title = net === -1 ? 'Day Resumed!' : 'Days Resumed!'; body = 'Your subscription has been reduced by <em>' + days(-net) + '</em>'; }
+  else { title = 'Days Updated!'; body = 'Your paused/resumed days have been updated.'; }
   document.getElementById('pzToastT').textContent = title;
   document.getElementById('pzToastB').innerHTML = body;
   const t = document.getElementById('pzToast');
