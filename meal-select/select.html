@@ -10,6 +10,34 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Meal Selector</title>
+<script>
+/* NATIVE GLASS FROM THE FIRST FRAME (platform.html, ruling 2026-09-15; Rashid:
+   "make sure we don't get a flash of the web glass and then the liquid glass
+   comes over it"). Measured on the sim before this: the host view showed one
+   frame of the page with its WEB X, dual, date and gauge, because the only
+   hide lived in the chrome module at the end of the body. So it is decided
+   HERE, at parse, from the injected caps, and the rules live in the main
+   stylesheet. Scope is the SHEET HOST only: the same predicate as DS_HOSTED,
+   because in the iframe path the web bar deliberately rides the entry (a
+   cross-process twin trailed the spring by 78pt, see prehide). Each class is
+   one twin family; the handshake only ever REMOVES them (DSSheet fallback,
+   a confirm without the capability, a gauge that never confirms). */
+(function () {
+  var c = window.DSNativeCaps, q = location.search;
+  if (!/DietStationLab/.test(navigator.userAgent) || !c || !(c.sheetHost >= 1)
+      || window.parent !== window || !/[?&]embed=1/.test(q) || /[?&]sheethost=0/.test(q)
+      || /[?&]solo=1/.test(q)) return;
+  var r = document.documentElement.classList;
+  r.add('ds-chrome-core', 'ds-chrome-gauge');
+  /* the date twin is the resting SQUARE only; the glass-style label has none */
+  var style = 'tile';
+  try { style = JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}').scrubStyle || 'tile'; } catch (_) {}
+  var m = q.match(/[?&]scrub=(\w+)/); if (m) style = m[1];
+  if (style === 'tile' && (c.tileRows >= 2 || c.dateWidget >= 1)) r.add('ds-chrome-date');
+  if (c.cardKebab >= 1) r.add('ds-chrome-kebab');
+  if (c.mealClose >= 1) r.add('ds-chrome-mclose');
+})();
+</script>
 <style>
   /* font-display: swap is a genuine improvement on a cold load — the default,
      `auto`, makes WebKit hide text until the face arrives — but IT IS NOT THE
@@ -25,6 +53,15 @@
   @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; font-display: swap; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* parse-time hides for the sheet host (see the head script). The date tile and
+     the scrub pill keep pointer-events: they are the gesture that arms the
+     scrubber, invisible but not absent. */
+  html.ds-chrome-core #closeBtn, html.ds-chrome-core .dual,
+  html.ds-chrome-kebab .card .kebab, html.ds-chrome-mclose .mo-close {
+    opacity: 0 !important; pointer-events: none !important; }
+  html.ds-chrome-date .nav .ttl:not(.scrub) { opacity: 0 !important; box-shadow: none !important; }
+  html.ds-chrome-gauge #navigator { visibility: hidden !important; pointer-events: none !important; }
+  html.ds-chrome-gauge #navigator .burst-ring, html.ds-chrome-gauge #navigator .spark { visibility: visible; }
   #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
   #dvhProbe { position: fixed; left: 0; top: 0; width: 1px; height: 100vh;
@@ -2497,6 +2534,8 @@ function syncTileMode() {
   const isTile = (typeof MODS !== 'undefined' && MODS.scrubStyle === 'tile');
   const on = isTile && !t.classList.contains('scrub');
   t.classList.toggle('tile', on);
+  /* the parse-time date hide covers the SQUARE only (head script) */
+  if (!isTile) document.documentElement.classList.remove('ds-chrome-date');
   /* the +8 row height belongs to the VARIATION, not to the resting state, so
      it stays on while the scrubber is armed — otherwise the X and the dual
      would shrink by 8pt the moment you touched the date and grow back on
@@ -3895,7 +3934,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 245 (4px between the date and its status icon)';
+const BUILD = 'build 2026-09-15 · 246 (hosted: native glass and gauge from the first frame)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4492,6 +4531,8 @@ if (QS.get('solo') === '1') {
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
       el.classList.remove('ds-native-hidden');
     });
+    document.documentElement.classList.remove('ds-chrome-core', 'ds-chrome-date',
+      'ds-chrome-gauge', 'ds-chrome-kebab', 'ds-chrome-mclose');
   }
   /* PRE-HIDING IS ONLY SAFE FOR AN ID SOMETHING IS ACTUALLY REPLACING.
      This runs on EVERY report, BEFORE any confirm, to stop a double-glass
@@ -4882,6 +4923,9 @@ if (QS.get('solo') === '1') {
     if (TILE_NATIVE_PROVEN && caps && caps.tileRows >= 2) tileNative = true;
     if (caps && caps.dateWidget >= 1) dateWidgetNative = true;
     if (!wasTileNative && tileNative) setTimeout(report, 0);
+    /* a confirm only UN-hides: a shell that can draw neither date form gets
+       the web square back (parse-time hide, head script) */
+    if (!tileNative && !dateWidgetNative) document.documentElement.classList.remove('ds-chrome-date');
     if (caps && caps.scrubMotion) {
       document.documentElement.classList.add('ds-scrub-owns-motion');
     }
@@ -5252,9 +5296,19 @@ if (QS.get('solo') === '1') {
     instantHide = false;
     return s;
   }
+  var gaugeRestoreT = null, gaugeConfirmed = false;
   function postGauge() {
     if (!gaugeArmed || layerUp) return;   /* the gauge belongs to the base layer */
     try { webkit.messageHandlers.ds.postMessage(gaugeState()); gaugeOn = true; } catch (_) {}
+    /* parse-hidden gauge, never confirmed: give the web bar back (clause 4).
+       NOT HOSTED: there a slow confirm would put the web bar back under a
+       native gauge already on screen — two bars. The host's watchdog decides
+       that case through DSSheet('fallback'), exactly as for the chrome. */
+    if (!window.DS_HOSTED && !gaugeConfirmed && !gaugeRestoreT && document.documentElement.classList.contains('ds-chrome-gauge')) {
+      gaugeRestoreT = setTimeout(function () {
+        if (!gaugeConfirmed) document.documentElement.classList.remove('ds-chrome-gauge');
+      }, 900);
+    }
   }
   function clearGauge() {
     gaugeOn = false;
@@ -5266,6 +5320,7 @@ if (QS.get('solo') === '1') {
     /* confirm = the web bar retires for the session (visibility-hidden via
        html.ds-gauge; particles exempt) — hosts without macrogauge never
        confirm, so the web bar keeps working there */
+    if (on) gaugeConfirmed = true;
     if (on && gaugeOn) document.documentElement.classList.add('ds-gauge');
   };
   /* every totals change flows through updateAll — wrap it for state posts */
@@ -5406,6 +5461,13 @@ if (QS.get('solo') === '1') {
     if (window.DS_HOSTED) {
       sheetGo = go;
       report();
+      /* THE GAUGE RIDES THE RISE TOO (Shell, 2026-09-15: the host accepts
+         macrogauge at any time and draws it at rect.y + dy, the same per-frame
+         shift as the els). Its web bar is hidden at parse, so waiting for
+         `presented` left no bar at all for the whole entry; posting here puts
+         the native gauge on screen with the sheet. The dock watcher still
+         waits for presented. */
+      gaugeArmed = true; postGauge();
       setTimeout(go, 3000);
       return;
     }
