@@ -492,10 +492,17 @@ const MODS = { faceMs: 1400, verifyMs: 550, resendS: 30 };
 try { Object.assign(MODS, JSON.parse(localStorage.getItem('ds-mods-auth') || '{}')); } catch (_) {}
 const saveMods = () => { try { localStorage.setItem('ds-mods-auth', JSON.stringify(MODS)); } catch (_) {} };
 
+/* THE page -> lab-shell hook (platform.html): after every change to the lab
+   state, whichever path made it, send the full state. Auth's lab state is the
+   three Feel ranges; the journey steps are actions and hold no value. */
+function labStateChanged() {
+  dispatchEvent(new CustomEvent('dslab-state',
+    { detail: { faceMs: MODS.faceMs, verifyMs: MODS.verifyMs, resendS: MODS.resendS } }));
+}
 function bindMod(id, key, out, fmt) {
   const r = document.getElementById(id), o = document.getElementById(out);
   r.value = MODS[key]; o.textContent = fmt(MODS[key]);
-  r.addEventListener('input', () => { MODS[key] = +r.value; o.textContent = fmt(MODS[key]); saveMods(); });
+  r.addEventListener('input', () => { MODS[key] = +r.value; o.textContent = fmt(MODS[key]); saveMods(); labStateChanged(); });
 }
 bindMod('mFace', 'faceMs', 'oFace', v => v + ' ms');
 bindMod('mVerify', 'verifyMs', 'oVerify', v => v + ' ms');
@@ -889,9 +896,9 @@ document.querySelectorAll('.jump-grid button').forEach(b =>
       if (el) el.value = MODS[key];
       document.getElementById(r.out).textContent = r.fmt(MODS[key]);
       saveMods();
-      dispatchEvent(new CustomEvent('dslab-state', { detail: state() }));
+      labStateChanged();
     },
-    run(actionKey) { if (ACTIONS[actionKey]) jump(ACTIONS[actionKey]); },
+    run(actionKey) { if (ACTIONS[actionKey]) { jump(ACTIONS[actionKey]); labStateChanged(); } },
     chrome(which) {
       if (which === 'exit') { exitFlow(); return; }
       if (which === 'restart') {
