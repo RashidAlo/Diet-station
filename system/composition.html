@@ -607,10 +607,17 @@ NESTED HOST  (2026-09-15, Rashid chose to build it.) The meal-details layer host
              on the child WKWebView's own scrollView.panGestureRecognizer: no second
              recogniser; at offset top a downward translation moves the sheet, with
              rubber-band and velocity release. Scroll-view physics are set ONCE at
-             creation, never mid-gesture (touch law). PENDING Shell's sim check: whether
-             bounces=false still delivers the pan at offset 0 (the recorded day-sheet
-             finding says it may refuse); if not, the physics setting is re-ruled before
-             any build. Known cost: no rubber-band at the bottom of the details page.
+             creation, never mid-gesture (touch law): bounces = true AND
+             alwaysBounceVertical = true. MEASURED (Shell pan probe, sim): bounces=false
+             passed on a 3000px document but gave ZERO pan events on a 300px one (content
+             no taller than the view never begins its pan), so a short dish could never
+             be pulled closed. It is ruled out. With bounce on, the pan always begins and
+             the pull reads as a negative contentOffset. Native sets the sheet offset to
+             translation - overscroll (overscroll = top - contentOffset), so sheet plus
+             content track the finger 1:1 by READING the offset, with no writes. The bottom
+             rubber-band is kept. Known residual, for the device check: the content
+             rubber-bands about 0.5x the finger INSIDE the sheet during a pull, so the dish
+             may appear to slide slightly under the X and header.
              Evidence: 1-7 plus a partial drag and return, a fling close, X close, the
              hub pruneStack check, and a DEVICE check by Rashid of the scroll-to-drag
              handoff (the sim cannot prove feel).
