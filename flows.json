@@ -599,7 +599,7 @@
                 "live": true
               },
               {
-                "key": "copy",
+                "key": "copyCalendar",
                 "label": "Copy values",
                 "type": "action",
                 "live": true,
@@ -789,7 +789,7 @@
                 "live": true
               },
               {
-                "key": "copy",
+                "key": "copyPlate",
                 "label": "Copy values",
                 "type": "action",
                 "live": true,
