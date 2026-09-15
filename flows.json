@@ -504,7 +504,308 @@
           },
           "note": "Optional overrides, already supported as query params on the internal selector"
         }
-      ]
+      ],
+      "lab": {
+        "v": 1,
+        "sections": [
+          {
+            "title": "The rule",
+            "page": "calendar",
+            "controls": [
+              {
+                "key": "horizon",
+                "label": "Auto-select horizon",
+                "type": "range",
+                "min": 24,
+                "max": 120,
+                "step": 6,
+                "unit": "h",
+                "default": 72,
+                "live": true,
+                "note": "Hours before delivery when selection locks and auto-picks apply."
+              },
+              {
+                "key": "active",
+                "label": "Active days",
+                "type": "range",
+                "min": 7,
+                "max": 45,
+                "step": 1,
+                "unit": "",
+                "default": 30,
+                "live": true,
+                "note": "Subscription days on the calendar, Fridays off, rolling from today."
+              },
+              {
+                "key": "ff",
+                "label": "Time machine",
+                "type": "range",
+                "min": 0,
+                "max": 96,
+                "step": 1,
+                "unit": "h",
+                "default": 0,
+                "live": true,
+                "note": "Jump the clock forward and watch plus days lock into checks."
+              }
+            ]
+          },
+          {
+            "title": "Simulate",
+            "page": "calendar",
+            "controls": [
+              {
+                "key": "sim10",
+                "label": "Confirm 10 days",
+                "type": "action",
+                "live": true,
+                "note": "As if you confirmed this many days in the picker and hit done."
+              },
+              {
+                "key": "sim20",
+                "label": "Confirm 20 days",
+                "type": "action",
+                "live": true
+              },
+              {
+                "key": "sim30",
+                "label": "Confirm 30 days",
+                "type": "action",
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Feel",
+            "page": "calendar",
+            "controls": [
+              {
+                "key": "pop",
+                "label": "Select pop",
+                "type": "range",
+                "min": 1,
+                "max": 1.5,
+                "step": 0.02,
+                "unit": "×",
+                "default": 1.18,
+                "live": true,
+                "note": "Overshoot of the check chip when a day completes."
+              },
+              {
+                "key": "haptics",
+                "label": "Haptics",
+                "type": "toggle",
+                "default": true,
+                "live": true
+              },
+              {
+                "key": "copy",
+                "label": "Copy values",
+                "type": "action",
+                "live": true,
+                "note": "The current values, as text."
+              },
+              {
+                "key": "resetDays",
+                "label": "Reset days",
+                "type": "action",
+                "role": "destructive",
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Category quotas",
+            "page": "selector",
+            "controls": [
+              {
+                "key": "quota.breakfast",
+                "label": "Breakfast",
+                "type": "range",
+                "min": 0,
+                "max": 3,
+                "step": 1,
+                "unit": "",
+                "default": 1,
+                "live": true,
+                "note": "Meals allowed per category, the x of y counters. Changing one clears the picks."
+              },
+              {
+                "key": "quota.lunch",
+                "label": "Lunch",
+                "type": "range",
+                "min": 0,
+                "max": 3,
+                "step": 1,
+                "unit": "",
+                "default": 2,
+                "live": true
+              },
+              {
+                "key": "quota.dinner",
+                "label": "Dinner",
+                "type": "range",
+                "min": 0,
+                "max": 3,
+                "step": 1,
+                "unit": "",
+                "default": 1,
+                "live": true
+              },
+              {
+                "key": "quota.snacks",
+                "label": "Snacks",
+                "type": "range",
+                "min": 0,
+                "max": 3,
+                "step": 1,
+                "unit": "",
+                "default": 1,
+                "live": true
+              },
+              {
+                "key": "quota.dessert",
+                "label": "Dessert",
+                "type": "range",
+                "min": 0,
+                "max": 3,
+                "step": 1,
+                "unit": "",
+                "default": 0,
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Selection feel",
+            "page": "selector",
+            "controls": [
+              {
+                "key": "idle",
+                "label": "Collapse after",
+                "type": "range",
+                "min": 0.8,
+                "max": 5,
+                "step": 0.1,
+                "unit": "s",
+                "default": 2,
+                "live": true,
+                "prime": true,
+                "note": "Idle time before the stepper folds into a number badge."
+              },
+              {
+                "key": "target",
+                "label": "Calorie target",
+                "type": "range",
+                "min": 1200,
+                "max": 2600,
+                "step": 20,
+                "unit": " kcal",
+                "default": 1860,
+                "live": true,
+                "prime": true,
+                "note": "Daily goal the gauge fills toward."
+              },
+              {
+                "key": "confetti",
+                "label": "Confetti",
+                "type": "range",
+                "min": 0,
+                "max": 30,
+                "step": 1,
+                "unit": "",
+                "default": 14,
+                "live": true,
+                "prime": true,
+                "note": "Celebration burst size."
+              },
+              {
+                "key": "tapMode",
+                "label": "Tap on selected",
+                "type": "choice",
+                "default": "add",
+                "live": true,
+                "prime": true,
+                "options": [
+                  {
+                    "v": "add",
+                    "label": "Adds +1"
+                  },
+                  {
+                    "v": "select",
+                    "label": "Selects only"
+                  }
+                ],
+                "note": "Tapping a selected meal adds one more, or only selects."
+              },
+              {
+                "key": "selc",
+                "label": "Selection color",
+                "type": "choice",
+                "default": "red",
+                "live": true,
+                "options": [
+                  {
+                    "v": "green",
+                    "label": "Green"
+                  },
+                  {
+                    "v": "red",
+                    "label": "Red"
+                  },
+                  {
+                    "v": "neon",
+                    "label": "Neon"
+                  }
+                ]
+              },
+              {
+                "key": "scrubStyle",
+                "label": "Date scrubber",
+                "type": "choice",
+                "default": "tile",
+                "live": true,
+                "options": [
+                  {
+                    "v": "glass",
+                    "label": "Glass"
+                  },
+                  {
+                    "v": "tile",
+                    "label": "Square"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Plate",
+            "page": "selector",
+            "controls": [
+              {
+                "key": "autofill",
+                "label": "Auto-fill",
+                "type": "action",
+                "live": true
+              },
+              {
+                "key": "copy",
+                "label": "Copy values",
+                "type": "action",
+                "live": true,
+                "note": "The current values, as text."
+              },
+              {
+                "key": "reset",
+                "label": "Reset picks",
+                "type": "action",
+                "role": "destructive",
+                "live": true
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "rewards",
