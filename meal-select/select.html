@@ -3497,7 +3497,7 @@ document.getElementById('sCopy').onclick = copyValues;
   const ACTIONS = {
     autofill: () => autoFill(),
     reset: () => resetAll(),
-    copy: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
+    copyPlate: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
   };
   function state() {
     const o = { idle: +MODS.idle, target: +MODS.target, confetti: +MODS.confetti,
@@ -3695,7 +3695,7 @@ document.getElementById('sCopy').onclick = copyValues;
           "live": true
         },
         {
-          "key": "copy",
+          "key": "copyPlate",
           "label": "Copy values",
           "type": "action",
           "live": true,
@@ -3886,7 +3886,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 242 (lab menu v1.1: schema, prime, copy text, build)';
+const BUILD = 'build 2026-09-15 · 243 (lab keys unique across the flow)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

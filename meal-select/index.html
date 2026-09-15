@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 39 (lab menu v1.1: schema, copy text, build)';
+const BUILD = 'calendar 2026-09-15 · 40 (lab keys unique across the flow)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -920,7 +920,7 @@ document.getElementById('sCopy').onclick = copyValues;
   const ACTIONS = {
     sim10: () => simulateFromMenu(10), sim20: () => simulateFromMenu(20),
     sim30: () => simulateFromMenu(30), resetDays: resetDays,
-    copy: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
+    copyCalendar: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
   };
   const state = () => ({ horizon: +MODS.horizon, active: +MODS.active, ff: +MODS.ff,
     pop: +MODS.pop, haptics: !!MODS.haptics });
@@ -1030,7 +1030,7 @@ document.getElementById('sCopy').onclick = copyValues;
           "live": true
         },
         {
-          "key": "copy",
+          "key": "copyCalendar",
           "label": "Copy values",
           "type": "action",
           "live": true,
