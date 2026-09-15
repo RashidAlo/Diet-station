@@ -701,7 +701,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·28</div>
+  <div class="s-foot" id="buildInfo">checkout ·29</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -725,7 +725,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·28';
+const BUILD = 'checkout ·29';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1629,27 +1629,125 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', fit)
 addEventListener('orientationchange', () => setTimeout(fit, 250));
 [300, 900, 2000].forEach(ms => setTimeout(fit, ms));
 
-/* ============================ sidebar wiring ============================== */
-function bindSeg(id, key, after) {
-  const wrap = document.getElementById(id);
-  if (!wrap) return;
-  wrap.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    wrap.querySelectorAll('button').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    S[key] = b.dataset[key];
-    if (after) after();
-    S.duration = null;
-    render();
+/* ============================ lab controls ===================================
+   ONE code path per control (Components STATE RULE): the sidebar, the lab menu
+   (LAB MENU v1, window.DSLab below) and the native lab sheet all call these. */
+function paintLabPickers() {
+  document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === S.tier));
+  document.querySelectorAll('#segEntry button').forEach(b => b.classList.toggle('on', b.dataset.entry === S.entry));
+  paintCouponSeg();
+  [['mCountdown', 'countdown'], ['mPush', 'push']].forEach(([id, k]) => {
+    const r = document.getElementById(id); if (r && +r.value !== MODS[k]) { r.value = MODS[k]; r.dispatchEvent(new Event('paint')); }
   });
 }
-bindSeg('segTier', 'tier', () => {
+function labSetTier(t) {
+  if (!TIERS[t]) return;
+  S.tier = t;
   writeGlobalTier(S.tier);            /* one tier, everywhere */
   /* a downgraded member loses coupons above their rung */
   const c = decodeCoupon(S.coupon);
   if (c && !couponUnlocked(c)) S.coupon = null;
-  setTimeout(paintCouponSeg, 0);
+  S.duration = null;
+  const k = S.screen; render(); showScreen(k, true);
+  paintLabPickers();
+}
+function labSetEntry(e) {
+  if (!['rewards', 'plans', 'renew'].includes(e)) return;
+  S.entry = e;
+  S.screen = S.entry === 'renew' ? 'duration' : 'plans';
+  S.duration = null;
+  render(); showScreen(S.screen, true);
+  /* "From coupons" stands in for the member arriving from the rewards flow
+     with a freshly ripped coupon: their own rung's top offer, carried over */
+  if (S.entry === 'rewards') setTimeout(() => { applyCoupon(walletCodes(S.tier)[0], { arrival: true }); paintLabPickers(); }, 0);
+  paintLabPickers();
+}
+function labSetCoupon(code) {
+  applyCoupon(code || null);
+  paintLabPickers();
+}
+function labSetMod(key, v) {
+  if (!(key in MODS) || !isFinite(+v)) return;
+  MODS[key] = +v;
+  try { localStorage.setItem('ds-mods-checkout', JSON.stringify(MODS)); } catch (_) {}
+  const k = S.screen; render(); showScreen(k, true);
+  paintLabPickers();
+}
+function labReset() {
+  S.tier = TIER_DEFAULT; writeGlobalTier(TIER_DEFAULT); S.entry = 'plans'; S.plan = 'thediet';
+  S.coupon = walletCodes(S.tier)[0];
+  S.method = 'card2'; S.screen = 'plans'; S.duration = null;
+  S.meals = { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 };
+  S.days = 'No Friday';
+  render(); showScreen('plans', true);
+  paintLabPickers();
+}
+function labCopy() {
+  const q = quote(S.method);
+  const txt = `checkout — tier ${S.tier} · ${S.entry} · plan ${S.plan} · ${currentDuration().id}\n` +
+    `list KD${q.list} · subtotal KD${q.subtotal} · coupon ${q.coupon ? q.coupon.code + ' −KD' + q.cut : 'none'} · ` +
+    `method ${S.method} −KD${q.mDelta} · total KD${q.total} · saved KD${q.saved}`;
+  navigator.clipboard && navigator.clipboard.writeText(txt);
+  toast('Values copied');
+}
+
+/* LAB MENU v1 (system/platform.html, 8a93962): the declaration mirrors
+   flows-entry.json `lab`; schema() adds the runtime-only coupon section, whose
+   options depend on the tier. lab-shell supplies chrome(). */
+const LAB_DECL = { v: 1, sections: [
+  { title: 'Member', controls: [
+    { key: 'tier', label: 'Loyalty tier', type: 'choice', live: true, default: TIER_DEFAULT,
+      note: 'Which coupons are unlocked and which badge rides the discount. Shared with every flow.',
+      options: [{ v: 'bronze', label: 'Bronze' }, { v: 'silver', label: 'Silver' }, { v: 'gold', label: 'Gold' }, { v: 'vip', label: 'VIP' }] },
+    { key: 'entry', label: 'Entry point', type: 'choice', live: true, default: 'plans',
+      note: 'From coupons: arrives with a ripped coupon. Signed out: clean plan picker. Renew: straight to durations.',
+      options: [{ v: 'rewards', label: 'From coupons' }, { v: 'plans', label: 'Signed out' }, { v: 'renew', label: 'Renew' }] } ] },
+  { title: 'Modifiers', controls: [
+    { key: 'countdown', label: 'Offer countdown', type: 'range', live: true, default: 180, min: 1, max: 240, step: 1, unit: ' min',
+      note: 'Minutes left on the promo before the coupon expires.' },
+    { key: 'push', label: 'Push duration', type: 'range', live: true, default: 420, min: 200, max: 700, step: 10, unit: 'ms',
+      note: 'Screen-to-screen slide on the Apple curve.' } ] },
+  { title: 'Values', controls: [
+    { key: 'reset', label: 'Reset values', type: 'action', note: 'Default tier, signed-out entry, the rung’s top coupon.' },
+    { key: 'copy', label: 'Copy values', type: 'action', note: 'The current price breakdown, as text.' } ] },
+] };
+window.DSLab = Object.assign(window.DSLab || {}, {
+  v: 1,
+  schema() {
+    const coupon = { title: 'Coupon', runtime: true, controls: [
+      { key: 'coupon', label: 'Redeemed coupon', type: 'choice', live: true, default: walletCodes(S.tier)[0],
+        note: 'Stands in for ripping a tab in Discounts; feeds the same code through the same entry point.',
+        options: walletCodes(S.tier).map(code => ({ v: code, label: decodeCoupon(code).label }))
+          .concat([{ v: '', label: 'None' }]) } ] };
+    return { v: 1, sections: [LAB_DECL.sections[0], coupon].concat(LAB_DECL.sections.slice(1)) };
+  },
+  state() {
+    return { tier: S.tier, entry: S.entry, coupon: S.coupon || '', countdown: MODS.countdown, push: MODS.push };
+  },
+  set(key, value) {
+    if (key === 'tier') labSetTier(value);
+    else if (key === 'entry') labSetEntry(value);
+    else if (key === 'coupon') labSetCoupon(value);
+    else if (key === 'countdown' || key === 'push') labSetMod(key, value);
+    return this.state();
+  },
+  run(actionKey) {
+    if (actionKey === 'reset') labReset();
+    else if (actionKey === 'copy') labCopy();
+    return this.state();
+  },
 });
+
+/* ============================ sidebar wiring ============================== */
+function bindSeg(id, key, set) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    set(b.dataset[key]);
+  });
+}
+bindSeg('segTier', 'tier', labSetTier);
 
 /* the redeemed-coupon stand-in: rewards' own three codes for the current tier */
 function paintCouponSeg() {
@@ -1662,27 +1760,18 @@ function paintCouponSeg() {
 }
 document.getElementById('segCoupon').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  applyCoupon(b.dataset.code || null);
-  paintCouponSeg();
+  labSetCoupon(b.dataset.code);
 });
 paintCouponSeg();
-bindSeg('segEntry', 'entry', () => {
-  S.screen = S.entry === 'renew' ? 'duration' : 'plans';
-  /* "From coupons" stands in for the member arriving from the rewards flow
-     with a freshly ripped coupon: their own rung's top offer, carried over */
-  if (S.entry === 'rewards') setTimeout(() => applyCoupon(walletCodes(S.tier)[0], { arrival: true }), 0);
-});
+bindSeg('segEntry', 'entry', labSetEntry);
 
 function bindRange(id, out, key, fmt) {
   const r = document.getElementById(id), o = document.getElementById(out);
   if (!r) return;
   r.value = MODS[key];
   const paint = () => { o.textContent = fmt(+r.value); };
-  r.addEventListener('input', () => {
-    MODS[key] = +r.value; paint();
-    try { localStorage.setItem('ds-mods-checkout', JSON.stringify(MODS)); } catch (_) {}
-    render();
-  });
+  r.addEventListener('input', () => { paint(); labSetMod(key, r.value); });
+  r.addEventListener('paint', paint);
   paint();
 }
 bindRange('mCountdown', 'oCountdown', 'countdown', v => {
@@ -1690,24 +1779,8 @@ bindRange('mCountdown', 'oCountdown', 'countdown', v => {
 });
 bindRange('mPush', 'oPush', 'push', v => v + 'ms');
 
-document.getElementById('sReset').onclick = () => {
-  S.tier = TIER_DEFAULT; writeGlobalTier(TIER_DEFAULT); S.entry = 'plans'; S.plan = 'thediet';
-  S.coupon = walletCodes(S.tier)[0];
-  S.method = 'card2'; S.screen = 'duration'; S.duration = null;
-  S.meals = { Breakfast: 1, 'Lunch & Dinner': 2, 'Salad & Soup': 1, Snack: 1 };
-  S.days = 'No Friday';
-  document.querySelectorAll('#segTier button').forEach(b => b.classList.toggle('on', b.dataset.tier === 'vip'));
-  document.querySelectorAll('#segEntry button').forEach(b => b.classList.toggle('on', b.dataset.entry === 'plans'));
-  render();
-};
-document.getElementById('sCopy').onclick = () => {
-  const q = quote(S.method);
-  const txt = `checkout — tier ${S.tier} · ${S.entry} · plan ${S.plan} · ${currentDuration().id}\n` +
-    `list KD${q.list} · subtotal KD${q.subtotal} · coupon ${q.coupon ? q.coupon.code + ' −KD' + q.cut : 'none'} · ` +
-    `method ${S.method} −KD${q.mDelta} · total KD${q.total} · saved KD${q.saved}`;
-  navigator.clipboard && navigator.clipboard.writeText(txt);
-  toast('Values copied');
-};
+document.getElementById('sReset').onclick = labReset;
+document.getElementById('sCopy').onclick = labCopy;
 
 /* ---- lab menu (the shared gesture lives in lab-shell.js) ---- */
 window.dsOwnLabMenu = true;

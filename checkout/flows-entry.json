@@ -334,52 +334,108 @@
       "href": "checkout/index.html"
     }
   ],
-  "settings": [
-    {
-      "key": "tier",
-      "label": "Loyalty tier",
-      "type": "select",
-      "options": [
-        "bronze",
-        "silver",
-        "gold",
-        "vip"
-      ],
-      "default": "vip",
-      "note": "Which coupons are unlocked, and which badge rides the discount"
-    },
-    {
-      "key": "entry",
-      "label": "Entry point",
-      "type": "select",
-      "options": [
-        "plans",
-        "renew"
-      ],
-      "default": "plans",
-      "note": "Signed-out plan picker, or the loyalty page's renew route"
-    },
-    {
-      "key": "countdown",
-      "label": "Offer countdown",
-      "type": "range",
-      "min": 1,
-      "max": 240,
-      "step": 1,
-      "default": 180,
-      "unit": " min",
-      "note": "Minutes left on the promo before the coupon expires"
-    },
-    {
-      "key": "push",
-      "label": "Push duration",
-      "type": "range",
-      "min": 200,
-      "max": 700,
-      "step": 10,
-      "default": 420,
-      "unit": "ms",
-      "note": "Screen-to-screen slide on the Apple curve"
-    }
-  ]
+  "lab": {
+    "v": 1,
+    "sections": [
+      {
+        "title": "Member",
+        "controls": [
+          {
+            "key": "tier",
+            "label": "Loyalty tier",
+            "type": "choice",
+            "live": true,
+            "default": "gold",
+            "note": "Which coupons are unlocked and which badge rides the discount. Shared with every flow (ds-tier-v1).",
+            "options": [
+              {
+                "v": "bronze",
+                "label": "Bronze"
+              },
+              {
+                "v": "silver",
+                "label": "Silver"
+              },
+              {
+                "v": "gold",
+                "label": "Gold"
+              },
+              {
+                "v": "vip",
+                "label": "VIP"
+              }
+            ]
+          },
+          {
+            "key": "entry",
+            "label": "Entry point",
+            "type": "choice",
+            "live": true,
+            "default": "plans",
+            "note": "From coupons: arrives with a ripped coupon. Signed out: clean plan picker. Renew: straight to durations.",
+            "options": [
+              {
+                "v": "rewards",
+                "label": "From coupons"
+              },
+              {
+                "v": "plans",
+                "label": "Signed out"
+              },
+              {
+                "v": "renew",
+                "label": "Renew"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Modifiers",
+        "controls": [
+          {
+            "key": "countdown",
+            "label": "Offer countdown",
+            "type": "range",
+            "live": true,
+            "default": 180,
+            "min": 1,
+            "max": 240,
+            "step": 1,
+            "unit": " min",
+            "note": "Minutes left on the promo before the coupon expires."
+          },
+          {
+            "key": "push",
+            "label": "Push duration",
+            "type": "range",
+            "live": true,
+            "default": 420,
+            "min": 200,
+            "max": 700,
+            "step": 10,
+            "unit": "ms",
+            "note": "Screen-to-screen slide on the Apple curve."
+          }
+        ]
+      },
+      {
+        "title": "Values",
+        "controls": [
+          {
+            "key": "reset",
+            "label": "Reset values",
+            "type": "action",
+            "note": "Default tier, signed-out entry, the rung's top coupon."
+          },
+          {
+            "key": "copy",
+            "label": "Copy values",
+            "type": "action",
+            "note": "The current price breakdown, as text."
+          }
+        ]
+      }
+    ]
+  }
 }
