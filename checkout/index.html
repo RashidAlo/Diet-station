@@ -746,7 +746,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·36</div>
+  <div class="s-foot" id="buildInfo">checkout ·37</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -770,7 +770,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·36';
+const BUILD = 'checkout ·37';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -2010,6 +2010,14 @@ if (pendingArrival) {
   var caps = window.DSNativeCaps;
   if (caps && typeof caps.safeTop === 'number')
     document.getElementById('phone').style.setProperty('--real-pad', Math.max(28, caps.safeTop - 1) + 'px');
+  /* caps injected at document start arm the first post COMPLETE — no empty
+     post, confirm, re-post round trip before the twins draw (rule 6) */
+  if (caps) {
+    if (caps.navGlyphs >= 1) navGlyphs = true;
+    if (caps.navPill >= 1) navPill = true;
+    if (caps.couponsFab >= 1) couponsFab = true;
+    if (caps.couponsPill >= 1) couponsPill = true;
+  }
 
   /* hide rules + root classes are set at parse time (head script) */
 
@@ -2108,7 +2116,20 @@ if (pendingArrival) {
   });
   addEventListener('pagehide', function () { post('sheet', [], true); });
   addEventListener('resize', function () { window.DSChrome.sync(350); });
-  /* the overlay entrance owns the first motion — wait for it */
+  /* FIRST OPPORTUNITY (platform rule 6): booting straight into a full-screen
+     step (Duration / Payment — renew, or an opener's ctx.screen) has no
+     entrance to wait for. In the shell the sheet is placed at rest before the
+     first paint (the app's own presentation is the motion) and complete
+     geometry posts on the first frame, not on the settle belt. */
+  if (S.screen !== 'plans') {
+    coSheet.classList.add('snap');
+    root.classList.remove('sheet-enter'); root.classList.add('bd-on');
+    void coSheet.offsetWidth; coSheet.classList.remove('snap');
+    settled = true;
+    requestAnimationFrame(report);
+  }
+  /* the overlay entrance owns the first motion — wait for it (INTERIM, tracked
+     non-compliant under rule 6 until the sheet is natively hosted) */
   coSheet.addEventListener('transitionend', function (e) {
     if (e.target === coSheet && e.propertyName === 'transform' && !settled) { settled = true; report(); }
   });
