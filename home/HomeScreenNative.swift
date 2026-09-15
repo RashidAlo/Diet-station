@@ -3287,6 +3287,12 @@ final class SheetHost: ObservableObject {
     let web: WKWebView
     let relay: FlowPreloader.Relay
     weak var calendar: WKWebView?
+    /// HUB PATH (spec-sheethost): the calendar is an iframe inside the hub's
+    /// single web view, so everything addressed to it targets this frame
+    /// instead of the main frame. nil on the pilot.
+    var calendarFrame: WKFrameInfo?
+    /// hub teardown hook (the pilot clears its OverlayChrome through `owner`)
+    var onDetach: (() -> Void)?
     /// the calendar overlay's chrome, which holds this host; cleared on teardown
     weak var owner: OverlayChrome?
     /// 1.03 = 103% of the container's height below its rest position
@@ -3314,7 +3320,7 @@ final class SheetHost: ObservableObject {
     /// first complete post after sheet-open) and set just above it.
     static let watchdogSeconds: TimeInterval = 1.4
 
-    init(url: URL, calendar: WKWebView) {
+    init(url: URL, calendar: WKWebView, frame: WKFrameInfo? = nil, safeTop: CGFloat? = nil) {
         let relay = FlowPreloader.Relay()
         relay.role = .host
         let cfg = WKWebViewConfiguration()
@@ -3330,7 +3336,7 @@ final class SheetHost: ObservableObject {
         // The calendar is full-screen at rest, so ITS inset is the inset this
         // sheet will have at rest. Only the HOST gets `safeTop`: it is the one
         // view that loads while held off-screen, where env() reads 0.
-        let restTop = calendar.window?.safeAreaInsets.top ?? calendar.safeAreaInsets.top
+        let restTop = safeTop ?? (calendar.window?.safeAreaInsets.top ?? calendar.safeAreaInsets.top)
         cfg.userContentController.addUserScript(
             WKUserScript(source: FlowPreloader.capsJS + " " + FlowPreloader.labMenuCapsJS
                             + " window.DSNativeCaps.safeTop = \(Int(restTop.rounded()));",
@@ -3350,6 +3356,7 @@ final class SheetHost: ObservableObject {
         self.web = wv
         self.relay = relay
         self.calendar = calendar
+        self.calendarFrame = frame
         relay.sheet = self
         #if DEBUG
         NSLog("DSSHEET(pilot) open url=%@", url.absoluteString)
@@ -3430,12 +3437,21 @@ final class SheetHost: ObservableObject {
     /// host -> calendar.
     func up(_ msg: Any) {
         guard let cal = calendar else { return }
-        Self.dispatch(msg, into: cal)
+        Self.dispatch(msg, into: cal, frame: calendarFrame)
+    }
+
+    /// evaluate in the calendar's own document — its frame on the hub path
+    private func evalCalendar(_ js: String) {
+        if let f = calendarFrame {
+            calendar?.evaluateJavaScript(js, in: f, in: .page, completionHandler: nil)
+        } else {
+            calendar?.evaluateJavaScript(js, completionHandler: nil)
+        }
     }
 
     /// A real `message` event, so the pages' existing handlers (which read
     /// only e.data) cannot tell it from a cross-frame postMessage.
-    static func dispatch(_ msg: Any, into wv: WKWebView) {
+    static func dispatch(_ msg: Any, into wv: WKWebView, frame: WKFrameInfo? = nil) {
         guard JSONSerialization.isValidJSONObject(msg) || msg is String || msg is NSNumber,
               let data = try? JSONSerialization.data(withJSONObject: msg, options: [.fragmentsAllowed]),
               let json = String(data: data, encoding: .utf8) else {
@@ -3444,15 +3460,18 @@ final class SheetHost: ObservableObject {
             #endif
             return
         }
-        wv.evaluateJavaScript(
-            "window.dispatchEvent(new MessageEvent('message', { data: \(json) }));",
-            completionHandler: nil)
+        let js = "window.dispatchEvent(new MessageEvent('message', { data: \(json) }));"
+        if let frame {
+            wv.evaluateJavaScript(js, in: frame, in: .page, completionHandler: nil)
+        } else {
+            wv.evaluateJavaScript(js, completionHandler: nil)
+        }
     }
 
     private func sheetCall(_ phase: String) {
         let js = "window.DSSheet && DSSheet('\(phase)');"
         web.evaluateJavaScript(js, completionHandler: nil)
-        calendar?.evaluateJavaScript(js, completionHandler: nil)
+        evalCalendar(js)
     }
 
     // motion ----------------------------------------------------------------
@@ -3550,7 +3569,7 @@ final class SheetHost: ObservableObject {
         guard !closing else { return }
         closing = true
         watchdog?.cancel(); watchdog = nil
-        calendar?.evaluateJavaScript("window.DSSheet && DSSheet('closing');", completionHandler: nil)
+        evalCalendar("window.DSSheet && DSSheet('closing');")
         #if DEBUG
         NSLog("DSSHEET(pilot) closing from=%.3f els=%d mode=%@ firstY=%@ hostChromeWV=%@",
               offsetFraction, relay.chrome.els.count, relay.chrome.mode ?? "nil",
@@ -3564,6 +3583,7 @@ final class SheetHost: ObservableObject {
             self.web.configuration.userContentController.removeAllScriptMessageHandlers()
             self.relay.chrome.clear()
             onTornDown()
+            self.onDetach?()
             if let then { self.up(then) }
             #if DEBUG
             NSLog("DSSHEET(pilot) torn down, relayed then")
@@ -3818,7 +3838,7 @@ struct FlowOverlay: View {
 /// per-frame sync during entry or exit, and the page's rest rects stay valid
 /// throughout because they're relative to the moving view.
 @available(iOS 26.0, *)
-private struct SheetHostView: View {
+struct SheetHostView: View {
     @ObservedObject var host: SheetHost
     @ObservedObject var chrome: OverlayChrome
 
@@ -3850,7 +3870,7 @@ private struct SheetHostView: View {
 }
 
 /// An existing WKWebView placed in SwiftUI as-is (the host owns its lifetime).
-private struct HostedWebView: UIViewRepresentable {
+struct HostedWebView: UIViewRepresentable {
     let web: WKWebView
     func makeUIView(context: Context) -> WKWebView { web }
     func updateUIView(_ uiView: WKWebView, context: Context) {}
