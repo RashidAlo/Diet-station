@@ -701,7 +701,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·29</div>
+  <div class="s-foot" id="buildInfo">checkout ·30</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -725,7 +725,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·29';
+const BUILD = 'checkout ·30';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1245,6 +1245,7 @@ function render() {
     if (before[k] !== undefined && before[k] !== d.textContent) d.classList.add('ticked');
   });
   JUST.dur = null; JUST.method = null;
+  if (typeof labNotify === 'function') labNotify();   /* lab menu hears every change */
 }
 
 /* Totals move with every coupon and duration. If one outgrows its column it
@@ -1708,9 +1709,20 @@ const LAB_DECL = { v: 1, sections: [
     { key: 'push', label: 'Push duration', type: 'range', live: true, default: 420, min: 200, max: 700, step: 10, unit: 'ms',
       note: 'Screen-to-screen slide on the Apple curve.' } ] },
   { title: 'Values', controls: [
-    { key: 'reset', label: 'Reset values', type: 'action', note: 'Default tier, signed-out entry, the rung’s top coupon.' },
+    { key: 'reset', label: 'Reset values', type: 'action', role: 'destructive', note: 'Default tier, signed-out entry, the rung’s top coupon.' },
     { key: 'copy', label: 'Copy values', type: 'action', note: 'The current price breakdown, as text.' } ] },
 ] };
+/* page -> lab-shell: ANY change to lab state, whatever path made it (tier via
+   the storage event, a coupon ripped in the sheet, the sidebar), is announced
+   once. Called after every render; fires only when state() actually changed. */
+let labLast = '';
+function labNotify() {
+  if (!window.DSLab || !window.DSLab.state) return;
+  const st = window.DSLab.state(), key = JSON.stringify(st);
+  if (key === labLast) return;
+  const first = !labLast; labLast = key;
+  if (!first) window.dispatchEvent(new CustomEvent('dslab-state', { detail: st }));
+}
 window.DSLab = Object.assign(window.DSLab || {}, {
   v: 1,
   schema() {

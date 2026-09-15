@@ -426,6 +426,7 @@
             "key": "reset",
             "label": "Reset values",
             "type": "action",
+            "role": "destructive",
             "note": "Default tier, signed-out entry, the rung's top coupon."
           },
           {
