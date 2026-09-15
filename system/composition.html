@@ -543,7 +543,7 @@
       is what a scrolled twin would need, which is the symptom this ruling names). It is drawn by the web for its whole
       life in the glass-control <code>.on-dark</code> style, so there is no flash, because there is never a handover. The
       <b>X on the meal-details sheet</b> rises on a .55s spring and follows a drag: moving on the page&rsquo;s clock, so
-      no chrometrack twin. It goes native only when native owns that motion (the details layer hosted, drag included,
+      no chrometrack twin (Rashid chose to host it natively: see NESTED HOST in the sheet-host spec). It goes native only when native owns that motion (the details layer hosted, drag included,
       as meal selection&rsquo;s sheet host), which Shell scopes separately. Until then it is web glass-control for its
       whole life. The dock and scrub exception is not extended.</p>
     <p class="meta"><b>Scoped exception, stated so nobody cites it:</b> meal selection&rsquo;s nav controls
@@ -596,6 +596,24 @@ HUB PATH     (2026-09-15, Rashid tests from the hub card.) On the hub the calend
              fire. It removes a flow frame that is disconnected, about:blank or on the
              hub root. So native must NEVER blank, reload or re-point the calendar
              frame while the host is up; close only through sheet-close as specified.
+NESTED HOST  (2026-09-15, Rashid chose to build it.) The meal-details layer hosted from the
+             selector, so its X is a real twin. The same vocabulary, one level down:
+             the selector sends sheet-open / ds-down, the child sends ds-up /
+             sheet-close; teardown is child before parent. Page (Calendar &amp; Meals):
+             select-meal.html?cat&amp;i with state via ds-down and the choice via `then`;
+             the in-page layer stays the fallback. THE ONE GESTURE (content scroll -&gt;
+             header collapse -&gt; pull to close) is kept by scrolling the child on the
+             DOCUMENT, not a div, and by native driving the dismiss from an extra target
+             on the child WKWebView's own scrollView.panGestureRecognizer: no second
+             recogniser; at offset top a downward translation moves the sheet, with
+             rubber-band and velocity release. Scroll-view physics are set ONCE at
+             creation, never mid-gesture (touch law). PENDING Shell's sim check: whether
+             bounces=false still delivers the pan at offset 0 (the recorded day-sheet
+             finding says it may refuse); if not, the physics setting is re-ruled before
+             any build. Known cost: no rubber-band at the bottom of the details page.
+             Evidence: 1-7 plus a partial drag and return, a fling close, X close, the
+             hub pruneStack check, and a DEVICE check by Rashid of the scroll-to-drag
+             handoff (the sim cannot prove feel).
 CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              { tileRows: 2, dateWidget: 1 }, all in the one injected object. The page
              reads tileRows / dateWidget from it at document start. Without them
