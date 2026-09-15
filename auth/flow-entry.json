@@ -11,6 +11,22 @@
   "hidden": true,
   "updated": "2026-09-10",
   "description": "The mock sign-in journey from the signed-out home: the Sign in sheet (Figma 16360-78680) with the +965 phone field and in-frame numeric keyboard, OTP confirmation (16360-78950) with countdown resend and error state, and a simulated Face ID quick path. Everything is fake — no real authentication — the flow demos validation, OTP entry, error/success states and haptics for dev handoff. Lab menu tunes Face ID scan time, OTP verify pause and the resend timer; OTP 0000 forces the error state.",
+  "lab": {
+    "v": 1,
+    "sections": [
+      { "title": "Journey", "controls": [
+        { "key": "jump-signin", "label": "Sign in", "type": "action", "live": true, "note": "Back to an empty phone field" },
+        { "key": "jump-otp", "label": "OTP", "type": "action", "live": true, "note": "Mock number 97377282. Code 0000 shows the error state; any other code succeeds" },
+        { "key": "run-faceid", "label": "Face ID", "type": "action", "live": true, "note": "Runs the simulated scan; it always matches" },
+        { "key": "jump-success", "label": "Success", "type": "action", "live": true }
+      ] },
+      { "title": "Feel", "controls": [
+        { "key": "faceMs", "label": "Face ID scan", "type": "range", "min": 600, "max": 2600, "step": 100, "unit": "ms", "default": 1400, "live": true, "note": "How long the scan runs before it confirms" },
+        { "key": "verifyMs", "label": "OTP verify", "type": "range", "min": 200, "max": 1500, "step": 50, "unit": "ms", "default": 550, "live": true, "note": "Pause after the 4th digit while the code checks" },
+        { "key": "resendS", "label": "Resend timer", "type": "range", "min": 5, "max": 60, "step": 5, "unit": "s", "default": 30, "live": true, "note": "Countdown before Resend unlocks" }
+      ] }
+    ]
+  },
   "entries": [
     { "id": "default", "note": "Boots on the Sign in sheet, empty phone field" },
     { "id": "otp", "params": { "step": "otp", "num": "<8 digits>" }, "note": "ctx {step:'otp', num} deep-links straight to OTP for a given number" }

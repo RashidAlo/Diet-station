@@ -846,19 +846,68 @@ function resetFlow() {
 }
 window.resetFlow = resetFlow;   /* lab menu's "Reset flow" hook */
 
-document.querySelectorAll('.jump-grid button').forEach(b => {
-  b.addEventListener('click', () => {
-    const j = b.dataset.jump;
-    if (j === 'faceid') { resetFlow(); runFaceId(); return; }
-    if (j === 'signin') { resetFlow(); return; }
-    if (j === 'otp') {
-      if (!phoneDigits) { phoneDigits = '97377282'; renderPhone(); }
-      document.getElementById('otpSentTo').textContent = 'OTP has been sent to ' + phoneDigits;
-      resetOtp(); go('otp');
-    }
-    if (j === 'success') go('success');
-  });
-});
+function jump(j) {
+  if (j === 'faceid') { resetFlow(); runFaceId(); return; }
+  if (j === 'signin') { resetFlow(); return; }
+  if (j === 'otp') {
+    if (!phoneDigits) { phoneDigits = '97377282'; renderPhone(); }
+    document.getElementById('otpSentTo').textContent = 'OTP has been sent to ' + phoneDigits;
+    resetOtp(); go('otp');
+  }
+  if (j === 'success') go('success');
+}
+document.querySelectorAll('.jump-grid button').forEach(b =>
+  b.addEventListener('click', () => jump(b.dataset.jump)));
+
+/* ---------------- lab menu v1 page API (system/platform.html, 8a93962) ----
+   The standard menu (web sheet, or the app's native sheet) drives the same
+   code paths as this sidebar. The declaration lives in flows.json (Hub-owned)
+   under auth's `lab`; schema() serves it from there so it never forks. Every
+   control is live: the Feel ranges are read at the moment each beat runs. */
+(function () {
+  const RANGES = {
+    faceMs:   { input: 'mFace',   out: 'oFace',   fmt: v => v + ' ms' },
+    verifyMs: { input: 'mVerify', out: 'oVerify', fmt: v => v + ' ms' },
+    resendS:  { input: 'mResend', out: 'oResend', fmt: v => v + ' s' },
+  };
+  const ACTIONS = { 'jump-signin': 'signin', 'jump-otp': 'otp', 'run-faceid': 'faceid', 'jump-success': 'success' };
+  let schema = { v: 1, sections: [] };
+  fetch('../flows.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).then(d => {
+    const f = d && (d.flows || []).find(x => x.id === 'auth');
+    if (f && f.lab) schema = f.lab;
+  }).catch(() => {});
+  const state = () => ({ faceMs: MODS.faceMs, verifyMs: MODS.verifyMs, resendS: MODS.resendS });
+  const page = {
+    v: 1,
+    schema: () => schema,
+    state,
+    set(key, value) {
+      const r = RANGES[key];
+      if (!r || !isFinite(+value)) return;
+      MODS[key] = +value;
+      const el = document.getElementById(r.input);
+      if (el) el.value = MODS[key];
+      document.getElementById(r.out).textContent = r.fmt(MODS[key]);
+      saveMods();
+      dispatchEvent(new CustomEvent('dslab-state', { detail: state() }));
+    },
+    run(actionKey) { if (ACTIONS[actionKey]) jump(ACTIONS[actionKey]); },
+    chrome(which) {
+      if (which === 'exit') { exitFlow(); return; }
+      if (which === 'restart') {
+        const q = new URLSearchParams(location.search);   /* keeps embed / solo */
+        q.set('v', Date.now());
+        location.replace(location.pathname + '?' + q.toString());
+        return;
+      }
+      if (which === 'userflow') { location.hash = 'userflow'; return; }
+      if (which === 'handoff') { location.hash = 'handoff'; return; }
+      if (which === 'back') history.back();
+    },
+  };
+  /* the page's API is the prototype's: a lab-shell default never replaces it */
+  window.DSLab = page;
+})();
 document.getElementById('sReset').addEventListener('click', resetFlow);
 document.getElementById('sCopy').addEventListener('click', () => {
   const s = `auth mods — faceMs:${MODS.faceMs} verifyMs:${MODS.verifyMs} resendS:${MODS.resendS}`;
