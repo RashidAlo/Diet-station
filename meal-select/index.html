@@ -559,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 44 (pause/X swap is one glass per frame)';
+const BUILD = 'calendar 2026-09-15 · 45 (pause/X swap lands with the header)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1005,7 +1005,9 @@ function pzChrome() {
      glyphs are native, and a rect taken mid-rotation (scale .6) posted a
      shrunken X; a non-instant post let the pause glass fade out over Save
      while the X faded in. One glass per frame, at its true size. */
-  requestAnimationFrame(() => { if (window.DSCalReport) window.DSCalReport(true); });
+  /* two frames, not one: film of ·44 showed the native X landing one frame
+     before WebKit committed the new header, so it sat on the old title */
+  requestAnimationFrame(() => requestAnimationFrame(() => { if (window.DSCalReport) window.DSCalReport(true); }));
 }
 function enterPause() {
   if (pauseMode || ovFrame || ovHosted) return;
