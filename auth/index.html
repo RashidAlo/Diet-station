@@ -15,6 +15,7 @@
 <script src="liquid-glass-container.js"></script>
 <link rel="stylesheet" href="glass-control.css">
 <style>
+  html.ds-chrome-native .authx { opacity: 0 !important; pointer-events: none !important; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
@@ -310,7 +311,15 @@
   /* mobile: controls live in the triple-tap lab menu; no devbar */
   .devbar { display: none !important; }
 </style>
-<script>document.documentElement.classList.add('sheet-enter');</script>
+<script>
+document.documentElement.classList.add('sheet-enter');
+/* NATIVE FROM THE FIRST FRAME (system/platform.html; reference checkout ·35,
+   b640c59). In the app the X is decided at parse: hidden before the body
+   paints, rule in the stylesheet above. `close` is drawn by every shell, so
+   there is no cap to scope on. The handshake only ever UN-hides. */
+if (/DietStationLab/.test(navigator.userAgent))
+  document.documentElement.classList.add('ds-chrome-native');
+</script>
 </head>
 <body>
 
@@ -718,7 +727,7 @@ document.getElementById('btnPwd').addEventListener('click', () => {
 window.DS_EMBED = /[?&]embed=1/.test(location.search);
 window.DS_SOLO = /[?&]solo=1/.test(location.search);
 function exitFlow() {
-  window.DSChrome && DSChrome.clear();
+  window.DSChrome && DSChrome.exit();           /* the twin rides the sheet out */
   /* the rule, reversed: sheet slides down, scrim dissolves out in place */
   document.documentElement.classList.add('sheet-enter');
   document.documentElement.classList.remove('bd-on');
@@ -774,7 +783,7 @@ document.getElementById('btnHome').addEventListener('click', () =>
     dy = Math.max(0, (e.clientY - startY) / scale());
     if (dy > 6 && !sh.classList.contains('drag')) {
       sh.classList.add('drag');
-      window.DSChrome && DSChrome.clear();
+      window.DSChrome && DSChrome.drag(true);   /* the twin rides the finger */
     }
     sh.style.transform = `translateY(${dy * DAMP}px)`;
   });
@@ -782,8 +791,10 @@ document.getElementById('btnHome').addEventListener('click', () =>
     if (!tracking || (e.pointerId !== undefined && e.pointerId !== pid)) return;
     tracking = false;
     sh.classList.remove('drag');                /* transition back on */
+    if (window.DSChrome) DSChrome.drag(false);
     if (dy > COMMIT) {
       buzz();
+      window.DSChrome && DSChrome.exit();
       sh.style.transform = 'translateY(103%)';
       document.documentElement.classList.remove('bd-on');
       setTimeout(() => {
@@ -793,8 +804,7 @@ document.getElementById('btnHome').addEventListener('click', () =>
         else location.href = '../';
       }, 430);
     } else {
-      sh.style.transform = '';                  /* springs back to seat */
-      if (dy > 6 && window.DSChrome) DSChrome.sync(600);
+      sh.style.transform = '';                  /* springs back to seat; the twin follows it home */
     }
     dy = 0;
   }
@@ -1015,33 +1025,28 @@ setTimeout(() => {
    which every shell draws — so the whole control set goes native together.
    One control, one id: close = .authx, mode sheet (posted y verbatim),
    surface light (white sheet).
-   Interim per overlays.html "rule vs shipped" (·217): the web X rides the
-   sheet's entry and the twin takes over at rest; the web X hides only once
-   the shell confirms the id. Any motion that moves or covers the bar
-   (exit, drag, the Face ID HUD) clears the twin first so the web X travels
-   with the sheet, then re-reports when things are still again.
-   iOS < 26 shells never confirm — nothing was hidden, nothing to restore. */
+   NATIVE FROM THE FIRST FRAME (platform.html, ruling 2026-09-15): the web X
+   is hidden at parse (head script + stylesheet) and never paints in the
+   shell unless the shell can't draw it: a first confirm without `close`, or
+   no confirm at all (iOS < 26), un-hides it for the page's life.
+   No gap to fill: the twin is armed at the FIRST opportunity (this script,
+   before the entry starts, while the sheet still sits at 103%), then rides
+   every sheet motion (entry, drag, spring-back, exit) on per-frame
+   chrometrack rects, meal selection's continuous follow. A rest glasschrome
+   lands each stop. The Face ID HUD covers the bar, so the twin steps out
+   (instant) and comes back at rest; the web X stays hidden throughout. */
 (function () {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
   var FLOW = 'auth', SURFACE = 'light', SEL = '.authx';
-  var settled = false, confirmed = false, live = true, syncT = null;
+  var root = document.documentElement;
+  var confirmed = false, live = true, exiting = false, raf = null, syncT = null, dragging = false;
   var sheet = document.getElementById('sheet');
-  var st = document.createElement('style');
-  st.textContent = '.ds-native-hidden{opacity:0!important;pointer-events:none!important}';
-  document.head.appendChild(st);
 
-  function post(els, instant) {
-    try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: SURFACE,
-        mode: 'sheet', instant: !!instant, els: els });
-    } catch (_) {}
-  }
-  function report() {
-    if (!settled || !live) return;
+  function rect() {
     var el = document.querySelector(SEL);
-    if (!el) return;
+    if (!el) return null;
     var r = el.getBoundingClientRect();
-    if (!r.width || !r.height) return;
+    if (!r.width || !r.height) return null;
     var off = { x: 0, y: 0 };
     try {
       var fe = window.frameElement;
@@ -1051,39 +1056,69 @@ setTimeout(() => {
         fe = fe.ownerDocument.defaultView.frameElement;
       }
     } catch (_) {}
-    post([{ id: 'close', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
-      r: Math.min(r.width, r.height) / 2 }], false);
+    return { id: 'close', x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
+      r: Math.min(r.width, r.height) / 2 };
   }
-  window.DSChrome = {
-    sync: function (ms) { live = true; clearTimeout(syncT); syncT = setTimeout(report, ms || 0); },
-    clear: function () {
-      live = false; clearTimeout(syncT);
-      var el = document.querySelector(SEL);
-      if (el) el.classList.remove('ds-native-hidden');
-      post([], true);
-    }
-  };
-  window.DSNativeChrome = function (ids) {
-    confirmed = true;
+  function send(msg) { try { webkit.messageHandlers.ds.postMessage(msg); } catch (_) {} }
+  function rest(instant) {
+    if (!live || exiting) return;
+    var e = rect();
+    if (e) send({ t: 'glasschrome', flow: FLOW, surface: SURFACE, mode: 'sheet', instant: !!instant, els: [e] });
+  }
+  function frame() {
+    raf = null;
     if (!live) return;
-    if ((ids || []).indexOf('close') >= 0) {
-      var el = document.querySelector(SEL);
-      if (el) el.classList.add('ds-native-hidden');
-    }
+    var e = rect();
+    if (e) send({ t: 'chrometrack', flow: FLOW, els: [e] });
+    if (moving()) raf = requestAnimationFrame(frame);
+  }
+  function moving() { return dragging || sheet.dataset.moving === '1'; }
+  function track() { if (live && !raf) raf = requestAnimationFrame(frame); }
+
+  window.DSChrome = {
+    track: track,
+    drag: function (on) { dragging = on; if (on) track(); },
+    sync: function (ms) { live = true; clearTimeout(syncT); syncT = setTimeout(function () { rest(false); }, ms || 0); },
+    clear: function () { live = false; clearTimeout(syncT); if (raf) { cancelAnimationFrame(raf); raf = null; } send({ t: 'glasschrome', flow: FLOW, surface: SURFACE, mode: 'sheet', instant: true, els: [] }); },
+    exit: function () { exiting = true; track(); }
+  };
+  /* every transform the sheet runs (entry, spring-back, exit) is followed */
+  sheet.addEventListener('transitionrun', function (e) {
+    if (e.target !== sheet || e.propertyName !== 'transform') return;
+    sheet.dataset.moving = '1'; track();
+  });
+  function stopped(e) {
+    if (e.target !== sheet || e.propertyName !== 'transform') return;
+    sheet.dataset.moving = '';
+    if (raf && !dragging) { cancelAnimationFrame(raf); raf = null; }   /* no track after the rest post */
+    if (exiting) window.DSChrome.clear();
+    else if (!dragging) rest(true);
+  }
+  sheet.addEventListener('transitionend', stopped);
+  sheet.addEventListener('transitioncancel', stopped);
+
+  /* a confirm only UN-hides: a shell that can't draw close gets the web X */
+  window.DSNativeChrome = function (ids) {
+    if (confirmed) return;
+    confirmed = true;
+    if ((ids || []).indexOf('close') < 0) root.classList.remove('ds-chrome-native');
   };
   window.DSChromeTap = function (id) {
     if (id !== 'close') return;
     var el = document.querySelector(SEL);
     if (el) el.click();
   };
-  addEventListener('pagehide', function () { post([], true); });
-  addEventListener('resize', function () { if (live) window.DSChrome.sync(350); });
-  /* the overlay entrance owns the first motion — wait for it to land */
-  sheet.addEventListener('transitionend', function (e) {
-    if (e.target === sheet && e.propertyName === 'transform' && !settled) { settled = true; report(); }
-  });
-  setTimeout(function () { if (!settled) { settled = true; report(); } },
-    (window.DS_EMBED || window.DS_SOLO) ? 1200 : 760);
+  addEventListener('pagehide', function () { window.DSChrome.clear(); });
+  addEventListener('resize', function () { if (live && !moving()) window.DSChrome.sync(350); });
+  /* arm now: the sheet is parked at 103%, so the twin is placed off-screen
+     and rides in with the entry that starts ~90ms from now */
+  rest(true);
+  /* no confirm = no native glass here: the web X for the page's whole life */
+  setTimeout(function () {
+    if (confirmed) return;
+    root.classList.remove('ds-chrome-native');
+    window.DSNativeChrome = function () {};
+  }, (window.DS_EMBED || window.DS_SOLO) ? 1900 : 1600);
 })();
 </script>
 <script src="../lab-shell.js?v=20260910b" data-flow="auth" defer></script>
