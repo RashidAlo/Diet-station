@@ -288,7 +288,8 @@ window.DSLab = { v: 1,
 //
 // 4 APP PATH. The web keeps gesture detection. Under cap labSheet >= 1, lab-shell
 //   does NOT open the web sheet on the gesture; it posts
-webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schema, state, back /* label? */ });
+webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schema, state, back /* label? */,
+  context /* 'prototype' (default) | 'gear' */ });
 //   Native renders a SwiftUI Form (chrome first, then sections) and replies INTO
 //   THE ORIGINATING FRAME (frameInfo) via DSLab.set / run / chrome. On presenting
 //   it calls DSLabSheet('shown') in that frame; with no 'shown' within 600ms the
@@ -305,7 +306,11 @@ webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schem
 // 5 HUB GEAR opens this same menu (native in the app, web sheet on web) and the
 //   separate primer retires. No prototype is running there, so it shows the chrome
 //   that applies (User flow, Dev handoff) and the NON-live controls only; live
-//   controls are hidden, not disabled.
+//   controls are hidden, not disabled. The sender says which: context: 'gear'.
+//   Native draws chrome FROM context (never Back / Restart / Exit under 'gear')
+//   and drops live: true controls itself, even though the sender also filters.
+//   The sheet then renders correctly whatever the schema, and an old sender
+//   without context gets the prototype sheet.
 //
 // 6 LAYERS: the native sheet needs none; the web sheet keeps { t:'layer', id:'labmenu' }.
 
