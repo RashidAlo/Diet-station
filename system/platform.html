@@ -355,7 +355,16 @@ webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schem
 //     2 frames on the sim. Longer than that is the 934ms empty bar again: move the
 //     post earlier, or hold the view off-screen until the post (the sheet-host
 //     pattern). Never un-hide the web control to fill the gap.
-// Reference: checkout 35 (b640c59).
+//   6 SURFACES THAT ENTER WITH MOTION (ruling 2026-09-15, checkout): a page presented
+//     as a sheet cannot post settled geometry until its entrance settles ("never
+//     sample a moving rect"), so its gap is the entrance, ~640ms plus a relay frame
+//     on checkout plans. That is NOT exempt. The compliant form is the sheet-host
+//     pattern: native owns the entrance and the twins ride its container, so they
+//     exist on the first frame (composition.html#spec-sheethost). Until a surface is
+//     hosted, it keeps its seats EMPTY through the entrance and fills them at settle.
+//     Never paint the web control to fill the gap (Rashid: never the switch). This
+//     is tracked as non-compliant, like meal selection's 217 interim.
+// Reference: checkout 35 (b640c59), 36 (45dcd5e, caps-scoped hide).
 
 // ── COVERING LAYERS: hide persistent native chrome (ruling 2026-09-14) ──
 // A web surface that COVERS the screen tells native, which hides persistent
