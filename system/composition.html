@@ -538,6 +538,14 @@
       Consultation and Guide me: Figma&rsquo;s Subscribe Modal pair (17304:469650), with Book as a light hairline
       pill and Guide me as the LifeStyle-gradient capsule with shimmer and wand. <b>Neither is glass</b>, and both
       stay in the scroll, drawn by the web, so this ruling holds unchanged.</p>
+    <p class="meta"><b>Applied (2026-09-15), meal selection, from build-62 feedback:</b> the <b>&#8942; on each
+      selected meal card</b> scrolls with the list, so it has no twin, no cap and no <code>clipTop</code> (a clip field
+      is what a scrolled twin would need, which is the symptom this ruling names). It is drawn by the web for its whole
+      life in the glass-control <code>.on-dark</code> style, so there is no flash, because there is never a handover. The
+      <b>X on the meal-details sheet</b> rises on a .55s spring and follows a drag: moving on the page&rsquo;s clock, so
+      no chrometrack twin. It goes native only when native owns that motion (the details layer hosted, drag included,
+      as meal selection&rsquo;s sheet host), which Shell scopes separately. Until then it is web glass-control for its
+      whole life. The dock and scrub exception is not extended.</p>
     <p class="meta"><b>Scoped exception, stated so nobody cites it:</b> meal selection&rsquo;s nav controls
       ride the scroll-linked dock through <code>--top-pad</code>. That travel is bounded to the sheet gap
       (~77pt) and ends at the chrome line, where they stop for good. It is not unbounded content
