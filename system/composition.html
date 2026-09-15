@@ -635,12 +635,15 @@ NESTED HOST  (2026-09-15, Rashid chose to build it.) The meal-details layer host
              passed on a 3000px document but gave ZERO pan events on a 300px one (content
              no taller than the view never begins its pan), so a short dish could never
              be pulled closed. It is ruled out. With bounce on, the pan always begins and
-             the pull reads as a negative contentOffset. Native sets the sheet offset to
-             translation - overscroll (overscroll = top - contentOffset), so sheet plus
-             content track the finger 1:1 by READING the offset, with no writes. The bottom
-             rubber-band is kept. Known residual, for the device check: the content
-             rubber-bands about 0.5x the finger INSIDE the sheet during a pull, so the dish
-             may appear to slide slightly under the X and header.
+             the pull reads as a negative contentOffset. The CHILD PAGE pins every visual
+             layer to max(0, scrollY), so a negative offset moves no content; native
+             therefore moves the sheet by the pan translation 1:1 from the moment the
+             offset reaches top (anchor = translation at that moment). Read only, with no
+             scroll-view writes. The bottom rubber-band is kept. The two halves depend on
+             each other: a child layer that does NOT clamp at 0 would slide inside the
+             sheet, so the evidence films a pull and checks that the content is still
+             relative to the sheet. (The first wording, translation minus overscroll, was
+             written before the page clamped, and would have made the sheet lag the finger.)
              Evidence: 1-7 plus a partial drag and return, a fling close, X close, the
              hub pruneStack check, and a DEVICE check by Rashid of the scroll-to-drag
              handoff (the sim cannot prove feel).
