@@ -1,0 +1,126 @@
+{
+  "_note": "LAB MENU v1 DECLARATION from the Home lane (rewards steward) for the Hub, which owns flows.json. Merge `lab` into the rewards entry and DROP its legacy `settings` (the three gesture ranges now live here, live:true, with the sidebar's real ranges). Every control is implemented by rewards' window.DSLab.set/run through the page's real paths.",
+  "id": "rewards",
+  "lab": {
+    "v": 1,
+    "sections": [
+      {
+        "title": "Loyalty",
+        "controls": [
+          {
+            "key": "theme",
+            "label": "Theme",
+            "type": "choice",
+            "default": "red",
+            "live": true,
+            "note": "Tiered themes the whole sheet per level; Red keeps the brand-red sheet and only the badge shows the tier.",
+            "options": [
+              {
+                "v": "tier",
+                "label": "Tiered"
+              },
+              {
+                "v": "red",
+                "label": "Red"
+              }
+            ]
+          },
+          {
+            "key": "level",
+            "label": "Member tier",
+            "type": "choice",
+            "default": "gold",
+            "live": true,
+            "note": "Shared across the prototype (ds-tier-v1): checkout and home follow.",
+            "options": [
+              {
+                "v": "bronze",
+                "label": "Bronze"
+              },
+              {
+                "v": "silver",
+                "label": "Silver"
+              },
+              {
+                "v": "gold",
+                "label": "Gold"
+              },
+              {
+                "v": "vip",
+                "label": "VIP"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Gesture",
+        "controls": [
+          {
+            "key": "tearAt",
+            "label": "Tear point",
+            "type": "range",
+            "min": 40,
+            "max": 90,
+            "step": 1,
+            "unit": "px",
+            "default": 62,
+            "live": true,
+            "note": "Pull at which the last hole pops and the tab rips free."
+          },
+          {
+            "key": "stretch",
+            "label": "Stretch",
+            "type": "range",
+            "min": 60,
+            "max": 140,
+            "step": 2,
+            "unit": "px",
+            "default": 96,
+            "live": true,
+            "note": "Max elastic travel of the pull."
+          },
+          {
+            "key": "confetti",
+            "label": "Confetti",
+            "type": "range",
+            "min": 0,
+            "max": 30,
+            "step": 1,
+            "unit": "",
+            "default": 14,
+            "live": true,
+            "note": "Particles bursting from the perforation on tear."
+          }
+        ]
+      },
+      {
+        "title": "Material",
+        "controls": [
+          {
+            "key": "frost",
+            "label": "Coupon frost",
+            "type": "range",
+            "min": 0,
+            "max": 30,
+            "step": 1,
+            "unit": "px",
+            "default": 0,
+            "live": true,
+            "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma."
+          }
+        ]
+      },
+      {
+        "title": "Coupons",
+        "controls": [
+          {
+            "key": "resetCoupons",
+            "label": "Reset coupons",
+            "type": "action"
+          }
+        ]
+      }
+    ]
+  }
+}

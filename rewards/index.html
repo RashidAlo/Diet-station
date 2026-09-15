@@ -1095,6 +1095,34 @@ bindMod('mStretch', 'vStretch', 'stretch', v => v + 'px');
 bindMod('mConfetti', 'vConfetti', 'confetti', v => v);
 bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
 
+/* ---------------- LAB MENU v1: the page's half (system/platform.html) ----------------
+   One lab menu for every prototype: native sheet in the app, lab-shell's web
+   sheet elsewhere. Live controls go through the REAL paths (setTheme, setLevel,
+   the modifier inputs' own handlers), the same ones the sidebar and the
+   Components tab use; lab-shell fills in schema and chrome. Gesture values
+   persist in ds-mods-rewards so a Restart keeps them. */
+window.DSLab = Object.assign(window.DSLab || {}, { v: 1,
+  state() {
+    return { theme: phone.dataset.theme, level: phone.dataset.level, tearAt: MODS.tearAt,
+      stretch: MODS.stretch, confetti: MODS.confetti, frost: MODS.frost };
+  },
+  set(key, value) {
+    if (key === 'theme') { if (value === 'tier' || value === 'red') setTheme(value); return; }
+    if (key === 'level') { if (LEVELS[value]) setLevel(value); return; }
+    const input = { tearAt: 'mTear', stretch: 'mStretch', confetti: 'mConfetti', frost: 'mFrost' }[key];
+    if (!input) return;
+    const el = document.getElementById(input);
+    el.value = value;
+    el.dispatchEvent(new Event('input'));
+    try {
+      const saved = JSON.parse(localStorage.getItem('ds-mods-rewards') || '{}');
+      saved[key] = MODS[key];
+      localStorage.setItem('ds-mods-rewards', JSON.stringify(saved));
+    } catch (_) {}
+  },
+  run(key) { if (key === 'resetCoupons') requestAnimationFrame(buildCoupons); },
+});
+
 document.getElementById('sCopy').addEventListener('click', () => {
   const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
     `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, level ${phone.dataset.level}, ` +

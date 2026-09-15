@@ -1109,14 +1109,17 @@ document.querySelectorAll('#shapeSeg button').forEach(b => b.onclick = () => {
   MODS.dayShape = b.dataset.v; vibrate(8); applyState();
 });
 
-document.querySelectorAll('#acctSeg button').forEach(b => b.onclick = () => {
-  MODS.loggedOut = b.dataset.v === 'out'; vibrate(8); applyState();
+function setAccount(out) {
+  MODS.loggedOut = out; applyState();
   /* display:none zeroed the strip's scroll — re-boot it on Today */
-  if (!MODS.loggedOut) requestAnimationFrame(() => {
+  if (!out) requestAnimationFrame(() => {
     const strip = document.getElementById('mealStrip');
     const groups = strip.querySelectorAll('.mgroup');
     strip.scrollLeft = groups[1].offsetLeft - strip.offsetLeft - 24;
   });
+}
+document.querySelectorAll('#acctSeg button').forEach(b => b.onclick = () => {
+  vibrate(8); setAccount(b.dataset.v === 'out');
 });
 document.querySelectorAll('#planSeg button').forEach(b => b.onclick = () => {
   MODS.theme = b.dataset.v; vibrate(8); applyState();
@@ -1127,11 +1130,40 @@ document.querySelectorAll('#daysSeg button').forEach(b => b.onclick = () => {
 document.querySelectorAll('#modSeg button').forEach(b => b.onclick = () => {
   MODS[b.dataset.v] = !MODS[b.dataset.v]; vibrate(8); applyState();
 });
-document.getElementById('sReset').onclick = () => {
+function resetHome() {
   Object.assign(MODS, { theme: 'lifestyle', days: 19, promo: true, disc: true, consult: true,
     consultBooked: false, discEmpty: false, dayShape: 'auto', loggedOut: false });
   applyState();
-};
+}
+document.getElementById('sReset').onclick = resetHome;
+
+/* ---------------- LAB MENU v1: the page's half (system/platform.html) ----------------
+   One lab menu for every prototype. Every control is live and goes through
+   applyState, the same path as this page's own menu; lab-shell fills in
+   schema and chrome. */
+window.DSLab = Object.assign(window.DSLab || {}, { v: 1,
+  state() {
+    return { account: MODS.loggedOut ? 'out' : 'in', theme: MODS.theme, days: MODS.days,
+      dayShape: MODS.dayShape, promo: MODS.promo, disc: MODS.disc, consult: MODS.consult,
+      discEmpty: MODS.discEmpty, consultBooked: MODS.consultBooked };
+  },
+  set(key, value) {
+    if (key === 'account') { setAccount(value === 'out'); return; }
+    if (key === 'theme') { if (!THEMES[value]) return; MODS.theme = value; }
+    else if (key === 'days') { if (![19, 5, 3, 0].includes(+value)) return; MODS.days = +value; }
+    else if (key === 'dayShape') {
+      if (!['auto', 'tall', 'wide', 'compact', 'slim'].includes(value)) return;
+      MODS.dayShape = value;
+    }
+    else if (['promo', 'disc', 'consult', 'discEmpty', 'consultBooked'].includes(key)) MODS[key] = !!value;
+    else return;
+    applyState();
+  },
+  run(key) {
+    if (key === 'reset') resetHome();
+    else if (key === 'reloadFresh') location.href = location.pathname + '?fresh=' + Date.now();
+  },
+});
 document.getElementById('sCopy').onclick = () => {
   const s = 'home · ' + (MODS.loggedOut ? 'signed-out' : 'signed-in') +
     ' · plan ' + MODS.theme + ' · days ' + MODS.days +
