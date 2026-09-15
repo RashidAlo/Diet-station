@@ -10,6 +10,16 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <title>DietStation — Calendar</title>
+<script>
+/* NATIVE GLASS FROM THE FIRST FRAME (platform.html, ruling 2026-09-15; Rashid:
+   "never the web glass, then liquid glass on top"). Decided at PARSE, before
+   the body can paint: in the app the pause button — the one control a native
+   twin draws here — is hidden by a root class whose rule lives in the main
+   stylesheet. It used to be hidden by the handshake at the END of <body>, which
+   is after WebKit may already have painted it. The handshake now only ever
+   UN-hides: a confirm that omits 'pause', or no confirm at all (iOS < 26). */
+if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classList.add('ds-chrome-pause');
+</script>
 <style>
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
@@ -127,6 +137,7 @@
   .hd-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9;
     white-space: nowrap; }
   .hd-sub b { font-weight: 700; margin-left: 4px; }
+  html.ds-chrome-pause #pauseBtn { opacity: 0 !important; pointer-events: none !important; }
   .pausebtn { width: 40px; height: 40px; border-radius: 999px; flex: none;
     border: 1px solid #B22425; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -455,7 +466,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 40 (lab keys unique across the flow)';
+const BUILD = 'calendar 2026-09-15 · 41 (native pause from the first frame)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1287,12 +1298,22 @@ if (/[?&]qaopen=1/.test(location.search)) {
     } catch (_) {}
   }
   window.DSNativeChrome = function (ids) {
+    var first = !nativeConfirmed;
     nativeConfirmed = true;
     (ids || []).forEach(function (id) {
       var el = document.querySelector(ELS[id]);
       if (el) el.classList.add('ds-native-hidden');
     });
+    /* a confirm only UN-hides: a shell that can't draw the pause gets the web
+       one back (the first confirm is authoritative) */
+    if (first && (ids || []).indexOf('pause') < 0) unhideAll();
   };
+  function unhideAll() {
+    document.documentElement.classList.remove('ds-chrome-pause');
+    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
+      el.classList.remove('ds-native-hidden');
+    });
+  }
   window.DSChromeTap = function (id) {
     var sel = TAPS[id] || ELS[id];
     var el = sel && document.querySelector(sel);
@@ -1301,13 +1322,17 @@ if (/[?&]qaopen=1/.test(location.search)) {
   /* iOS<26 shells never render twins — restore the web chrome */
   setTimeout(function () {
     if (nativeConfirmed) return;
-    document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
-      el.classList.remove('ds-native-hidden');
-    });
+    unhideAll();
     window.DSNativeChrome = function () {};
   }, ((EMBED || FRAMED) ? 1900 : 1600));
   addEventListener('resize', function () { setTimeout(report, 350); });
   function boot() { var t0 = (EMBED || FRAMED) ? 950 : 200;
+    /* THE GAP IS MEASURED (clause 5): with the web pause hidden from parse, the
+       first post is what ends the blank. Top-level, nothing moves the pause
+       after fit() (it runs in this same parse), so post NOW rather than 200ms
+       later. Framed (hub sheet) the frame is still presenting, so the settled
+       reports below stay the source of truth there. */
+    if (!(EMBED || FRAMED)) report();
     setTimeout(report, t0); setTimeout(report, t0 + 1000); setTimeout(report, t0 + 2400); }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
   else boot();
