@@ -171,7 +171,7 @@ if (DS_MEAL_HOSTED && /DietStationLab/.test(navigator.userAgent))
 </div>
 
 <script>
-const BUILD = 'meal-host 2026-09-15 · 1 (nested native host, first cut)';
+const BUILD = 'meal-host 2026-09-15 · 2 (read-only for delivered meals)';
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 const $ = id => document.getElementById(id);
 
@@ -237,6 +237,8 @@ function render(d) {
     : '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Served chilled</b><span style="color:#3B82D0">enjoy it cold!</span></div></div>';
   buildIngRows();
   syncSelect(!!d.selected);
+  /* a delivered or on-the-way meal is history, not a menu: no Select */
+  $('moSelect').style.display = d.readonly ? 'none' : '';
   layout();
 }
 

@@ -559,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 48 (delivered days open the selector overlay in delivered mode)';
+const BUILD = 'calendar 2026-09-15 · 49 (truck days open their meals too)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -711,11 +711,11 @@ function renderMonths(popNew) {
     } else if (st === 'auto' || st === 'sel') {
       el.classList.add('tap');
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
-    } else if (st === 'rate' || st === 'star') {
+    } else if (st === 'rate' || st === 'star' || st === 'today') {
       /* DELIVERED (Rashid, 2026-09-15): a delivered day opens its meals as rows,
          each one tappable to rate — the selector overlay in delivered mode */
       el.classList.add('tap');
-      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false, 'delivered');
+      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false, st === 'today' ? 'today' : 'delivered');
     } else {
       el.onclick = () => nudge(el);
     }
@@ -820,7 +820,9 @@ function deliveredSrc(mon, day) {
 }
 function openDay(mon, day, auto, page) {
   if (ovFrame || ovHosted) return;
-  const src = page === 'delivered' ? deliveredSrc(mon, day) : overlaySrc(mon, day, auto);
+  const src = page === 'delivered' ? deliveredSrc(mon, day)
+    : page === 'today' ? overlaySrc(mon, day, false) + '&dv=today'
+    : overlaySrc(mon, day, auto);
   vibrate(8);
   /* the tap's feedback is ours and immediate in both paths: the veil dissolves
      in place and the haptic fires while the host loads */
