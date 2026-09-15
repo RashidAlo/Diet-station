@@ -1,4 +1,4 @@
-/* ds-component plancard v3 · source system/components/plancard.css · do not edit here: change the source, then re-vendor */
+/* ds-component plancard v4 · source system/components/plancard.css · do not edit here: change the source, then re-vendor */
 /* THE PLAN CARD — documented at system/plancard.html (Figma Design System 4539-10208,
    variant A). One design for every plan list (Rashid, 2026-09-14): extracted from
    home/index.html at 324e812.
@@ -12,7 +12,15 @@
    ground only, which is where every plan list sits. Re-sample before using it on colour.
    Geometry is unchanged from v1.
    v3 (2026-09-14): the strike moved into price.css v2 (one strike, everywhere); this file
-   no longer draws it. REQUIRES price v2. REQUIRES price.css (the price slot is a .dsp), vendored
+   no longer draws it. REQUIRES price v2.
+   v4 (2026-09-15): EVERYTHING BUT THE PLATTER READ FROM NATIVE SOURCE. Rashid wants Home's
+   logged-out cards exactly, pills included, and said checkout's pills "have bevels". v2
+   sampled a screenshot and invented a pill bevel (inner shade, white border), white chip
+   fills, badge speculars and an offer rim. None of those exist in HomeScreenNative.swift
+   (planPill / dealChip / planRow / summerOffer). v4 takes values from that source; SwiftUI
+   shadow radius r maps to CSS blur 2r. The PLATTER keeps v2: native .glassEffect(.regular),
+   whose rim and specular the web can only approximate. The pill's .glassEffect(.clear) over
+   its gradient is not reproducible on the web and is left out rather than faked. REQUIRES price.css (the price slot is a .dsp), vendored
    beside it. Fonts (Urbane Rounded, Proxima Nova, Avenir Next World) come from the
    flow's own @font-face.
    Markup contract:
@@ -43,9 +51,8 @@
 /* ---- offer banner: white platter (Figma 100pt, monogram 46 at a deep 28 inset) ---- */
 .lo-offer { display: flex; align-items: center; gap: 16px; height: 100px;
   width: 100%; background: #fff; border-radius: 30px; padding: 0 16px 0 28px;
-  border: 1px solid transparent;
-  box-shadow: 0 0 0 .75px rgba(0,0,0,.12), inset 0 1.5px 0 #fff, inset 0 0 24px rgba(0,0,0,.02),
-    0 12px 38px -6px rgba(0,0,0,.11); cursor: pointer; }
+  border: none;
+  box-shadow: 0 7px 30px rgba(56,64,74,.16); cursor: pointer; }   /* native: r15 y7, no rim */
 .lo-offer .mono { flex: none; width: 46px; height: 46px; display: block; }
 .lo-off-t { flex: 1; min-width: 0; text-align: right; }
 .lo-off-t b { display: block; font: 600 17px/22px 'Urbane Rounded', sans-serif; color: #0b0e12; }
@@ -54,7 +61,7 @@
 .lo-arrow { flex: none; width: 44px; height: 44px; border-radius: 50%;
   border: none; cursor: pointer; background: #fff;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 18px -6px rgba(56,64,74,.28); }
+  box-shadow: 0 4px 18px rgba(56,64,74,.28); }   /* native: r9 y4 */
 .lo-arrow svg { width: 20px; height: 20px; display: block; }
 
 /* ---- "or try a different plan": straight hairline flanks (Figma ~95pt) ---- */
@@ -80,13 +87,13 @@
   justify-content: space-between; align-items: flex-start; }
 .pc-row { display: flex; gap: 6px; align-items: center; height: 18px; }
 .pc-row i { width: 18px; height: 18px; border-radius: 50%; flex: none;
-  background: #f2f2f3; box-shadow: inset 0 1px 0 #fff, 0 .5px 1.5px rgba(0,0,0,.06);
+  background: rgba(244,244,244,.6);   /* native planRow: no shadow */
   display: flex; align-items: center; justify-content: center;
   font: 600 12px/16px 'Proxima Nova', sans-serif; color: #0b0e12; font-style: normal; }
 .pc-row span { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
 .pc-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px;
   padding: 2px 10px; border-radius: 300px; box-sizing: border-box;
-  background: #fff; border: 1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 0 #fff, 0 1.5px 5px rgba(0,0,0,.05);
+  background: transparent; border: 1px solid rgba(0,0,0,.06);   /* native: hairline only */
   white-space: nowrap; color: #0b0e12; }
 .pc-chip b { font: 700 12px/16px 'Proxima Nova', sans-serif; }
 .pc-chip span { font: 400 12px/16px 'Proxima Nova', sans-serif; }
@@ -100,8 +107,8 @@
 
 /* ---- deal chip: gradient on the TEXT spans only; the emoji keeps its colour ---- */
 .pc-deal { direction: rtl; display: inline-flex; align-items: center; gap: 3px;
-  height: 24px; padding: 2px 10px; border-radius: 300px; background: #fff;
-  box-sizing: border-box; border: 1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 0 #fff, 0 1.5px 5px rgba(0,0,0,.05);
+  height: 24px; padding: 2px 10px; border-radius: 300px; background: transparent;
+  box-sizing: border-box; border: 1px solid rgba(0,0,0,.06);   /* native dealChip: hairline only */
   font: 600 12px/16px 'Avenir Next World', 'Proxima Nova', sans-serif; white-space: nowrap; }
 .pc-deal .gt { background-image: var(--plan-grad);
   -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -109,17 +116,18 @@
 /* ---- plan pill: r28, hairline #e3e3e3, theme gradient, Light + Demi two-tone ---- */
 .pc-pill { position: relative; height: 40px; border-radius: 28px;
   cursor: pointer; padding: 4px 20px; overflow: hidden;
-  background-color: transparent; background-image: var(--plan-grad); border: 1px solid rgba(255,255,255,.5);
-  /* v2: inner edge glow (rim lighter than centre on device), top highlight, bottom shade */
-  box-shadow: inset 0 0 7px rgba(255,255,255,.26), inset 0 1px 0 rgba(255,255,255,.38),
-    inset 0 -1.5px 3px rgba(0,0,0,.10), 0 0 0 .75px rgba(0,0,0,.10), 0 8px 16px -8px rgba(0,0,0,.35);
+  background-color: transparent; background-image: var(--plan-grad); border: 1px solid #e3e3e3;
+  /* native planPill: stroke e3e3e3 1, shadow ink .22 r9 y4, no inner shadow */
+  box-shadow: 0 4px 18px rgba(11,14,18,.22);
   display: flex; align-items: center; justify-content: center;
   font-family: 'Urbane Rounded', sans-serif; font-size: 16px; line-height: 22.4px;
   color: #fff; white-space: nowrap;
   transition: transform .18s cubic-bezier(.2,.8,.3,1.4); }
 .pc-pill:active { transform: scale(.94); }
 .pc-pill .a { font-weight: 300; opacity: .6; position: relative; }
-.pc-pill .b { font-weight: 600; position: relative; text-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.pc-pill .b { font-weight: 600; position: relative; }
+/* native: the whole label carries shadow black .1 r4 y1 */
+.pc-pill .a, .pc-pill .b { text-shadow: 0 1px 8px rgba(0,0,0,.1); }
 /* BODY Building: white Demi BODY, #F2543D Building */
 .plancard[data-plan="bodybuilding"] .pc-pill .a { font-weight: 600; opacity: 1; }
 .plancard[data-plan="bodybuilding"] .pc-pill .b { color: #F2543D; }
