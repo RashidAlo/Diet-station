@@ -285,6 +285,14 @@ window.DSLab = { v: 1,
   set(key, value),     // live controls go through the REAL code path (the
   run(actionKey),      //   Components STATE RULE); non-live write ds-mods
   chrome(which) };     // 'restart' | 'exit' | 'back' | 'userflow' | 'handoff'
+// PRECEDENCE: a page-assigned window.DSLab wins; lab-shell only fills in the
+// methods the page left out.
+// THE page -> lab-shell hook, and the only one: after EVERY change a page makes
+// (its own set / run, or a state change from inside the prototype a sheet shows),
+window.dispatchEvent(new CustomEvent('dslab-state', { detail: state }));   // full state object
+// lab-shell listens and forwards { t: 'lab-state', v: 1, state } while a native
+// sheet is up, or re-renders the web sheet. No lane posts lab-state itself.
+// (From Auth, the first lane to declare, c38262e.)
 //
 // 4 APP PATH. The web keeps gesture detection. Under cap labSheet >= 1, lab-shell
 //   does NOT open the web sheet on the gesture; it posts
