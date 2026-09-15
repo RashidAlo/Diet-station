@@ -253,6 +253,62 @@ window.DSNativeChrome(['close']);
 // native → web: route taps back
 window.DSChromeTap('close');
 
+// ── LAB MENU v1: one menu, every prototype (ruling 2026-09-15) ─────────
+// Rashid: the three-finger lab menu is ONE standardized system: a native sheet
+// in the app for EVERY prototype, the same content as a web sheet elsewhere.
+// Proposed by Hub; names blessed here. Replaces four menus (lab-shell's, the
+// home / calendar / selector / checkout own menus, the pilot's SwiftUI sheet
+// handing off to meal-select's, and the hub card's gear primer).
+//
+// 1 FIXED CHROME, drawn by the platform, never declared, always in this order:
+//   Back (web trail only) · Restart · Exit prototype · User flow · Dev handoff
+//   then the prototype's declared sections. Every prototype has Restart and Exit.
+//
+// 2 DECLARATION, per flow in flows.json (Hub-owned), extending `settings`:
+//   "lab": { "v": 1, "sections": [ { "title": "Loyalty", "controls": [
+//     { "key", "label", "type", "note"?, "default", "live"?, …type fields } ] } ] }
+//   type  choice  options [{ v, label }]: segmented when <= 4 options with short
+//                 labels, a picker menu beyond that (HIG: segmented is for a few
+//                 peers, a menu for a list)
+//         range   min, max, step, unit
+//         toggle
+//         action  a button with no value; "role": "destructive" optional
+//   live: true   applies to the running prototype at once; absent means the value
+//                is written and applies on Restart (today's primer semantics)
+//   Legacy `settings` reads as one "Settings" section of non-live controls.
+//   Persistence unchanged: ds-mods-<flow>; shared keys (ds-tier-v1) stay the page's.
+//
+// 3 PAGE API, one per prototype; lab-shell provides the default:
+window.DSLab = { v: 1,
+  schema(),            // the declaration, with any runtime-only sections
+  state(),             // -> { key: value }
+  set(key, value),     // live controls go through the REAL code path (the
+  run(actionKey),      //   Components STATE RULE); non-live write ds-mods
+  chrome(which) };     // 'restart' | 'exit' | 'back' | 'userflow' | 'handoff'
+//
+// 4 APP PATH. The web keeps gesture detection. Under cap labSheet >= 1, lab-shell
+//   does NOT open the web sheet on the gesture; it posts
+webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schema, state, back /* label? */ });
+//   Native renders a SwiftUI Form (chrome first, then sections) and replies INTO
+//   THE ORIGINATING FRAME (frameInfo) via DSLab.set / run / chrome. On presenting
+//   it calls DSLabSheet('shown') in that frame; with no 'shown' within 600ms the
+//   page opens the web sheet instead, so a gesture is NEVER dead. While the sheet
+//   is up the page posts { t: 'lab-state', v: 1, state } on every change.
+//   CAPS: labSheet is PER WEB VIEW, so it may be visible to every frame of a view
+//   whose relay renders lab sheets (hub iframes included). This is unlike
+//   sheetHost, because any frame that sees it can be served by the same relay.
+//   labMenu is unchanged and means only "native owns the gesture"; the two are
+//   independent.
+//   The native pilot (a SwiftUI screen, no page) renders its own native sections
+//   in the SAME sheet component and order.
+//
+// 5 HUB GEAR opens this same menu (native in the app, web sheet on web) and the
+//   separate primer retires. No prototype is running there, so it shows the chrome
+//   that applies (User flow, Dev handoff) and the NON-live controls only; live
+//   controls are hidden, not disabled.
+//
+// 6 LAYERS: the native sheet needs none; the web sheet keeps { t:'layer', id:'labmenu' }.
+
 // ── COVERING LAYERS: hide persistent native chrome (ruling 2026-09-14) ──
 // A web surface that COVERS the screen tells native, which hides persistent
 // chrome it draws (the pilot's DS bar) while ANY layer is up:
