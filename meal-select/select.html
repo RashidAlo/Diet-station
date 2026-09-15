@@ -3441,16 +3441,83 @@ document.getElementById('tapMode').addEventListener('click', e => {
 });
 document.getElementById('sFill').onclick = autoFill;
 document.getElementById('sReset').onclick = () => resetAll();
-document.getElementById('sCopy').onclick = () => {
+function copyValues() {
   const spec = 'meal-select playground: quotas ' +
     CATS.map(c => c.title + ' ' + c.quota).join(', ') +
     ' · collapse ' + MODS.idle + 's · target ' + MODS.target +
     ' kcal · confetti ' + MODS.confetti + ' · tap mode ' + MODS.tapMode;
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
-    b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);
+    if (b) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200); }
   }).catch(() => {});
-};
+}
+document.getElementById('sCopy').onclick = copyValues;
+
+/* ================= LAB MENU v1 page API (platform.html, canon 8a93962) =====
+   One lab menu for every prototype: a native sheet in the app, lab-shell's web
+   sheet elsewhere, both rendering the `lab` declaration in flows.json. This page
+   owns only what lab-shell cannot know: the live values, and how to apply each
+   one. Every set()/run() goes through the SAME function the sidebar control
+   calls (the Components STATE RULE); nothing here re-implements a control.
+   The sidebar stays in step via syncSide() until step 3 retires its markup.
+   Keys are unique across the flow: the calendar's live in index.html, and the
+   sections carry page:'selector' | 'calendar' so each page shows only its own. */
+(function () {
+  const $ = id => document.getElementById(id);
+  const seg = (sel, attr, v) => document.querySelectorAll(sel + ' button').forEach(x =>
+    x.classList.toggle('on', x.dataset[attr] === v));
+  function syncSide() {
+    const put = (i, o, val, txt) => { if ($(i)) $(i).value = val; if ($(o)) $(o).textContent = txt; };
+    put('mIdle', 'vIdle', MODS.idle, (+MODS.idle).toFixed(1) + 's');
+    put('mTarget', 'vTarget', MODS.target, MODS.target);
+    put('mConfetti', 'vConfetti', MODS.confetti, MODS.confetti);
+    seg('#tapMode', 'mode', MODS.tapMode);
+    seg('#scrubSeg', 'v', MODS.scrubStyle || 'tile');
+    buildQuotaRows();
+  }
+  const SETTERS = {
+    idle: v => { MODS.idle = +v; },
+    target: v => { MODS.target = +v; $('kcalCap').textContent = '/' + MODS.target; },
+    confetti: v => { MODS.confetti = +v; },
+    tapMode: v => { MODS.tapMode = v === 'select' ? 'select' : 'add'; },
+    selc: v => applySelc(v),
+    scrubStyle: v => { MODS.scrubStyle = v === 'glass' ? 'glass' : 'tile'; syncTileMode(); }
+  };
+  CATS.forEach(cat => {
+    SETTERS['quota.' + cat.id] = v => {
+      cat.quota = Math.max(0, Math.min(3, Math.round(+v)));
+      resetAll(true); buildScreen();
+    };
+  });
+  const ACTIONS = {
+    autofill: () => autoFill(),
+    reset: () => resetAll(),
+    copy: () => copyValues()
+  };
+  function state() {
+    const o = { idle: +MODS.idle, target: +MODS.target, confetti: +MODS.confetti,
+      tapMode: MODS.tapMode, selc: MODS.selc || 'red', scrubStyle: MODS.scrubStyle || 'tile' };
+    CATS.forEach(cat => { o['quota.' + cat.id] = cat.quota; });
+    return o;
+  }
+  window.DSLab = Object.assign(window.DSLab || {}, {
+    v: 1,
+    page: 'selector',
+    state: state,
+    set: function (key, value) {
+      const fn = SETTERS[key];
+      if (!fn) return false;
+      fn(value); syncSide();
+      return true;
+    },
+    run: function (key) {
+      const fn = ACTIONS[key];
+      if (!fn) return false;
+      fn();
+      return true;
+    }
+  });
+})();
 
 /* ================= stage scaling: desktop playground vs mobile fullscreen ==== */
 const phone = document.getElementById('phone');
@@ -3604,7 +3671,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-14 · 239 (auto-scroll lands the photos clear of the band)';
+const BUILD = 'build 2026-09-15 · 240 (lab menu v1: DSLab set/run/state)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

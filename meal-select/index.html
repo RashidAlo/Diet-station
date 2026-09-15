@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 36 (the native sheet host engages inside the hub too)';
+const BUILD = 'calendar 2026-09-15 · 37 (lab menu v1: DSLab set/run/state)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -846,11 +846,12 @@ function simulateDays(n) {
     renderMonths(false);
   }, endT + 1600);
 }
-document.querySelectorAll('#simSeg button').forEach(b => b.onclick = () => {
+function simulateFromMenu(n) {
   vibrate(8);
   closeLabMenu();
-  setTimeout(() => simulateDays(+b.dataset.n), 400);
-});
+  setTimeout(() => simulateDays(n), 400);
+}
+document.querySelectorAll('#simSeg button').forEach(b => b.onclick = () => simulateFromMenu(+b.dataset.n));
 
 /* ================= decorative chrome ================= */
 document.getElementById('pauseBtn').onclick = () => vibrate(8);
@@ -872,19 +873,68 @@ document.querySelectorAll('#hapSeg button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#hapSeg button').forEach(x =>
     x.classList.toggle('on', x === b));
 });
-document.getElementById('sReset').onclick = () => {
+function resetDays() {
   Object.keys(sessionSel).forEach(k => delete sessionSel[k]);
   MODS.ff = 0;
-  document.getElementById('mFF').value = 0;
-  document.getElementById('vFF').textContent = 'now';
+  const f = document.getElementById('mFF'), o = document.getElementById('vFF');
+  if (f) f.value = 0;
+  if (o) o.textContent = 'now';
   renderMonths(false);
-};
-document.getElementById('sCopy').onclick = () => {
+}
+function copyValues() {
   const s = 'calendar · horizon ' + MODS.horizon + 'h · active ' + MODS.active +
     ' days · clock ' + (MODS.ff ? '+' + MODS.ff + 'h' : 'now') +
     ' · pop ' + (+MODS.pop).toFixed(2) + ' · haptics ' + (MODS.haptics ? 'on' : 'off');
   try { navigator.clipboard.writeText(s); } catch (_) {}
-};
+}
+document.getElementById('sReset').onclick = resetDays;
+document.getElementById('sCopy').onclick = copyValues;
+
+/* ================= LAB MENU v1 page API (platform.html, canon 8a93962) =====
+   The calendar's half of the meal-select declaration (sections page:'calendar').
+   Every set()/run() calls the same function its sidebar control calls — the
+   `after` each bindMod passes, simulateFromMenu, resetDays — so the menu and
+   the sidebar can never apply a value two ways (Components STATE RULE). The
+   sidebar is kept in step until step 3 retires it. Defined before lab-shell
+   loads (it is deferred), which supplies schema, chrome and non-live values. */
+(function () {
+  const $ = id => document.getElementById(id);
+  const FMT = { horizon: v => v + 'h', active: v => v, ff: v => +v ? '+' + v + 'h' : 'now',
+    pop: v => (+v).toFixed(2) + '×' };
+  const IDS = { horizon: ['mHor', 'vHor'], active: ['mAct', 'vAct'], ff: ['mFF', 'vFF'], pop: ['mPop', 'vPop'] };
+  const AFTER = { horizon: () => renderMonths(true), active: () => renderMonths(false),
+    ff: () => renderMonths(true), pop: () => {} };
+  function syncSide() {
+    Object.keys(IDS).forEach(k => {
+      const i = $(IDS[k][0]), o = $(IDS[k][1]);
+      if (i) i.value = MODS[k];
+      if (o) o.textContent = FMT[k](MODS[k]);
+    });
+    document.querySelectorAll('#hapSeg button').forEach(x =>
+      x.classList.toggle('on', (x.dataset.v === 'on') === !!MODS.haptics));
+  }
+  const ACTIONS = {
+    sim10: () => simulateFromMenu(10), sim20: () => simulateFromMenu(20),
+    sim30: () => simulateFromMenu(30), resetDays: resetDays, copy: copyValues
+  };
+  window.DSLab = Object.assign(window.DSLab || {}, {
+    v: 1,
+    page: 'calendar',
+    state: () => ({ horizon: +MODS.horizon, active: +MODS.active, ff: +MODS.ff,
+      pop: +MODS.pop, haptics: !!MODS.haptics }),
+    set: function (key, value) {
+      if (key === 'haptics') { MODS.haptics = value === true || value === 'on'; syncSide(); return true; }
+      if (!AFTER[key]) return false;
+      MODS[key] = +value; AFTER[key](); syncSide();
+      return true;
+    },
+    run: function (key) {
+      if (!ACTIONS[key]) return false;
+      ACTIONS[key]();
+      return true;
+    }
+  });
+})();
 
 /* ================= embed mode (opened from the hub launcher) ================= */
 const EMBED = /[?&]embed=1/.test(location.search);
