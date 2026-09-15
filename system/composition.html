@@ -558,6 +558,20 @@
 TWIN         yes: the host view itself (position), plus the existing close, dual, tile
 DRAWS        native: the host view's motion, the twins. web: all sheet content. The
              calendar draws the scrim (#ovVeil) in its own view, beneath the host.
+HUB PATH     (2026-09-15, Rashid tests from the hub card.) On the hub the calendar is an
+             IFRAME inside index.html's flow sheet, inside the one LabWebView, so it is
+             never top-level. It gets its OWN cap, sheetHostFramed &gt;= 1, injected with
+             forMainFrameOnly:false plus a location.pathname guard (meal-select/) so it
+             reaches only that frame. NEVER inject sheetHost itself into frames: it would
+             leak into ordinary flow iframes (Hub's parent === window finding).
+               calendar may open a host = (parent === window &amp;&amp; sheetHost &gt;= 1)
+                                         || (parent !== window &amp;&amp; sheetHostFramed &gt;= 1)
+             The selector inside the host view IS top-level, so `hosted` is unchanged;
+             the framed calendar's own lab Exit still goes to the hub (lab-shell's
+             predicate stays parent === window). Native: accept sheet-open and ds-down
+             from that frame (frameInfo, path meal-select), put the host above
+             LabWebView, measure safeTop from the hub's rest inset, and deliver ds-up
+             with evaluateJavaScript(in: frame). Evidence 1-7 are re-run on the hub path.
 CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              { tileRows: 2, dateWidget: 1 }, all in the one injected object. The page
              reads tileRows / dateWidget from it at document start. Without them
