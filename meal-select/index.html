@@ -137,7 +137,8 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
   .hd-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9;
     white-space: nowrap; }
   .hd-sub b { font-weight: 700; margin-left: 4px; }
-  html.ds-chrome-pause #pauseBtn, html.ds-chrome-pause #pzClose { opacity: 0 !important; pointer-events: none !important; }
+  html.ds-chrome-pause #pauseBtn, html.ds-chrome-pause #pzClose { opacity: 0 !important; pointer-events: none !important;
+    animation: none !important; }
   .pausebtn { width: 40px; height: 40px; border-radius: 999px; flex: none;
     border: 1px solid #B22425; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -558,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 43 (pause mode comes alive at both ends)';
+const BUILD = 'calendar 2026-09-15 · 44 (pause/X swap is one glass per frame)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -1000,7 +1001,11 @@ function syncPauseHeader() {
 }
 function pzChrome() {
   /* the X takes the pause button's native seat — repost once layout settles */
-  requestAnimationFrame(() => { if (window.DSCalReport) window.DSCalReport(); });
+  /* INSTANT, and measured without the web spin: in the app the X and pause
+     glyphs are native, and a rect taken mid-rotation (scale .6) posted a
+     shrunken X; a non-instant post let the pause glass fade out over Save
+     while the X faded in. One glass per frame, at its true size. */
+  requestAnimationFrame(() => { if (window.DSCalReport) window.DSCalReport(true); });
 }
 function enterPause() {
   if (pauseMode || ovFrame || ovHosted) return;
@@ -1493,7 +1498,7 @@ if (/[?&]qaopen=1/.test(location.search)) {
       if (el) el.classList.add('ds-native-hidden');
     });
   }
-  function report() {
+  function report(instant) {
     /* the meal-selection overlay owns the whole screen — boot's late
        reports must not resurrect the pause twin / tab bar on top of it */
     if (overlayUp) { clearChrome(); return; }
@@ -1519,11 +1524,15 @@ if (/[?&]qaopen=1/.test(location.search)) {
         r: parseFloat(getComputedStyle(el).borderRadius) || Math.min(r.width, r.height) / 2 });
     });
     try {
-      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW,
-        surface: SURFACE, mode: MODE, els: els, bar: 'calendar' });
+      var msg = { t: 'glasschrome', flow: FLOW,
+        surface: SURFACE, mode: MODE, els: els, bar: 'calendar' };
+      /* instant: the whole post applies with no animation, so the leaving
+         twin is gone on the frame the arriving one lands (Shell's contract) */
+      if (instant) msg.instant = true;
+      webkit.messageHandlers.ds.postMessage(msg);
     } catch (_) {}
   }
-  window.DSCalReport = function () { report(); };
+  window.DSCalReport = function (instant) { report(instant); };
   window.DSNativeChrome = function (ids) {
     var first = !nativeConfirmed;
     nativeConfirmed = true;
