@@ -570,8 +570,14 @@ HUB PATH     (2026-09-15, Rashid tests from the hub card.) On the hub the calend
              the framed calendar's own lab Exit still goes to the hub (lab-shell's
              predicate stays parent === window). Native: accept sheet-open and ds-down
              from that frame (frameInfo, path meal-select), put the host above
-             LabWebView, measure safeTop from the hub's rest inset, and deliver ds-up
-             with evaluateJavaScript(in: frame). Evidence 1-7 are re-run on the hub path.
+             LabWebView, measure safeTop from the hub's rest inset, and deliver EVERY reply
+             to the calendar IN that frame with evaluateJavaScript(in: frame): ds-down
+             buffering is the host's, but ds-up, the sheet-close `then` (ds-close /
+             ds-done as a MessageEvent) and DSSheet('closing' / 'presented' / 'fallback')
+             all go to the frame. In the hub's main frame they are silently lost: the
+             veil stays up and Confirm never marks the day (Calendar &amp; Meals). Evidence
+             1-7 are re-run on the hub path, plus: Confirm, then the day turns selected on
+             the calendar and the veil dissolves.
              Hub-confirmed at b6e5528: lab-shell reads labMenu / layers / sheetHost only
              under parent === window, and nothing reads sheetHostFramed. index.html
              reads no caps and its flow sheet has no swipe-to-close.
