@@ -572,6 +572,14 @@ HUB PATH     (2026-09-15, Rashid tests from the hub card.) On the hub the calend
              from that frame (frameInfo, path meal-select), put the host above
              LabWebView, measure safeTop from the hub's rest inset, and deliver ds-up
              with evaluateJavaScript(in: frame). Evidence 1-7 are re-run on the hub path.
+             Hub-confirmed at b6e5528: lab-shell reads labMenu / layers / sheetHost only
+             under parent === window, and nothing reads sheetHostFramed. index.html
+             reads no caps and its flow sheet has no swipe-to-close.
+             CONSTRAINT (Hub): the hub runs pruneStack() on window focus and
+             visibilitychange, which a host taking or releasing first responder can
+             fire. It removes a flow frame that is disconnected, about:blank or on the
+             hub root. So native must NEVER blank, reload or re-point the calendar
+             frame while the host is up; close only through sheet-close as specified.
 CAP          DSNativeCaps.sheetHost &gt;= 1, PLUS the confirm's existing caps
              { tileRows: 2, dateWidget: 1 }, all in the one injected object. The page
              reads tileRows / dateWidget from it at document start. Without them
