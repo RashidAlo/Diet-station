@@ -335,6 +335,28 @@ webkit.messageHandlers.ds.postMessage({ t: 'lab-sheet', v: 1, flow, title, schem
 //
 // 6 LAYERS: the native sheet needs none; the web sheet keeps { t:'layer', id:'labmenu' }.
 
+// ── NATIVE FROM THE FIRST FRAME: every native-glass control (ruling 2026-09-15) ──
+// Rashid: "when we load liquid glass elements, we load it from the start without
+// this switcheroo." Ruling 3 made this law for overlay controls; it now applies to
+// EVERY control a native twin may draw, on every page. A web control that paints,
+// even for one frame, and is then covered by glass is a bug.
+//   1 DECIDE AT PARSE. In the shell (UA DietStationLab), a <head> script, before any
+//     body paints, adds the root hide class. When DSNativeCaps is injected, hide only
+//     the controls those caps cover (clause 1: decided before the first frame); when
+//     it is absent (older builds), hide all twinnable controls.
+//   2 THE HIDE RULE LIVES IN THE PAGE'S STYLESHEET. A <style> injected by the
+//     handshake script at the end of <body> arrives after first paint, too late.
+//   3 A CONFIRM ONLY UN-HIDES. The first DSNativeChrome(ids, caps) un-hides controls
+//     whose cap is missing or whose id it omits; it never has to hide anything.
+//   4 NO CONFIRM: the restore timer un-hides all, for the page's whole life (clause 5).
+//   5 THE COST IS A GAP, AND IT IS MEASURED. Pre-hiding trades a switch for a blank.
+//     A page must post COMPLETE geometry at its first opportunity (the injected
+//     caps make that synchronous), and the parse-to-twin-drawn gap must be at most
+//     2 frames on the sim. Longer than that is the 934ms empty bar again: move the
+//     post earlier, or hold the view off-screen until the post (the sheet-host
+//     pattern). Never un-hide the web control to fill the gap.
+// Reference: checkout 35 (b640c59).
+
 // ── COVERING LAYERS: hide persistent native chrome (ruling 2026-09-14) ──
 // A web surface that COVERS the screen tells native, which hides persistent
 // chrome it draws (the pilot's DS bar) while ANY layer is up:
