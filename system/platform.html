@@ -263,6 +263,8 @@ window.DSChromeTap('close');
 // 1 FIXED CHROME, drawn by the platform, never declared, always in this order:
 //   Back (web trail only) · Restart · Exit prototype · User flow · Dev handoff
 //   then the prototype's declared sections. Every prototype has Restart and Exit.
+//   Restart is ALWAYS a fresh load (cache-busting v= on the document; natively the
+//   view also drops its HTTP cache), so there is no separate "Reload fresh" button.
 //
 // 2 DECLARATION, per flow in flows.json (Hub-owned), extending `settings`:
 //   "lab": { "v": 1, "sections": [ { "title": "Loyalty", "controls": [
@@ -275,6 +277,13 @@ window.DSChromeTap('close');
 //         action  a button with no value; "role": "destructive" optional
 //   live: true   applies to the running prototype at once; absent means the value
 //                is written and applies on Restart (today's primer semantics)
+//   prime: true  (with live) ALSO offered in the hub gear, where the value is written
+//                to ds-mods-<flow> and read at the next load. Without prime, live
+//                controls are hidden in the gear.
+//   page: '…'    informational tag on a section for multi-page flows (meal-select:
+//                'calendar' | 'selector'). Renderers ignore it: each page's schema()
+//                returns only its own sections, and the gear shows all of them.
+//   "build": "…" optional string in schema(), rendered as a footer under the chrome.
 //   Legacy `settings` reads as one "Settings" section of non-live controls.
 //   Persistence unchanged: ds-mods-<flow>; shared keys (ds-tier-v1) stay the page's.
 //
@@ -283,7 +292,11 @@ window.DSLab = { v: 1,
   schema(),            // the declaration, with any runtime-only sections
   state(),             // -> { key: value }
   set(key, value),     // live controls go through the REAL code path (the
-  run(actionKey),      //   Components STATE RULE); non-live write ds-mods
+  run(actionKey),      //   Components STATE RULE); non-live write ds-mods.
+                       //   run may return { copy: 'text' }: the RENDERER copies it
+                       //   (UIPasteboard natively; navigator.clipboard on web, inside
+                       //   the tap, so a copy action's run must return synchronously).
+                       //   Pages never touch the clipboard for lab actions.
   chrome(which) };     // 'restart' | 'exit' | 'back' | 'userflow' | 'handoff'
 // PRECEDENCE: a page-assigned window.DSLab wins; lab-shell only fills in the
 // methods the page left out.
