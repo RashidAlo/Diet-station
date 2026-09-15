@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 37 (lab menu v1: DSLab set/run/state)';
+const BUILD = 'calendar 2026-09-15 · 38 (lab menu v1: dslab-state on every change)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -917,20 +917,34 @@ document.getElementById('sCopy').onclick = copyValues;
     sim10: () => simulateFromMenu(10), sim20: () => simulateFromMenu(20),
     sim30: () => simulateFromMenu(30), resetDays: resetDays, copy: copyValues
   };
+  const state = () => ({ horizon: +MODS.horizon, active: +MODS.active, ff: +MODS.ff,
+    pop: +MODS.pop, haptics: !!MODS.haptics });
+
+  /* page -> lab-shell, the ONE hook (platform.html LAB MENU v1 §3): announce
+     the full state after ANY change, whatever made it (set/run, or the sidebar
+     until step 3 retires it). Fires only when state() actually changed. */
+  let labLast = JSON.stringify(state());
+  function labNotify() {
+    const st = state(), key = JSON.stringify(st);
+    if (key === labLast) return;
+    labLast = key;
+    window.dispatchEvent(new CustomEvent('dslab-state', { detail: st }));
+  }
+  const side = document.getElementById('side');
+  if (side) ['input', 'click'].forEach(t => side.addEventListener(t, () => setTimeout(labNotify, 0), true));
   window.DSLab = Object.assign(window.DSLab || {}, {
     v: 1,
     page: 'calendar',
-    state: () => ({ horizon: +MODS.horizon, active: +MODS.active, ff: +MODS.ff,
-      pop: +MODS.pop, haptics: !!MODS.haptics }),
+    state: state,
     set: function (key, value) {
-      if (key === 'haptics') { MODS.haptics = value === true || value === 'on'; syncSide(); return true; }
+      if (key === 'haptics') { MODS.haptics = value === true || value === 'on'; syncSide(); labNotify(); return true; }
       if (!AFTER[key]) return false;
-      MODS[key] = +value; AFTER[key](); syncSide();
+      MODS[key] = +value; AFTER[key](); syncSide(); labNotify();
       return true;
     },
     run: function (key) {
       if (!ACTIONS[key]) return false;
-      ACTIONS[key]();
+      ACTIONS[key](); labNotify();
       return true;
     }
   });
