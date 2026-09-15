@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-14 · 35 (native lab menu owns the gesture when the app says so)';
+const BUILD = 'calendar 2026-09-15 · 36 (the native sheet host engages inside the hub too)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -635,10 +635,17 @@ let ovFrame = null;
    an iframe here — an iframe cannot be moved independently of this page.
    Gated on DSNativeCaps.sheetHost, injected main-frame-only at document start;
    every build before that announces nothing and the iframe path is unchanged.
-   parent === window: the calendar is top-level on the pilot; inside the hub it
-   is itself an iframe and keeps the iframe path (the hub has no host yet). */
-const HOST_SHEETS = window.parent === window
-  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1)
+   parent === window: the calendar is top-level on the pilot.
+   HUB PATH (spec canon b6e5528): inside the hub the calendar is itself an
+   iframe in the hub's flow sheet, so the top-level test never passed there —
+   Rashid tests from the hub card and saw the web→glass switch. Shell injects
+   sheetHostFramed into THIS frame only, and its presence is the whole claim:
+   the host routes replies (the ds-down relay, the `then` message, DSSheet)
+   back to the frame that posted sheet-open. Each key is read only in its own
+   position, so a framed page can never mistake the top-level key for its own. */
+const HOST_SHEETS = !!window.DSNativeCaps
+  && ((window.parent === window && window.DSNativeCaps.sheetHost >= 1)
+   || (window.parent !== window && window.DSNativeCaps.sheetHostFramed >= 1))
   && !/[?&]sheethost=0/.test(location.search);
 let ovHosted = false;
 /* ONE builder for both paths, so the hosted URL is the iframe src byte for
