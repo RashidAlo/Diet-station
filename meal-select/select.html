@@ -466,7 +466,7 @@
      same metrics read airier in a 370pt pill than in a 52pt tile, so the
      states are meant to differ now. Not drift — don't "fix" it back. */
   /* glass: headline box 11 + slot 29 = 40, centred in 69 -> 14.5 either side */
-  .nav .ttl.scrub { height: 69px; padding: 25.5px 0 14.5px; top: calc(var(--top-pad) - 9px);
+  .nav .ttl.scrub { height: 69px; padding: 23.5px 0 12.5px; top: calc(var(--top-pad) - 9px);
     border-radius: 30px;
     width: min(370px, calc(100vw - 32px)) !important;
     transition: color .35s ease, text-shadow .35s ease, background .3s ease,
@@ -621,10 +621,10 @@
      The OFF word keeps the shared 7px/9px rule: its own 6.5px/8px override
      used to live here and is gone, because a 9pt line box fits the 10pt chip
      row and the word should sit on the icons' optical line, not above it. */
-  .nav.tile-mode .ttl.scrub { padding: 18px 0 9px; }
+  .nav.tile-mode .ttl.scrub { padding: 16px 0 7px; }
   .nav.tile-mode .ttl.scrub .scb-day,
-  .nav.tile-mode .ttl.scrub .scb-mon { top: 8px; font-size: 9px; line-height: 10px; }
-  .nav.tile-mode .ttl.scrub .scb .scb-it { height: 25px; gap: 0; }
+  .nav.tile-mode .ttl.scrub .scb-mon { top: 6px; font-size: 9px; line-height: 10px; }
+  .nav.tile-mode .ttl.scrub .scb .scb-it { height: 29px; gap: 0; }
   .nav.tile-mode .ttl.scrub .scb .scb-it .n { height: 15px;
     font-size: 15px; line-height: 15px; }
   .nav.tile-mode .ttl.scrub .scb .scb-it .s { height: 10px; }
@@ -652,6 +652,16 @@
     letter-spacing: .05em; color: rgba(11,14,18,.55); }
   #dayTile .t-n { font: 600 15px/17px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   #dayTile .t-s { height: 10px; display: flex; align-items: center; }
+  /* +4 BETWEEN THE NUMERAL AND ITS STATUS (Rashid, build 62: "the icons look
+     very close to the number — an extra 4px of padding between them"). Every
+     box keeps its height: the 4 is taken 2/2 from the pads, the same split
+     Shell made natively, so the web→native handover lands on identical rows.
+       tile          6 + 10 + 15 + 4 + 10 + 7 = 52 (the stack is centred, so
+                     the margin alone moves each end by 2)
+       compact ladder pads 18/9 -> 16/7, headline 8 -> 6, slot 25 -> 29
+       glass ladder   pads 25.5/14.5 -> 23.5/12.5, headline 14.5 -> 12.5,
+                      slot 29 -> 33 */
+  #dayTile .t-s, .scb .scb-it .s { margin-top: 4px; }
   /* the calendar's chip images (·244): never squeezed by the 10px row */
   #dayTile .t-s img, .scb .scb-it .s img { display: block; flex: none; }
   #dayTile .t-s svg { display: block; width: 10px; height: 10px; fill: none;
@@ -693,7 +703,7 @@
      the top label from month to day, keep the lower label clear, have the
      status take that place"). The weekday now lives ONCE, as the stationary
      headline; the row beneath each tile belongs to the status chip. */
-  .scb .scb-it { width: 54px; height: 29px; flex: none; display: flex;
+  .scb .scb-it { width: 54px; height: 33px; flex: none; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 0;
     box-sizing: border-box; }
   /* NO SQUARE PER DATE (Rashid: "reduce the container height by 20%... which
@@ -713,7 +723,7 @@
      which is the space this buys back. */
   .scb-day, .scb-mon { display: none; }
   .nav .ttl.scrub .scb-day, .nav .ttl.scrub .scb-mon {
-    display: block; position: absolute; left: 50%; top: 14.5px; z-index: 2;
+    display: block; position: absolute; left: 50%; top: 12.5px; z-index: 2;
     white-space: nowrap; pointer-events: none;
     /* THE WEEKDAY IS PROXIMA AND LIGHTER (Rashid: "make the day font thinner,
        less weight, and maybe use Proxima — Proxima looks better when it's a
@@ -3885,7 +3895,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 244 (scrubber chips match the calendar)';
+const BUILD = 'build 2026-09-15 · 245 (4px between the date and its status icon)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
