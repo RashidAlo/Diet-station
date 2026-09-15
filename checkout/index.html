@@ -16,8 +16,20 @@
      that presents us (embed=1) supplies its own veil. */
   document.documentElement.classList.add('sheet-enter');
   if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
+  /* NATIVE GLASS FROM THE FIRST FRAME (Rashid, 2026-09-15: "I never want to see
+     [the web glass, then liquid glass on top]"). In the app, every control a
+     native twin can draw is hidden BEFORE the first paint — by root classes set
+     here, at parse time, with the rules in the main <style>. The handshake
+     only ever UN-hides: a shell that confirms without a cap gets that web
+     control back, and a shell that never confirms (iOS < 26) gets all of them. */
+  if (/DietStationLab/.test(navigator.userAgent))
+    document.documentElement.classList.add('ds-chrome-native', 'ds-chrome-nav', 'ds-chrome-pill', 'ds-chrome-fab');
 </script>
 <style>
+  html.ds-chrome-native .sheet-x,
+  html.ds-chrome-nav [data-needs="nav"] .gctl,
+  html.ds-chrome-nav.ds-chrome-pill [data-needs="nav pill"] .gctl,
+  html.ds-chrome-fab .fab { opacity: 0 !important; pointer-events: none !important; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; }
   @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; }
@@ -500,7 +512,7 @@
      area (34pt where env() reads 0 — desktop frame, hub iframe) */
   .fab-bar { padding: 0 20px 8px; height: auto; align-items: flex-end;
     bottom: max(34px, env(safe-area-inset-bottom, 0px)); }
-  .gctl.capsule.cpill { --gctl-size: 56px; --gctl-pad: 0; gap: 10px; padding: 0 16px 0 14px; max-width: 100%;
+  .gctl.capsule.cpill { --gctl-size: 56px; --gctl-pad: 0; gap: 12px; padding: 0 22px 0 20px; max-width: 100%;
     text-align: left; }
   .cpill .fico { width: 28.8px; height: 24px; }
   .cp-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -510,7 +522,7 @@
     font-variant-numeric: tabular-nums; }
   .cp-off { font-weight: 700; color: var(--green); }
   .cp-chev { width: 16px; height: 16px; flex: none; color: var(--ink); opacity: .55; }
-  .gctl.capsule.cpill.is-empty { padding-right: 22px; }
+  .gctl.capsule.cpill.is-empty { padding-right: 26px; }
   .cpill.is-empty .cp-l1 { font-weight: 600; }
   .cpill .dot { top: -4px; right: -4px; }
   /* switching coupons: the new text rises in, so the change reads */
@@ -725,7 +737,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·34</div>
+  <div class="s-foot" id="buildInfo">checkout ·35</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -749,7 +761,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·34';
+const BUILD = 'checkout ·35';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1990,15 +2002,7 @@ if (pendingArrival) {
   if (caps && typeof caps.safeTop === 'number')
     document.getElementById('phone').style.setProperty('--real-pad', Math.max(28, caps.safeTop - 1) + 'px');
 
-  var st = document.createElement('style');
-  st.textContent =
-    'html.ds-chrome-native .sheet-x,' +
-    'html.ds-chrome-nav [data-needs="nav"] .gctl,' +
-    'html.ds-chrome-nav.ds-chrome-pill [data-needs="nav pill"] .gctl,' +
-    'html.ds-chrome-fab .fab' +
-    '{opacity:0!important;pointer-events:none!important}';
-  document.head.appendChild(st);
-  root.classList.add('ds-chrome-native');
+  /* hide rules + root classes are set at parse time (head script) */
 
   function current() {
     if (typeof cpFrame !== 'undefined' && cpFrame) return { mode: 'sheet', els: {} };
@@ -2065,12 +2069,21 @@ if (pendingArrival) {
     clear: function () { clearTimeout(syncT); post(current().mode, [], true); }
   };
   window.DSNativeChrome = function (ids, caps2) {
+    var first = !confirmed;
     confirmed = true;
     var grew = false;
-    if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) { navGlyphs = true; root.classList.add('ds-chrome-nav'); grew = true; }
-    if (caps2 && caps2.navPill >= 1 && !navPill) { navPill = true; root.classList.add('ds-chrome-pill'); grew = true; }
+    if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) { navGlyphs = true; grew = true; }
+    if (caps2 && caps2.navPill >= 1 && !navPill) { navPill = true; grew = true; }
     if (caps2 && caps2.couponsFab >= 1 && !couponsFab) { couponsFab = true; grew = true; }
-    if (caps2 && caps2.couponsPill >= 1 && !couponsPill) { couponsPill = true; root.classList.add('ds-chrome-fab'); grew = true; }
+    if (caps2 && caps2.couponsPill >= 1 && !couponsPill) { couponsPill = true; grew = true; }
+    /* un-hide only what this shell can't draw (caps are flat and carried on
+       every confirm, so the first one is authoritative) */
+    if (first) {
+      if (!navGlyphs) root.classList.remove('ds-chrome-nav');
+      if (!navPill) root.classList.remove('ds-chrome-pill');
+      if (!couponsPill) root.classList.remove('ds-chrome-fab');
+      grew = true;
+    }
     if (grew) report();
   };
   window.DSChromeTap = function (id) {
