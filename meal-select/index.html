@@ -263,9 +263,47 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
   body.pausing .hd .hd-txt, body.pausing #pauseBtn { display: none; }
   body.pausing .pz-txt { display: flex; }
   body.pausing .pz-save, body.pausing #pzClose { display: flex; }
-  @keyframes pzin { from { opacity: 0; } }
-  body.pausing .pz-txt, body.pausing .pz-save, body.pausing #pzClose,
-  body.pz-leaving .hd-txt, body.pz-leaving #pauseBtn { animation: pzin .24s ease both; }
+  /* LIVELY AT BOTH ENDS (Rashid, ·43: "add a little bit of animation to these
+     states — the icon, the way the calendar days transform from the pause state
+     to the regular one — make the feature lively when it starts and ends").
+     One vocabulary, one clock: the house .55s curve for anything that travels,
+     the calendar's own overshoot for anything that pops, and a week-row cascade
+     (--pzd, set per day in renderMonths) so the grid turns over top to bottom
+     instead of switching all at once. */
+  @keyframes pzhdin { from { opacity: 0; transform: translateY(6px); } }
+  @keyframes pzxin { from { opacity: 0; transform: rotate(-90deg) scale(.6); } }
+  @keyframes pzpausein { from { opacity: 0; transform: rotate(90deg) scale(.6); } }
+  body.pausing .pz-txt { animation: pzhdin .42s cubic-bezier(.32,.72,0,1) both; }
+  body.pausing .pz-save { animation: pzhdin .42s cubic-bezier(.32,.72,0,1) .06s both; }
+  body.pausing #pzClose { animation: pzxin .46s cubic-bezier(.2,.8,.3,1.2) both; }
+  body.pz-leaving .hd-txt { animation: pzhdin .42s cubic-bezier(.32,.72,0,1) both; }
+  body.pz-leaving #pauseBtn { animation: pzpausein .46s cubic-bezier(.2,.8,.3,1.2) both; }
+  /* the day grid turning over */
+  @keyframes pzchipin { 0% { transform: scale(.3); opacity: 0; }
+    60% { transform: scale(1.14); opacity: 1; } 100% { transform: scale(1); } }
+  @keyframes pztile { 0% { transform: scale(1); } 40% { transform: scale(.93); } 100% { transform: scale(1); } }
+  @keyframes pzdim { from { opacity: 1; } }       /* settles on the rule's .2 / .3 */
+  @keyframes pzundim { from { opacity: .2; } }
+  body.pz-in .day.pz-ok .chip, body.pz-out .day .chip {
+    animation: pzchipin .46s cubic-bezier(.2,.8,.3,1.2) var(--pzd, 0ms) both; }
+  body.pz-in .day.pz-ok .tile, body.pz-out .day .tile {
+    animation: pztile .42s cubic-bezier(.3,.7,.3,1) var(--pzd, 0ms) both; }
+  body.pz-in .day.pz-no { animation: pzdim .38s ease var(--pzd, 0ms) both; }
+  body.pz-out .day.pz-was-no { animation: pzundim .38s ease var(--pzd, 0ms) both; }
+  /* the icon itself: spins in with a small overshoot, spins away when resumed */
+  @keyframes pzicon { 0% { transform: scale(0) rotate(-60deg); }
+    60% { transform: scale(1.2) rotate(8deg); } 100% { transform: none; } }
+  @keyframes pziconout { to { transform: scale(0) rotate(60deg); opacity: 0; } }
+  .day .chip img.pz-icon-in { animation: pzicon .42s cubic-bezier(.2,.8,.3,1.2) both; }
+  .day .chip img.pz-icon-out { animation: pziconout .18s ease-in both; }
+  .day.pz-tap .tile { animation: pztile .3s cubic-bezier(.3,.7,.3,1); }
+  /* saved: each newly paused day sends out one orange ring, in cascade */
+  .day.pz-ring .ring { border-color: #FF512A;
+    animation: ringout .6s ease-out calc(var(--pzd, 0ms) + 160ms) forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    body.pz-in .day *, body.pz-out .day *, body.pz-in .day, body.pz-out .day,
+    .day .chip img, .day.pz-ring .ring, .pz-txt, .pz-save, #pzClose, .hd-txt, #pauseBtn { animation: none !important; }
+  }
   .pz-txt { flex: 1; min-width: 0; flex-direction: column; align-items: center; }
   .pz-txt h1 { font: 600 20px/24px 'Urbane Rounded', sans-serif; color: #f9f9f9; white-space: nowrap; }
   .pz-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9; white-space: nowrap; }
@@ -284,7 +322,6 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
   body.pausing .day.pz-no .chip, body.pausing .day .badge, body.pausing .day .dot { display: none; }
   body.pausing .day.pz-ok { filter: drop-shadow(0 0 4px rgba(56,64,74,.08)); cursor: pointer; }
   body.pausing .day.pz-ok .tile { color: #0b0e12; }
-  .day.pz-pop .chip { animation: chippop .42s cubic-bezier(.2,.8,.3,1.2); }
   /* the result toast (Figma 15878-78083) floats clear of the tab bar */
   .pz-toast { position: absolute; left: 12px; right: 12px; bottom: 111px; z-index: 30;
     display: flex; gap: 8px; align-items: flex-start; padding: 20px; background: #fff;
@@ -521,7 +558,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 42 (pause days mode + result toast)';
+const BUILD = 'calendar 2026-09-15 · 43 (pause mode comes alive at both ends)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -620,7 +657,8 @@ function renderMonths(popNew) {
   const root = document.getElementById('months');
   root.innerHTML = '';
   const statuses = {};
-  let grid = null, curMonth = -1, firstOfMonth = false;
+  let grid = null, curMonth = -1, firstOfMonth = false, cell = 0;
+  const pzAnim = document.body.classList.contains('pz-in') || document.body.classList.contains('pz-out');
   for (let t = M.first.getTime(); t <= M.last.getTime() + DAYMS / 2; t += DAYMS) {
     const D = midnight(t);
     if (D.getMonth() !== curMonth) {
@@ -640,6 +678,11 @@ function renderMonths(popNew) {
     const el = document.createElement('button');
     el.className = 'day ' + st + (D.getTime() < M.today.getTime() ? ' past' : '');
     el.dataset.mon = MABBR[D.getMonth()]; el.dataset.day = D.getDate();
+    if (pzAnim) {
+      /* week-row cascade: a row every 55ms, a light lean across it */
+      el.style.setProperty('--pzd', Math.min(620, Math.floor(cell / 7) * 55 + (cell % 7) * 9) + 'ms');
+      cell++;
+    }
     if (firstOfMonth) { el.style.gridColumn = D.getDay() + 1; firstOfMonth = false; }
     let inner = '<span class="tile">' + D.getDate() + '</span>' +
       '<span class="chip">' + CHIP[st] + '</span><span class="ring"></span>';
@@ -659,6 +702,8 @@ function renderMonths(popNew) {
       grid.appendChild(el);
       continue;
     }
+    if (pzAnim && !(D.getDay() !== 5 && D.getTime() > M.today.getTime() && lockAt(D) > M.nowT))
+      el.classList.add('pz-was-no');
     if (st === 'add' || st === 'soon') {
       el.classList.add('tap');
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false);
@@ -962,18 +1007,31 @@ function enterPause() {
   vibrate(8);
   pauseMode = true;
   pzDraft = new Set(pausedDays);
-  document.body.classList.remove('pz-leaving');
-  document.body.classList.add('pausing');
+  document.body.classList.remove('pz-leaving', 'pz-out');
+  document.body.classList.add('pausing', 'pz-in');
+  clearTimeout(pzAnimT);
+  pzAnimT = setTimeout(() => document.body.classList.remove('pz-in'), 1300);
   syncPauseHeader();
   renderMonths(false);
   pzChrome();
 }
-function exitPause() {
+let pzAnimT = null;
+function exitPause(ringKeys) {
   pauseMode = false;
-  document.body.classList.remove('pausing');
-  document.body.classList.add('pz-leaving');
-  setTimeout(() => document.body.classList.remove('pz-leaving'), 300);
+  document.body.classList.remove('pausing', 'pz-in');
+  document.body.classList.add('pz-leaving', 'pz-out');
+  setTimeout(() => document.body.classList.remove('pz-leaving'), 500);
+  clearTimeout(pzAnimT);
+  pzAnimT = setTimeout(() => {
+    document.body.classList.remove('pz-out');
+    document.querySelectorAll('.day.pz-ring').forEach(d => d.classList.remove('pz-ring'));
+  }, 1400);
   renderMonths(false);
+  (ringKeys || []).forEach(k => {
+    const p = k.split(':');
+    const d = document.querySelector('.day[data-mon="' + p[0] + '"][data-day="' + p[1] + '"]');
+    if (d) d.classList.add('pz-ring');
+  });
   pzChrome();
 }
 function togglePause(el, key) {
@@ -981,8 +1039,21 @@ function togglePause(el, key) {
   else if (pzDraft.size < MODS.pauseAllowance) pzDraft.add(key);
   else { nudge(el); vibrate([8, 40, 8]); return; }
   vibrate(10);
-  el.querySelector('.chip').innerHTML = pzDraft.has(key) ? CHIP.pause : '';
-  el.classList.remove('pz-pop'); void el.offsetWidth; el.classList.add('pz-pop');
+  const chip = el.querySelector('.chip');
+  el.classList.remove('pz-tap'); void el.offsetWidth; el.classList.add('pz-tap');
+  if (pzDraft.has(key)) {
+    chip.innerHTML = CHIP.pause;
+    chip.firstChild.classList.add('pz-icon-in');
+  } else {
+    const img = chip.firstChild;
+    if (img) {
+      img.classList.remove('pz-icon-in');
+      img.classList.add('pz-icon-out');
+      const clear = () => { if (!pzDraft.has(key) && chip.firstChild === img) chip.innerHTML = ''; };
+      img.addEventListener('animationend', clear, { once: true });
+      setTimeout(clear, 450);   /* belt: a paused animation clock must not strand the icon */
+    }
+  }
   syncPauseHeader();
 }
 /* THE TOAST SAYS WHAT THE SAVE DID TO THE PLAN'S END. Every newly paused day
@@ -1008,13 +1079,15 @@ document.getElementById('pzClose').onclick = () => { vibrate(6); exitPause(); };
 pzSave.onclick = () => {
   if (pzSave.disabled) return;
   let added = 0, removed = 0;
+  const fresh = [...pzDraft].filter(k => !pausedDays.has(k));
   pzDraft.forEach(k => { if (!pausedDays.has(k)) added++; });
   pausedDays.forEach(k => { if (!pzDraft.has(k)) removed++; });
   pausedDays.clear();
   pzDraft.forEach(k => { pausedDays.add(k); delete sessionSel[k]; });
   vibrate([10, 40, 18]);
-  exitPause();
-  showPauseToast(added, removed);
+  exitPause(fresh);
+  /* the toast lands as the cascade finishes, not on top of it */
+  setTimeout(() => showPauseToast(added, removed), 420);
 };
 document.getElementById('pzToast').onclick = () => document.getElementById('pzToast').classList.remove('show');
 
