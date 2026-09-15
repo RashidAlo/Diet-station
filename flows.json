@@ -970,7 +970,7 @@
       "shots": [
         "plan-quiz/preview.png"
       ],
-      "hidden": true,
+      "hidden": false,
       "entries": [
         {
           "id": "default",
