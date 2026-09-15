@@ -1,5 +1,5 @@
 {
-  "_note": "LAB MENU v1 DECLARATION from the Home lane (rewards steward) for the Hub, which owns flows.json. Merge `lab` into the rewards entry and DROP its legacy `settings` (the three gesture ranges now live here, live:true, with the sidebar's real ranges). Every control is implemented by rewards' window.DSLab.set/run through the page's real paths.",
+  "_note": "LAB MENU v1 DECLARATION from the Home lane (rewards steward) for the Hub, which owns flows.json. Merge `lab` into the rewards entry and DROP its legacy `settings` (the three gesture ranges now live here, live:true, with the sidebar's real ranges). Every control is implemented by rewards' window.DSLab.set/run through the page's real paths. v1.1 (DS renderer additions): prime:true on the four persisted modifiers (ds-mods-rewards is read at boot); copyValues returns {copy}.",
   "id": "rewards",
   "lab": {
     "v": 1,
@@ -66,7 +66,8 @@
             "unit": "px",
             "default": 62,
             "live": true,
-            "note": "Pull at which the last hole pops and the tab rips free."
+            "note": "Pull at which the last hole pops and the tab rips free.",
+            "prime": true
           },
           {
             "key": "stretch",
@@ -78,7 +79,8 @@
             "unit": "px",
             "default": 96,
             "live": true,
-            "note": "Max elastic travel of the pull."
+            "note": "Max elastic travel of the pull.",
+            "prime": true
           },
           {
             "key": "confetti",
@@ -90,7 +92,8 @@
             "unit": "",
             "default": 14,
             "live": true,
-            "note": "Particles bursting from the perforation on tear."
+            "note": "Particles bursting from the perforation on tear.",
+            "prime": true
           }
         ]
       },
@@ -107,7 +110,8 @@
             "unit": "px",
             "default": 0,
             "live": true,
-            "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma."
+            "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma.",
+            "prime": true
           }
         ]
       },
@@ -118,6 +122,12 @@
             "key": "resetCoupons",
             "label": "Reset coupons",
             "type": "action"
+          },
+          {
+            "key": "copyValues",
+            "label": "Copy values",
+            "type": "action",
+            "note": "Puts this recipe on the clipboard — read it to Claude to bake it in."
           }
         ]
       }

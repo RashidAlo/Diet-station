@@ -1129,13 +1129,20 @@ window.DSLab = Object.assign(window.DSLab || {}, { v: 1,
       localStorage.setItem('ds-mods-rewards', JSON.stringify(saved));
     } catch (_) {}
   },
-  run(key) { if (key === 'resetCoupons') requestAnimationFrame(buildCoupons); },
+  /* the renderer owns the clipboard: an action returns { copy } synchronously */
+  run(key) {
+    if (key === 'resetCoupons') requestAnimationFrame(buildCoupons);
+    if (key === 'copyValues') return { copy: recipeText() };
+  },
 });
 
-document.getElementById('sCopy').addEventListener('click', () => {
-  const spec = `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
+function recipeText() {
+  return `rewards playground: tearAt ${MODS.tearAt}px, stretch ${MODS.stretch}px, ` +
     `confetti ${MODS.confetti}, coupon frost ${MODS.frost}px, level ${phone.dataset.level}, ` +
     `theme ${phone.dataset.theme || 'tier'}`;
+}
+document.getElementById('sCopy').addEventListener('click', () => {
+  const spec = recipeText();
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
     b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200);

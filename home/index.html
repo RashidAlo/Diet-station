@@ -1162,17 +1162,21 @@ window.DSLab = Object.assign(window.DSLab || {}, { v: 1,
     else return;
     applyState();
   },
+  /* the renderer owns the clipboard: an action returns { copy } synchronously;
+     Restart is always fresh, so there is no reload action */
   run(key) {
     if (key === 'reset') resetHome();
-    else if (key === 'reloadFresh') location.href = location.pathname + '?fresh=' + Date.now();
+    else if (key === 'copyValues') return { copy: recipeText() };
   },
 });
-document.getElementById('sCopy').onclick = () => {
-  const s = 'home · ' + (MODS.loggedOut ? 'signed-out' : 'signed-in') +
+function recipeText() {
+  return 'home · ' + (MODS.loggedOut ? 'signed-out' : 'signed-in') +
     ' · plan ' + MODS.theme + ' · days ' + MODS.days +
     ' · promo ' + (MODS.promo ? 'on' : 'off') + ' · discounts ' + (MODS.disc ? 'on' : 'off') +
     ' · consult ' + (MODS.consult ? 'on' : 'off');
-  try { navigator.clipboard.writeText(s); } catch (_) {}
+}
+document.getElementById('sCopy').onclick = () => {
+  try { navigator.clipboard.writeText(recipeText()); } catch (_) {}
 };
 
 /* decorative taps */

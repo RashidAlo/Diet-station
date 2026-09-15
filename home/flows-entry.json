@@ -1,5 +1,5 @@
 {
-  "_note": "LAB MENU v1 DECLARATION from the Home lane for the Hub, which owns flows.json. Merge `lab` into the home entry. All controls live:true through home's window.DSLab.set/run (applyState). The in-app home is the native pilot; it renders these same sections natively.",
+  "_note": "LAB MENU v1 DECLARATION from the Home lane for the Hub, which owns flows.json. Merge `lab` into the home entry. All controls live:true through home's window.DSLab.set/run (applyState). The in-app home is the native pilot; it renders these same sections natively. v1.1: reloadFresh dropped (Restart is always fresh); copyValues returns {copy}. No prime: home persists nothing.",
   "id": "home",
   "lab": {
     "v": 1,
@@ -171,8 +171,8 @@
             "type": "action"
           },
           {
-            "key": "reloadFresh",
-            "label": "Reload fresh (clear cache)",
+            "key": "copyValues",
+            "label": "Copy values",
             "type": "action"
           }
         ]
