@@ -701,7 +701,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·30</div>
+  <div class="s-foot" id="buildInfo">checkout ·31</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -725,7 +725,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·30';
+const BUILD = 'checkout ·31';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -1586,6 +1586,16 @@ function applyContext(ctx) {
   }
   else render();
 }
+/* PRIMED from the hub gear (lab `prime: true`): ds-mods-checkout carries the
+   tier / entry chosen before launch. The tier is CONSUMED once — it is global
+   (ds-tier-v1), so a lingering primer would overwrite a tier set in another
+   flow on every load. The entry stays primed. An opener's context still wins. */
+(function primeFromMods() {
+  let dirty = false;
+  if (TIERS[MODS.tier]) { S.tier = MODS.tier; writeGlobalTier(S.tier); delete MODS.tier; dirty = true; }
+  if (['rewards', 'plans', 'renew'].includes(MODS.entry)) S.entry = MODS.entry;
+  if (dirty) try { localStorage.setItem('ds-mods-checkout', JSON.stringify(MODS)); } catch (_) {}
+})();
 (function bootContext() {
   const q = new URLSearchParams(location.search);
   const raw = q.get('ctx');
@@ -1683,13 +1693,26 @@ function labReset() {
   render(); showScreen('plans', true);
   paintLabPickers();
 }
-function labCopy() {
+/* the price breakdown as text. Lab paths RETURN it (the renderer copies inside
+   the tap — native has no user activation, a promise loses it on web); only
+   the sidebar's own click writes the clipboard itself */
+function labCopyText() {
   const q = quote(S.method);
   const txt = `checkout — tier ${S.tier} · ${S.entry} · plan ${S.plan} · ${currentDuration().id}\n` +
     `list KD${q.list} · subtotal KD${q.subtotal} · coupon ${q.coupon ? q.coupon.code + ' −KD' + q.cut : 'none'} · ` +
     `method ${S.method} −KD${q.mDelta} · total KD${q.total} · saved KD${q.saved}`;
-  navigator.clipboard && navigator.clipboard.writeText(txt);
+  return txt;
+}
+function labCopy() {
+  navigator.clipboard && navigator.clipboard.writeText(labCopyText());
   toast('Values copied');
+}
+/* whether the coupon loop can close on this host — a reviewer ripping a coupon
+   and seeing no price move should be able to tell why */
+function labBuildLine() {
+  const loop = !DS_ROUTER ? 'standalone (use the Coupon picker)'
+             : routerCan('result') ? 'rewards → result ✓' : 'router without result relay';
+  return BUILD + ' · coupons: ' + loop;
 }
 
 /* LAB MENU v1 (system/platform.html, 8a93962): the declaration mirrors
@@ -1697,10 +1720,10 @@ function labCopy() {
    options depend on the tier. lab-shell supplies chrome(). */
 const LAB_DECL = { v: 1, sections: [
   { title: 'Member', controls: [
-    { key: 'tier', label: 'Loyalty tier', type: 'choice', live: true, default: TIER_DEFAULT,
+    { key: 'tier', label: 'Loyalty tier', type: 'choice', live: true, prime: true, default: TIER_DEFAULT,
       note: 'Which coupons are unlocked and which badge rides the discount. Shared with every flow.',
       options: [{ v: 'bronze', label: 'Bronze' }, { v: 'silver', label: 'Silver' }, { v: 'gold', label: 'Gold' }, { v: 'vip', label: 'VIP' }] },
-    { key: 'entry', label: 'Entry point', type: 'choice', live: true, default: 'plans',
+    { key: 'entry', label: 'Entry point', type: 'choice', live: true, prime: true, default: 'plans',
       note: 'From coupons: arrives with a ripped coupon. Signed out: clean plan picker. Renew: straight to durations.',
       options: [{ v: 'rewards', label: 'From coupons' }, { v: 'plans', label: 'Signed out' }, { v: 'renew', label: 'Renew' }] } ] },
   { title: 'Modifiers', controls: [
@@ -1731,7 +1754,7 @@ window.DSLab = Object.assign(window.DSLab || {}, {
         note: 'Stands in for ripping a tab in Discounts; feeds the same code through the same entry point.',
         options: walletCodes(S.tier).map(code => ({ v: code, label: decodeCoupon(code).label }))
           .concat([{ v: '', label: 'None' }]) } ] };
-    return { v: 1, sections: [LAB_DECL.sections[0], coupon].concat(LAB_DECL.sections.slice(1)) };
+    return { v: 1, build: labBuildLine(), sections: [LAB_DECL.sections[0], coupon].concat(LAB_DECL.sections.slice(1)) };
   },
   state() {
     return { tier: S.tier, entry: S.entry, coupon: S.coupon || '', countdown: MODS.countdown, push: MODS.push };
@@ -1744,8 +1767,8 @@ window.DSLab = Object.assign(window.DSLab || {}, {
     return this.state();
   },
   run(actionKey) {
+    if (actionKey === 'copy') return { copy: labCopyText() };   /* synchronous */
     if (actionKey === 'reset') labReset();
-    else if (actionKey === 'copy') labCopy();
     return this.state();
   },
 });

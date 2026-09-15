@@ -345,6 +345,7 @@
             "label": "Loyalty tier",
             "type": "choice",
             "live": true,
+            "prime": true,
             "default": "gold",
             "note": "Which coupons are unlocked and which badge rides the discount. Shared with every flow (ds-tier-v1).",
             "options": [
@@ -371,6 +372,7 @@
             "label": "Entry point",
             "type": "choice",
             "live": true,
+            "prime": true,
             "default": "plans",
             "note": "From coupons: arrives with a ripped coupon. Signed out: clean plan picker. Renew: straight to durations.",
             "options": [
@@ -433,7 +435,7 @@
             "key": "copy",
             "label": "Copy values",
             "type": "action",
-            "note": "The current price breakdown, as text."
+            "note": "The current price breakdown, as text (run returns { copy })."
           }
         ]
       }
