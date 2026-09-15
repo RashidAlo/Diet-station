@@ -2416,6 +2416,11 @@ final class FlowPreloader {
                                              date: e["date"] as? String,
                                              status: e["status"] as? String,
                                              badge: e["badge"] as? String,
+                                             label: e["label"] as? String,
+                                             code: e["code"] as? String,
+                                             off: e["off"] as? String,
+                                             ends: (e["ends"] as? NSNumber)?.doubleValue,
+                                             count: (e["count"] as? NSNumber)?.intValue,
                                              from: fromRect))
                 }
                 let bar = body["bar"] as? String
@@ -2517,7 +2522,7 @@ final class FlowPreloader {
                             // capability announced by one relay and not the
                             // other would hand the tile over on one surface
                             // and orphan the number on the other.
-                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true, tileRows: 2, dateWidget: 1, navGlyphs: 1, navPill: 1, couponsFab: 1 })",
+                            "window.DSNativeChrome && DSNativeChrome([\(ids)], { scrubMotion: true, tileRows: 2, dateWidget: 1, navGlyphs: 1, navPill: 1, couponsFab: 1, couponsPill: 1 })",
                             in: frame, in: .page, completionHandler: nil)
                     }
                 }
