@@ -1223,7 +1223,85 @@
           "code": "// validation: number.length < 8 on submit -> translateX shake (AUTH.timing.shake),\n//   underline + hint flip to #ED1C24, Haptics.notificationAsync(ERROR)\n// OTP: hidden TextInput drives 4 cells; on 4th digit pulse cells (scale 1.07)\n//   for verifyMs, then code === '0000' ? error flash + clear : success\n// resend: mm:ss countdown from resendS; on 0 the label becomes a red underlined link\n// Face ID: expo-local-authentication authenticateAsync(); success ->\n//   Haptics.notificationAsync(SUCCESS), tick draw-on (stroke-dashoffset), dismiss to home\n// success: sheet auto-dismisses after ~1.6s back to the (now signed-in) home"
         }
       ],
-      "downloads": []
+      "downloads": [],
+      "lab": {
+        "v": 1,
+        "sections": [
+          {
+            "title": "Journey",
+            "controls": [
+              {
+                "key": "jump-signin",
+                "label": "Sign in",
+                "type": "action",
+                "live": true,
+                "note": "Back to an empty phone field"
+              },
+              {
+                "key": "jump-otp",
+                "label": "OTP",
+                "type": "action",
+                "live": true,
+                "note": "Mock number 97377282. Code 0000 shows the error state; any other code succeeds"
+              },
+              {
+                "key": "run-faceid",
+                "label": "Face ID",
+                "type": "action",
+                "live": true,
+                "note": "Runs the simulated scan; it always matches"
+              },
+              {
+                "key": "jump-success",
+                "label": "Success",
+                "type": "action",
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Feel",
+            "controls": [
+              {
+                "key": "faceMs",
+                "label": "Face ID scan",
+                "type": "range",
+                "min": 600,
+                "max": 2600,
+                "step": 100,
+                "unit": "ms",
+                "default": 1400,
+                "live": true,
+                "note": "How long the scan runs before it confirms"
+              },
+              {
+                "key": "verifyMs",
+                "label": "OTP verify",
+                "type": "range",
+                "min": 200,
+                "max": 1500,
+                "step": 50,
+                "unit": "ms",
+                "default": 550,
+                "live": true,
+                "note": "Pause after the 4th digit while the code checks"
+              },
+              {
+                "key": "resendS",
+                "label": "Resend timer",
+                "type": "range",
+                "min": 5,
+                "max": 60,
+                "step": 5,
+                "unit": "s",
+                "default": 30,
+                "live": true,
+                "note": "Countdown before Resend unlocks"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "checkout",
