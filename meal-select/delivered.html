@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>DietStation — Delivered Day</title>
+<script>
+/* THE DELIVERED DAY (Figma, page "Jul 15 - ongoing": Calendar & Meal selection >
+   "Meals Selectedn" 15040:181684 for the sheet, Meal Cards 15075:185973 unrated /
+   15075:185975 rated, English > Rating > Rating Overlay 10823:41505-41510).
+   Rashid: "a delivered state for a calendar day which shows meals as rows. You tap
+   on a meal to rate it. The meal row has a rated and unrated icon state", and the
+   rating overlay's "text changing based on the level you pick".
+   Opened by the calendar exactly like the selector: its own native host when the
+   relay can host sheets, the calendar's iframe otherwise.
+   NATIVE FROM THE FIRST FRAME: hosted, the X and the calorie bar are twins, hidden
+   here at parse. */
+var DS_HOSTED = window.parent === window
+  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHost >= 1)
+  && /[?&]embed=1/.test(location.search)
+  && !/[?&]sheethost=0/.test(location.search);
+if (DS_HOSTED && /DietStationLab/.test(navigator.userAgent))
+  document.documentElement.classList.add('ds-chrome-core', 'ds-chrome-gauge');
+</script>
+<script src="meal-data.js?v=1"></script>
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; font-display: swap; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: transparent; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif; -webkit-user-select: none; user-select: none; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 0 0; }
+  html.ds-chrome-core #dvClose { opacity: 0 !important; pointer-events: none !important; }
+  html.ds-chrome-gauge #dvGauge { visibility: hidden !important; }
+
+  /* ---- the sheet: Figma "Select Meals Sheet" at y 77, radius 38, shadow 0 0 16 ---- */
+  .dv-back { position: absolute; left: 10px; right: 10px; top: calc(var(--sheet-top) - 15px);
+    height: 60px; border-radius: 38px 38px 0 0; background: #fff; opacity: .66; }
+  .dv-sheet { position: absolute; left: 0; right: 0; bottom: 0; top: var(--sheet-top);
+    background: #fff; border-radius: 38px 38px 0 0; box-shadow: 0 0 16px rgba(56,64,74,.1);
+    display: flex; flex-direction: column; overflow: hidden; }
+  html.dv-iframe .dv-sheet, html.dv-iframe .dv-back { transform: translateY(103%);
+    transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  html.dv-iframe.dv-in .dv-sheet, html.dv-iframe.dv-in .dv-back { transform: none; }
+  .dv-grab { position: absolute; left: calc(50% - 18px); top: 12px; width: 36px; height: 5px;
+    border-radius: 100px; background: #d1d1d1; }
+  .dv-head { flex: none; display: flex; align-items: center; justify-content: space-between;
+    padding: 32px 20px 8px; position: relative; }
+  .dv-close { width: 40px; height: 40px; border-radius: 999px; border: 1px solid #e5e5e5; background: #fff;
+    box-shadow: 0 1px 15px rgba(56,64,74,.1); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex: none; transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+  .dv-close:active { transform: scale(.92); }
+  .dv-close img { width: 20px; height: 20px; display: block; }
+  .dv-title { position: absolute; left: 0; right: 0; text-align: center; pointer-events: none;
+    font: 500 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-badge { height: 40px; padding: 4px 11px; border-radius: 1024px; background: #f5f5f5; flex: none;
+    display: flex; align-items: center; gap: 4px; font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0d0d0d; }
+  .dv-badge img { width: 16px; height: 16px; display: block; }
+  .dv-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    padding: 0 0 150px; scrollbar-width: none; }
+  .dv-list::-webkit-scrollbar { display: none; }
+  .dv-rule { height: 1px; background: #ededed; margin: 8px 0; }
+
+  /* ---- Meal Cards (15075:185973 / 185975) ---- */
+  .dv-card { display: flex; align-items: center; padding: 6px 16px; cursor: pointer; }
+  .dv-card:active .dv-thumb { transform: scale(.97); }
+  .dv-thumb { position: relative; width: 106px; height: 106px; flex: none; padding: 4px; border-radius: 22px;
+    border: 1px solid #ededed; background: #fff; transition: transform .2s cubic-bezier(.3,.8,.3,1); }
+  .dv-thumb > img.ph { width: 100%; height: 100%; border-radius: 18px; object-fit: cover; display: block; }
+  .dv-thumb .i { position: absolute; left: 10px; top: 10px; width: 20px; height: 20px; display: flex;
+    align-items: center; justify-content: center; filter: drop-shadow(0 1px 5px rgba(56,64,74,.1)); }
+  .dv-thumb .i img { width: 16px; height: 16px; display: block; }
+  .dv-body { flex: 1; min-width: 0; padding: 8px 8px 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .dv-top { display: flex; align-items: center; gap: 6px; }
+  .dv-cat { flex: 1; min-width: 0; height: 24px; display: flex; align-items: center;
+    font: 300 12px/16px 'Urbane Rounded', sans-serif; color: #5e5e5e; white-space: nowrap; }
+  .dv-rate { width: 24.24px; height: 24.24px; border-radius: 45px; background: #ffc52e; flex: none;
+    display: flex; align-items: center; justify-content: center; }
+  .dv-rate img { width: 11.4px; height: 11.4px; display: block; }
+  .dv-rated { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 63px;
+    border: 1px solid #ededed; background: #fff; flex: none; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-rated img { width: 16px; height: 16px; display: block; }
+  .dv-chip-pop { animation: dvchip .5s cubic-bezier(.2,.8,.3,1.25) both; }
+  @keyframes dvchip { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: none; } }
+  .dv-name { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-mac { display: flex; align-items: center; gap: 11px; padding-right: 8px; }
+  .dv-kcal { flex: 1; display: flex; align-items: center; gap: 2px; font-size: 12px; line-height: 16px; }
+  .dv-kcal b { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-kcal i { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e; font-style: normal; }
+  .dv-pcf { display: flex; gap: 11px; font: 400 10px/12px 'Proxima Nova', sans-serif; color: #5e5e5e; white-space: nowrap; }
+  .dv-pcf span b { font-weight: 400; margin-left: 4px; }
+
+  /* ---- the calorie bar (Meal Selection Navigator 2.0), web fallback of the native gauge ---- */
+  .dv-edge { position: absolute; left: 0; right: 0; bottom: 0; height: 126px; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,.9) 70%); }
+  .dv-gauge { position: absolute; left: calc(50% - 179px); bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 358px; height: 69px; border-radius: 296px; overflow: hidden;
+    background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 8px 40px rgba(0,0,0,.12), inset 0 1px 1px rgba(255,255,255,.6); }
+  .dv-gauge .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 296px;
+    background: linear-gradient(90deg, rgba(238,32,35,.94), rgba(245,120,19,.94) 62%, rgba(253,215,2,.94) 96%);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+  .dv-gauge .ct { position: absolute; inset: 0; display: flex; align-items: center; gap: 20px; padding: 0 24px; color: #fff; }
+  .dv-gauge .k { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); min-width: 96px; }
+  .dv-gauge .k small { display: block; font: 500 9px/10px 'Urbane Rounded', sans-serif; }
+  .dv-gauge .k b { font: 600 19px/25px 'Urbane Rounded', sans-serif; }
+  .dv-gauge .k i { font: 500 10px/14px 'Urbane Rounded', sans-serif; opacity: .46; font-style: normal; }
+  .dv-gauge .m { display: flex; gap: 10px; color: #0b0e12; }
+  .dv-gauge .m small { display: block; font: 300 9px/12px 'Urbane Rounded', sans-serif; opacity: .6; }
+  .dv-gauge .m b { font: 500 15px/20px 'Urbane Rounded', sans-serif; }
+
+  /* ---- Rating Overlay (10823:41505..41510): a bottom sheet over the day ---- */
+  .rt-veil { position: absolute; inset: 0; background: rgba(11,14,18,.42); opacity: 0; pointer-events: none;
+    transition: opacity .32s ease; z-index: 50; }
+  .rt-veil.show { opacity: 1; pointer-events: auto; }
+  .rt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 51; background: #fff;
+    border-radius: 28px 28px 0 0; padding: 40px 0 calc(32px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: center;
+    transform: translateY(105%); transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .rt.show { transform: none; }
+  .rt-x { position: absolute; right: 16px; top: 18px; width: 44px; height: 44px; border: none; background: none;
+    padding: 12px; cursor: pointer; }
+  .rt-x img { width: 24px; height: 24px; display: block; }
+  .rt-in { width: min(347px, calc(100% - 56px)); display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .rt-head { padding-top: 52px; display: flex; flex-direction: column; align-items: center; gap: 13px; text-align: center; color: #0b0e12; }
+  .rt-head h2 { font: 600 24px/32px 'Urbane Rounded', sans-serif; }
+  .rt-head p { font: 300 14px/20px 'Urbane Rounded', sans-serif; }
+  .rt-stars { display: flex; padding: 9.88px; margin-top: -6px; }
+  .rt-stars button { width: 69.17px; height: 69.17px; margin-right: -16.06px; border: none; background: none; padding: 0;
+    cursor: pointer; position: relative; }
+  .rt-stars button:last-child { margin-right: 0; }
+  .rt-stars button img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .18s ease; }
+  .rt-stars button .on { opacity: 0; }
+  .rt-stars button.lit .on { opacity: 1; }
+  .rt-stars button.pop { animation: rtstar .42s cubic-bezier(.2,.8,.3,1.3) both; }
+  @keyframes rtstar { 0% { transform: scale(.7); } 55% { transform: scale(1.18); } 100% { transform: none; } }
+  .rt-field { width: 100%; height: 65px; border: 1px solid #e5e5e5; border-radius: 8px; background: #f5f5f5;
+    padding: 8px 12px; resize: none; outline: none; font: 400 14px/20px 'Proxima Nova', sans-serif; color: #0b0e12;
+    -webkit-user-select: text; user-select: text; }
+  .rt-field::placeholder { color: #7a7a7a; transition: color .2s ease; }
+  .rt-submit { width: min(353px, calc(100% - 50px)); height: 53px; border: none; border-radius: 1024px; margin-top: 22px;
+    font: 500 16px/1 'Urbane Rounded', sans-serif; color: #fff; cursor: pointer;
+    background: linear-gradient(90deg, #ee2023, #fd6d02); transition: transform .15s cubic-bezier(.3,.8,.3,1), background .25s ease, color .25s ease; }
+  .rt-submit:active:not(:disabled) { transform: scale(.97); }
+  .rt-submit:disabled { background: #f9f9f9; color: #999; cursor: default; }
+  /* the dish climbs out of the card with the first star and brings its voice */
+  .rt-dish { position: absolute; left: calc(50% - 53px); top: 63px; width: 106px; height: 134px; border-radius: 18px;
+    box-shadow: 0 0 11.9px rgba(56,64,74,.3); opacity: 0; transform: scale(.7); pointer-events: none;
+    transition: top .55s cubic-bezier(.2,.9,.3,1.25), opacity .25s ease, transform .5s cubic-bezier(.2,.9,.3,1.3); }
+  .rt-dish img.ph { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: block; }
+  .rt.voiced .rt-dish { top: -61px; opacity: 1; transform: none; }
+  .rt-speech { position: absolute; left: calc(50% + 2px); top: -77px; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 316px; }
+  .rt-bubble { background: #ed1c24; border-radius: 12px; padding: 16px; white-space: nowrap;
+    font: 500 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9; opacity: 0; transform: translateY(8px) scale(.9);
+    transition: opacity .25s ease .12s, transform .45s cubic-bezier(.2,.9,.3,1.3) .12s; }
+  .rt.voiced .rt-bubble { opacity: 1; transform: none; }
+  .rt-bubble.say { animation: rtsay .38s cubic-bezier(.2,.9,.3,1.3); }
+  @keyframes rtsay { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
+  .rt-dot14, .rt-dot8 { border-radius: 50%; background: #ed1c24; opacity: 0; transition: opacity .2s ease .2s; }
+  .rt-dot14 { width: 14px; height: 14px; } .rt-dot8 { width: 8px; height: 8px; }
+  .rt.voiced .rt-dot14, .rt.voiced .rt-dot8 { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .rt, .rt-dish, .rt-bubble, .dv-sheet, .dv-back { transition: none !important; }
+    .rt-stars button.pop, .dv-chip-pop, .rt-bubble.say { animation: none !important; } }
+</style>
+</head>
+<body>
+<div id="safeProbe"></div>
+<div class="dv-back"></div>
+<div class="dv-sheet" id="dvSheet">
+  <div class="dv-grab"></div>
+  <div class="dv-head">
+    <button class="dv-close" id="dvClose" aria-label="Close"><img src="dv-close.svg" alt=""></button>
+    <div class="dv-title" id="dvTitle"></div>
+    <div class="dv-badge"><img src="dv-check.svg" alt="">Delivered</div>
+  </div>
+  <div class="dv-list" id="dvList"></div>
+  <div class="dv-edge"></div>
+  <div class="dv-gauge" id="dvGauge">
+    <div class="fill" id="dvFill"></div>
+    <div class="ct">
+      <div class="k"><small>Kcal</small><b id="dvKcal">0</b><i id="dvCap">/1860</i></div>
+      <div class="m">
+        <div><small>Protein</small><b id="dvP">0g</b></div>
+        <div><small>Carbs</small><b id="dvC">0g</b></div>
+        <div><small>Fat</small><b id="dvF">0g</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="rt-veil" id="rtVeil"></div>
+<div class="rt" id="rt" role="dialog" aria-label="Rate meal">
+  <div class="rt-dish"><img class="ph" id="rtImg" src="" alt="">
+    <div class="rt-speech"><div class="rt-bubble" id="rtBubble"></div><div class="rt-dot14"></div><div class="rt-dot8"></div></div>
+  </div>
+  <button class="rt-x" id="rtX" aria-label="Close"><img src="rate-close.svg" alt=""></button>
+  <div class="rt-in">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="rt-head"><h2>Rate Meal</h2><p id="rtName"></p></div>
+        <div class="rt-stars" id="rtStars"></div>
+      </div>
+      <textarea class="rt-field" id="rtNote" placeholder="Tell us what you think"></textarea>
+    </div>
+  </div>
+  <button class="rt-submit" id="rtSubmit" disabled>Submit</button>
+</div>
+
+<script>
+const BUILD = 'delivered 2026-09-15 · 1 (delivered day + rating)';
+const $ = id => document.getElementById(id);
+function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
+const QS = new URLSearchParams(location.search);
+const MON = QS.get('mon') || 'Mar', DAY = +QS.get('day') || 15;
+const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const { DISHES, CATS } = window.DS_MEALS;
+function ordinal(n) { const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+
+/* ---- the sheet's top: the selector's SHEET_GAP (77 at safeTop 62) ---- */
+const REAL_PAD = (DS_HOSTED && window.DSNativeCaps && typeof DSNativeCaps.safeTop === 'number')
+  ? Math.max(28, DSNativeCaps.safeTop - 1)
+  : Math.max(28, (parseFloat(getComputedStyle($('safeProbe')).paddingTop) || 0) - 1);
+document.documentElement.style.setProperty('--sheet-top', (REAL_PAD + 16) + 'px');
+if (!DS_HOSTED) document.documentElement.classList.add('dv-iframe');
+
+/* ---- what was delivered: the plan's quotas, the same menu, a stable pick per day ---- */
+const MEALS = [];
+CATS.forEach((cat, ci) => {
+  for (let n = 0; n < cat.quota; n++) {
+    const list = DISHES[cat.id];
+    const i = (DAY * 3 + ci * 5 + n * 2) % list.length;
+    MEALS.push({ key: MON + ':' + DAY + ':' + cat.id + ':' + n, cat: cat.title, d: list[i] });
+  }
+});
+let target = 1860;
+try { target = +JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}').target || 1860; } catch (_) {}
+
+/* ---- ratings persist per delivered meal ---- */
+const RKEY = 'ds-meal-ratings-v1';
+let RATINGS = {};
+try { RATINGS = JSON.parse(localStorage.getItem(RKEY) || '{}'); } catch (_) {}
+function saveRatings() { try { localStorage.setItem(RKEY, JSON.stringify(RATINGS)); } catch (_) {} }
+
+function chipHTML(m) {
+  const r = RATINGS[m.key];
+  return r ? '<span class="dv-rated">' + r.stars + '<img src="dv-star-badge.svg" alt=""></span>'
+           : '<span class="dv-rate"><img src="dv-star-unrated.svg" alt=""></span>';
+}
+function render() {
+  $('dvTitle').textContent = MON + ' ' + ordinal(DAY);
+  const list = $('dvList');
+  list.innerHTML = '';
+  let k = 0, p = 0, c = 0, f = 0;
+  MEALS.forEach((m, i) => {
+    k += m.d.kcal; p += m.d.p; c += m.d.c; f += m.d.f;
+    if (i) { const rule = document.createElement('div'); rule.className = 'dv-rule'; list.appendChild(rule); }
+    const row = document.createElement('div');
+    row.className = 'dv-card';
+    row.innerHTML =
+      '<div class="dv-thumb"><img class="ph" src="' + m.d.img + '" alt=""><span class="i"><img src="dv-info.svg" alt=""></span></div>' +
+      '<div class="dv-body">' +
+        '<div class="dv-top"><span class="dv-cat">' + m.cat + '</span><span class="chip">' + chipHTML(m) + '</span></div>' +
+        '<div class="dv-name">' + m.d.n + '</div>' +
+        '<div class="dv-mac"><span class="dv-kcal"><b>' + m.d.kcal + '</b><i>Kcal</i></span>' +
+          '<span class="dv-pcf"><span>Protein<b>' + m.d.p + 'g</b></span><span>Carbs<b>' + m.d.c + 'g</b></span><span>Fat<b>' + m.d.f + 'g</b></span></span></div>' +
+      '</div>';
+    row.onclick = () => openRating(m, row);
+    list.appendChild(row);
+  });
+  $('dvKcal').textContent = k; $('dvCap').textContent = '/' + target;
+  $('dvP').textContent = p + 'g'; $('dvC').textContent = c + 'g'; $('dvF').textContent = f + 'g';
+  const frac = Math.min(1, k / target);
+  $('dvFill').style.width = Math.max(24.73, frac * 100) + '%';
+  return { k, p, c, f, frac };
+}
+const TOT = render();
+
+/* ---- Rating Overlay: the voice and the prompt follow the stars (Figma, verbatim) ---- */
+const SAYS = [
+  { say: '', hint: 'Tell us what you think' },
+  { say: 'Why do you hate me this much yahya?', hint: 'At least tell me why...' },
+  { say: "I've seen better days", hint: 'What would fix me?' },
+  { say: "Thank you, I'll try better next time", hint: 'How can I be even better?' },
+  { say: 'I think you like me', hint: 'Help me earn that fifth star' },
+  { say: 'I love you too!', hint: 'Go on spoil me some more!' },
+];
+const stars = $('rtStars');
+for (let i = 1; i <= 5; i++) {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', i + (i === 1 ? ' star' : ' stars'));
+  b.innerHTML = '<img src="rate-star-off.svg" alt=""><img class="on" src="rate-star-on.svg" alt="">';
+  b.onclick = () => setStars(i, true);
+  stars.appendChild(b);
+}
+let rating = null, level = 0;
+function setStars(n, fromTap) {
+  const was = level;
+  level = n;
+  [...stars.children].forEach((b, i) => {
+    b.classList.toggle('lit', i < n);
+    if (fromTap && i < n) {
+      b.classList.remove('pop'); void b.offsetWidth;
+      b.style.animationDelay = (Math.max(0, i - Math.min(was, n - 1)) * 45) + 'ms';
+      b.classList.add('pop');
+    }
+  });
+  const s = SAYS[n];
+  $('rtNote').placeholder = s.hint;
+  $('rt').classList.toggle('voiced', n > 0);
+  const bub = $('rtBubble');
+  if (n > 0) {
+    bub.textContent = s.say;
+    if (was > 0 && was !== n) { bub.classList.remove('say'); void bub.offsetWidth; bub.classList.add('say'); }
+  }
+  $('rtSubmit').disabled = n === 0;
+  if (fromTap) vibrate(n === 5 ? [10, 40, 18] : 8);
+}
+function hideTwins(hide) { if (window.DVChrome) window.DVChrome(hide); }
+function openRating(m, row) {
+  rating = { m, row };
+  const r = RATINGS[m.key];
+  $('rtImg').src = m.d.img;
+  $('rtName').textContent = m.d.n;
+  $('rtNote').value = r ? (r.note || '') : '';
+  setStars(r ? r.stars : 0, false);
+  hideTwins(true);
+  $('rtVeil').classList.add('show');
+  $('rt').classList.add('show');
+  vibrate(8);
+}
+function closeRating() {
+  $('rtVeil').classList.remove('show');
+  $('rt').classList.remove('show');
+  $('rtNote').blur();
+  setTimeout(() => { if (!$('rt').classList.contains('show')) hideTwins(false); }, 420);
+}
+$('rtX').onclick = closeRating;
+$('rtVeil').onclick = closeRating;
+$('rtSubmit').onclick = () => {
+  if (!rating || !level) return;
+  RATINGS[rating.m.key] = { stars: level, note: $('rtNote').value.trim(), at: Date.now() };
+  saveRatings();
+  vibrate([10, 40, 18]);
+  const chip = rating.row.querySelector('.chip');
+  closeRating();
+  /* the row answers after the sheet has started down, so the change is seen */
+  setTimeout(() => {
+    chip.innerHTML = chipHTML(rating.m);
+    chip.firstChild.classList.add('dv-chip-pop');
+  }, 260);
+};
+
+/* ---- leaving: the calendar owns the overlay ---- */
+let closing = false;
+function dismiss() {
+  if (closing) return;
+  closing = true;
+  vibrate(8);
+  if (DS_HOSTED) {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'sheet-close', then: { t: 'ds-close' } }); } catch (_) {}
+    return;
+  }
+  document.documentElement.classList.remove('dv-in');
+  setTimeout(() => { try { parent.postMessage({ t: 'ds-close' }, '*'); } catch (_) {} }, 380);
+}
+$('dvClose').onclick = dismiss;
+/* iframe path: the sheet rises on the house curve. Flush the off-screen style
+   first, then flip the class in the same task — no rAF, which a hidden or
+   throttled frame may never run (the sheet would stay parked below) */
+if (!DS_HOSTED) { void getComputedStyle($('dvSheet')).transform; document.documentElement.classList.add('dv-in'); }
+
+/* ---- native twins (hosted): the X and the calorie bar, complete from the first post ---- */
+(function () {
+  if (!DS_HOSTED || !/DietStationLab/.test(navigator.userAgent)) return;
+  const FLOW = 'delivered';
+  let fallback = false, gaugeOn = false;
+  function post() {
+    if (fallback || closing) return;
+    const r = $('dvClose').getBoundingClientRect();
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'light', mode: 'sheet', complete: true,
+        els: [{ id: 'close', x: r.left, y: r.top, w: r.width, h: r.height, r: r.width / 2 }] });
+    } catch (_) {}
+  }
+  function postGauge() {
+    if (fallback || closing) return;
+    const g = $('dvGauge').getBoundingClientRect();
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'macrogauge', flow: FLOW, surface: 'light',
+        rect: { x: g.left, y: g.top, w: g.width, h: g.height },
+        fill: 0.2473 + TOT.frac * (1 - 0.2473), kcal: TOT.k, goal: target, p: TOT.p, c: TOT.c, f: TOT.f,
+        next: false, state: 'progress', dock: 'none', warn: '', selc: '#ED1C24', selcDark: false, instant: false });
+      gaugeOn = true;
+    } catch (_) {}
+  }
+  window.DVChrome = function (hide) {
+    if (fallback || closing) return;
+    try {
+      if (hide) {
+        webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'light', mode: 'sheet', els: [], instant: true });
+        webkit.messageHandlers.ds.postMessage({ t: 'macrogauge', flow: FLOW, clear: true });
+      } else { post(); postGauge(); }
+    } catch (_) {}
+  };
+  window.DSChromeTap = function (id) { if (id === 'close') dismiss(); };
+  window.DSNativeChrome = function (ids) {
+    if ((ids || []).indexOf('close') < 0) document.documentElement.classList.remove('ds-chrome-core');
+  };
+  window.DSNativeGauge = function (on) { if (!on) document.documentElement.classList.remove('ds-chrome-gauge'); };
+  window.DSSheet = function (phase) {
+    if (phase === 'fallback') {
+      fallback = true;
+      try {
+        webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: FLOW, surface: 'light', mode: 'sheet', els: [] });
+        webkit.messageHandlers.ds.postMessage({ t: 'macrogauge', flow: FLOW, clear: true });
+      } catch (_) {}
+      document.documentElement.classList.remove('ds-chrome-core', 'ds-chrome-gauge');
+    }
+  };
+  function boot() { post(); postGauge(); }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+</body>
+</html>

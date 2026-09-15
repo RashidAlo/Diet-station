@@ -559,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 45 (pause/X swap lands with the header)';
+const BUILD = 'calendar 2026-09-15 · 46 (delivered days open their meals to rate)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -711,6 +711,11 @@ function renderMonths(popNew) {
     } else if (st === 'auto' || st === 'sel') {
       el.classList.add('tap');
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
+    } else if (st === 'rate' || st === 'star') {
+      /* DELIVERED (Rashid, 2026-09-15): a delivered day opens its meals as rows,
+         each one tappable to rate (delivered.html, Figma "Meals Selectedn") */
+      el.classList.add('tap');
+      el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false, 'delivered');
     } else {
       el.onclick = () => nudge(el);
     }
@@ -808,8 +813,12 @@ function overlaySrc(mon, day, auto) {
       ? '&rpt=' + (new URLSearchParams(location.search)).get('rpt') : '') +
     '&v=' + Date.now();
 }
-function openDay(mon, day, auto) {
+function deliveredSrc(mon, day) {
+  return 'delivered.html?embed=1&cal=1&mon=' + mon + '&day=' + day + '&v=' + Date.now();
+}
+function openDay(mon, day, auto, page) {
   if (ovFrame || ovHosted) return;
+  const src = page === 'delivered' ? deliveredSrc(mon, day) : overlaySrc(mon, day, auto);
   vibrate(8);
   /* the tap's feedback is ours and immediate in both paths: the veil dissolves
      in place and the haptic fires while the host loads */
@@ -820,7 +829,7 @@ function openDay(mon, day, auto) {
       webkit.messageHandlers.ds.postMessage({ t: 'sheet-open',
         /* resolved exactly as the browser resolves an iframe src — against the
            document's base, not location — so the two paths load the same URL */
-        url: new URL(overlaySrc(mon, day, auto), document.baseURI).href });
+        url: new URL(src, document.baseURI).href });
     } catch (_) {}
     /* native buffers down-messages until the host posts ds-ready, so the
        statuses can go now; the selector's late-repaint path covers order */
@@ -831,7 +840,7 @@ function openDay(mon, day, auto) {
   ovFrame.className = 'ov-frame';
   /* v= keeps the overlay out of the WKWebView cache — Rashid kept getting
      stale builds because this iframe src was the one unbusted URL */
-  ovFrame.src = overlaySrc(mon, day, auto);
+  ovFrame.src = src;
   document.getElementById('phone').appendChild(ovFrame);
   /* the scrubber shows each day's STATUS (Rashid) and only the calendar
      knows it — dayStatus() needs the whole month model, the lock clock and
