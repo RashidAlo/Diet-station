@@ -216,12 +216,15 @@
     <p class="desc">Flow folders are self-contained dev chunks, so a flow never links to <code>/system/</code>. Copy
       <b>both</b> files into the flow&rsquo;s folder and link the copies. Line 1 is a version stamp, and
       everything after it must stay byte-identical to the source.</p>
+    <p class="spec"><b>Bump <code>?v=</code> on the link with every copy.</b> An unversioned link keeps serving the old
+      file from cache (browser and the app&rsquo;s web view alike). Checkout saw v2&rsquo;s bevel survive a v4 copy until the
+      href changed. <code>?v=</code> is the component version from line 1.</p>
     <p class="spec"><b>No local overrides after the link.</b> A rule placed after the copy to change the card is drift
       in disguise: the diff check passes while the flows diverge. Propose the change to the source instead (that is how
       v2 came in), then copy it again.</p>
     <div class="codewrap"><pre id="pcUse">&lt;!-- in the flow's &lt;head&gt;, after its @font-face rules --&gt;
-&lt;link rel="stylesheet" href="price.css"&gt;
-&lt;link rel="stylesheet" href="plancard.css"&gt;
+&lt;link rel="stylesheet" href="price.css?v=2"&gt;      &lt;!-- ?v = the component version on line 1 --&gt;
+&lt;link rel="stylesheet" href="plancard.css?v=4"&gt;   &lt;!-- bump it with EVERY re-vendor --&gt;
 
 # copy (from the repo root)
 cp system/components/price.css    &lt;flow&gt;/price.css
@@ -256,7 +259,7 @@ done</pre><button class="copycode" data-copy="pcUse">Copy</button></div>
         <code>diet</code>&rarr;<code>thediet</code> and <code>body</code>&rarr;<code>bodybuilding</code>, drop the inline
         gradient styles, add <code>grad</code> to the price slot. Its strike moves from 1.6px/&minus;9.9&deg; to Figma&rsquo;s
         1px/&minus;9.87&deg;.</span></div>
-    <div class="mrow"><span class="mn">Checkout &middot; plans</span><span class="badge todo">Copy v4</span>
+    <div class="mrow"><span class="mn">Checkout &middot; plans</span><span class="badge ok">v4</span>
       <span class="mt"><b>v1 adopted at &middot;23 (2c7577b)</b>; <b>v2 adopted at &middot;25 (a02b464)</b>, the &middot;24 override deleted, copies in sync. Card parts measured identical to Home&rsquo;s to 0.1pt at the same viewport; checkout&rsquo;s price engine only supplies the numbers (coupon fils ride <code>.dec</code>). Steps taken: copy both files; <code>price.css</code> is its existing
         <code>.dsp</code> block plus <code>grad</code>. In the card, <code>.ppill</code> becomes
         <code>.pc-pill</code> (its other pills keep <code>.ppill</code>), the <code>strike-plan.svg</code> image leaves
