@@ -44,7 +44,185 @@
           "id": "default",
           "note": "Boots the widget board fresh — no context"
         }
-      ]
+      ],
+      "lab": {
+        "v": 1,
+        "sections": [
+          {
+            "title": "Account",
+            "controls": [
+              {
+                "key": "account",
+                "label": "Account",
+                "type": "choice",
+                "default": "in",
+                "live": true,
+                "note": "The signed-out home (Figma 16360-78205): Sign in greeting, Book Consultation + Guide me, the plans list.",
+                "options": [
+                  {
+                    "v": "in",
+                    "label": "Logged in"
+                  },
+                  {
+                    "v": "out",
+                    "label": "Logged out"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Subscription plan",
+            "controls": [
+              {
+                "key": "theme",
+                "label": "Plan",
+                "type": "choice",
+                "default": "lifestyle",
+                "live": true,
+                "options": [
+                  {
+                    "v": "lifestyle",
+                    "label": "LifeStyle"
+                  },
+                  {
+                    "v": "diet",
+                    "label": "The Diet"
+                  },
+                  {
+                    "v": "body",
+                    "label": "BODYBuilding"
+                  },
+                  {
+                    "v": "kids",
+                    "label": "Kids"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Days left",
+            "controls": [
+              {
+                "key": "days",
+                "label": "Days left",
+                "type": "choice",
+                "default": 19,
+                "live": true,
+                "options": [
+                  {
+                    "v": 19,
+                    "label": "19"
+                  },
+                  {
+                    "v": 5,
+                    "label": "5"
+                  },
+                  {
+                    "v": 3,
+                    "label": "3 (urgent)"
+                  },
+                  {
+                    "v": 0,
+                    "label": "Expired"
+                  }
+                ]
+              },
+              {
+                "key": "dayShape",
+                "label": "Shape",
+                "type": "choice",
+                "default": "auto",
+                "live": true,
+                "note": "Force an arrangement (Figma 4798-19569) or let the column decide.",
+                "options": [
+                  {
+                    "v": "auto",
+                    "label": "Auto"
+                  },
+                  {
+                    "v": "tall",
+                    "label": "Tall"
+                  },
+                  {
+                    "v": "wide",
+                    "label": "Wide"
+                  },
+                  {
+                    "v": "compact",
+                    "label": "Compact"
+                  },
+                  {
+                    "v": "slim",
+                    "label": "Slim"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Widgets on screen",
+            "controls": [
+              {
+                "key": "promo",
+                "label": "Promo banner",
+                "type": "toggle",
+                "default": true,
+                "live": true
+              },
+              {
+                "key": "disc",
+                "label": "Discounts",
+                "type": "toggle",
+                "default": true,
+                "live": true
+              },
+              {
+                "key": "consult",
+                "label": "Consultation",
+                "type": "toggle",
+                "default": true,
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Widget states",
+            "controls": [
+              {
+                "key": "discEmpty",
+                "label": "No coupons",
+                "type": "toggle",
+                "default": false,
+                "live": true
+              },
+              {
+                "key": "consultBooked",
+                "label": "Consultation booked",
+                "type": "toggle",
+                "default": false,
+                "live": true
+              }
+            ]
+          },
+          {
+            "title": "Build",
+            "controls": [
+              {
+                "key": "reset",
+                "label": "Reset to defaults",
+                "type": "action"
+              },
+              {
+                "key": "reloadFresh",
+                "label": "Reload fresh (clear cache)",
+                "type": "action"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "meal-select",
@@ -564,7 +742,129 @@
           "id": "default",
           "note": "Usually presented as a sheet; context {src} identifies the opener"
         }
-      ]
+      ],
+      "lab": {
+        "v": 1,
+        "sections": [
+          {
+            "title": "Loyalty",
+            "controls": [
+              {
+                "key": "theme",
+                "label": "Theme",
+                "type": "choice",
+                "default": "red",
+                "live": true,
+                "note": "Tiered themes the whole sheet per level; Red keeps the brand-red sheet and only the badge shows the tier.",
+                "options": [
+                  {
+                    "v": "tier",
+                    "label": "Tiered"
+                  },
+                  {
+                    "v": "red",
+                    "label": "Red"
+                  }
+                ]
+              },
+              {
+                "key": "level",
+                "label": "Member tier",
+                "type": "choice",
+                "default": "gold",
+                "live": true,
+                "note": "Shared across the prototype (ds-tier-v1): checkout and home follow.",
+                "options": [
+                  {
+                    "v": "bronze",
+                    "label": "Bronze"
+                  },
+                  {
+                    "v": "silver",
+                    "label": "Silver"
+                  },
+                  {
+                    "v": "gold",
+                    "label": "Gold"
+                  },
+                  {
+                    "v": "vip",
+                    "label": "VIP"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Gesture",
+            "controls": [
+              {
+                "key": "tearAt",
+                "label": "Tear point",
+                "type": "range",
+                "min": 40,
+                "max": 90,
+                "step": 1,
+                "unit": "px",
+                "default": 62,
+                "live": true,
+                "note": "Pull at which the last hole pops and the tab rips free."
+              },
+              {
+                "key": "stretch",
+                "label": "Stretch",
+                "type": "range",
+                "min": 60,
+                "max": 140,
+                "step": 2,
+                "unit": "px",
+                "default": 96,
+                "live": true,
+                "note": "Max elastic travel of the pull."
+              },
+              {
+                "key": "confetti",
+                "label": "Confetti",
+                "type": "range",
+                "min": 0,
+                "max": 30,
+                "step": 1,
+                "unit": "",
+                "default": 14,
+                "live": true,
+                "note": "Particles bursting from the perforation on tear."
+              }
+            ]
+          },
+          {
+            "title": "Material",
+            "controls": [
+              {
+                "key": "frost",
+                "label": "Coupon frost",
+                "type": "range",
+                "min": 0,
+                "max": 30,
+                "step": 1,
+                "unit": "px",
+                "default": 0,
+                "live": true,
+                "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma."
+              }
+            ]
+          },
+          {
+            "title": "Coupons",
+            "controls": [
+              {
+                "key": "resetCoupons",
+                "label": "Reset coupons",
+                "type": "action"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "breathe",
@@ -1682,7 +1982,111 @@
           "unit": "ms",
           "note": "Screen-to-screen slide on the Apple curve"
         }
-      ]
+      ],
+      "lab": {
+        "v": 1,
+        "sections": [
+          {
+            "title": "Member",
+            "controls": [
+              {
+                "key": "tier",
+                "label": "Loyalty tier",
+                "type": "choice",
+                "live": true,
+                "default": "gold",
+                "note": "Which coupons are unlocked and which badge rides the discount. Shared with every flow (ds-tier-v1).",
+                "options": [
+                  {
+                    "v": "bronze",
+                    "label": "Bronze"
+                  },
+                  {
+                    "v": "silver",
+                    "label": "Silver"
+                  },
+                  {
+                    "v": "gold",
+                    "label": "Gold"
+                  },
+                  {
+                    "v": "vip",
+                    "label": "VIP"
+                  }
+                ]
+              },
+              {
+                "key": "entry",
+                "label": "Entry point",
+                "type": "choice",
+                "live": true,
+                "default": "plans",
+                "note": "From coupons: arrives with a ripped coupon. Signed out: clean plan picker. Renew: straight to durations.",
+                "options": [
+                  {
+                    "v": "rewards",
+                    "label": "From coupons"
+                  },
+                  {
+                    "v": "plans",
+                    "label": "Signed out"
+                  },
+                  {
+                    "v": "renew",
+                    "label": "Renew"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Modifiers",
+            "controls": [
+              {
+                "key": "countdown",
+                "label": "Offer countdown",
+                "type": "range",
+                "live": true,
+                "default": 180,
+                "min": 1,
+                "max": 240,
+                "step": 1,
+                "unit": " min",
+                "note": "Minutes left on the promo before the coupon expires."
+              },
+              {
+                "key": "push",
+                "label": "Push duration",
+                "type": "range",
+                "live": true,
+                "default": 420,
+                "min": 200,
+                "max": 700,
+                "step": 10,
+                "unit": "ms",
+                "note": "Screen-to-screen slide on the Apple curve."
+              }
+            ]
+          },
+          {
+            "title": "Values",
+            "controls": [
+              {
+                "key": "reset",
+                "label": "Reset values",
+                "type": "action",
+                "note": "Default tier, signed-out entry, the rung's top coupon."
+              },
+              {
+                "key": "copy",
+                "label": "Copy values",
+                "type": "action",
+                "note": "The current price breakdown, as text."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
