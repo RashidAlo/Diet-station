@@ -156,7 +156,7 @@
       <li><b>Platter.</b> &ldquo;Liquid Glass &middot; Regular &middot; Medium&rdquo;, painted to match the app&rsquo;s
         native glass (v2): radius 32, opaque white, a .75px rim, a white specular inside the top edge, a ~2% interior
         vignette and an ambient shadow. Press scales to .98.</li>
-      <li><b>Meal rows.</b> 18pt count badge (<code>#f2f2f3</code> with a top highlight, Proxima 600 12) + Urbane
+      <li><b>Meal rows.</b> 18pt count badge (<code>rgba(244,244,244,.6)</code>, Proxima 600 12) + Urbane
         500 12 label, spread over a fixed 122pt column.</li>
       <li><b>Nutrition chip.</b> Hairline pill: <b>kcal</b> | <b>macros</b>, Proxima 12.</li>
       <li><b>Price slot.</b> The <a href="price.html" style="color:var(--red)">Price component</a>,
@@ -166,8 +166,8 @@
         <code>#ED1C24</code> at &minus;9.87&deg;, spanning the price whatever its width.</li>
       <li><b>Deal chip.</b> Hairline pill, Arabic, Avenir Next World 600 12, gradient on the TEXT only (the
         &#128293; keeps its colour). Optional.</li>
-      <li><b>Plan pill.</b> 40 tall, radius 28, the plan gradient with a glass edge (white .5 rim, inner edge glow,
-        top highlight, bottom shade), Urbane 16: Light at 60% + Demi. Press scales to .94.</li>
+      <li><b>Plan pill.</b> 40 tall, radius 28, the plan gradient, a 1px <code>#e3e3e3</code> stroke and an ink shadow
+        (<code>.22</code>, blur 18, y 4), Urbane 16: Light at 60% + Demi, with a soft label shadow. No bevel. Press scales to .94.</li>
     </ol>
     <p class="spec">Before the list, optionally: the <b>offer banner</b> (<code>.lo-offer</code>, white platter,
       radius 30, monogram 46 at a 28 inset, arrow button 44) and the <b>&ldquo;or&rdquo; divider</b>
@@ -193,6 +193,12 @@
       web cards lacked. Plan cards scroll with content, so they can never be native twins (composition Ruling 4). The
       web paint layer is sampled from his 3x screenshots (rim 203, top specular, ~2% vignette, ambient 232/220),
       and is valid on a <b>white</b> sheet only. On colour, re-sample before using it.</span></p>
+    <p class="law">READ NATIVE FROM SOURCE, NEVER FROM A SCREENSHOT.
+      <span>v4, Rashid: checkout&rsquo;s pills &ldquo;have bevels&rdquo; Home&rsquo;s don&rsquo;t. v2 had sampled a screenshot and
+      invented a pill bevel, white chip fills, badge highlights and an offer rim. v4 takes the pill, chips, badges,
+      banner and arrow straight from <code>HomeScreenNative.swift</code> (SwiftUI shadow radius <i>r</i> becomes CSS blur
+      2<i>r</i>). Only the platter stays approximated, because the web cannot draw native
+      <code>.glassEffect</code>.</span></p>
     <p class="law">THE PRICE IS THE PRICE COMPONENT, NEVER A RE-DRAWN ONE.
       <span>Home&rsquo;s first card set the numeral at Figma&rsquo;s 30/19 line-height. A 19px line box cannot
       hold 30px Urbane ink, so the gradient numeral was clipped. Figma line-heights do not transfer to CSS,
@@ -245,12 +251,12 @@ done</pre><button class="copycode" data-copy="pcUse">Copy</button></div>
 
   <section class="card" id="adoption" style="scroll-margin-top:80px">
     <h2>Adoption</h2>
-    <div class="mrow"><span class="mn">Home &middot; logged-out</span><span class="badge ok">v2</span>
+    <div class="mrow"><span class="mn">Home &middot; logged-out</span><span class="badge todo">Copy v4</span>
       <span class="mt"><b>v1 adopted at 9efba57</b>; <b>v2 adopted at 0f1b448</b> (web rendering; the app draws Home natively), copies in sync. Card geometry and ink tops unchanged; the thinner Figma strike is the only visual change. Was the reference (324e812). Steps taken: copy both files, delete the inline copies, rename plan keys
         <code>diet</code>&rarr;<code>thediet</code> and <code>body</code>&rarr;<code>bodybuilding</code>, drop the inline
         gradient styles, add <code>grad</code> to the price slot. Its strike moves from 1.6px/&minus;9.9&deg; to Figma&rsquo;s
         1px/&minus;9.87&deg;.</span></div>
-    <div class="mrow"><span class="mn">Checkout &middot; plans</span><span class="badge ok">v2</span>
+    <div class="mrow"><span class="mn">Checkout &middot; plans</span><span class="badge todo">Copy v4</span>
       <span class="mt"><b>v1 adopted at &middot;23 (2c7577b)</b>; <b>v2 adopted at &middot;25 (a02b464)</b>, the &middot;24 override deleted, copies in sync. Card parts measured identical to Home&rsquo;s to 0.1pt at the same viewport; checkout&rsquo;s price engine only supplies the numbers (coupon fils ride <code>.dec</code>). Steps taken: copy both files; <code>price.css</code> is its existing
         <code>.dsp</code> block plus <code>grad</code>. In the card, <code>.ppill</code> becomes
         <code>.pc-pill</code> (its other pills keep <code>.ppill</code>), the <code>strike-plan.svg</code> image leaves
