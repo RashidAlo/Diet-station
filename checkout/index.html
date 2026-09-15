@@ -495,6 +495,27 @@
     display: flex; align-items: center; justify-content: flex-end; padding: 0 24px;
     pointer-events: none; }
   .fab { --gctl-size: 50px; pointer-events: auto; }
+  /* the coupon pill: a 56-tall glass-control capsule, glyph + two lines + chevron */
+  .fab-bar { padding: 0 20px; }
+  .gctl.capsule.cpill { --gctl-size: 56px; --gctl-pad: 0; gap: 10px; padding: 0 16px 0 14px; max-width: 100%;
+    text-align: left; }
+  .cpill .fico { width: 28.8px; height: 24px; }
+  .cp-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cp-l1 { font: 500 13px/16px 'Urbane Rounded', sans-serif; color: var(--ink); white-space: nowrap; }
+  .cp-l1 b { font-weight: 600; letter-spacing: .2px; }
+  .cp-l2 { font: 400 12px/15px 'Proxima Nova', sans-serif; color: var(--muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums; }
+  .cp-off { font-weight: 700; color: var(--green); }
+  .cp-chev { width: 16px; height: 16px; flex: none; color: var(--ink); opacity: .55; }
+  .gctl.capsule.cpill.is-empty { padding-right: 22px; }
+  .cpill.is-empty .cp-l1 { font-weight: 600; }
+  .cpill .dot { top: -4px; right: -4px; }
+  /* switching coupons: the new text rises in, so the change reads */
+  @keyframes cp-swap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .cpill.swapped .cp-txt { animation: cp-swap .38s var(--ease) both; }
+  .cpill.swapped { animation: cp-pop .42s var(--ease); }
+  @keyframes cp-pop { 40% { transform: scale(1.04); } }
+  @media (prefers-reduced-motion: reduce) { .cpill.swapped, .cpill.swapped .cp-txt { animation: none; } }
   .fab .dot { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px;
     border-radius: 10px; background: var(--green); border: 2px solid #fff; color: #fff;
     font: 700 10px/16px 'Proxima Nova', sans-serif; display: flex; align-items: center;
@@ -701,7 +722,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·31</div>
+  <div class="s-foot" id="buildInfo">checkout ·32</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -725,7 +746,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·31';
+const BUILD = 'checkout ·32';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
@@ -928,11 +949,22 @@ function money(n) {
 }
 
 /* ============================ countdown =================================== */
+/* The offer ends at a real moment: now + the Offer countdown modifier. Every
+   countdown on the page reads the same deadline and ticks each second without
+   a re-render (.cd-live spans are rewritten in place). Changing the modifier
+   restarts the clock. */
+let offerEnds = Date.now() + MODS.countdown * 60000 + 20000;
+let offerMins = MODS.countdown;
 function countdownText() {
-  const mins = MODS.countdown;
-  const h = Math.floor(mins / 60), m = mins % 60;
-  return h + ':' + String(m).padStart(2, '0') + ':20';
+  if (offerMins !== MODS.countdown) { offerMins = MODS.countdown; offerEnds = Date.now() + offerMins * 60000 + 20000; }
+  const left = Math.max(0, Math.round((offerEnds - Date.now()) / 1000));
+  const h = Math.floor(left / 3600), m = Math.floor(left / 60) % 60, sec = left % 60;
+  return h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
 }
+setInterval(() => {
+  const t = countdownText();
+  document.querySelectorAll('.cd-live').forEach(el => { if (el.textContent !== t) el.textContent = t; });
+}, 1000);
 
 /* ============================ markup helpers ============================== */
 const A = 'assets/';
@@ -999,7 +1031,7 @@ function promoBar() {
         <span class="promo-line">
           <img class="promo-check" src="${A}check-thin.svg" alt="">
           <b>${off} off</b>
-          <span class="promo-ends">· Ends in ${countdownText()}</span>
+          <span class="promo-ends">· Ends in <span class="cd-live">${countdownText()}</span></span>
         </span>
       </span>
       <span class="promo-change">Change</span>
@@ -1007,6 +1039,33 @@ function promoBar() {
     <button class="promo-x" data-act="uncoupon" aria-label="Remove promo code ${c.code}">
       <span><img src="${A}close.svg" alt=""></span></button>
   </div></div>`;
+}
+
+/* ---- THE COUPON PILL (Rashid, 2026-09-15) — the plan picker's coupon control.
+   It says what is applied: the code, what it takes off, and the time left on
+   the offer. Tapping opens the member's coupons to switch; the cards re-price
+   live. With nothing applied it invites instead, with how many are waiting.
+   Material: a glass-control capsule; content is checkout's. */
+let pillLast = '';
+function couponPill() {
+  const c = decodeCoupon(S.coupon);
+  const key = c ? c.code : '';
+  const changed = pillLast && pillLast !== key; pillLast = key || '-';
+  if (!c) {
+    return `<button class="gctl capsule fab cpill is-empty" data-act="coupons"
+      aria-label="Add a coupon. ${WALLET_SIZE} available">
+      <img class="fico" src="${A}coupon-glyph.svg" alt="">
+      <span class="cp-txt"><span class="cp-l1">Add a coupon</span>
+        <span class="cp-l2">${WALLET_SIZE} waiting for you</span></span></button>`;
+  }
+  const off = c.kind === 'pct' ? `${c.value}% off` : `KD ${c.value} off`;
+  return `<button class="gctl capsule fab cpill${changed ? ' swapped' : ''}" data-act="coupons"
+    aria-label="${c.code} applied, ${off}. Tap to switch coupons">
+    <img class="fico" src="${A}coupon-glyph.svg" alt="">
+    <span class="cp-txt"><span class="cp-l1"><b>${c.code}</b> applied</span>
+      <span class="cp-l2"><span class="cp-off">${off}</span> · <span class="cd-live">${countdownText()}</span> left</span></span>
+    <svg class="cp-chev" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`;
 }
 
 /* ---- the bottom dock: price + CTA ---- */
@@ -1231,9 +1290,7 @@ function render() {
     screenPayment() +
     `<div class="veil" data-act="closeSheet"></div>` +
     sheetModify() +
-    `<div class="fab-bar">${glassBtn('fab',
-        `<img class="fico" src="${A}coupon-glyph.svg" alt="Coupons">`, 'coupons',
-        S.coupon ? '' : `<span class="dot">${WALLET_SIZE}</span>`)}</div>` +
+    `<div class="fab-bar">${couponPill()}</div>` +
     `<div class="toast" id="toast"></div>`;
   showScreen(S.screen, true);
   document.documentElement.style.setProperty('--push', MODS.push + 'ms');
@@ -1923,7 +1980,7 @@ if (pendingArrival) {
   var EMBED = /[?&]embed=1/.test(location.search);
   var FRAMED = false; try { FRAMED = window.self !== window.top; } catch (_) { FRAMED = true; }
   var root = document.documentElement;
-  var navGlyphs = false, navPill = false, couponsFab = false, confirmed = false, settled = false, syncT = null;
+  var navGlyphs = false, navPill = false, couponsFab = false, couponsPill = false, confirmed = false, settled = false, syncT = null;
 
   /* a hosted page loads off-screen: take the rest inset from the host */
   var caps = window.DSNativeCaps;
@@ -1948,7 +2005,10 @@ if (pendingArrival) {
       var pe = navGlyphs ? { close: '.sub-nav .nav-x', call: '.sub-nav .nav-call' } : {};
       /* the coupons FAB is its own control (not in a bar): native at
          caps.couponsFab >= 1, which also carries its count badge */
-      if (couponsFab) pe.coupons = '.fab-bar .fab';
+      /* ·32: the FAB became a pill with live text (code, off, countdown). The
+         couponsFab twin draws a 50pt glyph circle, so it is NOT handed over;
+         caps.couponsPill >= 1 (asked of Shell) takes it back. */
+      if (couponsPill) pe.coupons = '.fab-bar .fab';
       return { mode: 'sheet', els: pe };
     }
     var scr = '.scr[data-scr="' + S.screen + '"] ';
@@ -1984,7 +2044,14 @@ if (pendingArrival) {
       if (!r.width || !r.height) return;
       var item = { id: id, x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height,
         r: Math.min(r.width, r.height) / 2 };
-      if (id === 'coupons') { var dot = el.querySelector('.dot'); item.badge = dot ? dot.textContent : ''; }
+      if (id === 'coupons') {
+        var dot = el.querySelector('.dot'); item.badge = dot ? dot.textContent : '';
+        var cc = decodeCoupon(S.coupon);
+        item.code = cc ? cc.code : '';
+        item.off = cc ? (cc.kind === 'pct' ? cc.value + '% off' : 'KD ' + cc.value + ' off') : '';
+        item.ends = offerEnds;                 /* epoch ms: native ticks its own clock */
+        item.label = el.querySelector('.cp-l1') ? el.querySelector('.cp-l1').textContent.trim() : '';
+      }
       els.push(item);
     });
     post(c.mode, els, false);
@@ -1998,7 +2065,8 @@ if (pendingArrival) {
     var grew = false;
     if (caps2 && caps2.navGlyphs >= 1 && !navGlyphs) { navGlyphs = true; root.classList.add('ds-chrome-nav'); grew = true; }
     if (caps2 && caps2.navPill >= 1 && !navPill) { navPill = true; root.classList.add('ds-chrome-pill'); grew = true; }
-    if (caps2 && caps2.couponsFab >= 1 && !couponsFab) { couponsFab = true; root.classList.add('ds-chrome-fab'); grew = true; }
+    if (caps2 && caps2.couponsFab >= 1 && !couponsFab) { couponsFab = true; grew = true; }
+    if (caps2 && caps2.couponsPill >= 1 && !couponsPill) { couponsPill = true; root.classList.add('ds-chrome-fab'); grew = true; }
     if (grew) report();
   };
   window.DSChromeTap = function (id) {
