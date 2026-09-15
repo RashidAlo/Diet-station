@@ -496,7 +496,10 @@
     pointer-events: none; }
   .fab { --gctl-size: 50px; pointer-events: auto; }
   /* the coupon pill: a 56-tall glass-control capsule, glyph + two lines + chevron */
-  .fab-bar { padding: 0 20px; }
+  /* clear the home indicator: the pill rests 8pt above the iOS bottom safe
+     area (34pt where env() reads 0 — desktop frame, hub iframe) */
+  .fab-bar { padding: 0 20px 8px; height: auto; align-items: flex-end;
+    bottom: max(34px, env(safe-area-inset-bottom, 0px)); }
   .gctl.capsule.cpill { --gctl-size: 56px; --gctl-pad: 0; gap: 10px; padding: 0 16px 0 14px; max-width: 100%;
     text-align: left; }
   .cpill .fico { width: 28.8px; height: 24px; }
@@ -722,7 +725,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·32</div>
+  <div class="s-foot" id="buildInfo">checkout ·33</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -746,7 +749,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·32';
+const BUILD = 'checkout ·33';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
