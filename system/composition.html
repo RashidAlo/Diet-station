@@ -546,6 +546,18 @@
       no chrometrack twin (Rashid chose to host it natively: see NESTED HOST in the sheet-host spec). It goes native only when native owns that motion (the details layer hosted, drag included,
       as meal selection&rsquo;s sheet host), which Shell scopes separately. Until then it is web glass-control for its
       whole life. The dock and scrub exception is not extended.</p>
+    <p class="meta"><b>Amended (2026-09-15), Rashid overrides for meal selection:</b> &ldquo;The meal details x button
+      and the meal thumbnails dots (more) button &hellip; needs to be native liquid glass.&rdquo; The LAW stands (a twin&rsquo;s
+      geometry never moves on the page&rsquo;s clock); what changes is the route. A control in content may be a twin
+      when <b>native scrolls it</b>: the hosted document scrolls on the web view&rsquo;s OWN scroll view (body scroll,
+      not a div), and the twins move by native reading of <code>contentOffset</code> (KVO, same frame), never by page
+      posts. The page posts only rest positions in <b>content coordinates</b> and show/hide. Constraints:
+      <b>(1)</b> the twins sit in ONE container created at host creation, clipped in screen space below the docked
+      band and nav, so their glass never overlaps the bar&rsquo;s glass; nav and gauge twins stay above it.
+      <b>(2)</b> Touch law: no subview added or removed and no physics set during a gesture; show/hide is alpha on
+      views created up front (or pooled), so a selection tap mid-fling re-seats nothing.
+      <b>(3)</b> Hosted mode only; the div scroller stays the fallback, with kebabs as web glass-control.
+      Per-frame page posts with native prediction stay ruled out.</p>
     <p class="meta"><b>Scoped exception, stated so nobody cites it:</b> meal selection&rsquo;s nav controls
       ride the scroll-linked dock through <code>--top-pad</code>. That travel is bounded to the sheet gap
       (~77pt) and ends at the chrome line, where they stop for good. It is not unbounded content
