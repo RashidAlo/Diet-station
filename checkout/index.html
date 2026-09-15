@@ -22,8 +22,17 @@
      here, at parse time, with the rules in the main <style>. The handshake
      only ever UN-hides: a shell that confirms without a cap gets that web
      control back, and a shell that never confirms (iOS < 26) gets all of them. */
-  if (/DietStationLab/.test(navigator.userAgent))
-    document.documentElement.classList.add('ds-chrome-native', 'ds-chrome-nav', 'ds-chrome-pill', 'ds-chrome-fab');
+  if (/DietStationLab/.test(navigator.userAgent)) (function () {
+    /* platform.html "NATIVE FROM THE FIRST FRAME" clause 1: when the host
+       injected its caps at document start, hide exactly what they cover;
+       without them, hide everything and let the confirm un-hide */
+    var h = document.documentElement, c = window.DSNativeCaps;
+    h.classList.add('ds-chrome-native');                     /* every shell draws the X */
+    var known = c && ('navGlyphs' in c || 'navPill' in c || 'couponsPill' in c);
+    if (!known || c.navGlyphs >= 1) h.classList.add('ds-chrome-nav');
+    if (!known || c.navPill >= 1) h.classList.add('ds-chrome-pill');
+    if (!known || c.couponsPill >= 1) h.classList.add('ds-chrome-fab');
+  })();
 </script>
 <style>
   html.ds-chrome-native .sheet-x,
@@ -737,7 +746,7 @@
       <button id="sCopy">Copy values</button>
     </div>
   </div>
-  <div class="s-foot" id="buildInfo">checkout ·35</div>
+  <div class="s-foot" id="buildInfo">checkout ·36</div>
 </aside>
 <div id="labVeil"></div>
 
@@ -761,7 +770,7 @@
    Frames: Subscribe Modal · Duration Select · Level 8 (renew) ·
            Modify Default Plan Modal · Payment options (Visa) · Promo Code Empty
    ========================================================================== */
-const BUILD = 'checkout ·35';
+const BUILD = 'checkout ·36';
 
 /* ---------------- modifiers (sidebar-tunable) ---------------- */
 const GG = (() => { try { return JSON.parse(localStorage.getItem('ds-glass-global-v1')) || {}; } catch (_) { return {}; } })();
