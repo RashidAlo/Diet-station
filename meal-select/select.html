@@ -621,6 +621,109 @@
       backdrop-filter .34s ease; }
   .nav.tile-mode .navbtn { width: 52px; height: 52px; }
   .nav.tile-mode .dual { height: 52px; border-radius: 26px; }
+  /* ================= DELIVERED DAYS (Rashid, 2026-09-15: "this should have the same
+     overlay design as the meal selector, with different content, so include the
+     date scrubber here too"). A delivered day is a MODE of this overlay, decided per
+     day from the calendar's status map: same sheet, X, date tile and scrubber, the
+     gauge showing what was delivered; the grid becomes the day's meals as rows
+     (Figma Jul 15 page: Meals Selectedn 15040:181684, Meal Cards 15075:185973 /
+     185975) and the dual's seat holds the Delivered badge. ================= */
+  body.delivered .dual { display: none; }
+  .dv-seat { position: absolute; right: 16px; top: calc(var(--top-pad) + 9px); height: 44px; z-index: 31;
+    display: none; align-items: center; }
+  .nav.tile-mode .dv-seat { height: 52px; }
+  body.delivered .dv-seat { display: flex; }
+  .dv-badge { height: 40px; padding: 4px 11px; border-radius: 1024px; background: #f5f5f5;
+    display: flex; align-items: center; gap: 4px; font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0d0d0d; }
+  .dv-badge img { width: 16px; height: 16px; display: block; }
+  .dv-rows { padding: 6px 0 24px; }
+  .dv-rule { height: 1px; background: #ededed; margin: 8px 0; }
+  .dv-card { display: flex; align-items: center; padding: 6px 16px; cursor: pointer; }
+  .dv-card:active .dv-thumb { transform: scale(.97); }
+  .dv-thumb { position: relative; width: 106px; height: 106px; flex: none; padding: 4px; border-radius: 22px;
+    border: 1px solid #ededed; background: #fff; transition: transform .2s cubic-bezier(.3,.8,.3,1); }
+  .dv-thumb > img.ph { width: 100%; height: 100%; border-radius: 18px; object-fit: cover; display: block; }
+  .dv-thumb .i { position: absolute; left: 10px; top: 10px; width: 20px; height: 20px; display: flex;
+    align-items: center; justify-content: center; filter: drop-shadow(0 1px 5px rgba(56,64,74,.1)); }
+  .dv-thumb .i img { width: 16px; height: 16px; display: block; }
+  .dv-body { flex: 1; min-width: 0; padding: 8px 8px 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .dv-top { display: flex; align-items: center; gap: 6px; }
+  .dv-cat { flex: 1; min-width: 0; height: 24px; display: flex; align-items: center;
+    font: 300 12px/16px 'Urbane Rounded', sans-serif; color: #5e5e5e; white-space: nowrap; }
+  .dv-rate { width: 24.24px; height: 24.24px; border-radius: 45px; background: #ffc52e; flex: none;
+    display: flex; align-items: center; justify-content: center; }
+  .dv-rate img { width: 11.4px; height: 11.4px; display: block; }
+  .dv-rated { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 63px;
+    border: 1px solid #ededed; background: #fff; flex: none; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-rated img { width: 16px; height: 16px; display: block; }
+  .dv-chip-pop { animation: dvchip .5s cubic-bezier(.2,.8,.3,1.25) both; }
+  @keyframes dvchip { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: none; } }
+  .dv-name { font: 600 14px/20px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-mac { display: flex; align-items: center; gap: 11px; padding-right: 8px; }
+  .dv-kcal { flex: 1; display: flex; align-items: center; gap: 2px; }
+  .dv-kcal b { font: 500 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .dv-kcal i { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e; font-style: normal; }
+  .dv-pcf { display: flex; gap: 11px; font: 400 10px/12px 'Proxima Nova', sans-serif; color: #5e5e5e; white-space: nowrap; }
+  .dv-pcf span b { font-weight: 400; margin-left: 4px; }
+  /* ---- Rating Overlay (10823:41505..41510), a bottom sheet over the day ----
+     Rashid (·249): the dish shows FROM THE START; the note and Submit stay tucked
+     away until a star is picked; and the dish must leave with the sheet (it used
+     to hang above the parked sheet's top edge, stuck at the bottom of the screen). */
+  .rt-veil { position: absolute; inset: 0; background: rgba(11,14,18,.42); opacity: 0; pointer-events: none;
+    transition: opacity .32s ease; z-index: 60; }
+  .rt-veil.show { opacity: 1; pointer-events: auto; }
+  .rt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 61; background: #fff;
+    border-radius: 28px 28px 0 0; padding: 40px 0 calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: center;
+    transform: translateY(calc(100% + 240px)); transition: transform .55s cubic-bezier(.32,.72,0,1); }
+  .rt.show { transform: none; }
+  .rt-x { position: absolute; right: 16px; top: 18px; width: 44px; height: 44px; border: none; background: none;
+    padding: 12px; cursor: pointer; }
+  .rt-x img { width: 24px; height: 24px; display: block; }
+  .rt-head { padding-top: 52px; display: flex; flex-direction: column; align-items: center; gap: 13px; text-align: center; color: #0b0e12; }
+  .rt-head h2 { font: 600 24px/32px 'Urbane Rounded', sans-serif; }
+  .rt-head p { font: 300 14px/20px 'Urbane Rounded', sans-serif; }
+  .rt-stars { display: flex; padding: 9.88px; }
+  .rt-stars button { width: 69.17px; height: 69.17px; margin-right: -16.06px; border: none; background: none; padding: 0;
+    cursor: pointer; position: relative; }
+  .rt-stars button:last-child { margin-right: 0; }
+  .rt-stars button img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .18s ease; }
+  .rt-stars button .on { opacity: 0; }
+  .rt-stars button.lit .on { opacity: 1; }
+  .rt-stars button.pop { animation: rtstar .42s cubic-bezier(.2,.8,.3,1.3) both; }
+  @keyframes rtstar { 0% { transform: scale(.7); } 55% { transform: scale(1.18); } 100% { transform: none; } }
+  /* the extra actions unfold under the stars once there is a rating to send */
+  .rt-more { display: grid; grid-template-rows: 0fr; width: 100%; opacity: 0;
+    transition: grid-template-rows .45s cubic-bezier(.32,.72,0,1), opacity .25s ease; }
+  .rt-more > div { overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+  .rt.rated .rt-more { grid-template-rows: 1fr; opacity: 1; transition-delay: 0s, .08s; }
+  .rt-field { width: min(347px, calc(100% - 56px)); height: 65px; margin-top: 16px; border: 1px solid #e5e5e5; border-radius: 8px;
+    background: #f5f5f5; padding: 8px 12px; resize: none; outline: none; font: 400 14px/20px 'Proxima Nova', sans-serif; color: #0b0e12;
+    -webkit-user-select: text; user-select: text; }
+  .rt-field::placeholder { color: #7a7a7a; }
+  .rt-submit { width: min(353px, calc(100% - 50px)); height: 53px; flex: none; border: none; border-radius: 1024px; margin: 22px 0 4px;
+    font: 500 16px/1 'Urbane Rounded', sans-serif; color: #fff; cursor: pointer;
+    background: linear-gradient(90deg, #ee2023, #fd6d02); transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .rt-submit:active { transform: scale(.97); }
+  .rt-dish { position: absolute; left: calc(50% - 53px); top: -61px; width: 106px; height: 134px; border-radius: 18px;
+    box-shadow: 0 0 11.9px rgba(56,64,74,.3); pointer-events: none;
+    opacity: 0; transform: translateY(40px) scale(.8);
+    transition: opacity .25s ease, transform .6s cubic-bezier(.2,.9,.3,1.25); }
+  .rt.show .rt-dish { opacity: 1; transform: none; transition-delay: .12s; }
+  .rt-dish img.ph { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: block; }
+  .rt-speech { position: absolute; left: calc(50% + 2px); top: -77px; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px; width: 316px; }
+  .rt-bubble { background: #ed1c24; border-radius: 12px; padding: 16px; white-space: nowrap;
+    font: 500 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9; opacity: 0; transform: translateY(8px) scale(.9);
+    transition: opacity .25s ease, transform .45s cubic-bezier(.2,.9,.3,1.3); }
+  .rt.rated .rt-bubble { opacity: 1; transform: none; }
+  .rt-bubble.say { animation: rtsay .38s cubic-bezier(.2,.9,.3,1.3); }
+  @keyframes rtsay { 0% { transform: scale(.92); } 60% { transform: scale(1.05); } 100% { transform: none; } }
+  .rt-dot14, .rt-dot8 { border-radius: 50%; background: #ed1c24; opacity: 0; transition: opacity .2s ease .15s; }
+  .rt-dot14 { width: 14px; height: 14px; } .rt-dot8 { width: 8px; height: 8px; }
+  .rt.rated .rt-dot14, .rt.rated .rt-dot8 { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .rt, .rt-dish, .rt-bubble, .rt-more { transition: none !important; }
+    .rt-stars button.pop, .dv-chip-pop, .rt-bubble.say { animation: none !important; } }
   .nav.tile-mode .dual button { height: 52px; }
 
   /* ---- ARMED, IN THIS VARIATION ONLY: WIDER, NOT TALLER ----
@@ -1485,6 +1588,7 @@
             <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </button>
           <div class="ttl"><span id="dayLabel" style="display:inline-block">Mar 15th</span><span id="dayTile" aria-hidden="true"></span></div>
+          <div class="dv-seat"><div class="dv-badge"><img src="dv-check.svg" alt="">Delivered</div></div>
           <div class="dual">
             <button class="dclear" id="clearBtn" aria-label="Clear all">
               <svg viewBox="0 0 18 18" fill="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 1.6v3M9 13.4v3M1.6 9h3M13.4 9h3M3.77 3.77l2.12 2.12M12.11 12.11l2.12 2.12M14.23 3.77l-2.12 2.12M5.89 12.11l-2.12 2.12"/></g></svg>
@@ -1525,6 +1629,19 @@
           <div class="done-center"><svg viewBox="0 0 15.5 11.5" fill="none"><path d="M1.25 6.05L5.38636 10.25L14.25 1.25" pathLength="1" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Done</span></div>
           <div class="warnmsg" id="warnMsg"></div>
           <button class="dock" id="dock"></button>
+        </div>
+        <div class="rt-veil" id="rtVeil"></div>
+        <div class="rt" id="rt" role="dialog" aria-label="Rate meal">
+          <div class="rt-dish"><img class="ph" id="rtImg" src="" alt="">
+            <div class="rt-speech"><div class="rt-bubble" id="rtBubble"></div><div class="rt-dot14"></div><div class="rt-dot8"></div></div>
+          </div>
+          <button class="rt-x" id="rtX" aria-label="Close"><img src="rate-close.svg" alt=""></button>
+          <div class="rt-head"><h2>Rate Meal</h2><p id="rtName"></p></div>
+          <div class="rt-stars" id="rtStars"></div>
+          <div class="rt-more"><div>
+            <textarea class="rt-field" id="rtNote" placeholder="Tell us what you think"></textarea>
+            <button class="rt-submit" id="rtSubmit">Submit</button>
+          </div></div>
         </div>
         <div class="mo-veil" id="moVeil"></div>
         <div class="meal-ov" id="mealOv">
@@ -1939,6 +2056,91 @@ addEventListener('message', e => {
 });
 
 document.getElementById('moClose').addEventListener('click', closeMealOv);
+
+/* ================= Rating Overlay (Figma 10823:41505..41510, copy verbatim) ============= */
+const RT_SAYS = [
+  { say: '', hint: 'Tell us what you think' },
+  { say: 'Why do you hate me this much yahya?', hint: 'At least tell me why...' },
+  { say: "I've seen better days", hint: 'What would fix me?' },
+  { say: "Thank you, I'll try better next time", hint: 'How can I be even better?' },
+  { say: 'I think you like me', hint: 'Help me earn that fifth star' },
+  { say: 'I love you too!', hint: 'Go on spoil me some more!' },
+];
+const rtEl = document.getElementById('rt'), rtStars = document.getElementById('rtStars');
+for (let i = 1; i <= 5; i++) {
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', i + (i === 1 ? ' star' : ' stars'));
+  b.innerHTML = '<img src="rate-star-off.svg" alt=""><img class="on" src="rate-star-on.svg" alt="">';
+  b.onclick = () => rtSet(i, true);
+  rtStars.appendChild(b);
+}
+let rtCtx = null, rtLevel = 0;
+function rtSet(n, tap) {
+  const was = rtLevel;
+  rtLevel = n;
+  [...rtStars.children].forEach((b, i) => {
+    b.classList.toggle('lit', i < n);
+    if (tap && i < n) {
+      b.classList.remove('pop'); void b.offsetWidth;
+      b.style.animationDelay = (Math.max(0, i - Math.min(was, n - 1)) * 45) + 'ms';
+      b.classList.add('pop');
+    }
+  });
+  document.getElementById('rtNote').placeholder = RT_SAYS[n].hint;
+  rtEl.classList.toggle('rated', n > 0);
+  const bub = document.getElementById('rtBubble');
+  if (n > 0) {
+    bub.textContent = RT_SAYS[n].say;
+    if (was > 0 && was !== n) { bub.classList.remove('say'); void bub.offsetWidth; bub.classList.add('say'); }
+  }
+  if (tap) vibrate(n === 5 ? [10, 40, 18] : 8);
+}
+function openRating(m, row) {
+  if (rtCtx) return;
+  rtCtx = { m, row };
+  window.DSLayer && DSLayer('rate', true);
+  const r = ratings()[m.key];
+  document.getElementById('rtImg').src = m.d.img;
+  document.getElementById('rtName').textContent = m.d.n;
+  document.getElementById('rtNote').value = r ? (r.note || '') : '';
+  rtSet(r ? r.stars : 0, false);
+  /* the rating sheet lives inside the day's sheet, like the meal details layer:
+     dock the outer sheet first so it rests on the screen's bottom edge, not 44pt
+     below it (measured: Submit ran off the bottom while the sheet sat undocked) */
+  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
+    scrollArea.scrollTop = SHEET_GAP;
+    syncSheet();
+  }
+  document.getElementById('rtVeil').classList.add('show');
+  rtEl.classList.add('show');
+  vibrate(8);
+}
+function closeRating() {
+  if (!rtCtx) return;
+  rtCtx = null;
+  document.getElementById('rtVeil').classList.remove('show');
+  rtEl.classList.remove('show');
+  document.getElementById('rtNote').blur();
+  window.DSLayer && DSLayer('rate', false);
+}
+document.getElementById('rtX').onclick = closeRating;
+document.getElementById('rtVeil').onclick = closeRating;
+document.getElementById('rtSubmit').onclick = () => {
+  if (!rtCtx || !rtLevel) return;
+  const { m, row } = rtCtx;
+  const all = ratings();
+  all[m.key] = { stars: rtLevel, note: document.getElementById('rtNote').value.trim(), at: Date.now() };
+  try { localStorage.setItem(RATE_KEY, JSON.stringify(all)); } catch (_) {}
+  vibrate([10, 40, 18]);
+  closeRating();
+  /* the row answers once the sheet is on its way down, so the change is seen */
+  setTimeout(() => {
+    const chip = row.querySelector('.chip');
+    if (!chip) return;
+    chip.innerHTML = rateChip(m.key);
+    chip.firstChild.classList.add('dv-chip-pop');
+  }, 260);
+};
 /* hosted, the scrim is not a close target: only native closes the child */
 document.getElementById('moVeil').addEventListener('click', () => { if (!mealHosted) closeMealOv(); });
 
@@ -2305,7 +2507,7 @@ function updateAll(instant) {
   gaugeFx.target = frac;
   /* completion: Saved moment -> Next */
   const done = quotaTotal > 0 && t.count >= quotaTotal;
-  if (done && !completed) {
+  if (done && !completed && !deliveredMode) {   /* nothing to celebrate or confirm on a delivered day */
     completed = true;
     if (userActed) celebrate(); else armNextDock();
   }
@@ -2515,6 +2717,8 @@ addEventListener('message', e => {
   const d = e.data;
   if (!d || d.t !== 'ds-daystatus' || !d.map) return;
   DAY_STATUS = d.map;
+  /* the map is what says whether this day was delivered — re-decide the mode */
+  if (typeof isDeliveredIdx === 'function' && isDeliveredIdx(dayIdx) !== deliveredMode) applyDay(dayIdx);
   if (window.repaintScrubStrip) window.repaintScrubStrip();
   /* the resting tile carries a status chip too, and this map lands after
      first paint — without this the tile shows a day with no status until
@@ -2537,10 +2741,78 @@ function seedAutoDay(idx) {
 }
 
 function saveDay() {
+  if (deliveredMode) return;   /* a delivered day has nothing to keep */
   dayStates[dayIdx] = { sel: { ...sel }, auto: [...autoSet] };
 }
 
+/* ---- delivered mode ---- */
+const DV_OPEN = /[?&]dv=1/.test(location.search);   /* the calendar opened a delivered day */
+let deliveredMode = false;
+function statusOfIdx(idx) { const d = dateFor(idx); return DAY_STATUS[d.getDate() + ':' + d.getMonth()] || ''; }
+function isDeliveredIdx(idx) {
+  const st = statusOfIdx(idx);
+  if (st) return st === 'rate' || st === 'star';
+  return idx === 0 && DV_OPEN;   /* before the status map lands */
+}
+/* what was delivered: the plan's quotas, the same menu, a stable pick per date */
+function deliveredMeals(idx) {
+  const d = dateFor(idx), day = d.getDate(), out = [];
+  CATS.forEach((cat, ci) => {
+    for (let n = 0; n < cat.quota; n++) {
+      const i = (day * 3 + ci * 5 + n * 2) % DISHES[cat.id].length;
+      out.push({ cat, i, d: DISHES[cat.id][i], key: MONS[d.getMonth()] + ':' + day + ':' + cat.id + ':' + n });
+    }
+  });
+  return out;
+}
+const RATE_KEY = 'ds-meal-ratings-v1';
+function ratings() { try { return JSON.parse(localStorage.getItem(RATE_KEY) || '{}'); } catch (_) { return {}; } }
+function rateChip(key) {
+  const r = ratings()[key];
+  return r ? '<span class="dv-rated">' + r.stars + '<img src="dv-star-badge.svg" alt=""></span>'
+           : '<span class="dv-rate"><img src="dv-star-unrated.svg" alt=""></span>';
+}
+function buildDelivered(idx) {
+  scrollArea.innerHTML = '';
+  Object.keys(cardEls).forEach(k => delete cardEls[k]);
+  const wrap = document.createElement('div');
+  wrap.className = 'dv-rows';
+  deliveredMeals(idx).forEach((m, n) => {
+    if (n) { const r = document.createElement('div'); r.className = 'dv-rule'; wrap.appendChild(r); }
+    const row = document.createElement('div');
+    row.className = 'dv-card';
+    row.innerHTML =
+      '<div class="dv-thumb"><img class="ph" src="' + m.d.img + '" alt=""><span class="i"><img src="dv-info.svg" alt=""></span></div>' +
+      '<div class="dv-body">' +
+        '<div class="dv-top"><span class="dv-cat">' + m.cat.title + '</span><span class="chip">' + rateChip(m.key) + '</span></div>' +
+        '<div class="dv-name">' + m.d.n + '</div>' +
+        '<div class="dv-mac"><span class="dv-kcal"><b>' + m.d.kcal + '</b><i>Kcal</i></span>' +
+          '<span class="dv-pcf"><span>Protein<b>' + m.d.p + 'g</b></span><span>Carbs<b>' + m.d.c + 'g</b></span><span>Fat<b>' + m.d.f + 'g</b></span></span></div>' +
+      '</div>';
+    row.onclick = () => openRating(m, row);
+    wrap.appendChild(row);
+  });
+  scrollArea.appendChild(wrap);
+}
 function applyDay(idx) {
+  if (isDeliveredIdx(idx)) {
+    deliveredMode = true;
+    document.body.classList.add('delivered');
+    resetAll(true);
+    userActed = false;
+    buildDelivered(idx);
+    /* the gauge shows what arrived: the delivered meals ARE the day's selection */
+    deliveredMeals(idx).forEach(m => { const k = m.cat.id + ':' + m.i; sel[k] = (sel[k] || 0) + 1; });
+    updateAll(true);
+    if (window.DSScrubRepost) setTimeout(window.DSScrubRepost, 0);   /* the dual leaves its seat */
+    return;
+  }
+  if (deliveredMode) {
+    deliveredMode = false;
+    document.body.classList.remove('delivered');
+    buildScreen();
+    if (window.DSScrubRepost) setTimeout(window.DSScrubRepost, 0);   /* the dual comes back */
+  }
   const st = dayStates[idx] || (AUTO ? seedAutoDay(idx) : { sel: {}, auto: [] });
   resetAll(true);
   userActed = false;
@@ -3993,7 +4265,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 248 (meal details open in a nested native host when the app can)';
+const BUILD = 'build 2026-09-15 · 249 (delivered days live in the selector, scrubber included; rating polish)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4848,7 +5120,8 @@ if (QS.get('solo') === '1') {
       if (window.DS_HOSTED) {
         var have = {};
         els.forEach(function (e) { have[e.id] = e; });
-        if (have.close && have.dual && have.scrub &&
+        /* a delivered day has no dual: its seat holds the (web) Delivered badge */
+        if (have.close && (have.dual || deliveredMode) && have.scrub &&
             have.scrub.dates && have.scrub.dates.length >= 1) msg.complete = true;
       }
       webkit.messageHandlers.ds.postMessage(msg);

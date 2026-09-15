@@ -559,7 +559,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 47 (pause toast copy from Figma)';
+const BUILD = 'calendar 2026-09-15 · 48 (delivered days open the selector overlay in delivered mode)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -713,7 +713,7 @@ function renderMonths(popNew) {
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, true);
     } else if (st === 'rate' || st === 'star') {
       /* DELIVERED (Rashid, 2026-09-15): a delivered day opens its meals as rows,
-         each one tappable to rate (delivered.html, Figma "Meals Selectedn") */
+         each one tappable to rate — the selector overlay in delivered mode */
       el.classList.add('tap');
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false, 'delivered');
     } else {
@@ -813,8 +813,10 @@ function overlaySrc(mon, day, auto) {
       ? '&rpt=' + (new URLSearchParams(location.search)).get('rpt') : '') +
     '&v=' + Date.now();
 }
+/* a delivered day is a MODE of the selector overlay (same sheet, tile and scrubber;
+   Rashid ·249), so it opens the same page and tells it the first day was delivered */
 function deliveredSrc(mon, day) {
-  return 'delivered.html?embed=1&cal=1&mon=' + mon + '&day=' + day + '&v=' + Date.now();
+  return overlaySrc(mon, day, false) + '&dv=1';
 }
 function openDay(mon, day, auto, page) {
   if (ovFrame || ovHosted) return;
