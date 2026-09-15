@@ -1617,6 +1617,18 @@ function dsPost(msg) {
   }
   parent.postMessage(msg, '*');
 }
+/* NESTED HOST (composition.html#spec-sheethost; Rashid: "the meal details x
+   button ... needs to be native liquid glass"). When this hosted selector's
+   relay can host a sheet of its own, the meal-details layer opens as
+   select-meal.html in a native web view one level down: this page sends
+   sheet-open and ds-down, the child answers with ds-up and sheet-close.
+   Cap absent, not hosted, or ?mealhost=0: the in-page layer, unchanged. */
+var DS_MEAL_HOST = DS_HOSTED
+  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHostNested >= 1)
+  && !/[?&]mealhost=0/.test(location.search);
+function dsDown(msg) {
+  try { webkit.messageHandlers.ds.postMessage({ t: 'ds-down', msg: msg }); } catch (_) {}
+}
 /* THROW BEACON (diagnostic). ·191 stopped posting chrome to the shell
    entirely — no DSCHROME lines at all — and the chrome module is gated on the
    DietStationLab user agent, so it cannot be reproduced or read in a desktop
@@ -1754,10 +1766,13 @@ function moDish(key) {
   return { cat: CATS.find(c => c.id === parts[0]), d: DISHES[parts[0]][+parts[1]] };
 }
 
+let mealHosted = false;
 function openMealOv(key) {
+  if (mealHosted) return;
   window.DSLayer && DSLayer('meal', true);
   moKey = key;
   const { cat, d } = moDish(key);
+  if (DS_MEAL_HOST) return openMealHosted(key, cat, d);
   moImg.src = d.img;
   document.getElementById('moCat').textContent = cat.title;
   document.getElementById('moTitle').textContent = d.n;
@@ -1801,7 +1816,40 @@ function openMealOv(key) {
   vibrate(8);
 }
 
+/* the hosted open: the scrim is ours and immediate, the sheet is native's */
+function openMealHosted(key, cat, d) {
+  mealHosted = true;
+  if (!d.off) d.off = new Set();
+  document.getElementById('moVeil').classList.add('show', 'hosted');
+  if (typeof SHEET_GAP !== 'undefined' && scrollArea.scrollTop < SHEET_GAP) {
+    scrollArea.scrollTop = SHEET_GAP;
+    syncSheet();
+  }
+  const base = document.baseURI;
+  const hot = d.hot !== undefined ? !!d.hot
+    : (['breakfast', 'lunch', 'dinner'].includes(cat.id) && !/salad|pudding|pineapple/i.test(d.n));
+  const css = getComputedStyle(document.body);
+  try {
+    webkit.messageHandlers.ds.postMessage({ t: 'sheet-open',
+      url: new URL('select-meal.html?nested=1&cat=' + cat.id + '&i=' + key.split(':')[1] +
+        '&v=' + Date.now(), base).href });
+  } catch (_) {}
+  /* buffered by native until the child posts ds-ready */
+  dsDown({ t: 'ds-meal', key: key, cat: cat.id, catTitle: cat.title, n: d.n,
+    img: new URL(d.img, base).href, kcal: d.kcal, p: d.p, c: d.c, f: d.f, r: d.r, hot: hot,
+    ing: d.ing || [], off: [...d.off], selected: !!sel[key],
+    selc: css.getPropertyValue('--selc').trim(), selcInk: css.getPropertyValue('--selc-ink').trim() });
+  vibrate(8);
+}
 function closeMealOv() {
+  if (mealHosted) {
+    /* native has already run the exit and torn the child down before relaying
+       `then`; only our scrim and layer state remain */
+    mealHosted = false;
+    window.DSLayer && DSLayer('meal', false);
+    document.getElementById('moVeil').classList.remove('show', 'hosted');
+    return;
+  }
   window.DSLayer && DSLayer('meal', false);
   mealOv.classList.remove('open', 'drag');
   mealOv.style.transform = '';
@@ -1849,30 +1897,50 @@ function syncMoSelect() {
   document.getElementById('moSelTxt').textContent = on ? 'Selected' : 'Select';
 }
 
-moSelect.addEventListener('click', () => {
+/* one toggle, two surfaces: the in-page button and the hosted child both go
+   through here, so selecting from either is the same selection */
+function toggleMoSelect(fromHost) {
   const catId = moKey.split(':')[0];
   const el = cardEls[moKey];
   if (sel[moKey]) {
     delete sel[moKey];
     deselect(el);
-    vibrate(8);
+    if (!fromHost) vibrate(8);
   } else {
     if (catCount(catId) >= quotaOf(catId)) {
-      moSelect.classList.remove('deny'); void moSelect.offsetWidth;
-      moSelect.classList.add('deny');
-      vibrate([12, 40, 12]);
-      return;
+      if (!fromHost) {
+        moSelect.classList.remove('deny'); void moSelect.offsetWidth;
+        moSelect.classList.add('deny');
+        vibrate([12, 40, 12]);
+      }
+      return { selected: false, deny: true };
     }
     sel[moKey] = 1;
     selectSeq(el);
-    vibrate(8);
+    if (!fromHost) vibrate(8);
     updateAll();
   }
   syncMoSelect();
+  return { selected: !!sel[moKey], deny: false };
+}
+moSelect.addEventListener('click', () => toggleMoSelect(false));
+/* the hosted child's up-messages, relayed by native as MessageEvents */
+addEventListener('message', e => {
+  const m = e.data;
+  if (!m || !m.t || !mealHosted) return;
+  if (m.t === 'ds-meal-toggle' && m.key === moKey) {
+    const r = toggleMoSelect(true);
+    dsDown({ t: 'ds-meal-state', selected: r.selected, deny: r.deny });
+  } else if (m.t === 'ds-meal-ing' && m.key === moKey) {
+    moDish(moKey).d.off = new Set(m.off || []);
+  } else if (m.t === 'ds-meal-closed') {
+    closeMealOv();
+  }
 });
 
 document.getElementById('moClose').addEventListener('click', closeMealOv);
-document.getElementById('moVeil').addEventListener('click', closeMealOv);
+/* hosted, the scrim is not a close target: only native closes the child */
+document.getElementById('moVeil').addEventListener('click', () => { if (!mealHosted) closeMealOv(); });
 
 /* one continuous scroll: phase 1 collapses the image to its 40% floor,
    then the same gesture keeps scrolling the ingredient list under the
@@ -3925,7 +3993,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 247 (kebab + details X on glass-control)';
+const BUILD = 'build 2026-09-15 · 248 (meal details open in a nested native host when the app can)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4851,6 +4919,10 @@ if (QS.get('solo') === '1') {
        stop posting chrome for good. */
   var sheetGo = null;
   window.DSSheet = function (phase) {
+    /* 'closing' only ever reaches this view as the PARENT of the nested meal
+       host (the calendar receives it for this view's own exit): dissolve our
+       scrim alongside the child's fall rather than after it */
+    if (phase === 'closing') { document.getElementById('moVeil').classList.remove('show'); return; }
     if (phase === 'presented') { if (sheetGo) sheetGo(); return; }
     if (phase === 'fallback') {
       sheetFallback = true;

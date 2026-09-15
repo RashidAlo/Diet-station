@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>DietStation — Meal Details</title>
+<script>
+/* THE MEAL-DETAILS LAYER, HOSTED NATIVELY (composition.html#spec-sheethost,
+   NESTED HOST; Rashid: "the meal details x button ... needs to be native liquid
+   glass"). The selector opens this document in its own native web view, one level
+   below its own host, so the X is a real twin and native owns the sheet's motion:
+   the rise, the pull to close, the fall. select.html keeps the in-page layer as
+   the fallback, byte for byte, for every host without the nested cap.
+   NATIVE FROM THE FIRST FRAME: decided here, at parse, from the injected caps. */
+var DS_MEAL_HOSTED = window.parent === window
+  && !!(window.DSNativeCaps && window.DSNativeCaps.sheetHostNested >= 1)
+  && /[?&]nested=1/.test(location.search);
+if (DS_MEAL_HOSTED && /DietStationLab/.test(navigator.userAgent))
+  document.documentElement.classList.add('ds-chrome-mclose');
+</script>
+<link rel="stylesheet" href="glass-control.css?v=1">
+<style>
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Medium.ttf'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-DemiBold.ttf'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Urbane Rounded'; src: url('UrbaneRounded-Light.ttf'); font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'Proxima Nova'; src: url('proxima-regular.otf'); font-weight: 400; font-display: swap; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  #safeProbe { position: fixed; inset: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 0 0; }
+  /* the document is transparent: the selector draws the scrim in its own view,
+     beneath this one, exactly as the calendar does for the selector */
+  html, body { background: transparent; }
+  body { font-family: 'Urbane Rounded', -apple-system, sans-serif;
+    -webkit-user-select: none; user-select: none; overflow-x: hidden;
+    --selc: #ED1C24; --selc-ink: #ED1C24; }
+  html.ds-chrome-mclose #moClose { opacity: 0 !important; pointer-events: none !important; }
+
+  /* ONE SCROLLER, AND IT IS THE DOCUMENT. The in-page layer chains content scroll,
+     header collapse and the pull to close inside one div; hosted, the pull belongs
+     to native, which can only read the web view's own scroll view. So the document
+     scrolls, every visual layer is fixed and positioned off window.scrollY, and the
+     ingredient list is the only thing in flow. */
+  .meal-ov { position: fixed; left: 0; right: 0; bottom: 0; top: var(--sheet-top, 43px);
+    border-radius: 44px 44px 0 0; overflow: hidden; pointer-events: none; z-index: 1; }
+  .mo-img { position: absolute; left: 0; top: 0; right: 0; height: 62%; overflow: hidden; }
+  .mo-img img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; display: block; }
+  .mo-sheetbg { position: absolute; left: 0; right: 0; bottom: 0; background: #fff;
+    border-radius: 44px 44px 0 0; }
+  #moIngList { position: relative; z-index: 2; padding: 0 24px 130px; background: transparent; }
+  .mo-front { position: fixed; left: 0; right: 0; bottom: 0; top: var(--sheet-top, 43px);
+    overflow: hidden; pointer-events: none; z-index: 3; border-radius: 44px 44px 0 0; }
+  .mo-top { position: absolute; left: 0; right: 0; top: 0; height: 74px; display: flex;
+    align-items: center; justify-content: flex-end; padding: 14px 16px 0 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,.22), rgba(0,0,0,0)); }
+  .mo-close { --gctl-size: 44px; pointer-events: auto; }
+  .mo-close svg { width: 17.6px; height: 17.6px; pointer-events: none; }
+  .mo-headblock { position: absolute; left: 0; right: 0; background: #fff;
+    border-radius: 44px 44px 0 0; padding: 32px 24px 0; }
+  .mo-action-row { position: absolute; left: 0; right: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 14px; height: 40px; pointer-events: auto; }
+  .mo-stars { display: flex; gap: 4px; align-items: center;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.35)); transition: opacity .25s ease; }
+  .mo-stars svg { width: 22px; height: 22px; }
+  .mo-badge { position: absolute; left: 14px; bottom: 0; align-items: center; gap: 5px;
+    height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(20,16,10,.45);
+    font: 600 14px/1 'Urbane Rounded', sans-serif; color: #f9f9f9;
+    opacity: 0; transition: opacity .25s ease; display: flex; }
+  .mo-badge svg { width: 15px; height: 15px; }
+  body.compact .mo-stars { opacity: 0; }
+  body.compact .mo-badge { opacity: 1; }
+  .mo-select { border: none; cursor: pointer; height: 40px; padding: 0 22px;
+    border-radius: 999px; background: #fff; display: flex; align-items: center;
+    gap: 6px; font: 500 14px/1 'Urbane Rounded', sans-serif; color: #ED1C24;
+    box-shadow: 0 4px 14px rgba(0,0,0,.16); transition: transform .15s cubic-bezier(.3,.8,.3,1); }
+  .mo-select:active { transform: scale(.94); }
+  .mo-select.sel { color: #0b0e12; }
+  .mo-select .msc { width: 16px; height: 16px; border-radius: 50%; background: var(--selc);
+    display: none; align-items: center; justify-content: center; }
+  .mo-select.sel .msc { display: flex; }
+  .mo-select .msc svg { width: 9px; height: 7px; }
+  .mo-select.deny { animation: deny .4s ease; }
+  @keyframes deny { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
+  .mo-cat { font: 600 16px/19px 'Urbane Rounded', sans-serif; color: #ED1C24; margin-bottom: 8px; }
+  .mo-title { font: 600 22px/28px 'Urbane Rounded', sans-serif; color: #0b0e12; margin-bottom: 12px; }
+  .mo-heat { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .mo-heat .hc { flex: 1; display: flex; align-items: center; gap: 9px; border: 1px solid #EDEDED;
+    border-radius: 14px; padding: 11px 14px; background: #fff; }
+  .mo-heat .hc .he { font-size: 17px; }
+  .mo-heat .hc b { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .mo-heat .hc span { display: block; font: 600 12px/16px 'Urbane Rounded', sans-serif; }
+  .mo-heat .or { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #999; }
+  .mo-ing-h { font: 600 13px/17px 'Urbane Rounded', sans-serif; color: #0b0e12; margin-bottom: 6px; }
+  .mo-row { display: flex; align-items: center; justify-content: space-between; min-height: 24px;
+    padding: 10px 2px 10px 0; position: relative; border-bottom: 1px solid #F0F0F0; cursor: pointer; }
+  .mo-row:last-child { border-bottom: none; }
+  .mo-row .lab { font: 400 15px/22px 'Proxima Nova', sans-serif; color: #252B33;
+    transition: opacity .25s ease; position: relative; }
+  .mo-row .lab::after { content: ''; position: absolute; left: 0; right: 0; top: calc(50% + 1px);
+    height: 1.5px; background: #252B33; border-radius: 1px; transform: scaleX(0);
+    transform-origin: left center; transition: transform .3s cubic-bezier(.3,.8,.3,1); }
+  .mo-row.off .lab { opacity: .35; }
+  .mo-row.off .lab::after { transform: scaleX(1); }
+  .mo-fb { position: absolute; right: 0; top: 50%; transform: translateY(-50%) scale(.75);
+    display: flex; align-items: center; gap: 5px; font: 600 12.5px/16px 'Urbane Rounded', sans-serif;
+    opacity: 0; transition: opacity .2s ease, transform .25s cubic-bezier(.3,.9,.3,1.25); pointer-events: none; }
+  .mo-fb.add { color: var(--selc-ink); }
+  .mo-fb.rem { color: #ED1C24; }
+  .mo-fb .sc { width: 14px; height: 14px; border-radius: 50%; background: var(--selc);
+    display: flex; align-items: center; justify-content: center; }
+  .mo-fb .sc svg { width: 7px; height: 6px; }
+  .mo-fb svg.tr { width: 13px; height: 14px; }
+  .mo-row.fb .mo-fb { opacity: 1; transform: translateY(-50%) scale(1); }
+  .mo-sw { width: 30px; height: 18px; border-radius: 50px; flex: none; border: 1px solid var(--selc);
+    background: var(--selc); padding: 2px; display: flex; justify-content: flex-end; align-items: center;
+    transition: background .25s ease, border-color .25s ease, opacity .18s ease, transform .22s cubic-bezier(.3,.9,.3,1); }
+  .mo-row.fb .mo-sw { opacity: 0; transform: scale(.55); }
+  .mo-row.off .mo-sw { background: #f5f5f5; border-color: #e5e5e5; justify-content: flex-start; }
+  .mo-sw .knob { width: 12px; height: 12px; border-radius: 50%; background: #f5f5f5;
+    box-shadow: 0 0 3px 2px rgba(0,0,0,.08); transition: transform .25s cubic-bezier(.3,.8,.3,1.2); }
+  .mo-row.off .mo-sw .knob { background: #fff; }
+  .mo-macros { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; background: #fff;
+    border-top: 1px solid #EDEDED; padding: 14px 32px calc(20px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; justify-content: space-between; }
+  .mo-macros .mk small { display: block; font: 500 10.5px/14px 'Urbane Rounded', sans-serif; color: #999; }
+  .mo-macros .mk b { font: 500 24px/26px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .mo-macros .mk i { font: 400 12px/16px 'Proxima Nova', sans-serif; color: #5e5e5e; font-style: normal; margin-left: 3px; }
+  .mo-macros .mp { display: flex; gap: 14px; }
+  .mo-macros .mp div small { display: block; font: 300 10px/12px 'Urbane Rounded', sans-serif; color: #999; }
+  .mo-macros .mp div b { font: 500 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+</style>
+</head>
+<body>
+<div id="safeProbe"></div>
+
+<!-- back: the photo and the white sheet the list scrolls over -->
+<div class="meal-ov" id="mealOv">
+  <div class="mo-img" id="moImgBox"><img id="moImg" src="" alt=""></div>
+  <div class="mo-sheetbg" id="moSheetBg"></div>
+</div>
+<!-- in flow: the only thing the document scroll moves -->
+<div id="moIngList"></div>
+<!-- front: header, action row, the X -->
+<div class="mo-front">
+  <div class="mo-headblock" id="moHeadBlock">
+    <div class="mo-cat" id="moCat"></div>
+    <div class="mo-title" id="moTitle"></div>
+    <div class="mo-heat" id="moHeat"></div>
+    <div class="mo-ing-h">Ingredients:</div>
+  </div>
+  <div class="mo-action-row" id="moActionRow">
+    <div class="mo-stars" id="moStars"></div>
+    <div class="mo-badge" id="moBadge"></div>
+    <button class="mo-select" id="moSelect">
+      <span class="msc"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.4L3.4 5.8 8 1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span id="moSelTxt">Select</span>
+    </button>
+  </div>
+  <div class="mo-top">
+    <button class="mo-close gctl on-dark" id="moClose" aria-label="Close">
+      <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+<div class="mo-macros">
+  <div class="mk"><small>Meal&rsquo;s Macros</small><b id="moKcal">0</b><i>Kcal</i></div>
+  <div class="mp">
+    <div><small>Protein</small><b id="moP">0g</b></div>
+    <div><small>Carbs</small><b id="moC">0g</b></div>
+    <div><small>Fat</small><b id="moF">0g</b></div>
+  </div>
+</div>
+
+<script>
+const BUILD = 'meal-host 2026-09-15 · 1 (nested native host, first cut)';
+function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
+const $ = id => document.getElementById(id);
+
+/* ---- wire: everything this document knows arrives from the selector ----
+   down  {t:'ds-meal', key, cat, catTitle, n, img, kcal, p, c, f, r, hot, ing[], off[],
+          selected, selc, selcInk}                   (at open, buffered until ds-ready)
+         {t:'ds-meal-state', selected, deny}         (the answer to a toggle)
+   up    {t:'ds-meal-toggle'}  {t:'ds-meal-ing', off[]}                  (ds-up)
+   close {t:'sheet-close', then:{t:'ds-meal-closed'}}  — the X; native owns the pull */
+function up(msg) {
+  if (DS_MEAL_HOSTED) { try { webkit.messageHandlers.ds.postMessage({ t: 'ds-up', msg: msg }); } catch (_) {} return; }
+  try { parent.postMessage(msg, '*'); } catch (_) {}
+}
+let closing = false;
+function dismiss() {
+  if (closing) return;
+  closing = true;
+  vibrate(8);
+  if (DS_MEAL_HOSTED) {
+    try { webkit.messageHandlers.ds.postMessage({ t: 'sheet-close', then: { t: 'ds-meal-closed' } }); } catch (_) {}
+    return;
+  }
+  try { parent.postMessage({ t: 'ds-meal-closed' }, '*'); } catch (_) {}
+}
+
+/* ---- geometry: the sheet's top is the selector's, one pad above the chrome line ---- */
+function sheetTop() {
+  const c = window.DSNativeCaps;
+  let pad;
+  if (DS_MEAL_HOSTED && c && typeof c.safeTop === 'number') pad = Math.max(28, c.safeTop - 1);
+  else pad = Math.max(28, (parseFloat(getComputedStyle($('safeProbe')).paddingTop) || 0) - 1);
+  return pad - 18;   /* select.html: .meal-ov { top: calc(var(--top-pad) - 18px) } */
+}
+const SHEET_TOP = sheetTop();
+document.documentElement.style.setProperty('--sheet-top', SHEET_TOP + 'px');
+
+function moStarSVG(fill) {
+  return '<svg viewBox="0 0 16 16" fill="none"><path d="M8 11.68l2.767 1.673c.506.307 1.126-.146.993-.72l-.733-3.146 2.446-2.12c.447-.387.207-1.12-.38-1.167l-3.22-.273-1.26-2.973c-.227-.54-1-.54-1.227 0L6.127 5.92l-3.22.273c-.587.047-.827.78-.38 1.167L4.973 9.48l-.733 3.146c-.133.574.487 1.027.993.72L8 11.68z" fill="' + fill + '"/></svg>';
+}
+const FB_CHECK = '<span class="sc"><svg viewBox="0 0 7 6" fill="none"><path d="M1 2.9L2.8 4.7 6 1.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+const FB_TRASH = '<svg class="tr" viewBox="0 0 13 14" fill="none"><path d="M1.5 3.5h10M4.8 3.5V2.2c0-.4.3-.7.7-.7h2c.4 0 .7.3.7.7v1.3M3 3.5l.6 8.1c0 .5.4.9.9.9h4c.5 0 .9-.4.9-.9l.6-8.1M5.3 6v4M7.7 6v4" stroke="#ED1C24" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+let dish = null, off = new Set();
+function render(d) {
+  dish = d;
+  off = new Set(d.off || []);
+  if (d.selc) document.body.style.setProperty('--selc', d.selc);
+  if (d.selcInk) document.body.style.setProperty('--selc-ink', d.selcInk);
+  $('moImg').src = d.img;
+  $('moCat').textContent = d.catTitle;
+  $('moTitle').textContent = d.n;
+  $('moKcal').textContent = d.kcal;
+  $('moP').textContent = d.p + 'g';
+  $('moC').textContent = d.c + 'g';
+  $('moF').textContent = d.f + 'g';
+  const full = Math.round(parseFloat(d.r));
+  $('moStars').innerHTML = Array.from({ length: 5 }, (_, i) => moStarSVG(i < full ? '#FFC52E' : 'rgba(255,255,255,.55)')).join('');
+  $('moBadge').innerHTML = d.r + ' ' + moStarSVG('#FFC52E');
+  $('moHeat').innerHTML = d.hot
+    ? '<div class="hc"><span class="he">&#x1F525;</span><div><b>Microwave it</b><span style="color:#ED1C24">2-3 minutes</span></div></div>' +
+      '<span class="or">or</span>' +
+      '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Enjoy it</b><span style="color:#3B82D0">cold!</span></div></div>'
+    : '<div class="hc"><span class="he">&#x2744;&#xFE0F;</span><div><b>Served chilled</b><span style="color:#3B82D0">enjoy it cold!</span></div></div>';
+  buildIngRows();
+  syncSelect(!!d.selected);
+  layout();
+}
+
+function buildIngRows() {
+  const list = $('moIngList');
+  list.innerHTML = '';
+  (dish.ing || []).forEach((label, i) => {
+    const row = document.createElement('div');
+    row.className = 'mo-row' + (off.has(i) ? ' off' : '');
+    row.innerHTML = '<span class="lab">' + label + '</span><span class="mo-fb"></span>' +
+      '<span class="mo-sw"><span class="knob"></span></span>';
+    row.addEventListener('click', () => {
+      if (off.has(i)) off.delete(i); else off.add(i);
+      const nowOff = off.has(i);
+      row.classList.toggle('off', nowOff);
+      vibrate(8);
+      const fb = row.querySelector('.mo-fb');
+      fb.className = 'mo-fb ' + (nowOff ? 'rem' : 'add');
+      fb.innerHTML = nowOff ? FB_TRASH + 'Removed' : FB_CHECK + 'Added';
+      clearTimeout(row._fbT);
+      row.classList.remove('fb'); void row.offsetWidth; row.classList.add('fb');
+      row._fbT = setTimeout(() => row.classList.remove('fb'), 1050);
+      up({ t: 'ds-meal-ing', key: dish.key, off: [...off] });
+    });
+    list.appendChild(row);
+  });
+}
+
+function syncSelect(on) {
+  $('moSelect').classList.toggle('sel', on);
+  $('moSelTxt').textContent = on ? 'Selected' : 'Select';
+}
+$('moSelect').addEventListener('click', () => { if (dish) up({ t: 'ds-meal-toggle', key: dish.key }); });
+$('moClose').addEventListener('click', dismiss);
+
+/* ---- the collapse, read off the document scroll ----
+   CLAMPED AT THE TOP (Design System, NESTED HOST): with bounce on, native's pull
+   reads as a NEGATIVE scrollY. That is the sheet moving, not the content, so it
+   must neither grow the photo nor move a layer — st never goes below 0. */
+let baseImgH = 0, headH = 120;
+function viewH() { return window.innerHeight - SHEET_TOP; }
+function layout() {
+  const H = viewH();
+  baseImgH = H * 0.62;
+  headH = $('moHeadBlock').offsetHeight;
+  document.body.style.paddingTop = (SHEET_TOP + baseImgH + headH) + 'px';
+  $('moIngList').style.minHeight = (H - headH - baseImgH + H * 0.28 + 1) + 'px';   /* always room to collapse */
+  sync();
+}
+function sync() {
+  if (!baseImgH) return;
+  const st = Math.max(0, window.scrollY);
+  const H = viewH();
+  const imgH = Math.max(H * 0.34, baseImgH - st);
+  $('moImgBox').style.height = (imgH + 46) + 'px';
+  $('moSheetBg').style.top = imgH + 'px';
+  $('moHeadBlock').style.top = imgH + 'px';
+  $('moActionRow').style.top = (imgH - 50) + 'px';
+  const cut = Math.max(0, imgH + headH + st - (baseImgH + headH));
+  $('moIngList').style.clipPath = 'inset(' + cut + 'px 0 0 0)';
+  document.body.classList.toggle('compact', imgH < H * 0.38);
+}
+addEventListener('scroll', sync, { passive: true });
+addEventListener('resize', () => { if (dish) layout(); });
+
+addEventListener('message', e => {
+  const d = e.data;
+  if (!d || !d.t) return;
+  if (d.t === 'ds-meal') render(d);
+  if (d.t === 'ds-meal-state') {
+    syncSelect(!!d.selected);
+    if (d.deny) {
+      const b = $('moSelect');
+      b.classList.remove('deny'); void b.offsetWidth; b.classList.add('deny');
+      vibrate([12, 40, 12]);
+    } else vibrate(8);
+  }
+});
+
+/* ---- the X twin: complete from the first post, native from the first frame ---- */
+(function () {
+  if (!DS_MEAL_HOSTED || !/DietStationLab/.test(navigator.userAgent)) return;
+  let fallback = false;
+  function post() {
+    if (fallback || closing) return;
+    const r = $('moClose').getBoundingClientRect();
+    try {
+      webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'selector', surface: 'dark',
+        mode: 'sheet', complete: true,
+        els: [{ id: 'close', x: r.left, y: r.top, w: r.width, h: r.height, r: r.width / 2 }] });
+    } catch (_) {}
+  }
+  window.DSChromeTap = function (id) { if (id === 'close') dismiss(); };
+  window.DSNativeChrome = function (ids) {
+    if ((ids || []).indexOf('close') < 0) document.documentElement.classList.remove('ds-chrome-mclose');
+  };
+  window.DSSheet = function (phase) {
+    if (phase === 'fallback') {
+      fallback = true;
+      try { webkit.messageHandlers.ds.postMessage({ t: 'glasschrome', flow: 'selector', surface: 'dark', mode: 'sheet', els: [] }); } catch (_) {}
+      document.documentElement.classList.remove('ds-chrome-mclose');
+    }
+  };
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', post);
+  else post();
+})();
+</script>
+</body>
+</html>
