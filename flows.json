@@ -215,8 +215,8 @@
                 "type": "action"
               },
               {
-                "key": "reloadFresh",
-                "label": "Reload fresh (clear cache)",
+                "key": "copyValues",
+                "label": "Copy values",
                 "type": "action"
               }
             ]
@@ -808,7 +808,8 @@
                 "unit": "px",
                 "default": 62,
                 "live": true,
-                "note": "Pull at which the last hole pops and the tab rips free."
+                "note": "Pull at which the last hole pops and the tab rips free.",
+                "prime": true
               },
               {
                 "key": "stretch",
@@ -820,7 +821,8 @@
                 "unit": "px",
                 "default": 96,
                 "live": true,
-                "note": "Max elastic travel of the pull."
+                "note": "Max elastic travel of the pull.",
+                "prime": true
               },
               {
                 "key": "confetti",
@@ -832,7 +834,8 @@
                 "unit": "",
                 "default": 14,
                 "live": true,
-                "note": "Particles bursting from the perforation on tear."
+                "note": "Particles bursting from the perforation on tear.",
+                "prime": true
               }
             ]
           },
@@ -849,7 +852,8 @@
                 "unit": "px",
                 "default": 0,
                 "live": true,
-                "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma."
+                "note": "Optional backdrop blur under the coupon fills. 0 = pure Figma.",
+                "prime": true
               }
             ]
           },
@@ -860,6 +864,12 @@
                 "key": "resetCoupons",
                 "label": "Reset coupons",
                 "type": "action"
+              },
+              {
+                "key": "copyValues",
+                "label": "Copy values",
+                "type": "action",
+                "note": "Puts this recipe on the clipboard — read it to Claude to bake it in."
               }
             ]
           }
