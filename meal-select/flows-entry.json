@@ -1,5 +1,5 @@
 {
-  "_note": "DECLARATION from the Calendar & Meals lane for the Hub session, which owns flows.json. Merge `lab` into the existing meal-select entry; it replaces the legacy `settings` (folded into 'Selection feel' with the page's real values). section.page is INFORMATIONAL (which page's DSLab.schema() returns it), pending the Design System ruling; the calendar and the selector share one flow and keys are unique across both.",
+  "_note": "DECLARATION from the Calendar & Meals lane for the Hub session, which owns flows.json. Merge `lab` into the existing meal-select entry; it replaces the legacy `settings`. SOURCE OF TRUTH for both pages: index.html and select.html embed their own sections (by section.page) between LAB-SECTIONS markers, regenerated from this file, so the gear and the running pages cannot drift.",
   "id": "meal-select",
   "lab": {
     "v": 1,
@@ -98,7 +98,8 @@
             "key": "copy",
             "label": "Copy values",
             "type": "action",
-            "live": true
+            "live": true,
+            "note": "The current values, as text."
           },
           {
             "key": "resetDays",
@@ -185,6 +186,7 @@
             "unit": "s",
             "default": 2,
             "live": true,
+            "prime": true,
             "note": "Idle time before the stepper folds into a number badge."
           },
           {
@@ -197,6 +199,7 @@
             "unit": " kcal",
             "default": 1860,
             "live": true,
+            "prime": true,
             "note": "Daily goal the gauge fills toward."
           },
           {
@@ -209,6 +212,7 @@
             "unit": "",
             "default": 14,
             "live": true,
+            "prime": true,
             "note": "Celebration burst size."
           },
           {
@@ -217,6 +221,7 @@
             "type": "choice",
             "default": "add",
             "live": true,
+            "prime": true,
             "options": [
               {
                 "v": "add",
@@ -283,7 +288,8 @@
             "key": "copy",
             "label": "Copy values",
             "type": "action",
-            "live": true
+            "live": true,
+            "note": "The current values, as text."
           },
           {
             "key": "reset",

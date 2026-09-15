@@ -3441,11 +3441,16 @@ document.getElementById('tapMode').addEventListener('click', e => {
 });
 document.getElementById('sFill').onclick = autoFill;
 document.getElementById('sReset').onclick = () => resetAll();
-function copyValues() {
-  const spec = 'meal-select playground: quotas ' +
+/* the values as text. Lab paths RETURN it and the renderer copies inside the
+   tap (lab menu v1.1); only the sidebar's own click touches the clipboard */
+function copyText() {
+  return 'meal-select playground: quotas ' +
     CATS.map(c => c.title + ' ' + c.quota).join(', ') +
     ' · collapse ' + MODS.idle + 's · target ' + MODS.target +
     ' kcal · confetti ' + MODS.confetti + ' · tap mode ' + MODS.tapMode;
+}
+function copyValues() {
+  const spec = copyText();
   const b = document.getElementById('sCopy');
   navigator.clipboard && navigator.clipboard.writeText(spec).then(() => {
     if (b) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy values', 1200); }
@@ -3492,11 +3497,11 @@ document.getElementById('sCopy').onclick = copyValues;
   const ACTIONS = {
     autofill: () => autoFill(),
     reset: () => resetAll(),
-    copy: () => copyValues()
+    copy: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
   };
   function state() {
     const o = { idle: +MODS.idle, target: +MODS.target, confetti: +MODS.confetti,
-      tapMode: MODS.tapMode, selc: MODS.selc || 'red', scrubStyle: MODS.scrubStyle || 'tile' };
+      tapMode: MODS.tapMode === 'add' ? 'add' : 'select', selc: MODS.selc || 'red', scrubStyle: MODS.scrubStyle || 'tile' };
     CATS.forEach(cat => { o['quota.' + cat.id] = cat.quota; });
     return o;
   }
@@ -3513,9 +3518,206 @@ document.getElementById('sCopy').onclick = copyValues;
   }
   const side = document.getElementById('side');
   if (side) ['input', 'click'].forEach(t => side.addEventListener(t, () => setTimeout(labNotify, 0), true));
+  /* LAB-SECTIONS:selector — generated from meal-select/flows-entry.json; edit there */
+  const LAB_SECTIONS = [
+    {
+      "title": "Category quotas",
+      "page": "selector",
+      "controls": [
+        {
+          "key": "quota.breakfast",
+          "label": "Breakfast",
+          "type": "range",
+          "min": 0,
+          "max": 3,
+          "step": 1,
+          "unit": "",
+          "default": 1,
+          "live": true,
+          "note": "Meals allowed per category, the x of y counters. Changing one clears the picks."
+        },
+        {
+          "key": "quota.lunch",
+          "label": "Lunch",
+          "type": "range",
+          "min": 0,
+          "max": 3,
+          "step": 1,
+          "unit": "",
+          "default": 2,
+          "live": true
+        },
+        {
+          "key": "quota.dinner",
+          "label": "Dinner",
+          "type": "range",
+          "min": 0,
+          "max": 3,
+          "step": 1,
+          "unit": "",
+          "default": 1,
+          "live": true
+        },
+        {
+          "key": "quota.snacks",
+          "label": "Snacks",
+          "type": "range",
+          "min": 0,
+          "max": 3,
+          "step": 1,
+          "unit": "",
+          "default": 1,
+          "live": true
+        },
+        {
+          "key": "quota.dessert",
+          "label": "Dessert",
+          "type": "range",
+          "min": 0,
+          "max": 3,
+          "step": 1,
+          "unit": "",
+          "default": 0,
+          "live": true
+        }
+      ]
+    },
+    {
+      "title": "Selection feel",
+      "page": "selector",
+      "controls": [
+        {
+          "key": "idle",
+          "label": "Collapse after",
+          "type": "range",
+          "min": 0.8,
+          "max": 5,
+          "step": 0.1,
+          "unit": "s",
+          "default": 2,
+          "live": true,
+          "prime": true,
+          "note": "Idle time before the stepper folds into a number badge."
+        },
+        {
+          "key": "target",
+          "label": "Calorie target",
+          "type": "range",
+          "min": 1200,
+          "max": 2600,
+          "step": 20,
+          "unit": " kcal",
+          "default": 1860,
+          "live": true,
+          "prime": true,
+          "note": "Daily goal the gauge fills toward."
+        },
+        {
+          "key": "confetti",
+          "label": "Confetti",
+          "type": "range",
+          "min": 0,
+          "max": 30,
+          "step": 1,
+          "unit": "",
+          "default": 14,
+          "live": true,
+          "prime": true,
+          "note": "Celebration burst size."
+        },
+        {
+          "key": "tapMode",
+          "label": "Tap on selected",
+          "type": "choice",
+          "default": "add",
+          "live": true,
+          "prime": true,
+          "options": [
+            {
+              "v": "add",
+              "label": "Adds +1"
+            },
+            {
+              "v": "select",
+              "label": "Selects only"
+            }
+          ],
+          "note": "Tapping a selected meal adds one more, or only selects."
+        },
+        {
+          "key": "selc",
+          "label": "Selection color",
+          "type": "choice",
+          "default": "red",
+          "live": true,
+          "options": [
+            {
+              "v": "green",
+              "label": "Green"
+            },
+            {
+              "v": "red",
+              "label": "Red"
+            },
+            {
+              "v": "neon",
+              "label": "Neon"
+            }
+          ]
+        },
+        {
+          "key": "scrubStyle",
+          "label": "Date scrubber",
+          "type": "choice",
+          "default": "tile",
+          "live": true,
+          "options": [
+            {
+              "v": "glass",
+              "label": "Glass"
+            },
+            {
+              "v": "tile",
+              "label": "Square"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Plate",
+      "page": "selector",
+      "controls": [
+        {
+          "key": "autofill",
+          "label": "Auto-fill",
+          "type": "action",
+          "live": true
+        },
+        {
+          "key": "copy",
+          "label": "Copy values",
+          "type": "action",
+          "live": true,
+          "note": "The current values, as text."
+        },
+        {
+          "key": "reset",
+          "label": "Reset picks",
+          "type": "action",
+          "role": "destructive",
+          "live": true
+        }
+      ]
+    }
+  ];
+  /* /LAB-SECTIONS */
   window.DSLab = Object.assign(window.DSLab || {}, {
     v: 1,
     page: 'selector',
+    /* only this page's sections (section.page is informational); the gear reads
+       flows.json and shows both pages' */
+    schema: () => ({ v: 1, build: BUILD, sections: LAB_SECTIONS }),
     state: state,
     set: function (key, value) {
       const fn = SETTERS[key];
@@ -3526,8 +3728,8 @@ document.getElementById('sCopy').onclick = copyValues;
     run: function (key) {
       const fn = ACTIONS[key];
       if (!fn) return false;
-      fn(); labNotify();
-      return true;
+      const r = fn(); labNotify();
+      return r && typeof r === 'object' ? r : true;
     }
   });
 })();
@@ -3684,7 +3886,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 241 (lab menu v1: dslab-state on every change)';
+const BUILD = 'build 2026-09-15 · 242 (lab menu v1.1: schema, prime, copy text, build)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;

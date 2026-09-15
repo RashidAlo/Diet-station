@@ -455,7 +455,7 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 38 (lab menu v1: dslab-state on every change)';
+const BUILD = 'calendar 2026-09-15 · 39 (lab menu v1.1: schema, copy text, build)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
@@ -881,11 +881,15 @@ function resetDays() {
   if (o) o.textContent = 'now';
   renderMonths(false);
 }
-function copyValues() {
-  const s = 'calendar · horizon ' + MODS.horizon + 'h · active ' + MODS.active +
+/* lab paths RETURN the text and the renderer copies inside the tap (lab menu
+   v1.1); only the sidebar's own click touches the clipboard */
+function copyText() {
+  return 'calendar · horizon ' + MODS.horizon + 'h · active ' + MODS.active +
     ' days · clock ' + (MODS.ff ? '+' + MODS.ff + 'h' : 'now') +
     ' · pop ' + (+MODS.pop).toFixed(2) + ' · haptics ' + (MODS.haptics ? 'on' : 'off');
-  try { navigator.clipboard.writeText(s); } catch (_) {}
+}
+function copyValues() {
+  try { navigator.clipboard.writeText(copyText()); } catch (_) {}
 }
 document.getElementById('sReset').onclick = resetDays;
 document.getElementById('sCopy').onclick = copyValues;
@@ -915,7 +919,8 @@ document.getElementById('sCopy').onclick = copyValues;
   }
   const ACTIONS = {
     sim10: () => simulateFromMenu(10), sim20: () => simulateFromMenu(20),
-    sim30: () => simulateFromMenu(30), resetDays: resetDays, copy: copyValues
+    sim30: () => simulateFromMenu(30), resetDays: resetDays,
+    copy: () => ({ copy: copyText() })   /* synchronous: the renderer copies */
   };
   const state = () => ({ horizon: +MODS.horizon, active: +MODS.active, ff: +MODS.ff,
     pop: +MODS.pop, haptics: !!MODS.haptics });
@@ -932,9 +937,122 @@ document.getElementById('sCopy').onclick = copyValues;
   }
   const side = document.getElementById('side');
   if (side) ['input', 'click'].forEach(t => side.addEventListener(t, () => setTimeout(labNotify, 0), true));
+  /* LAB-SECTIONS:calendar — generated from meal-select/flows-entry.json; edit there */
+  const LAB_SECTIONS = [
+    {
+      "title": "The rule",
+      "page": "calendar",
+      "controls": [
+        {
+          "key": "horizon",
+          "label": "Auto-select horizon",
+          "type": "range",
+          "min": 24,
+          "max": 120,
+          "step": 6,
+          "unit": "h",
+          "default": 72,
+          "live": true,
+          "note": "Hours before delivery when selection locks and auto-picks apply."
+        },
+        {
+          "key": "active",
+          "label": "Active days",
+          "type": "range",
+          "min": 7,
+          "max": 45,
+          "step": 1,
+          "unit": "",
+          "default": 30,
+          "live": true,
+          "note": "Subscription days on the calendar, Fridays off, rolling from today."
+        },
+        {
+          "key": "ff",
+          "label": "Time machine",
+          "type": "range",
+          "min": 0,
+          "max": 96,
+          "step": 1,
+          "unit": "h",
+          "default": 0,
+          "live": true,
+          "note": "Jump the clock forward and watch plus days lock into checks."
+        }
+      ]
+    },
+    {
+      "title": "Simulate",
+      "page": "calendar",
+      "controls": [
+        {
+          "key": "sim10",
+          "label": "Confirm 10 days",
+          "type": "action",
+          "live": true,
+          "note": "As if you confirmed this many days in the picker and hit done."
+        },
+        {
+          "key": "sim20",
+          "label": "Confirm 20 days",
+          "type": "action",
+          "live": true
+        },
+        {
+          "key": "sim30",
+          "label": "Confirm 30 days",
+          "type": "action",
+          "live": true
+        }
+      ]
+    },
+    {
+      "title": "Feel",
+      "page": "calendar",
+      "controls": [
+        {
+          "key": "pop",
+          "label": "Select pop",
+          "type": "range",
+          "min": 1,
+          "max": 1.5,
+          "step": 0.02,
+          "unit": "×",
+          "default": 1.18,
+          "live": true,
+          "note": "Overshoot of the check chip when a day completes."
+        },
+        {
+          "key": "haptics",
+          "label": "Haptics",
+          "type": "toggle",
+          "default": true,
+          "live": true
+        },
+        {
+          "key": "copy",
+          "label": "Copy values",
+          "type": "action",
+          "live": true,
+          "note": "The current values, as text."
+        },
+        {
+          "key": "resetDays",
+          "label": "Reset days",
+          "type": "action",
+          "role": "destructive",
+          "live": true
+        }
+      ]
+    }
+  ];
+  /* /LAB-SECTIONS */
   window.DSLab = Object.assign(window.DSLab || {}, {
     v: 1,
     page: 'calendar',
+    /* only this page's sections (section.page is informational); the gear reads
+       flows.json and shows both pages' */
+    schema: () => ({ v: 1, build: BUILD, sections: LAB_SECTIONS }),
     state: state,
     set: function (key, value) {
       if (key === 'haptics') { MODS.haptics = value === true || value === 'on'; syncSide(); labNotify(); return true; }
@@ -944,8 +1062,8 @@ document.getElementById('sCopy').onclick = copyValues;
     },
     run: function (key) {
       if (!ACTIONS[key]) return false;
-      ACTIONS[key](); labNotify();
-      return true;
+      const r = ACTIONS[key](); labNotify();
+      return r && typeof r === 'object' ? r : true;
     }
   });
 })();
