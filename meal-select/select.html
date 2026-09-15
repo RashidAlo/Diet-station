@@ -652,6 +652,8 @@
     letter-spacing: .05em; color: rgba(11,14,18,.55); }
   #dayTile .t-n { font: 600 15px/17px 'Urbane Rounded', sans-serif; color: #0b0e12; }
   #dayTile .t-s { height: 10px; display: flex; align-items: center; }
+  /* the calendar's chip images (·244): never squeezed by the 10px row */
+  #dayTile .t-s img, .scb .scb-it .s img { display: block; flex: none; }
   #dayTile .t-s svg { display: block; width: 10px; height: 10px; fill: none;
     stroke: rgba(11,14,18,.34); stroke-width: 1.4;
     stroke-linecap: round; stroke-linejoin: round; }
@@ -2772,36 +2774,33 @@ confirmBtn.onclick = () => {
     clearTimeout(monT);
     monT = setTimeout(() => ttl.classList.remove('month-in'), 1150);
   }
-  /* the calendar's own chip vocabulary, reused verbatim so the scrubber and
-     the calendar grid can never tell different stories about a day */
-  /* LINE ICONS, NOT FILLS (Rashid: "for the glass version I want the icons
-     under the date number to be line based and not fill, and very subtle —
-     the numbers themselves can be black, while the icons are in gray").
-     These were the calendar grid's filled <img> chips, which read as solid
-     blobs at 13px and competed with the numeral above them. Inline strokes
-     instead, so they take currentColor and a scheme can tint them: gray on
-     glass. Drawn inline and coloured from --sc-chip rather than shipped as
-     an icon set, which is what let the red scheme come and go without the
-     chips ever being redrawn. */
-  const CHIP_SVG = function (d, vb, extra) {
-    return '<svg viewBox="' + (vb || '0 0 14 14') + '" aria-hidden="true">' +
-      '<path d="' + d + '"/>' + (extra || '') + '</svg>';
+  /* THE CALENDAR'S OWN CHIPS, VERBATIM (Rashid, ·244: "a circle with the icon
+     punched out… small but readable", then "have them match the calendar status
+     view — green plus, gray check etc — so it's the same vibe").
+     This reverses the line-icon ruling (gray hairline strokes, "very subtle"):
+     he now wants the scrubber to read as the calendar grid does, so it uses the
+     grid's artwork files themselves rather than a redrawing of them. One source
+     per meaning means the two surfaces can never tell different stories about
+     a day again. The plus is the filled disc with the cross punched out; check,
+     truck, star and OFF keep the grid's own shapes and colours.
+     SIZES: the grid shows these at 16–20px inside a 22px white disc. Here there
+     is no disc and the row is 10px (tile, compact ladder) or 13px (glass
+     ladder), so each is set to the smallest size its glyph stays legible at:
+     the plus 12 (its disc is 10), the check 11, truck and star 12, OFF 13 wide.
+     A 12px image in a 10px row overflows by 1px each side on purpose: the row
+     keeps its height, so the tile stays 52pt and the native rows keep matching. */
+  const CHIP_IMG = function (file, w, h) {
+    return '<img src="' + file + '" width="' + w + '" height="' + (h || w) + '" alt="">';
   };
   const SCRUB_CHIP = {
-    add:   CHIP_SVG('M7 3.4v7.2M3.4 7h7.2'),
-    soon:  CHIP_SVG('M7 3.4v7.2M3.4 7h7.2'),
-    sel:   CHIP_SVG('M3.2 7.4l2.6 2.6 5-5.8'),
-    auto:  CHIP_SVG('M3.2 7.4l2.6 2.6 5-5.8'),
-    today: CHIP_SVG('M1.4 4h7.2v5.4H1.4zM8.6 5.8h2.8l2.2 2.2v1.4H8.6z',
-             '0 0 16 14',
-             '<circle cx="4.2" cy="11" r="1.5"/><circle cx="11.6" cy="11" r="1.5"/>'),
-    rate:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
-    star:  CHIP_SVG('M7 2.4l1.45 2.94 3.25.47-2.35 2.29.55 3.24L7 9.81l-2.9 1.53.55-3.24L2.3 5.81l3.25-.47z'),
-    /* a dash is not a word (Rashid: "the day you have a dash is an off day —
-       just write OFF instead of the dash, so it's understandable"). Every
-       other chip is a picture of its meaning; a horizontal line is a picture
-       of nothing, and the calendar grid already says OFF in words. */
-    off:   '<i class="c-off">OFF</i>',
+    add:   CHIP_IMG('cal-add.svg', 12),
+    soon:  CHIP_IMG('cal-add.svg', 12),
+    sel:   CHIP_IMG('cal-check.svg', 11),
+    auto:  CHIP_IMG('cal-check.svg', 11),
+    today: CHIP_IMG('cal-truck.svg', 12),
+    rate:  CHIP_IMG('cal-staryellow.svg', 12),
+    star:  CHIP_IMG('cal-staryellow.svg', 12),
+    off:   CHIP_IMG('cal-off.svg', 13, 5),
   };
 
   /* on window: the status map arrives on a top-level message listener, which
@@ -3886,7 +3885,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 243 (lab keys unique across the flow)';
+const BUILD = 'build 2026-09-15 · 244 (scrubber chips match the calendar)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
