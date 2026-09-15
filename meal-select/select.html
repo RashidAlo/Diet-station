@@ -34,10 +34,9 @@
   try { style = JSON.parse(localStorage.getItem('ds-mods-meal-select') || '{}').scrubStyle || 'tile'; } catch (_) {}
   var m = q.match(/[?&]scrub=(\w+)/); if (m) style = m[1];
   if (style === 'tile' && (c.tileRows >= 2 || c.dateWidget >= 1)) r.add('ds-chrome-date');
-  if (c.cardKebab >= 1) r.add('ds-chrome-kebab');
-  if (c.mealClose >= 1) r.add('ds-chrome-mclose');
 })();
 </script>
+<link rel="stylesheet" href="glass-control.css?v=1">
 <style>
   /* font-display: swap is a genuine improvement on a cold load — the default,
      `auto`, makes WebKit hide text until the face arrives — but IT IS NOT THE
@@ -56,8 +55,9 @@
   /* parse-time hides for the sheet host (see the head script). The date tile and
      the scrub pill keep pointer-events: they are the gesture that arms the
      scrubber, invisible but not absent. */
-  html.ds-chrome-core #closeBtn, html.ds-chrome-core .dual,
-  html.ds-chrome-kebab .card .kebab, html.ds-chrome-mclose .mo-close {
+  /* (the card kebab and the details X are NOT here: Ruling 4 keeps them web for
+     life, and hiding a control no twin replaces would leave an empty seat) */
+  html.ds-chrome-core #closeBtn, html.ds-chrome-core .dual {
     opacity: 0 !important; pointer-events: none !important; }
   html.ds-chrome-date .nav .ttl:not(.scrub) { opacity: 0 !important; box-shadow: none !important; }
   html.ds-chrome-gauge #navigator { visibility: hidden !important; pointer-events: none !important; }
@@ -968,13 +968,10 @@
     align-self: flex-end; margin: 0 0 4px 1px; }
   .card .rating svg { width: 11px; height: 11px; margin-left: 7px; }
   /* kebab pops in on select — Figma: opacity .27s + y -23 spring; house glass */
-  .card .kebab { width: 28px; height: 28px; border-radius: 50%; border: none;
-    background: rgba(120,120,126,.32); color: #fff;
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
-    backdrop-filter: blur(10px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 0 0 .5px rgba(255,255,255,.32),
-      0 3px 10px -6px rgba(0,0,0,.25);
-    display: flex; align-items: center; justify-content: center;
+  /* THE MATERIAL IS glass-control .on-dark (Design System, Ruling 4, on Rashid's
+     "doesn't look like native liquid glass"): web for its whole life, the ruled
+     web look, vendored — this rule only sizes it and keeps the select pop. */
+  .card .kebab { --gctl-size: 28px;
     opacity: 0; transform: translateY(-23px); pointer-events: none; }
   .card.sel .kebab { opacity: 1; transform: translateY(0); pointer-events: auto;
     transition: opacity .27s cubic-bezier(.5,0,.5,1),
@@ -1239,15 +1236,9 @@
     justify-content: flex-end; padding: 14px 16px 0 20px;
     background: linear-gradient(to bottom, rgba(0,0,0,.22), rgba(0,0,0,0));
     pointer-events: none; }
-  .mo-close { width: 44px; height: 44px; border-radius: 50%; border: none;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    pointer-events: auto; color: #ffffff; background: rgba(72,72,78,.30);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 0 0 .6px rgba(255,255,255,.4),
-      0 4px 14px -8px rgba(0,0,0,.22);
-    transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-  .mo-close:active { transform: scale(.92); }
+  /* glass-control .on-dark, sized for meal selection (44) — web until the
+     details layer is natively hosted (composition.html#spec-sheethost NESTED HOST) */
+  .mo-close { --gctl-size: 44px; pointer-events: auto; }
   .mo-close svg { width: 17.6px; height: 17.6px; pointer-events: none; }   /* 44pt glyph, see .navbtn */
   /* ONE scroller drives everything: collapse, list, and the drag-to-close
      all chain inside a single gesture. Layers are JS-positioned off its
@@ -1539,7 +1530,7 @@
         <div class="meal-ov" id="mealOv">
           <div class="mo-img"><img id="moImg" src="" alt=""></div>
           <div class="mo-top">
-            <button class="mo-close" id="moClose" aria-label="Close">
+            <button class="mo-close gctl on-dark" id="moClose" aria-label="Close">
               <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             </button>
           </div>
@@ -1979,7 +1970,7 @@ function makeCard(cat, d, i) {
     '<div class="toprow">' +
       '<div class="rating"><span class="r-big">' + d.r.split('.')[0] + '</span>' +
       '<span class="r-dec">.' + d.r.split('.')[1] + '</span>' + ICON.star + '</div>' +
-      '<button class="kebab" aria-label="More">' + ICON.kebab + '</button>' +
+      '<button class="kebab gctl on-dark" aria-label="More">' + ICON.kebab + '</button>' +
     '</div>' +
     '<div class="autobadge"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.3 3.3 1.2-3.3 1.2L8 10.5 6.8 7.2 3.5 6l3.3-1.2L8 1.5zM12.6 10l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7.7-1.7z" fill="#fff"/></svg>Auto Selected</div>' +
     '<div class="details">' +
@@ -3934,7 +3925,7 @@ function openLabMenu() {
   vibrate(12);
 }
 function closeLabMenu() { document.body.classList.remove('labmenu-open'); }
-const BUILD = 'build 2026-09-15 · 246 (hosted: native glass and gauge from the first frame)';
+const BUILD = 'build 2026-09-15 · 247 (kebab + details X on glass-control)';
 function refreshBuildInfo() {
   const probeH = document.getElementById('dvhProbe').offsetHeight;
   const de = document.documentElement;
@@ -4531,8 +4522,7 @@ if (QS.get('solo') === '1') {
     document.querySelectorAll('.ds-native-hidden').forEach(function (el) {
       el.classList.remove('ds-native-hidden');
     });
-    document.documentElement.classList.remove('ds-chrome-core', 'ds-chrome-date',
-      'ds-chrome-gauge', 'ds-chrome-kebab', 'ds-chrome-mclose');
+    document.documentElement.classList.remove('ds-chrome-core', 'ds-chrome-date', 'ds-chrome-gauge');
   }
   /* PRE-HIDING IS ONLY SAFE FOR AN ID SOMETHING IS ACTUALLY REPLACING.
      This runs on EVERY report, BEFORE any confirm, to stop a double-glass
