@@ -1052,6 +1052,9 @@ function applyState() {
     (!MODS.disc && MODS.consult) ? '26px' : '22px';
   syncSegs();
   requestShape();
+  /* one choke point for every change: an open lab menu follows it */
+  if (window.DSLab && DSLab.state)
+    window.dispatchEvent(new CustomEvent('dslab-state', { detail: DSLab.state() }));
 }
 
 /* live countdown on the urgent chip */

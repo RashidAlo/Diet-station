@@ -1038,6 +1038,7 @@ function setLevel(lvl) {
   if (phone.classList.contains('ly-open')) { renderLoyalty(); playLoyalty(); }
   // rebuild next frame so the fresh page snapshot sees the new theme
   requestAnimationFrame(buildCoupons);
+  labStateChanged();
 }
 /* another flow changed the member's tier: re-derive through the same path */
 addEventListener('storage', e => {
@@ -1053,6 +1054,7 @@ function setTheme(theme) {
     x.classList.toggle('on', x.dataset.theme === theme));
   document.getElementById('themeChip').classList.toggle('on', theme === 'red');
   requestAnimationFrame(buildCoupons);
+  labStateChanged();
 }
 document.querySelectorAll('#themeGrid [data-theme]').forEach(b =>
   b.addEventListener('click', () => setTheme(b.dataset.theme)));
@@ -1081,6 +1083,7 @@ function bindMod(id, out, key, fmt, after) {
     MODS[key] = parseFloat(el.value);
     o.textContent = fmt(MODS[key]);
     after && after();
+    labStateChanged();
   });
 }
 (function () {
@@ -1101,6 +1104,12 @@ bindMod('mFrost', 'vFrost', 'frost', v => v + 'px', applyFrost);
    the modifier inputs' own handlers), the same ones the sidebar and the
    Components tab use; lab-shell fills in schema and chrome. Gesture values
    persist in ds-mods-rewards so a Restart keeps them. */
+/* every state path reports here, so an open lab menu follows changes made
+   anywhere (sidebar, dev bar, another flow's tier, the Components tab) */
+function labStateChanged() {
+  if (!window.DSLab || !DSLab.state) return;
+  window.dispatchEvent(new CustomEvent('dslab-state', { detail: DSLab.state() }));
+}
 window.DSLab = Object.assign(window.DSLab || {}, { v: 1,
   state() {
     return { theme: phone.dataset.theme, level: phone.dataset.level, tearAt: MODS.tearAt,
