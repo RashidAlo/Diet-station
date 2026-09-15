@@ -301,6 +301,11 @@ struct HomeScreenNative: View {
     @State private var state = HomeState()
     @Namespace private var glassNS
     var onClose: (() -> Void)? = nil
+    /// LAB MENU v1: the host's route for the User flow / Dev handoff rows
+    /// ('userflow' | 'handoff'); without one the pilot's sheet omits them
+    var onLabChrome: ((String) -> Void)? = nil
+    /// the pilot's lab sheet, drawn by the shared DSLabSheet component
+    @State private var pilotLab: DSLabSheetModel?
     /* entrance choreography: widgets arrive staggered, then the days dial
        sweeps to its value while the number counts down from 30 */
     /// chrome layers: true while the calendar's meal selector owns the whole
@@ -460,7 +465,10 @@ struct HomeScreenNative: View {
             state.labOpen = true
         })
         #endif
-        .sheet(isPresented: $state.labOpen) { labSheet.presentationDetents([.medium]) }
+        .sheet(item: $pilotLab, onDismiss: { state.labOpen = false }) { model in
+            DSLabSheet(model: model).presentationDetents([.medium, .large])
+        }
+        .onChange(of: state.labOpen) { _, open in pilotLab = open ? makePilotLab() : nil }
         // strip meal tap → THE meal-details page from the selection flow,
         // summoned solo (Rashid: same design, no recreated screens). THE
         // RULE: within 72 hours the meal is already in prep — ingredient
@@ -1616,78 +1624,125 @@ struct HomeScreenNative: View {
         }
     }
 
-    // MARK: native lab sheet (long-press)
+    // MARK: native lab sheet (Lab Menu v1: the shared DSLabSheet component)
 
-    private var labSheet: some View {
-        NavigationStack {
-            Form {
-                Section("Account") {
-                    Picker("Account", selection: $state.loggedOut) {
-                        Text("Logged in").tag(false)
-                        Text("Logged out").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                }
-                Section("Subscription plan") {
-                    Picker("Plan", selection: $state.plan) {
-                        ForEach(HomeState.Plan.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                Section("Days left") {
-                    Picker("Days", selection: $state.daysLeft) {
-                        Text("19").tag(19); Text("5").tag(5)
-                        Text("3 (urgent)").tag(3); Text("Expired").tag(0)
-                    }
-                    .pickerStyle(.segmented)
-                    Picker("Shape", selection: $state.daysShapeChoice) {
-                        ForEach(HomeState.DaysShapeChoice.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                Section("Widgets on screen") {
-                    Toggle("Promo banner", isOn: $state.showPromo)
-                    Toggle("Discounts", isOn: $state.showDiscounts)
-                    Toggle("Consultation", isOn: $state.showConsult)
-                    Toggle("Dynamic tab bar", isOn: $state.tabBarDynamic)
-                }
-                if state.showDiscounts {
-                    Section("Discounts state") {
-                        Picker("Coupons", selection: $state.discountsEmpty) {
-                            Text("KD 32").tag(false); Text("No coupons").tag(true)
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                }
-                if state.showConsult {
-                    Section("Consultation state") {
-                        Picker("Consultation", selection: $state.consultBooked) {
-                            Text("Book").tag(false); Text("Booked").tag(true)
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                }
-                if state.calendarOpen {
-                    // the calendar's own lab controls, reached from this ONE
-                    // menu — its page binds no gesture under the pilot
-                    Section {
-                        Button("Meal selection controls…") {
-                            state.labOpen = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                                FlowPreloader.shared.entry("meal-select").web
-                                    .evaluateJavaScript("window.DSLabMenu && DSLabMenu.open()",
-                                                        completionHandler: nil)
-                            }
-                        }
-                    }
-                }
-                if let onClose {
-                    Section { Button("Exit prototype", role: .destructive) { onClose() } }
-                }
-            }
-            .navigationTitle("Native Home — Lab")
-            .navigationBarTitleDisplayMode(.inline)
+    /// The pilot has no page, so its sections live here and its values stay in
+    /// Swift — same sheet, same chrome order as every prototype.
+    private func pilotLabContent() -> ([DSLabSection], [String: DSLabValue]) {
+        func opts(_ pairs: [(DSLabValue, String)]) -> [DSLabOption] {
+            pairs.map { DSLabOption(v: $0.0, label: $0.1) }
         }
+        var sections: [DSLabSection] = [
+            DSLabSection(title: "Account", controls: [
+                DSLabControl(key: "account", label: "Account", kind: .choice,
+                             options: opts([(.string("in"), "Logged in"), (.string("out"), "Logged out")]))]),
+            DSLabSection(title: "Subscription plan", controls: [
+                DSLabControl(key: "plan", label: "Plan", kind: .choice,
+                             options: HomeState.Plan.allCases.map { DSLabOption(v: .string($0.rawValue), label: $0.label) })]),
+            DSLabSection(title: "Days left", controls: [
+                DSLabControl(key: "days", label: "Days left", kind: .choice,
+                             options: opts([(.number(19), "19"), (.number(5), "5"),
+                                            (.number(3), "3 (urgent)"), (.number(0), "Expired")])),
+                DSLabControl(key: "dayShape", label: "Shape", kind: .choice,
+                             options: HomeState.DaysShapeChoice.allCases.map { DSLabOption(v: .string($0.rawValue), label: $0.label) })]),
+            DSLabSection(title: "Widgets on screen", controls: [
+                DSLabControl(key: "promo", label: "Promo banner", kind: .toggle),
+                DSLabControl(key: "discounts", label: "Discounts", kind: .toggle),
+                DSLabControl(key: "consult", label: "Consultation", kind: .toggle),
+                DSLabControl(key: "tabBarDynamic", label: "Dynamic tab bar", kind: .toggle)]),
+        ]
+        var states: [DSLabControl] = []
+        if state.showDiscounts { states.append(DSLabControl(key: "discountsEmpty", label: "No coupons", kind: .toggle)) }
+        if state.showConsult { states.append(DSLabControl(key: "consultBooked", label: "Consultation booked", kind: .toggle)) }
+        if !states.isEmpty { sections.append(DSLabSection(title: "Widget states", controls: states)) }
+        if state.calendarOpen {
+            // until meal selection declares `lab`, its sheet is one tap away
+            sections.append(DSLabSection(title: "Meal selection", controls: [
+                DSLabControl(key: "mealControls", label: "Meal selection controls…", kind: .action)]))
+        }
+        sections.append(DSLabSection(title: "Values", controls: [
+            DSLabControl(key: "copyValues", label: "Copy values", kind: .action)]))
+        let values: [String: DSLabValue] = [
+            "account": .string(state.loggedOut ? "out" : "in"),
+            "plan": .string(state.plan.rawValue),
+            "days": .number(Double(state.daysLeft)),
+            "dayShape": .string(state.daysShapeChoice.rawValue),
+            "promo": .bool(state.showPromo),
+            "discounts": .bool(state.showDiscounts),
+            "consult": .bool(state.showConsult),
+            "tabBarDynamic": .bool(state.tabBarDynamic),
+            "discountsEmpty": .bool(state.discountsEmpty),
+            "consultBooked": .bool(state.consultBooked),
+        ]
+        return (sections, values)
+    }
+
+    private func makePilotLab() -> DSLabSheetModel {
+        let (sections, values) = pilotLabContent()
+        let model = DSLabSheetModel(flow: "home", title: "Home", sections: sections, state: values)
+        var rows: Set<String> = ["restart"]
+        if onClose != nil { rows.insert("exit") }
+        if onLabChrome != nil { rows.formUnion(["userflow", "handoff"]) }
+        model.available = rows
+        let state = self.state
+        model.onSet = { [weak model] key, v in
+            switch key {
+            case "account": state.loggedOut = v == .string("out")
+            case "plan": if case .string(let p) = v, let plan = HomeState.Plan(rawValue: p) { state.plan = plan }
+            case "days": if let d = v.double { state.daysLeft = Int(d) }
+            case "dayShape": if case .string(let c) = v, let shape = HomeState.DaysShapeChoice(rawValue: c) { state.daysShapeChoice = shape }
+            case "promo": state.showPromo = v.bool ?? state.showPromo
+            case "discounts": state.showDiscounts = v.bool ?? state.showDiscounts
+            case "consult": state.showConsult = v.bool ?? state.showConsult
+            case "tabBarDynamic": state.tabBarDynamic = v.bool ?? state.tabBarDynamic
+            case "discountsEmpty": state.discountsEmpty = v.bool ?? state.discountsEmpty
+            case "consultBooked": state.consultBooked = v.bool ?? state.consultBooked
+            default: break
+            }
+            // dependent sections (widget states) follow the new values
+            let (s2, v2) = pilotLabContent()
+            model?.setSections(s2)
+            model?.state = v2
+        }
+        model.onRun = { key in
+            switch key {
+            case "mealControls":
+                pilotLab = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    FlowPreloader.shared.entry("meal-select").web
+                        .evaluateJavaScript("window.DSLabMenu && DSLabMenu.open()", completionHandler: nil)
+                }
+                return nil
+            case "copyValues":
+                return "home (native pilot) · " + (state.loggedOut ? "signed-out" : "signed-in")
+                    + " · plan \(state.plan.rawValue) · days \(state.daysLeft) · shape \(state.daysShapeChoice.rawValue)"
+                    + " · promo \(state.showPromo ? "on" : "off") · discounts \(state.showDiscounts ? "on" : "off")"
+                    + " · consult \(state.showConsult ? "on" : "off") · dynamic bar \(state.tabBarDynamic ? "on" : "off")"
+            default:
+                return nil
+            }
+        }
+        model.onChrome = { which, _ in
+            switch which {
+            case "restart":
+                state.loggedOut = false
+                state.plan = .lifestyle
+                state.daysLeft = 19
+                state.daysShapeChoice = .auto
+                state.showPromo = true
+                state.showDiscounts = true
+                state.showConsult = true
+                state.tabBarDynamic = true
+                state.discountsEmpty = false
+                state.consultBooked = false
+                replayHomeIntro()
+            case "exit":
+                onClose?()
+            default:
+                onLabChrome?(which)
+            }
+        }
+        return model
     }
 }
 
@@ -2531,6 +2586,34 @@ final class FlowPreloader {
                 }
                 return
             }
+            if t == "lab-sheet" || t == "lab-state" {
+                // LAB MENU v1: the page's gesture asks for its lab sheet; the
+                // bar-owning chrome presents it (a hosted sheet's view reports
+                // into its owner, like layers)
+                let target: OverlayChrome? = role == .host ? sheet?.owner : chrome
+                if t == "lab-state" {
+                    target?.labSheet?.update(stateBody: body)
+                    return
+                }
+                guard let model = DSLabSheetModel(body: body) else { return }
+                let frame = message.frameInfo
+                weak var wv = message.webView
+                model.reply = { js, done in
+                    guard let wv else { done(nil); return }
+                    wv.evaluateJavaScript(js, in: frame, in: .page) { done(try? $0.get()) }
+                }
+                // RESTART IS ALWAYS FRESH: drop this view's HTTP cache, then
+                // let the page's cache-busting reload run
+                model.onChrome = { which, proceed in
+                    guard which == "restart", let store = wv?.configuration.websiteDataStore else {
+                        proceed(); return
+                    }
+                    store.removeData(ofTypes: [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache],
+                                     modifiedSince: .distantPast) { proceed() }
+                }
+                target?.labSheet = model
+                return
+            }
             if t == "selector" {
                 // chrome layers: the calendar posts this from its selector
                 // open/close choke points — the pilot's persistent bar
@@ -2657,6 +2740,10 @@ final class FlowPreloader {
     /// on the object. Main frame only, like every cap.
     static let labMenuCapsJS = "window.DSNativeCaps = Object.assign(window.DSNativeCaps || {}, { labMenu: 1, layers: 1 });"
 
+    /// LAB MENU v1: every warm flow view renders its lab sheet natively. Per
+    /// VIEW, so frame-visible (any frame this relay serves may ask).
+    static let labSheetCapsJS = "window.DSNativeCaps = Object.assign(window.DSNativeCaps || {}, { labSheet: 1 });"
+
     /// document-END runs at DOMContentLoaded (didFinish is the later load
     /// event). Down-messages buffer until this edge.
     static let readyJS = "try { webkit.messageHandlers.ds.postMessage({ t: 'ds-ready' }); } catch (_) {}"
@@ -2683,6 +2770,9 @@ final class FlowPreloader {
         cfg.userContentController.addUserScript(
             WKUserScript(source: closeRelay, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         cfg.userContentController.add(relay, name: "dsflow")
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: Self.labSheetCapsJS, injectionTime: .atDocumentStart,
+                         forMainFrameOnly: false))
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []   // flow sound autoplay
         // Same haptics bridge as the main shell webview — the rewards rip's
@@ -3333,6 +3423,9 @@ final class SheetHost: ObservableObject {
         cfg.userContentController.addUserScript(
             WKUserScript(source: LabWebView.Coordinator.bridgeJS,
                          injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: FlowPreloader.labSheetCapsJS, injectionTime: .atDocumentStart,
+                         forMainFrameOnly: false))
         // The calendar is full-screen at rest, so ITS inset is the inset this
         // sheet will have at rest. Only the HOST gets `safeTop`: it is the one
         // view that loads while held off-screen, where env() reads 0.
@@ -3617,6 +3710,8 @@ final class OverlayChrome: ObservableObject {
     /// bar over another. Ids from the hosted sheet's view are kept as
     /// "host:<id>" so the two views can't cancel each other's.
     @Published var layers: Set<String> = []
+    /// LAB MENU v1: the page-backed lab sheet this overlay presents
+    @Published var labSheet: DSLabSheetModel?
     func setLayer(_ id: String, _ up: Bool) {
         if up { layers.insert(id) } else { layers.remove(id) }
     }
@@ -3690,6 +3785,7 @@ final class OverlayChrome: ObservableObject {
         frame = nil
         selectorUp = false
         layers = []
+        labSheet = nil
     }
 }
 
@@ -3830,6 +3926,9 @@ struct FlowOverlay: View {
         }
         .onChange(of: chrome.selectorUp) { _, up in onSelector?(up) }
         .onChange(of: chrome.layers.isEmpty) { _, empty in onLayers?(!empty) }
+        .sheet(item: $chrome.labSheet) { model in
+            DSLabSheet(model: model).presentationDetents([.medium, .large])
+        }
     }
 }
 
@@ -3893,6 +3992,358 @@ private struct FlowWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+}
+
+// MARK: - Lab menu v1 (system/platform.html): ONE sheet for every prototype
+
+/// A lab control's value exactly as JSON carries it. NSNumber hides both
+/// numbers and booleans, so the CF type decides which one arrived.
+enum DSLabValue: Hashable {
+    case string(String), number(Double), bool(Bool)
+
+    init?(json: Any?) {
+        switch json {
+        case let n as NSNumber:
+            self = CFGetTypeID(n) == CFBooleanGetTypeID() ? .bool(n.boolValue) : .number(n.doubleValue)
+        case let s as String:
+            self = .string(s)
+        default:
+            return nil
+        }
+    }
+
+    var js: String {
+        switch self {
+        case .string(let s): return DSLabValue.jsString(s)
+        case .number(let d):
+            return d == d.rounded() && abs(d) < 1e15 ? String(Int64(d)) : String(d)
+        case .bool(let b): return b ? "true" : "false"
+        }
+    }
+    var double: Double? { if case .number(let d) = self { return d }; return nil }
+    var bool: Bool? { if case .bool(let b) = self { return b }; return nil }
+
+    /// a JSON string literal is a valid JS string literal
+    static func jsString(_ s: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: [s]),
+              let arr = String(data: data, encoding: .utf8) else { return "\"\"" }
+        return String(arr.dropFirst().dropLast())
+    }
+}
+
+struct DSLabOption: Hashable, Identifiable {
+    let v: DSLabValue
+    let label: String
+    var id: String { label + "|" + v.js }
+}
+
+struct DSLabControl: Identifiable {
+    enum Kind { case choice, range, toggle, action }
+    let key: String
+    let label: String
+    let kind: Kind
+    var note: String? = nil
+    var def: DSLabValue? = nil
+    var live = false
+    var prime = false
+    var options: [DSLabOption] = []
+    var min = 0.0, max = 1.0, step = 1.0
+    var unit = ""
+    var destructive = false
+    var id: String { key }
+
+    init(key: String, label: String, kind: Kind, note: String? = nil, def: DSLabValue? = nil,
+         live: Bool = true, options: [DSLabOption] = [], destructive: Bool = false) {
+        self.key = key; self.label = label; self.kind = kind; self.note = note
+        self.def = def; self.live = live; self.options = options; self.destructive = destructive
+    }
+
+    init?(json: [String: Any]) {
+        guard let key = json["key"] as? String, !key.isEmpty else { return nil }
+        let kind: Kind
+        switch json["type"] as? String {
+        case "choice": kind = .choice
+        case "range": kind = .range
+        case "toggle": kind = .toggle
+        case "action": kind = .action
+        default: return nil
+        }
+        self.key = key
+        self.label = (json["label"] as? String) ?? key
+        self.kind = kind
+        note = json["note"] as? String
+        def = DSLabValue(json: json["default"])
+        live = (json["live"] as? Bool) ?? false
+        prime = (json["prime"] as? Bool) ?? false
+        options = ((json["options"] as? [[String: Any]]) ?? []).compactMap { o in
+            guard let v = DSLabValue(json: o["v"]) else { return nil }
+            return DSLabOption(v: v, label: (o["label"] as? String) ?? v.js)
+        }
+        min = (json["min"] as? NSNumber)?.doubleValue ?? 0
+        max = (json["max"] as? NSNumber)?.doubleValue ?? 1
+        step = (json["step"] as? NSNumber)?.doubleValue ?? 1
+        unit = (json["unit"] as? String) ?? ""
+        destructive = (json["role"] as? String) == "destructive"
+    }
+}
+
+struct DSLabSection: Identifiable {
+    let title: String
+    let controls: [DSLabControl]
+    var id: String { title }
+}
+
+/// The state behind one lab sheet. A page-backed sheet (lab-sheet) replies by
+/// JavaScript into the frame that asked; the pilot's native sheet keeps its
+/// values in Swift through onSet / onRun. Either way the SAME view draws it.
+@MainActor
+final class DSLabSheetModel: ObservableObject, Identifiable {
+    enum Context { case prototype, gear }
+
+    let id = UUID()
+    let flow: String
+    let context: Context
+    @Published var title: String
+    @Published private(set) var sections: [DSLabSection] = []
+    @Published var state: [String: DSLabValue]
+    @Published var back: String?
+    @Published var build: String?
+    @Published var flash: String?
+    /// chrome rows this host can serve; the context narrows it further
+    var available: Set<String> = ["back", "restart", "exit", "userflow", "handoff"]
+
+    /// run JS in the ORIGINATING frame; the completion gets the result
+    var reply: ((String, @escaping (Any?) -> Void) -> Void)?
+    /// the host's half of a chrome row (the Shell drops the HTTP cache before
+    /// Restart); call `proceed` to let the page act. Nil proceeds at once.
+    var onChrome: ((String, @escaping () -> Void) -> Void)?
+    /// native-only sheets: values and actions stay in Swift (return text to copy)
+    var onSet: ((String, DSLabValue) -> Void)?
+    var onRun: ((String) -> String?)?
+
+    init(flow: String, title: String, sections: [DSLabSection], state: [String: DSLabValue],
+         context: Context = .prototype, back: String? = nil, build: String? = nil) {
+        self.flow = flow
+        self.title = title
+        self.state = state
+        self.context = context
+        self.back = back
+        self.build = build
+        setSections(sections)
+    }
+
+    /// `{ t:'lab-sheet', v:1, flow, title, schema, state, back?, context? }`
+    convenience init?(body: [String: Any]) {
+        guard let schema = body["schema"] as? [String: Any] else { return nil }
+        let sections = ((schema["sections"] as? [[String: Any]]) ?? []).map { s in
+            DSLabSection(title: (s["title"] as? String) ?? "",
+                         controls: ((s["controls"] as? [[String: Any]]) ?? []).compactMap(DSLabControl.init(json:)))
+        }
+        self.init(flow: (body["flow"] as? String) ?? "",
+                  title: (body["title"] as? String) ?? (body["flow"] as? String) ?? "Lab",
+                  sections: sections,
+                  state: DSLabSheetModel.values((body["state"] as? [String: Any]) ?? [:]),
+                  context: (body["context"] as? String) == "gear" ? .gear : .prototype,
+                  back: body["back"] as? String,
+                  build: schema["build"] as? String)
+    }
+
+    static func values(_ dict: [String: Any]) -> [String: DSLabValue] {
+        dict.compactMapValues { DSLabValue(json: $0) }
+    }
+
+    /// Under 'gear' no prototype is running: live controls are hidden unless
+    /// primed, whatever the sender filtered.
+    func setSections(_ all: [DSLabSection]) {
+        sections = all.compactMap { s in
+            let kept = context == .gear ? s.controls.filter { !$0.live || $0.prime } : s.controls
+            return kept.isEmpty ? nil : DSLabSection(title: s.title, controls: kept)
+        }
+    }
+
+    /// `{ t:'lab-state', v:1, state }` while the sheet is up
+    func update(stateBody body: [String: Any]) {
+        guard let s = body["state"] as? [String: Any] else { return }
+        state = DSLabSheetModel.values(s)
+    }
+
+    var chromeRows: [String] {
+        let order = context == .gear ? ["userflow", "handoff"]
+                                     : ["back", "restart", "exit", "userflow", "handoff"]
+        return order.filter { available.contains($0) && ($0 != "back" || back != nil) }
+    }
+
+    func value(_ c: DSLabControl) -> DSLabValue? { state[c.key] ?? c.def }
+
+    func set(_ key: String, _ v: DSLabValue) {
+        state[key] = v
+        if let onSet { onSet(key, v); return }
+        reply?("window.DSLab && DSLab.set(\(DSLabValue.jsString(key)), \(v.js))") { _ in }
+    }
+
+    func run(_ key: String) {
+        if let onRun {
+            if let text = onRun(key) { copy(text) }
+            return
+        }
+        // DSLab.run may return { copy } synchronously; the renderer owns the clipboard
+        let js = "(function(){var r = window.DSLab && DSLab.run(\(DSLabValue.jsString(key)));"
+            + " return (r && typeof r.copy === 'string') ? r.copy : null;})()"
+        reply?(js) { [weak self] result in
+            guard let text = result as? String else { return }
+            DispatchQueue.main.async { self?.copy(text) }
+        }
+    }
+
+    func chrome(_ which: String) {
+        let proceed: () -> Void = { [weak self] in
+            self?.reply?("window.DSLab && DSLab.chrome(\(DSLabValue.jsString(which)))") { _ in }
+        }
+        if let onChrome { onChrome(which, proceed) } else { proceed() }
+    }
+
+    /// the page falls back to its web sheet if this doesn't arrive in 600ms
+    func shown() {
+        reply?("window.DSLabSheet && DSLabSheet('shown')") { _ in }
+    }
+
+    func copy(_ text: String) {
+        UIPasteboard.general.string = text
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        flash = "Copied"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?.flash = nil }
+    }
+}
+
+/// The lab sheet: fixed chrome first, then the prototype's sections.
+/// Present it with `.sheet(item:)`; `presentationDetents` is the host's.
+struct DSLabSheet: View {
+    @ObservedObject var model: DSLabSheetModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if !model.chromeRows.isEmpty || model.build != nil {
+                    Section {
+                        ForEach(model.chromeRows, id: \.self) { chromeRow($0) }
+                    } footer: {
+                        if let build = model.build {
+                            Text(build).font(.caption2.monospaced())
+                        }
+                    }
+                }
+                ForEach(model.sections) { section in
+                    Section(section.title) {
+                        ForEach(section.controls) { control($0) }
+                    }
+                }
+            }
+            .navigationTitle(model.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .overlay(alignment: .top) {
+            if let flash = model.flash {
+                flashPill(flash)
+                    .padding(.top, 12)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: model.flash)
+        .onAppear { model.shown() }
+    }
+
+    @ViewBuilder private func flashPill(_ text: String) -> some View {
+        let label = Text(text).font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 16).padding(.vertical, 8)
+        if #available(iOS 26.0, *) {
+            label.glassEffect(.regular, in: .capsule)
+        } else {
+            label.background(.regularMaterial, in: Capsule())
+        }
+    }
+
+    @ViewBuilder private func chromeRow(_ which: String) -> some View {
+        let spec: (String, String) = {
+            switch which {
+            case "back": return (model.back ?? "Back", "chevron.backward")
+            case "restart": return ("Restart", "arrow.clockwise")
+            case "exit": return ("Exit prototype", "xmark")
+            case "userflow": return ("User flow", "point.3.connected.trianglepath.dotted")
+            default: return ("Dev handoff", "chevron.left.forwardslash.chevron.right")
+            }
+        }()
+        Button(role: which == "exit" ? .destructive : nil) {
+            model.chrome(which)
+            dismiss()
+        } label: {
+            Label(spec.0, systemImage: spec.1)
+        }
+        // only Exit reads as destructive; the app's red accent would tint all
+        .tint(which == "exit" ? nil : .primary)
+    }
+
+    @ViewBuilder private func control(_ c: DSLabControl) -> some View {
+        switch c.kind {
+        case .choice:
+            let selection = Binding<DSLabValue>(
+                get: { model.value(c) ?? c.options.first?.v ?? .string("") },
+                set: { model.set(c.key, $0) })
+            // HIG: segmented for a few short peers, a menu for a list
+            if c.options.count <= 4 && c.options.allSatisfy({ $0.label.count <= 12 }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(c.label)
+                    Picker(c.label, selection: selection) {
+                        ForEach(c.options) { Text($0.label).tag($0.v) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    note(c)
+                }
+            } else {
+                Picker(c.label, selection: selection) {
+                    ForEach(c.options) { Text($0.label).tag($0.v) }
+                }
+                .pickerStyle(.menu)
+                note(c)
+            }
+        case .range:
+            let value = Binding<Double>(
+                get: { model.value(c)?.double ?? c.min },
+                set: { model.set(c.key, .number(($0 / c.step).rounded() * c.step)) })
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(c.label)
+                    Spacer()
+                    Text(verbatim: "\(DSLabValue.number(value.wrappedValue).js)\(c.unit)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: value, in: c.min...Swift.max(c.min + c.step, c.max), step: c.step)
+                note(c)
+            }
+        case .toggle:
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle(c.label, isOn: Binding(
+                    get: { model.value(c)?.bool ?? false },
+                    set: { model.set(c.key, .bool($0)) }))
+                note(c)
+            }
+        case .action:
+            Button(c.label, role: c.destructive ? .destructive : nil) { model.run(c.key) }
+        }
+    }
+
+    @ViewBuilder private func note(_ c: DSLabControl) -> some View {
+        if let n = c.note {
+            Text(n).font(.footnote).foregroundStyle(.secondary)
+        }
+    }
 }
 
 // MARK: - Figma icon shapes (traced from the home flow's SVG exports)
