@@ -137,7 +137,7 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
   .hd-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9;
     white-space: nowrap; }
   .hd-sub b { font-weight: 700; margin-left: 4px; }
-  html.ds-chrome-pause #pauseBtn { opacity: 0 !important; pointer-events: none !important; }
+  html.ds-chrome-pause #pauseBtn, html.ds-chrome-pause #pzClose { opacity: 0 !important; pointer-events: none !important; }
   .pausebtn { width: 40px; height: 40px; border-radius: 999px; flex: none;
     border: 1px solid #B22425; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -253,6 +253,49 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
   .endnote p { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #0d0d0d; }
   .endnote p b { color: #ed1c24; font-weight: 400; }
   .endpad { height: calc(46px + env(safe-area-inset-bottom, 0px)); }
+
+  /* ---- PAUSE MODE (Figma 15084-190130 empty, 15084-190567 with pauses,
+     15878-77768 the calendar with the result toast). Rashid: "the calendar
+     shifts view to show only the days you can pause, which starts 72 hours
+     from today. You can tap to set the pause state or tap to remove it." ---- */
+  .pz-txt, .pz-save, #pzClose { display: none; }
+  body.pausing .hd { gap: 8px; }
+  body.pausing .hd .hd-txt, body.pausing #pauseBtn { display: none; }
+  body.pausing .pz-txt { display: flex; }
+  body.pausing .pz-save, body.pausing #pzClose { display: flex; }
+  @keyframes pzin { from { opacity: 0; } }
+  body.pausing .pz-txt, body.pausing .pz-save, body.pausing #pzClose,
+  body.pz-leaving .hd-txt, body.pz-leaving #pauseBtn { animation: pzin .24s ease both; }
+  .pz-txt { flex: 1; min-width: 0; flex-direction: column; align-items: center; }
+  .pz-txt h1 { font: 600 20px/24px 'Urbane Rounded', sans-serif; color: #f9f9f9; white-space: nowrap; }
+  .pz-sub { font: 400 14px/20px 'Proxima Nova', sans-serif; color: #f9f9f9; white-space: nowrap; }
+  .pz-sub b { font-weight: 600; margin-left: 4px; }
+  .pz-save { height: 40px; padding: 0 14px; border: none; border-radius: 999px; background: #fff;
+    align-items: center; justify-content: center; cursor: pointer; flex: none;
+    font: 500 14px/1 'Urbane Rounded', sans-serif; color: #ed1c24;
+    box-shadow: 0 1px 15px -15px rgba(56,64,74,.1);
+    transition: opacity .2s ease, transform .18s cubic-bezier(.2,.8,.3,1.4); }
+  .pz-save:active:not(:disabled) { transform: scale(.94); }
+  .pz-save:disabled { opacity: .5; cursor: default; }
+  /* days you can't pause recede; their tile loses its white fill (Figma) */
+  body.pausing .day.pz-no { opacity: .2; }
+  body.pausing .day.pz-no.past { opacity: .3; }
+  body.pausing .day.pz-no .tile { background: transparent; color: #0b0e12; }
+  body.pausing .day.pz-no .chip, body.pausing .day .badge, body.pausing .day .dot { display: none; }
+  body.pausing .day.pz-ok { filter: drop-shadow(0 0 4px rgba(56,64,74,.08)); cursor: pointer; }
+  body.pausing .day.pz-ok .tile { color: #0b0e12; }
+  .day.pz-pop .chip { animation: chippop .42s cubic-bezier(.2,.8,.3,1.2); }
+  /* the result toast (Figma 15878-78083) floats clear of the tab bar */
+  .pz-toast { position: absolute; left: 12px; right: 12px; bottom: 111px; z-index: 30;
+    display: flex; gap: 8px; align-items: flex-start; padding: 20px; background: #fff;
+    border-radius: 28px; box-shadow: 0 6px 15.3px 7px rgba(56,64,74,.08);
+    opacity: 0; transform: translateY(24px) scale(.98); pointer-events: none;
+    transition: opacity .3s ease, transform .55s cubic-bezier(.32,.72,0,1); }
+  .pz-toast.show { opacity: 1; transform: none; pointer-events: auto; }
+  .pz-toast img { width: 24px; height: 24px; flex: none; display: block; }
+  .pz-toast b { display: block; font: 600 16px/24px 'Urbane Rounded', sans-serif; color: #0b0e12; }
+  .pz-toast p { font: 500 16px/24px 'Proxima Nova', sans-serif; color: #0b0e12; }
+  .pz-toast p em { font-style: normal; color: #ed1c24; }
 
   /* ---- bottom scroll-edge blur ---- */
   .scrollfade { position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
@@ -414,6 +457,14 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
           <button class="pausebtn" id="pauseBtn" aria-label="Pause subscription">
             <img src="cal-pause.svg" alt="">
           </button>
+          <button class="pausebtn" id="pzClose" aria-label="Cancel pausing">
+            <img src="cal-close.svg" alt="">
+          </button>
+          <div class="pz-txt">
+            <h1>Tap to pause days</h1>
+            <div class="pz-sub">Remaining:<b id="pzLeft">5</b></div>
+          </div>
+          <button class="pz-save" id="pzSave" disabled>Save</button>
         </div>
         <div class="sheetc">
           <div class="dow">
@@ -423,6 +474,10 @@ if (/DietStationLab/.test(navigator.userAgent)) document.documentElement.classLi
           <div class="months" id="months"></div>
         </div>
         <div class="scrollfade"></div>
+        <div class="pz-toast" id="pzToast" role="status" aria-live="polite">
+          <img src="cal-checkcircle.svg" alt="">
+          <div><b id="pzToastT"></b><p id="pzToastB"></p></div>
+        </div>
         <div class="ov-veil" id="ovVeil"></div>
       </div>
       <div class="island"></div>
@@ -466,11 +521,13 @@ window.dsOwnLabMenu = true;   /* richer built-in menu; skip lab-shell's generic 
    badge still reads as arriving with the screen. If the page ever gets a
    real entry animation that actually runs, revisit this with a measurement,
    not with a theory. */
-const BUILD = 'calendar 2026-09-15 · 41 (native pause from the first frame)';
+const BUILD = 'calendar 2026-09-15 · 42 (pause days mode + result toast)';
 function vibrate(p) { try { if (MODS.haptics) navigator.vibrate && navigator.vibrate(p); } catch (_) {} }
 
 /* ================= modifiers ================= */
-const MODS = { horizon: 72, active: 30, ff: 0, pop: 1.18, haptics: true };
+const MODS = { horizon: 72, active: 30, ff: 0, pop: 1.18, haptics: true,
+  /* how many days a subscriber may have paused at once (Figma: "Remaining: 5") */
+  pauseAllowance: 5 };
 
 /* ================= live calendar model =================
    Real dates, real clock. The active window is the next `active`
@@ -488,6 +545,12 @@ const MFULL = ['January','February','March','April','May','June','July','August'
 const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAYMS = 864e5;
 const sessionSel = {};   /* 'Sep:18' -> true — days confirmed by hand this session */
+/* PAUSED DAYS ARE NOT SUBSCRIPTION DAYS. A paused day delivers nothing and
+   costs nothing, so the plan's `active` count skips it and the window runs one
+   day longer per pause: "if you pause two days, we give you two days at the
+   end of the subscription" (Rashid). Unpausing gives the day back and the end
+   comes in again. The count is the whole calculation; nothing else is stored. */
+const pausedDays = new Set();   /* 'Sep:18' */
 
 function calNow() { return Date.now() + MODS.ff * 3600e3; }
 function midnight(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d; }
@@ -499,9 +562,12 @@ function computeModel() {
   const today = midnight(nowT);
   const active = [];
   let d = today;
+  let last = today;
   while (active.length < MODS.active) {
     d = new Date(d.getTime() + DAYMS);
-    if (d.getDay() !== 5) active.push(d);
+    if (d.getDay() === 5) continue;
+    last = d;
+    if (!pausedDays.has(keyOf(d))) active.push(d);
   }
   let soon = null;
   for (const a of active) {
@@ -509,10 +575,11 @@ function computeModel() {
   }
   return { nowT, today, soon,
     first: new Date(today.getTime() - 4 * DAYMS),
-    last: active[active.length - 1] };
+    last: last };
 }
 
 function dayStatus(D, M) {
+  if (pausedDays.has(keyOf(D))) return 'pause';
   if (sessionSel[keyOf(D)]) return 'sel';
   if (D.getDay() === 5) return 'off';
   const t = D.getTime(), td = M.today.getTime();
@@ -536,6 +603,7 @@ const CHIP = {
   rate:  '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
   star:  '<img src="cal-staryellow.svg" width="18" height="18" alt="">',
   off:   '<img src="cal-off.svg" width="14" height="6" alt="">',
+  pause: '<img src="cal-pausecircle.svg" width="20" height="20" alt="">',
 };
 
 function fmtHM(ms) {
@@ -580,6 +648,17 @@ function renderMonths(popNew) {
       Math.max(0, Math.floor((lockAt(D) - M.nowT) / 3600e3)) + ':00</span><span class="bt">' +
       '<img src="cal-tri.svg" alt=""></span></span>';
     el.innerHTML = inner;
+    if (pauseMode) {
+      /* PAUSABLE = a subscription day whose delivery is still beyond the lock
+         (72h by default — the same clock that closes meal selection), and not
+         an OFF Friday. Everything else recedes and ignores the tap. */
+      const ok = D.getDay() !== 5 && D.getTime() > M.today.getTime() && lockAt(D) > M.nowT;
+      el.classList.add(ok ? 'pz-ok' : 'pz-no');
+      el.querySelector('.chip').innerHTML = pzDraft.has(key) ? CHIP.pause : '';
+      el.onclick = ok ? () => togglePause(el, key) : () => nudge(el);
+      grid.appendChild(el);
+      continue;
+    }
     if (st === 'add' || st === 'soon') {
       el.classList.add('tap');
       el.onclick = () => openDay(el.dataset.mon, +el.dataset.day, false);
@@ -865,7 +944,79 @@ function simulateFromMenu(n) {
 document.querySelectorAll('#simSeg button').forEach(b => b.onclick = () => simulateFromMenu(+b.dataset.n));
 
 /* ================= decorative chrome ================= */
-document.getElementById('pauseBtn').onclick = () => vibrate(8);
+/* ================= pause mode ================= */
+let pauseMode = false;
+let pzDraft = new Set();
+const pzSave = document.getElementById('pzSave');
+function pzSame(a, b) { if (a.size !== b.size) return false; for (const k of a) if (!b.has(k)) return false; return true; }
+function syncPauseHeader() {
+  document.getElementById('pzLeft').textContent = Math.max(0, MODS.pauseAllowance - pzDraft.size);
+  pzSave.disabled = pzSame(pzDraft, pausedDays);
+}
+function pzChrome() {
+  /* the X takes the pause button's native seat — repost once layout settles */
+  requestAnimationFrame(() => { if (window.DSCalReport) window.DSCalReport(); });
+}
+function enterPause() {
+  if (pauseMode || ovFrame || ovHosted) return;
+  vibrate(8);
+  pauseMode = true;
+  pzDraft = new Set(pausedDays);
+  document.body.classList.remove('pz-leaving');
+  document.body.classList.add('pausing');
+  syncPauseHeader();
+  renderMonths(false);
+  pzChrome();
+}
+function exitPause() {
+  pauseMode = false;
+  document.body.classList.remove('pausing');
+  document.body.classList.add('pz-leaving');
+  setTimeout(() => document.body.classList.remove('pz-leaving'), 300);
+  renderMonths(false);
+  pzChrome();
+}
+function togglePause(el, key) {
+  if (pzDraft.has(key)) pzDraft.delete(key);
+  else if (pzDraft.size < MODS.pauseAllowance) pzDraft.add(key);
+  else { nudge(el); vibrate([8, 40, 8]); return; }
+  vibrate(10);
+  el.querySelector('.chip').innerHTML = pzDraft.has(key) ? CHIP.pause : '';
+  el.classList.remove('pz-pop'); void el.offsetWidth; el.classList.add('pz-pop');
+  syncPauseHeader();
+}
+/* THE TOAST SAYS WHAT THE SAVE DID TO THE PLAN'S END. Every newly paused day
+   adds a day at the end, every resumed day takes one back, so the change is
+   the difference: pause 2 and resume 1 and the plan runs 1 day longer. */
+let pzToastT = null;
+function showPauseToast(added, removed) {
+  const net = added - removed;
+  const days = n => n + (n === 1 ? ' day.' : ' days.');
+  let title, body;
+  if (net > 0) { title = 'Pause Success!'; body = 'Your subscription has been extended by <em>' + days(net) + '</em>'; }
+  else if (net < 0) { title = 'Days Resumed!'; body = 'Your subscription has been shortened by <em>' + days(-net) + '</em>'; }
+  else { title = 'Pause Updated!'; body = 'Your subscription end date <em>stays the same.</em>'; }
+  document.getElementById('pzToastT').textContent = title;
+  document.getElementById('pzToastB').innerHTML = body;
+  const t = document.getElementById('pzToast');
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  clearTimeout(pzToastT);
+  pzToastT = setTimeout(() => t.classList.remove('show'), 3600);
+}
+document.getElementById('pauseBtn').onclick = enterPause;
+document.getElementById('pzClose').onclick = () => { vibrate(6); exitPause(); };
+pzSave.onclick = () => {
+  if (pzSave.disabled) return;
+  let added = 0, removed = 0;
+  pzDraft.forEach(k => { if (!pausedDays.has(k)) added++; });
+  pausedDays.forEach(k => { if (!pzDraft.has(k)) removed++; });
+  pausedDays.clear();
+  pzDraft.forEach(k => { pausedDays.add(k); delete sessionSel[k]; });
+  vibrate([10, 40, 18]);
+  exitPause();
+  showPauseToast(added, removed);
+};
+document.getElementById('pzToast').onclick = () => document.getElementById('pzToast').classList.remove('show');
 
 /* ================= sidebar wiring ================= */
 function bindMod(id, out, key, fmt, after) {
@@ -1246,7 +1397,9 @@ if (/[?&]qaopen=1/.test(location.search)) {
 (function () {
   if (!/DietStationLab/.test(navigator.userAgent)) return;
   var FLOW = 'calendar', SURFACE = 'dark';
-  var ELS = { pause: '#pauseBtn' };
+  /* pause mode swaps the pause button for its X in the same seat; report()
+     skips whichever is display:none, so one post carries exactly one */
+  var ELS = { pause: '#pauseBtn', close: '#pzClose' };
   var TAPS = {};
   var nativeConfirmed = false;
   var EMBED = /[?&]embed=1/.test(location.search);
@@ -1297,6 +1450,7 @@ if (/[?&]qaopen=1/.test(location.search)) {
         surface: SURFACE, mode: MODE, els: els, bar: 'calendar' });
     } catch (_) {}
   }
+  window.DSCalReport = function () { report(); };
   window.DSNativeChrome = function (ids) {
     var first = !nativeConfirmed;
     nativeConfirmed = true;
